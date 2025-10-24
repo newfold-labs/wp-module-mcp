@@ -17,13 +17,9 @@ use BLU\McpServer;
 /**
  * BLU MCP initialization class
  */
-class BLU_MCP {
+class BLUMcp {
 
 	public function __construct() {
-		$this->init();
-	}
-	
-	public function init() {
 		add_action( 'abilities_api_categories_init', array( $this, 'register_blu_ability_category' ) );
 		add_action( 'abilities_api_init', array( $this, 'initialize_abilities' ) );
 		$this->McpServer = new McpServer();

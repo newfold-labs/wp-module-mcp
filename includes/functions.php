@@ -29,5 +29,9 @@ function blu_get_abilities_by_namespace( string $namespace ): array {
  * @return void
  */
 function newfold_register_ability( string $name, array $args ): void {
-	wp_register_ability( $name, $args );
+	if ( function_exists( 'wp_register_ability' ) ) {
+		wp_register_ability( $name, $args );
+	} else {
+		// fallback ?
+	}
 }
