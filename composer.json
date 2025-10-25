@@ -16,5 +16,13 @@
       "bootstrap.php"
     ]
   },
-  "require": {}
+  "require": {
+    "wordpress/mcp-adapter": "^0.1.0",
+    "wordpress/abilities-api": "^0.3.0"
+  },
+  "config": {
+    "allow-plugins": {
+      "automattic/jetpack-autoloader": true
+    }
+  }
 }
