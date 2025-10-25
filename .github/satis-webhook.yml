@@ -1,0 +1,41 @@
+name: Trigger Satis Build
+
+on:
+  release:
+    types:
+      - created
+
+# Disable permissions for all available scopes by default.
+# Any needed permissions should be configured at the job level.
+permissions: {}
+
+jobs:
+  webhook:
+    name: Send Webhook
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+
+      - name: Set Package
+        id: package
+        env:
+          REPO: ${{ github.repository }}
+        run: echo "PACKAGE=${REPO##*/}" >> "$GITHUB_OUTPUT"
+
+      - name: Set Version
+        id: tag
+        run: echo "VERSION=${GITHUB_REF##*/}" >> "$GITHUB_OUTPUT"
+
+      - name: Repository Dispatch
+        uses: peter-evans/repository-dispatch@5fc4efd1a4797ddb68ffd0714a238564e4cc0e6f # v4.0.0
+        with:
+          token: ${{ secrets.WEBHOOK_TOKEN }}
+          repository: newfold-labs/satis
+          event-type: 'Trigger Satis Build'
+          client-payload: >-
+            {
+              "vendor": "${{ github.repository_owner }}",
+              "package": "${{ steps.package.outputs.PACKAGE }}",
+              "version": "${{ steps.tag.outputs.VERSION }}"
+            }
