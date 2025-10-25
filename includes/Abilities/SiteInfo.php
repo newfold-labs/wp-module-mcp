@@ -19,7 +19,7 @@ class SiteInfo {
 	 * Register site info ability.
 	 */
 	private function register_abilities(): void {
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/get-site-info',
 			array(
 				'label'               => 'Get Site Info',

@@ -1,11 +1,10 @@
 {
-  "name": "wpscholar/blu-mcp",
-  "type": "wordpress-plugin",
+  "name": "newfold/wp-module-mcp",
   "license": "GPL-2.0-or-later",
   "authors": [
     {
       "name": "Micah Wood",
-      "email": "micah@wpscholar.com"
+      "homepage": "https://wpscholar.com"
     }
   ],
   "autoload": {
@@ -13,16 +12,9 @@
       "BLU\\": "includes/"
     },
     "files": [
-      "includes/functions.php"
+      "includes/functions.php",
+      "bootstrap.php"
     ]
   },
-  "require": {
-    "wordpress/mcp-adapter": "^0.1.0",
-    "wordpress/abilities-api": "^0.3.0"
-  },
-  "config": {
-    "allow-plugins": {
-      "automattic/jetpack-autoloader": true
-    }
-  }
+  "require": {}
 }

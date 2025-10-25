@@ -20,7 +20,7 @@ class Users {
 	 */
 	private function register_abilities(): void {
 		// Search/list users
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/users-search',
 			array(
 				'label'               => 'Search Users',
@@ -68,7 +68,7 @@ class Users {
 		);
 
 		// Get single user
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/get-user',
 			array(
 				'label'               => 'Get User',
@@ -101,7 +101,7 @@ class Users {
 		);
 
 		// Add user
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/add-user',
 			array(
 				'label'               => 'Add User',
@@ -156,7 +156,7 @@ class Users {
 		);
 
 		// Update user
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/update-user',
 			array(
 				'label'               => 'Update User',
@@ -208,7 +208,7 @@ class Users {
 		);
 
 		// Delete user
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/delete-user',
 			array(
 				'label'               => 'Delete User',
@@ -249,7 +249,7 @@ class Users {
 		);
 
 		// Get current user
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/get-current-user',
 			array(
 				'label'               => 'Get Current User',
@@ -275,7 +275,7 @@ class Users {
 		);
 
 		// Update current user
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/update-current-user',
 			array(
 				'label'               => 'Update Current User',

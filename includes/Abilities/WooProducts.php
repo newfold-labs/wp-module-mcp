@@ -27,7 +27,7 @@ class WooProducts {
 	 */
 	private function register_product_abilities(): void {
 		// Search products
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/wc-products-search',
 			array(
 				'label'               => 'Search WooCommerce Products',
@@ -70,7 +70,7 @@ class WooProducts {
 		);
 
 		// Get product
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/wc-get-product',
 			array(
 				'label'               => 'Get WooCommerce Product',
@@ -103,7 +103,7 @@ class WooProducts {
 		);
 
 		// Add product
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/wc-add-product',
 			array(
 				'label'               => 'Add WooCommerce Product',
@@ -149,7 +149,7 @@ class WooProducts {
 		);
 
 		// Update product
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/wc-update-product',
 			array(
 				'label'               => 'Update WooCommerce Product',
@@ -197,7 +197,7 @@ class WooProducts {
 		);
 
 		// Delete product
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/wc-delete-product',
 			array(
 				'label'               => 'Delete WooCommerce Product',
@@ -236,7 +236,7 @@ class WooProducts {
 	 */
 	private function register_category_abilities(): void {
 		// List categories
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/wc-list-product-categories',
 			array(
 				'label'               => 'List WooCommerce Product Categories',
@@ -262,7 +262,7 @@ class WooProducts {
 		);
 
 		// Add category
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/wc-add-product-category',
 			array(
 				'label'               => 'Add WooCommerce Product Category',
@@ -296,7 +296,7 @@ class WooProducts {
 		);
 
 		// Update category
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/wc-update-product-category',
 			array(
 				'label'               => 'Update WooCommerce Product Category',
@@ -336,7 +336,7 @@ class WooProducts {
 		);
 
 		// Delete category
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/wc-delete-product-category',
 			array(
 				'label'               => 'Delete WooCommerce Product Category',
@@ -375,7 +375,7 @@ class WooProducts {
 	 */
 	private function register_tag_abilities(): void {
 		// List tags
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/wc-list-product-tags',
 			array(
 				'label'               => 'List WooCommerce Product Tags',
@@ -401,7 +401,7 @@ class WooProducts {
 		);
 
 		// Add tag
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/wc-add-product-tag',
 			array(
 				'label'               => 'Add WooCommerce Product Tag',
@@ -435,7 +435,7 @@ class WooProducts {
 		);
 
 		// Update tag
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/wc-update-product-tag',
 			array(
 				'label'               => 'Update WooCommerce Product Tag',
@@ -475,7 +475,7 @@ class WooProducts {
 		);
 
 		// Delete tag
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/wc-delete-product-tag',
 			array(
 				'label'               => 'Delete WooCommerce Product Tag',
@@ -514,7 +514,7 @@ class WooProducts {
 	 */
 	private function register_brand_abilities(): void {
 		// List brands
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/wc-list-product-brands',
 			array(
 				'label'               => 'List WooCommerce Product Brands',
@@ -540,7 +540,7 @@ class WooProducts {
 		);
 
 		// Add brand
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/wc-add-product-brand',
 			array(
 				'label'               => 'Add WooCommerce Product Brand',
@@ -574,7 +574,7 @@ class WooProducts {
 		);
 
 		// Update brand
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/wc-update-product-brand',
 			array(
 				'label'               => 'Update WooCommerce Product Brand',
@@ -614,7 +614,7 @@ class WooProducts {
 		);
 
 		// Delete brand
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/wc-delete-product-brand',
 			array(
 				'label'               => 'Delete WooCommerce Product Brand',

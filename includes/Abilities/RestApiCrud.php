@@ -20,7 +20,7 @@ class RestApiCrud {
 	 */
 	private function register_abilities(): void {
 		// List available API functions
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/list-api-functions',
 			array(
 				'label'               => 'List API Functions',
@@ -76,7 +76,7 @@ class RestApiCrud {
 		);
 
 		// Get function details
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/get-function-details',
 			array(
 				'label'               => 'Get Function Details',
@@ -127,7 +127,7 @@ class RestApiCrud {
 		);
 
 		// Run API function
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/run-api-function',
 			array(
 				'label'               => 'Run API Function',

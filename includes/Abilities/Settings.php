@@ -20,7 +20,7 @@ class Settings {
 	 */
 	private function register_abilities(): void {
 		// Get settings
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/get-general-settings',
 			array(
 				'label'               => 'Get General Settings',
@@ -46,7 +46,7 @@ class Settings {
 		);
 
 		// Update settings
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/update-general-settings',
 			array(
 				'label'               => 'Update General Settings',

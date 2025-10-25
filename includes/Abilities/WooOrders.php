@@ -25,7 +25,7 @@ class WooOrders {
 	 */
 	private function register_order_abilities(): void {
 		// Search orders
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/wc-orders-search',
 			array(
 				'label'               => 'Search WooCommerce Orders',
@@ -73,7 +73,7 @@ class WooOrders {
 	 */
 	private function register_report_abilities(): void {
 		// Coupons totals report
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/wc-reports-coupons-totals',
 			array(
 				'label'               => 'Get WooCommerce Coupons Report',
@@ -99,7 +99,7 @@ class WooOrders {
 		);
 
 		// Customers totals report
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/wc-reports-customers-totals',
 			array(
 				'label'               => 'Get WooCommerce Customers Report',
@@ -125,7 +125,7 @@ class WooOrders {
 		);
 
 		// Orders totals report
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/wc-reports-orders-totals',
 			array(
 				'label'               => 'Get WooCommerce Orders Report',
@@ -151,7 +151,7 @@ class WooOrders {
 		);
 
 		// Products totals report
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/wc-reports-products-totals',
 			array(
 				'label'               => 'Get WooCommerce Products Report',
@@ -177,7 +177,7 @@ class WooOrders {
 		);
 
 		// Reviews totals report
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/wc-reports-reviews-totals',
 			array(
 				'label'               => 'Get WooCommerce Reviews Report',
@@ -203,7 +203,7 @@ class WooOrders {
 		);
 
 		// Sales report
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/wc-reports-sales',
 			array(
 				'label'               => 'Get WooCommerce Sales Report',

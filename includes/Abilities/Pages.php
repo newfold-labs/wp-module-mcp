@@ -20,7 +20,7 @@ class Pages {
 	 */
 	private function register_abilities(): void {
 		// Search/list pages
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/pages-search',
 			array(
 				'label'               => 'Search Pages',
@@ -63,7 +63,7 @@ class Pages {
 		);
 
 		// Get single page
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/get-page',
 			array(
 				'label'               => 'Get Page',
@@ -96,7 +96,7 @@ class Pages {
 		);
 
 		// Add page
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/add-page',
 			array(
 				'label'               => 'Add Page',
@@ -150,7 +150,7 @@ class Pages {
 		);
 
 		// Update page
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/update-page',
 			array(
 				'label'               => 'Update Page',
@@ -210,7 +210,7 @@ class Pages {
 		);
 
 		// Delete page
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/delete-page',
 			array(
 				'label'               => 'Delete Page',

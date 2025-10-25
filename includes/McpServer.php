@@ -1,8 +1,19 @@
 <?php
+
 declare( strict_types=1 );
 
 namespace BLU;
 
+use BLU\Abilities\CustomPostTypes;
+use BLU\Abilities\Media;
+use BLU\Abilities\Pages;
+use BLU\Abilities\Posts;
+use BLU\Abilities\RestApiCrud;
+use BLU\Abilities\Settings;
+use BLU\Abilities\SiteInfo;
+use BLU\Abilities\Users;
+use BLU\Abilities\WooOrders;
+use BLU\Abilities\WooProducts;
 use WP\MCP\Core\McpAdapter;
 use WP\MCP\Infrastructure\ErrorHandling\ErrorLogMcpErrorHandler;
 use WP\MCP\Infrastructure\Observability\NullMcpObservabilityHandler;
@@ -14,36 +25,36 @@ use WP\MCP\Transport\Http\RestTransport;
 class McpServer {
 
 	/**
-	 * Constructor - registers the MCP server.
+	 * Initializes the class by setting up actions to register the server and abilities
+	 * during the respective initialization hooks.
+	 *
+	 * @return void
 	 */
 	public function __construct() {
-		add_action( 'mcp_adapter_init', array( $this, 'register_server' ) );
+		add_action( 'mcp_adapter_init', [ $this, 'register_server' ] );
+		add_action( 'abilities_api_init', [ $this, 'register_abilities' ] );
+		add_action( 'abilities_api_categories_init', [ $this, 'register_ability_categories' ] );;
 	}
 
 	/**
-	 * Register the MCP server with all blu abilities.
+	 * Registers a server with specified configurations, including abilities, transports, and handlers,
+	 * for the Bluehost MCP server functionality.
+	 *
+	 * @return void
+	 * @throws \Exception
 	 */
 	public function register_server(): void {
 
-		// Get all abilities in the blu namespace
-		$abilities = blu_get_abilities_by_namespace( 'blu' );
-
-		// Extract ability names
-		$ability_names = array();
-		foreach ( $abilities as $ability ) {
-			// Only register abilities in the blu-mcp category
-			if ( $ability->get_category() === 'blu-mcp' ) {
-				$ability_names[] = $ability->get_name();
-			}
-		}
+		// Get all abilities in the blu-mcp category
+		$abilities = array_map(
+			function ( $ability ) {
+				return $ability->get_name();
+			},
+			blu_get_abilities_by_category( 'blu-mcp' )
+		);
 
 		// Get the MCP adapter instance
 		$adapter = McpAdapter::instance();
-
-		// Configure REST transport
-		$transports = array(
-			RestTransport::class,
-		);
 
 		// Create the server
 		$adapter->create_server(
@@ -53,10 +64,44 @@ class McpServer {
 			server_name: 'Bluehost MCP Server',
 			server_description: 'MCP server exposing Bluehost WordPress abilities',
 			server_version: '1.0.0',
-			mcp_transports: $transports,
+			mcp_transports: [ RestTransport::class ],
 			error_handler: ErrorLogMcpErrorHandler::class,
 			observability_handler: NullMcpObservabilityHandler::class,
-			tools: $ability_names
+			tools: $abilities
+		);
+	}
+
+	/**
+	 * Registers various abilities by initializing their respective classes.
+	 *
+	 * @return void
+	 */
+	public function register_abilities(): void {
+		// Initialize all ability classes
+		new Posts();
+		new Pages();
+		new Media();
+		new Users();
+		new SiteInfo();
+		new Settings();
+		new CustomPostTypes();
+		new RestApiCrud();
+		new WooProducts();
+		new WooOrders();
+	}
+
+	/**
+	 * Registers ability categories for the Bluehost MCP, including a label and description for categorization.
+	 *
+	 * @return void
+	 */
+	public function register_ability_categories(): void {
+		wp_register_ability_category(
+			'blu-mcp',
+			array(
+				'label'       => 'Bluehost MCP',
+				'description' => 'Bluehost-specific abilities for use with MCP',
+			)
 		);
 	}
 }

@@ -20,7 +20,7 @@ class Media {
 	 */
 	private function register_abilities(): void {
 		// List media
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/list-media',
 			array(
 				'label'               => 'List Media',
@@ -59,7 +59,7 @@ class Media {
 		);
 
 		// Get media
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/get-media',
 			array(
 				'label'               => 'Get Media',
@@ -92,7 +92,7 @@ class Media {
 		);
 
 		// Get media file (binary content)
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/get-media-file',
 			array(
 				'label'               => 'Get Media File',
@@ -154,7 +154,7 @@ class Media {
 		);
 
 		// Upload media
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/upload-media',
 			array(
 				'label'               => 'Upload Media',
@@ -243,7 +243,7 @@ class Media {
 		);
 
 		// Update media
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/update-media',
 			array(
 				'label'               => 'Update Media',
@@ -295,7 +295,7 @@ class Media {
 		);
 
 		// Delete media
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/delete-media',
 			array(
 				'label'               => 'Delete Media',
@@ -329,7 +329,7 @@ class Media {
 		);
 
 		// Search media
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/search-media',
 			array(
 				'label'               => 'Search Media',

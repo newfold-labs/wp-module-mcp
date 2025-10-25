@@ -1,6 +1,6 @@
-# Blu MCP
+# WordPress MCP
 
-A WordPress plugin that exposes WordPress functionality through the Model Context Protocol (MCP), enabling AI assistants like Claude to interact with your WordPress site.
+A Composer package that exposes WordPress functionality through the Model Context Protocol (MCP), enabling AI assistants to interact with your WordPress site.
 
 ## Overview
 
@@ -93,16 +93,6 @@ You can then ask your AI assistant to perform WordPress tasks, such as:
 
 ## Testing
 - Use the [MCP Inspector](https://modelcontextprotocol.io/docs/tools/inspector) to test specific calls
-
-```shell
-npx -y @modelcontextprotocol/inspector \
-  npx -y @automattic/mcp-wordpress-remote \
-  --env WP_API_URL=https://wp.lndo.site/wp-json/blu/mcp \
-  --env WP_API_USERNAME=admin \
-  --env WP_API_PASSWORD=password \
-  --env OAUTH_ENABLED=false \
-  --env NODE_TLS_REJECT_UNAUTHORIZED=0
-```
 
 ## Support
 

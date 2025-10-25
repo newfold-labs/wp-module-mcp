@@ -22,7 +22,7 @@ class Posts {
 	 */
 	private function register_post_abilities(): void {
 		// Search/list posts
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/posts-search',
 			array(
 				'label'               => 'Search Posts',
@@ -65,7 +65,7 @@ class Posts {
 		);
 
 		// Get single post
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/get-post',
 			array(
 				'label'               => 'Get Post',
@@ -98,7 +98,7 @@ class Posts {
 		);
 
 		// Add post
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/add-post',
 			array(
 				'label'               => 'Add Post',
@@ -144,7 +144,7 @@ class Posts {
 		);
 
 		// Update post
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/update-post',
 			array(
 				'label'               => 'Update Post',
@@ -196,7 +196,7 @@ class Posts {
 		);
 
 		// Delete post
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/delete-post',
 			array(
 				'label'               => 'Delete Post',
@@ -234,7 +234,7 @@ class Posts {
 	 */
 	private function register_category_abilities(): void {
 		// List categories
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/list-categories',
 			array(
 				'label'               => 'List Categories',
@@ -260,7 +260,7 @@ class Posts {
 		);
 
 		// Add category
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/add-category',
 			array(
 				'label'               => 'Add Category',
@@ -302,7 +302,7 @@ class Posts {
 		);
 
 		// Update category
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/update-category',
 			array(
 				'label'               => 'Update Category',
@@ -346,7 +346,7 @@ class Posts {
 		);
 
 		// Delete category
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/delete-category',
 			array(
 				'label'               => 'Delete Category',
@@ -384,7 +384,7 @@ class Posts {
 	 */
 	private function register_tag_abilities(): void {
 		// List tags
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/list-tags',
 			array(
 				'label'               => 'List Tags',
@@ -410,7 +410,7 @@ class Posts {
 		);
 
 		// Add tag
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/add-tag',
 			array(
 				'label'               => 'Add Tag',
@@ -452,7 +452,7 @@ class Posts {
 		);
 
 		// Update tag
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/update-tag',
 			array(
 				'label'               => 'Update Tag',
@@ -496,7 +496,7 @@ class Posts {
 		);
 
 		// Delete tag
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/delete-tag',
 			array(
 				'label'               => 'Delete Tag',

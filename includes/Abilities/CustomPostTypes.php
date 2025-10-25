@@ -20,7 +20,7 @@ class CustomPostTypes {
 	 */
 	private function register_abilities(): void {
 		// List post types
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/list-post-types',
 			array(
 				'label'               => 'List Post Types',
@@ -46,7 +46,7 @@ class CustomPostTypes {
 		);
 
 		// Search custom post types
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/cpt-search',
 			array(
 				'label'               => 'Search Custom Post Types',
@@ -129,7 +129,7 @@ class CustomPostTypes {
 		);
 
 		// Get custom post type
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/get-cpt',
 			array(
 				'label'               => 'Get Custom Post Type',
@@ -168,7 +168,7 @@ class CustomPostTypes {
 		);
 
 		// Add custom post type
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/add-cpt',
 			array(
 				'label'               => 'Add Custom Post Type',
@@ -235,7 +235,7 @@ class CustomPostTypes {
 		);
 
 		// Update custom post type
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/update-cpt',
 			array(
 				'label'               => 'Update Custom Post Type',
@@ -316,7 +316,7 @@ class CustomPostTypes {
 		);
 
 		// Delete custom post type
-		newfold_register_ability(
+		blu_register_ability(
 			'blu/delete-cpt',
 			array(
 				'label'               => 'Delete Custom Post Type',
