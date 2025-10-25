@@ -2,13 +2,14 @@
 
 use BLU\McpServer;
 
-if ( function_exists( 'add_action' ) && function_exists( 'did_action' ) ) {
+if ( function_exists( 'add_action' ) ) {
 
-	if ( ! did_action( 'plugins_loaded' ) ) {
-		return;
-	}
-
-	// Initialize MCP server
-	new McpServer();
+	add_action(
+		'plugins_loaded',
+		function () {
+			// Initialize MCP server
+			new McpServer();
+		}
+	);
 
 }
