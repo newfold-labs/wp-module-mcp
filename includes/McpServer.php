@@ -14,6 +14,7 @@ use BLU\Abilities\SiteInfo;
 use BLU\Abilities\Users;
 use BLU\Abilities\WooOrders;
 use BLU\Abilities\WooProducts;
+use BLU\Validation\McpValidation;
 use WP\MCP\Core\McpAdapter;
 use WP\MCP\Infrastructure\ErrorHandling\ErrorLogMcpErrorHandler;
 use WP\MCP\Infrastructure\Observability\NullMcpObservabilityHandler;
@@ -33,7 +34,7 @@ class McpServer {
 	public function __construct() {
 		add_action( 'mcp_adapter_init', [ $this, 'register_server' ] );
 		add_action( 'abilities_api_init', [ $this, 'register_abilities' ] );
-		add_action( 'abilities_api_categories_init', [ $this, 'register_ability_categories' ] );;
+		add_action( 'abilities_api_categories_init', [ $this, 'register_ability_categories' ] );
 	}
 
 	/**
@@ -44,7 +45,7 @@ class McpServer {
 	 * @throws \Exception
 	 */
 	public function register_server(): void {
-
+	
 		// Get all abilities in the blu-mcp category
 		$abilities = array_map(
 			function ( $ability ) {
@@ -67,7 +68,12 @@ class McpServer {
 			mcp_transports: [ RestTransport::class ],
 			error_handler: ErrorLogMcpErrorHandler::class,
 			observability_handler: NullMcpObservabilityHandler::class,
-			tools: $abilities
+			tools: $abilities,
+			resources: [],
+			prompts: [],
+			transport_permission_callback: function () {
+				return McpValidation::get_transport_permission_callback();
+			}
 		);
 	}
 

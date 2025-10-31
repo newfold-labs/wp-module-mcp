@@ -18,7 +18,8 @@
   },
   "require": {
     "wordpress/mcp-adapter": "^0.1.0",
-    "wordpress/abilities-api": "^0.3.0"
+    "wordpress/abilities-api": "^0.3.0",
+    "firebase/php-jwt": "^6.11"
   },
   "config": {
     "allow-plugins": {
