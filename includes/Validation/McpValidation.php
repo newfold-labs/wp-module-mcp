@@ -142,6 +142,7 @@ EOD;
 	 */
 	private function is_valid_token( string $token ): bool {
 		try {
+			//TODO: Check the token claims like exp, nbf, iss, aud as needed.
 			$decoded = JWT::decode( $token, new Key( $this->public_key, 'RS256' ) );
 			return true;
 		} catch ( \Exception $e ) {
