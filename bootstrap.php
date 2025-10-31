@@ -10,7 +10,7 @@ if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
 
 use BLU\McpServer;
 use BLU\Validation\McpValidation;
-use WP\MCP\Core\McpAdapter;		
+use WP\MCP\Core\McpAdapter;
 
 if ( function_exists( 'add_action' ) ) {
 

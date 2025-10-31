@@ -26,15 +26,12 @@ class McpValidation {
 	 * @var string
 	 */
 	private const BEARER_TOKEN_PATTERN = '/Bearer\s(\S+)/';
-
 	/**
-	 * The user ID associated with the token.
+	 * Public key for JWT validation.
 	 *
-	 * @var int|false
+	 * @var string
 	 */
-	private $user_id = false;
-
-	public $public_key = <<<EOD
+	private $public_key = <<<EOD
 -----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuzWHNM5f+amCjQztc5QT
 fJfzCC5J4nuW+L/aOxZ4f8J3FrewM2c/dufrnmedsApb0By7WhaHlcqCh/ScAPyJ
@@ -53,7 +50,7 @@ EOD;
 	 */
 	public function __construct() {
 
-		add_filter( 'determine_current_user', [ $this, 'filter_current_user' ] );
+		add_filter( 'rest_authentication_errors', [ $this, 'authenticate_request' ] );
 	}
 
 	/**
@@ -67,49 +64,91 @@ EOD;
 	 */
 	public static function get_transport_permission_callback(): bool|WP_Error {
 
-		if( isset($_SERVER['HTTP_AUTHORIZATION']) && str_starts_with( $_SERVER['HTTP_AUTHORIZATION'], 'Bearer ' )) {
-			$instance = new self();
-			$token = $instance->extract_bearer_token( $_SERVER['HTTP_AUTHORIZATION'] );
-			if ( $token && $instance->is_valid_token( $token ) ) {
-				return true;
-			}
+		$instance = new self();
+		
+		$is_valid_token = $instance->handle_token_validation();
+
+		if( $is_valid_token instanceof WP_Error ) {
+			return new WP_Error( 'mcp_transport_unauthorized', 'Unauthorized: Invalid token authorization.', array( 'status' => 401 ) );
 		}
 
-		return new WP_Error( 'mcp_transport_unauthorized', 'Unauthorized: Invalid token authorization.', array( 'status' => 401 ) );
+		return true;
 	}
 
 	/**
-	 * Filter to set the current user for authentication.
+	 * Authenticate incoming requests to MCP endpoints.
 	 *
-	 * Checks the Authorization header for a valid Bearer token and sets an admin user.
-	 * This will be checked only on mcp endpoint requests.
-	 * 
-	 * @param int|false $user_id The current user ID or false if not authenticated.
-	 * @return int The user ID to set as the current user.
+	 * @param mixed $result Previous authentication result.
+	 * @return bool|WP_Error True if authenticated, WP_Error otherwise.
 	 */
+	public function authenticate_request( $result ) : bool|WP_Error {
 
-	public function filter_current_user($user_id) {
-		
-		if ( $this->is_mcp_endpoint() && isset($_SERVER['HTTP_AUTHORIZATION']) && str_starts_with( $_SERVER['HTTP_AUTHORIZATION'], 'Bearer ' )) {
-			$token = $this->extract_bearer_token( $_SERVER['HTTP_AUTHORIZATION'] );
-			if( $token && $this->is_valid_token( $token ) ) {
-				if( $this->user_id ) {
-					return $this->user_id;
-				}	
-				// Return the first admin user ID.
-				$args = array(
-					'role'   => 'administrator',
-					'fields' => 'ID',            
-					'number' => 1,               
-				);
-				$admin_user = get_users( $args );
-				if ( ! empty( $admin_user ) ) {
-					$this->user_id = $admin_user[0];
-					return $this->user_id;
-				}
-			}
+		// If a previous authentication check has already returned a result, pass it through.
+		if ( ! empty( $result ) ) {
+			return $result;
 		}
-		return $user_id;
+
+		// Only apply JWT authentication to MCP endpoints.
+		if ( ! $this->is_mcp_endpoint() ) {
+			return $result;
+		}
+		
+		$is_valid_token = $this->handle_token_validation();
+
+		if( $is_valid_token instanceof WP_Error ) {
+			return $is_valid_token;
+		}
+
+		// Set current user to an admin user upon successful token validation.
+		$admin_user = get_transient('ndf_blu_mcp_user');
+		if( ! $admin_user ) { 
+			$args = array(
+				'role'   => 'administrator',
+				'fields' => 'ID',            
+				'number' => 1,               
+			);
+			$admin_user = get_users( $args );
+
+			if( empty( $admin_user ) ) {
+				return new WP_Error(
+					'unauthorized',
+					'No user found for authentication.',
+					array( 'status' => 401 )
+				);
+			}
+
+			$admin_user = $admin_user[0];
+			set_transient('ndf_blu_mcp_user', $admin_user, DAY_IN_SECONDS);
+		}
+		wp_set_current_user( $admin_user);
+		return $is_valid_token;
+	}
+
+	/**
+	 * Handle token validation process.
+	 *
+	 * @return bool|WP_Error True if valid, WP_Error otherwise.
+	 */
+	private function handle_token_validation() {
+
+		$auth_header = $this->get_authorization_header();
+
+		if( empty( $auth_header ) ) {
+			return $this->handle_missing_authorization();
+		}
+
+		$token = $this->extract_bearer_token( $auth_header );
+
+		if( null === $token ) {
+			return new WP_Error(
+				'unauthorized',
+				'Invalid Authorization header format. Expected "Bearer <token>".',
+				array( 'status' => 401 )
+			);
+		}
+		
+		return  $this->is_valid_token( $token );
+
 	}
 
 	/**
@@ -138,16 +177,64 @@ EOD;
 	 * Validate the JWT token.
 	 *
 	 * @param string $token The JWT token to validate.
-	 * @return bool True if valid, false otherwise.
+	 * @return bool|WP_Error True if valid, false or WP_Error otherwise.
 	 */
-	private function is_valid_token( string $token ): bool {
+	private function is_valid_token( string $token ): bool|WP_Error {
+
+		if ( ! str_contains( $token, '.' ) ) {
+			// Not a JWT format, return error for invalid token.
+			return new WP_Error(
+				'invalid_token',
+				'Token format is invalid.',
+				array( 'status' => 403 )
+			);
+		}
+
 		try {
-			//TODO: Check the token claims like exp, nbf, iss, aud as needed.
 			$decoded = JWT::decode( $token, new Key( $this->public_key, 'RS256' ) );
+			// The decoded JWT payload is currently unused. If claim validation is needed in the future,
+			// use $decoded to inspect claims such as exp, nbf, iss, aud. For now, we only check if decoding succeeds.
+			//TODO add extra validation as needed
+			/*if( !isset( $decoded->aud ) || $decoded->aud !== 'QA' ) {
+				return new WP_Error(
+					'invalid_token',
+					'Token validation failed.',
+					array( 'status' => 403 )
+				);
+			}*/
+			
+
 			return true;
 		} catch ( \Exception $e ) {
-			return false;
+			return new WP_Error(
+				'invalid_token',
+				'Token validation failed: ' . $e->getMessage(),
+				array( 'status' => 403 )
+			);
 		}	
 	}
+
+	/**
+	 * Get Authorization header from request.
+	 *
+	 * @return string
+	 */
+	private function get_authorization_header(): string {
+		return isset( $_SERVER['HTTP_AUTHORIZATION'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_AUTHORIZATION'] ) ) : '';
+	}
+
+	/**
+	 * Handle authentication when no Authorization header is present.
+	 *
+	 * @return mixed Authentication result.
+	 */
+	private function handle_missing_authorization() {
+		return new WP_Error(
+			'unauthorized',
+			'Authentication required. Please provide a Bearer token.',
+			array( 'status' => 401 )
+		);
+	}
+	
 
 }
