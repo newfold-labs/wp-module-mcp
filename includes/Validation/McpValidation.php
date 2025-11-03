@@ -31,7 +31,7 @@ class McpValidation {
 	 *
 	 * @var string
 	 */
-	private $public_key = <<<EOD
+	private $public_key = <<<'EOD'
 -----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuzWHNM5f+amCjQztc5QT
 fJfzCC5J4nuW+L/aOxZ4f8J3FrewM2c/dufrnmedsApb0By7WhaHlcqCh/ScAPyJ
@@ -50,7 +50,7 @@ EOD;
 	 */
 	public function __construct() {
 
-		add_filter( 'rest_authentication_errors', [ $this, 'authenticate_request' ] );
+		add_filter( 'rest_authentication_errors', array( $this, 'authenticate_request' ) );
 	}
 
 	/**
@@ -59,16 +59,15 @@ EOD;
 	 * Inspects the incoming HTTP Authorization header for a Bearer token and
 	 * determines whether the current request is authorized to use the transport.
 	 *
-	 * @access private
 	 * @return bool|WP_Error True when authorized; WP_Error('mcp_transport_unauthorized', 'Unauthorized: Invalid API token.', array('status' => 401)) otherwise.
 	 */
 	public static function get_transport_permission_callback(): bool|WP_Error {
 
 		$instance = new self();
-		
+
 		$is_valid_token = $instance->handle_token_validation();
 
-		if( $is_valid_token instanceof WP_Error ) {
+		if ( $is_valid_token instanceof WP_Error ) {
 			return new WP_Error( 'mcp_transport_unauthorized', 'Unauthorized: Invalid token authorization.', array( 'status' => 401 ) );
 		}
 
@@ -81,7 +80,7 @@ EOD;
 	 * @param mixed $result Previous authentication result.
 	 * @return bool|WP_Error True if authenticated, WP_Error otherwise.
 	 */
-	public function authenticate_request( $result ) : bool|WP_Error {
+	public function authenticate_request( $result ): bool|WP_Error {
 
 		// If a previous authentication check has already returned a result, pass it through.
 		if ( ! empty( $result ) ) {
@@ -92,24 +91,31 @@ EOD;
 		if ( ! $this->is_mcp_endpoint() ) {
 			return $result;
 		}
-		
+
 		$is_valid_token = $this->handle_token_validation();
 
-		if( $is_valid_token instanceof WP_Error ) {
+		if ( $is_valid_token instanceof WP_Error ) {
 			return $is_valid_token;
 		}
 
 		// Set current user to an admin user upon successful token validation.
-		$admin_user = get_transient('ndf_blu_mcp_user');
-		if( ! $admin_user ) { 
-			$args = array(
+		$admin_user    = get_transient( 'ndf_blu_mcp_user' );
+		$valid_user_id = false;
+		if ( $admin_user ) {
+			if ( user_can( $admin_user, 'manage_settings' ) ) {
+				$valid_user_id = true;
+			}
+		}
+
+		if ( ! $valid_user_id ) {
+			$args       = array(
 				'role'   => 'administrator',
-				'fields' => 'ID',            
-				'number' => 1,               
+				'fields' => 'ID',
+				'number' => 1,
 			);
 			$admin_user = get_users( $args );
 
-			if( empty( $admin_user ) ) {
+			if ( empty( $admin_user ) ) {
 				return new WP_Error(
 					'unauthorized',
 					'No user found for authentication.',
@@ -118,9 +124,9 @@ EOD;
 			}
 
 			$admin_user = $admin_user[0];
-			set_transient('ndf_blu_mcp_user', $admin_user, DAY_IN_SECONDS);
+			set_transient( 'ndf_blu_mcp_user', $admin_user, 2 * HOUR_IN_SECONDS );
 		}
-		wp_set_current_user( $admin_user);
+		wp_set_current_user( $admin_user );
 		return $is_valid_token;
 	}
 
@@ -133,22 +139,21 @@ EOD;
 
 		$auth_header = $this->get_authorization_header();
 
-		if( empty( $auth_header ) ) {
+		if ( empty( $auth_header ) ) {
 			return $this->handle_missing_authorization();
 		}
 
 		$token = $this->extract_bearer_token( $auth_header );
 
-		if( null === $token ) {
+		if ( null === $token ) {
 			return new WP_Error(
 				'unauthorized',
 				'Invalid Authorization header format. Expected "Bearer <token>".',
 				array( 'status' => 401 )
 			);
 		}
-		
-		return  $this->is_valid_token( $token );
 
+		return $this->is_valid_token( $token );
 	}
 
 	/**
@@ -158,7 +163,7 @@ EOD;
 	 */
 	private function is_mcp_endpoint(): bool {
 		$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
-		return str_contains( $request_uri, self::BLU_ENDPOINT_PATTERN );
+		return preg_match( '#^/wp-json/blu/mcp(/|$)#', $request_uri ) === 1;
 	}
 
 	/**
@@ -194,15 +199,15 @@ EOD;
 			$decoded = JWT::decode( $token, new Key( $this->public_key, 'RS256' ) );
 			// The decoded JWT payload is currently unused. If claim validation is needed in the future,
 			// use $decoded to inspect claims such as exp, nbf, iss, aud. For now, we only check if decoding succeeds.
-			//TODO add extra validation as needed
-			/*if( !isset( $decoded->aud ) || $decoded->aud !== 'QA' ) {
-				return new WP_Error(
-					'invalid_token',
-					'Token validation failed.',
-					array( 'status' => 403 )
-				);
-			}*/
-			
+			// TODO: Add extra validation as needed.
+
+			// if( !isset( $decoded->aud ) || $decoded->aud !== 'QA' ) {
+			// return new WP_Error(
+			// 'invalid_token',
+			// 'Token validation failed.',
+			// array( 'status' => 403 )
+			// );
+			// }
 
 			return true;
 		} catch ( \Exception $e ) {
@@ -211,7 +216,7 @@ EOD;
 				'Token validation failed: ' . $e->getMessage(),
 				array( 'status' => 403 )
 			);
-		}	
+		}
 	}
 
 	/**
@@ -235,6 +240,4 @@ EOD;
 			array( 'status' => 401 )
 		);
 	}
-	
-
 }
