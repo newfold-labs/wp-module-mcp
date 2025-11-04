@@ -104,7 +104,7 @@ class RestApiCrud {
 					$routes = rest_get_server()->get_routes();
 
 					if ( ! isset( $routes[ $route ] ) ) {
-						return new \WP_Error( 'route_not_found', 'Route not found' );
+						return array( 'message' => 'Route not found' );
 					}
 
 					foreach ( $routes[ $route ] as $endpoint ) {
@@ -113,7 +113,7 @@ class RestApiCrud {
 						}
 					}
 
-					return new \WP_Error( 'method_not_found', 'Method not found for this route' );
+					return array( 'message' => 'Method not found for this route' );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(

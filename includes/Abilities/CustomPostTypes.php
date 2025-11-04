@@ -152,9 +152,9 @@ class CustomPostTypes {
 				'execute_callback'    => function ( $input ) {
 					$post = get_post( intval( $input['id'] ) );
 					if ( ! $post || $post->post_type !== $input['post_type'] ) {
-						return new \WP_Error( 'post_not_found', 'Post not found' );
+						return array('message' => 'Post not found');
 					}
-					return $post;
+					return array( $post );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
@@ -218,10 +218,10 @@ class CustomPostTypes {
 
 					$post_id = wp_insert_post( $post_data );
 					if ( is_wp_error( $post_id ) ) {
-						return $post_id;
+						return array('message' => 'Failed to create post');
 					}
 
-					return get_post( $post_id );
+					return array( get_post( $post_id ) );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
@@ -274,7 +274,7 @@ class CustomPostTypes {
 				'execute_callback'    => function ( $input ) {
 					$post = get_post( intval( $input['id'] ) );
 					if ( ! $post || $post->post_type !== $input['post_type'] ) {
-						return new \WP_Error( 'post_not_found', 'Post not found' );
+						return array('message' => 'Post not found');
 					}
 
 					$post_data = array(
@@ -299,10 +299,10 @@ class CustomPostTypes {
 
 					$post_id = wp_update_post( $post_data );
 					if ( is_wp_error( $post_id ) ) {
-						return $post_id;
+						return array('message' => 'Failed to update post');
 					}
 
-					return get_post( $post_id );
+					return array( get_post( $post_id ) );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
@@ -339,12 +339,12 @@ class CustomPostTypes {
 				'execute_callback'    => function ( $input ) {
 					$post = get_post( intval( $input['id'] ) );
 					if ( ! $post || $post->post_type !== $input['post_type'] ) {
-						return new \WP_Error( 'post_not_found', 'Post not found' );
+						return array('message' => 'Post not found');
 					}
 
 					$result = wp_delete_post( $post->ID, true );
 					if ( ! $result ) {
-						return new \WP_Error( 'delete_failed', 'Failed to delete post' );
+						return array('message' => 'Failed to delete post');
 					}
 
 					return array( 'success' => true );
