@@ -78,9 +78,9 @@ EOD;
 	 * Authenticate incoming requests to MCP endpoints.
 	 *
 	 * @param mixed $result Previous authentication result.
-	 * @return bool|WP_Error True if authenticated, WP_Error otherwise.
+	 * @return bool|WP_Error|null True if authenticated, WP_Error otherwise.
 	 */
-	public function authenticate_request( $result ): bool|WP_Error {
+	public function authenticate_request( $result ): bool|WP_Error|null {
 
 		// If a previous authentication check has already returned a result, pass it through.
 		if ( ! empty( $result ) ) {
