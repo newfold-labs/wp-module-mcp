@@ -1,5 +1,6 @@
 {
   "name": "newfold-labs/wp-module-mcp",
+  "description": "WordPress MCP module for Newfold Labs BLU",
   "license": "GPL-2.0-or-later",
   "authors": [
     {
@@ -17,8 +18,8 @@
     ]
   },
   "require": {
-    "wordpress/mcp-adapter": "^0.1.0",
-    "wordpress/abilities-api": "^0.3.0"
+    "wordpress/mcp-adapter": "^0.3.0",
+    "wordpress/abilities-api": "^0.4.0"
   },
   "config": {
     "allow-plugins": {
