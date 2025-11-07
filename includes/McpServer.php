@@ -17,7 +17,7 @@ use BLU\Abilities\WooProducts;
 use WP\MCP\Core\McpAdapter;
 use WP\MCP\Infrastructure\ErrorHandling\ErrorLogMcpErrorHandler;
 use WP\MCP\Infrastructure\Observability\NullMcpObservabilityHandler;
-use WP\MCP\Transport\Http\RestTransport;
+use WP\MCP\Transport\HttpTransport;
 
 /**
  * MCP Server registration for Bluehost abilities.
@@ -64,7 +64,7 @@ class McpServer {
 			server_name: 'Bluehost MCP Server',
 			server_description: 'MCP server exposing Bluehost WordPress abilities',
 			server_version: '1.0.0',
-			mcp_transports: [ RestTransport::class ],
+			mcp_transports: [ HttpTransport::class ],
 			error_handler: ErrorLogMcpErrorHandler::class,
 			observability_handler: NullMcpObservabilityHandler::class,
 			tools: $abilities
