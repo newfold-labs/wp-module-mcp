@@ -32,8 +32,8 @@ class McpServer {
 	 */
 	public function __construct() {
 		add_action( 'mcp_adapter_init', [ $this, 'register_server' ] );
-		add_action( 'abilities_api_init', [ $this, 'register_abilities' ] );
-		add_action( 'abilities_api_categories_init', [ $this, 'register_ability_categories' ] );;
+		add_action( 'wp_abilities_api_init', [ $this, 'register_abilities' ] );
+		add_action( 'wp_abilities_api_categories_init', [ $this, 'register_ability_categories' ] );
 	}
 
 	/**
