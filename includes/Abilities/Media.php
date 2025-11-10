@@ -130,7 +130,7 @@ class Media {
 					}
 
 					if ( ! file_exists( $file_path ) ) {
-						return new \WP_Error( 'size_not_found', 'Requested size not found' );
+						return array( 'message' => 'Requested size not found' );
 					}
 
 					$mime_type = get_post_mime_type( $id );
@@ -195,7 +195,7 @@ class Media {
 
 					$file_data = base64_decode( $base64_data, true );
 					if ( false === $file_data ) {
-						return new \WP_Error( 'invalid_file', 'Invalid base64 data' );
+						return array( 'message', 'Invalid base64 data' );
 					}
 
 					// Detect mime type
@@ -208,7 +208,7 @@ class Media {
 					$upload   = wp_upload_bits( $filename, null, $file_data );
 
 					if ( $upload['error'] ) {
-						return new \WP_Error( 'upload_failed', $upload['error'] );
+						return array( 'message' => $upload['error'] );
 					}
 
 					// Create attachment
@@ -229,7 +229,7 @@ class Media {
 						update_post_meta( $attach_id, '_wp_attachment_image_alt', $input['alt_text'] );
 					}
 
-					return get_post( $attach_id );
+					return array( get_post( $attach_id ) );
 				},
 				'permission_callback' => fn() => current_user_can( 'upload_files' ),
 				'meta'                => array(

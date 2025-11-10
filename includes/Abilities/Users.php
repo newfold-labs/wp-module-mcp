@@ -226,7 +226,7 @@ class Users {
 							'description' => 'Reassign posts to this user ID',
 						),
 					),
-					'required'   => array( 'id' ),
+					'required'   => array( 'id', 'reassign' ),
 				),
 				'execute_callback'    => function ( $input ) {
 					$request = new \WP_REST_Request( 'DELETE', '/wp/v2/users/' . $input['id'] );
