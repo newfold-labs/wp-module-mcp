@@ -32,7 +32,7 @@ class Settings {
 				'execute_callback'    => function () {
 					$request = new \WP_REST_Request( 'GET', '/wp/v2/settings' );
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return array( 'response' => $response->get_data() );
 				},
 				'permission_callback' => fn() => current_user_can( 'manage_options' ),
 				'meta'                => array(
@@ -115,7 +115,7 @@ class Settings {
 						$request->set_body_params( $input );
 					}
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return array( 'response' => $response->get_data() );
 				},
 				'permission_callback' => fn() => current_user_can( 'manage_options' ),
 				'meta'                => array(

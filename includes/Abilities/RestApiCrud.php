@@ -104,16 +104,16 @@ class RestApiCrud {
 					$routes = rest_get_server()->get_routes();
 
 					if ( ! isset( $routes[ $route ] ) ) {
-						return array( 'message' => 'Route not found' );
+						return array( 'response' => 'Route not found' );
 					}
 
 					foreach ( $routes[ $route ] as $endpoint ) {
 						if ( isset( $endpoint['methods'][ $method ] ) ) {
-							return $endpoint;
+							return array( 'response' => $endpoint );
 						}
 					}
 
-					return array( 'message' => 'Method not found for this route' );
+					return array( 'response' => 'Method not found for this route' );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
@@ -183,7 +183,7 @@ class RestApiCrud {
 					}
 
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return array( 'response' => $response->get_data() );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(

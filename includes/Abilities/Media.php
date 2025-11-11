@@ -45,7 +45,7 @@ class Media {
 						$request->set_query_params( $input );
 					}
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return array( 'response' => $response->get_data() );
 				},
 				'permission_callback' => fn() => current_user_can( 'upload_files' ),
 				'meta'                => array(
@@ -78,7 +78,7 @@ class Media {
 				'execute_callback'    => function ( $input ) {
 					$request = new \WP_REST_Request( 'GET', '/wp/v2/media/' . $input['id'] );
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return array( 'response' => $response->get_data() );
 				},
 				'permission_callback' => fn() => current_user_can( 'upload_files' ),
 				'meta'                => array(
@@ -118,7 +118,7 @@ class Media {
 					$file_path = get_attached_file( $id );
 
 					if ( ! file_exists( $file_path ) ) {
-						return new \WP_Error( 'file_not_found', 'File not found' );
+						return array( 'response' => 'File not found' );
 					}
 
 					if ( 'full' !== $size && 'original' !== $size ) {
@@ -130,7 +130,7 @@ class Media {
 					}
 
 					if ( ! file_exists( $file_path ) ) {
-						return array( 'message' => 'Requested size not found' );
+						return array( 'response' => 'Requested size not found' );
 					}
 
 					$mime_type = get_post_mime_type( $id );
@@ -195,7 +195,7 @@ class Media {
 
 					$file_data = base64_decode( $base64_data, true );
 					if ( false === $file_data ) {
-						return array( 'message', 'Invalid base64 data' );
+						return array( 'response' => 'Invalid base64 data' );
 					}
 
 					// Detect mime type
@@ -208,7 +208,7 @@ class Media {
 					$upload   = wp_upload_bits( $filename, null, $file_data );
 
 					if ( $upload['error'] ) {
-						return array( 'message' => $upload['error'] );
+						return array( 'response' => $upload['error'] );
 					}
 
 					// Create attachment
@@ -229,7 +229,7 @@ class Media {
 						update_post_meta( $attach_id, '_wp_attachment_image_alt', $input['alt_text'] );
 					}
 
-					return array( get_post( $attach_id ) );
+					return array( 'response' => get_post( $attach_id ) );
 				},
 				'permission_callback' => fn() => current_user_can( 'upload_files' ),
 				'meta'                => array(
@@ -281,7 +281,7 @@ class Media {
 					$request = new \WP_REST_Request( 'POST', '/wp/v2/media/' . $id );
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return array( 'response' => $response->get_data() );
 				},
 				'permission_callback' => fn() => current_user_can( 'upload_files' ),
 				'meta'                => array(
@@ -315,7 +315,7 @@ class Media {
 					$request = new \WP_REST_Request( 'DELETE', '/wp/v2/media/' . $input['id'] );
 					$request->set_param( 'force', true );
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return array( 'response' => $response->get_data() );
 				},
 				'permission_callback' => fn() => current_user_can( 'delete_posts' ),
 				'meta'                => array(
@@ -358,7 +358,7 @@ class Media {
 						$request->set_query_params( $input );
 					}
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return array( 'response' => $response->get_data() );
 				},
 				'permission_callback' => fn() => current_user_can( 'upload_files' ),
 				'meta'                => array(

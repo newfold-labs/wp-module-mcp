@@ -32,7 +32,7 @@ class CustomPostTypes {
 				'execute_callback'    => function () {
 					$request = new \WP_REST_Request( 'GET', '/wp/v2/types' );
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return array( 'response' => $response->get_data() );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
@@ -152,9 +152,9 @@ class CustomPostTypes {
 				'execute_callback'    => function ( $input ) {
 					$post = get_post( intval( $input['id'] ) );
 					if ( ! $post || $post->post_type !== $input['post_type'] ) {
-						return array('message' => 'Post not found');
+						return array( 'response' => 'Post not found' );
 					}
-					return array( $post );
+					return array( 'response' => $post );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
@@ -218,10 +218,10 @@ class CustomPostTypes {
 
 					$post_id = wp_insert_post( $post_data );
 					if ( is_wp_error( $post_id ) ) {
-						return array('message' => 'Failed to create post');
+						return array( 'response' => 'Failed to create post' );
 					}
 
-					return array( get_post( $post_id ) );
+					return array( 'response' => get_post( $post_id ) );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
@@ -274,7 +274,7 @@ class CustomPostTypes {
 				'execute_callback'    => function ( $input ) {
 					$post = get_post( intval( $input['id'] ) );
 					if ( ! $post || $post->post_type !== $input['post_type'] ) {
-						return array('message' => 'Post not found');
+						return array( 'response' => 'Post not found' );
 					}
 
 					$post_data = array(
@@ -299,10 +299,10 @@ class CustomPostTypes {
 
 					$post_id = wp_update_post( $post_data );
 					if ( is_wp_error( $post_id ) ) {
-						return array('message' => 'Failed to update post');
+						return array( 'response' => 'Failed to update post' );
 					}
 
-					return array( get_post( $post_id ) );
+					return array( 'response' => get_post( $post_id ) );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
@@ -339,15 +339,15 @@ class CustomPostTypes {
 				'execute_callback'    => function ( $input ) {
 					$post = get_post( intval( $input['id'] ) );
 					if ( ! $post || $post->post_type !== $input['post_type'] ) {
-						return array('message' => 'Post not found');
+						return array( 'response' => 'Post not found' );
 					}
 
 					$result = wp_delete_post( $post->ID, true );
 					if ( ! $result ) {
-						return array('message' => 'Failed to delete post');
+						return array( 'response' => 'Failed to delete post' );
 					}
 
-					return array( 'success' => true );
+					return array( 'response' => true );
 				},
 				'permission_callback' => fn() => current_user_can( 'delete_posts' ),
 				'meta'                => array(

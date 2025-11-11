@@ -54,7 +54,7 @@ class WooOrders {
 						$request->set_query_params( $input );
 					}
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return array( 'response' => $response->get_data() );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_shop_orders' ),
 				'meta'                => array(
@@ -85,7 +85,7 @@ class WooOrders {
 				'execute_callback'    => function () {
 					$request = new \WP_REST_Request( 'GET', '/wc/v3/reports/coupons/totals' );
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return array( 'response' => $response->get_data() );
 				},
 				'permission_callback' => fn() => current_user_can( 'view_woocommerce_reports' ),
 				'meta'                => array(
@@ -111,7 +111,7 @@ class WooOrders {
 				'execute_callback'    => function () {
 					$request = new \WP_REST_Request( 'GET', '/wc/v3/reports/customers/totals' );
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return array( 'response' => $response->get_data() );
 				},
 				'permission_callback' => fn() => current_user_can( 'view_woocommerce_reports' ),
 				'meta'                => array(
@@ -137,7 +137,7 @@ class WooOrders {
 				'execute_callback'    => function () {
 					$request = new \WP_REST_Request( 'GET', '/wc/v3/reports/orders/totals' );
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return array( 'response' => $response->get_data() );
 				},
 				'permission_callback' => fn() => current_user_can( 'view_woocommerce_reports' ),
 				'meta'                => array(
@@ -189,7 +189,7 @@ class WooOrders {
 				'execute_callback'    => function () {
 					$request = new \WP_REST_Request( 'GET', '/wc/v3/reports/reviews/totals' );
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return array( 'response' => $response->get_data() );
 				},
 				'permission_callback' => fn() => current_user_can( 'view_woocommerce_reports' ),
 				'meta'                => array(
@@ -224,7 +224,7 @@ class WooOrders {
 						$request->set_query_params( $input );
 					}
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return array( 'response' => $response->get_data() );
 				},
 				'permission_callback' => fn() => current_user_can( 'view_woocommerce_reports' ),
 				'meta'                => array(

@@ -51,7 +51,7 @@ class Posts {
 						$request->set_query_params( $input );
 					}
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return array( 'response' => $response->get_data() );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
@@ -84,7 +84,7 @@ class Posts {
 				'execute_callback'    => function ( $input ) {
 					$request = new \WP_REST_Request( 'GET', '/wp/v2/posts/' . $input['id'] );
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return array( 'response' => $response->get_data() );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
@@ -130,7 +130,7 @@ class Posts {
 					$request = new \WP_REST_Request( 'POST', '/wp/v2/posts' );
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return array( 'response' => $response->get_data() );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
@@ -182,7 +182,7 @@ class Posts {
 					$request = new \WP_REST_Request( 'PUT', '/wp/v2/posts/' . $id );
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return array( 'response' => $response->get_data() );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
@@ -215,7 +215,7 @@ class Posts {
 				'execute_callback'    => function ( $input ) {
 					$request = new \WP_REST_Request( 'DELETE', '/wp/v2/posts/' . $input['id'] );
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return array( 'response' => $response->get_data() );
 				},
 				'permission_callback' => fn() => current_user_can( 'delete_posts' ),
 				'meta'                => array(
@@ -246,7 +246,7 @@ class Posts {
 				'execute_callback'    => function () {
 					$request = new \WP_REST_Request( 'GET', '/wp/v2/categories' );
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return array( 'response' => $response->get_data() );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
@@ -288,7 +288,7 @@ class Posts {
 					$request = new \WP_REST_Request( 'POST', '/wp/v2/categories' );
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return array( 'response' => $response->get_data() );
 				},
 				'permission_callback' => fn() => current_user_can( 'manage_categories' ),
 				'meta'                => array(
@@ -332,7 +332,7 @@ class Posts {
 					$request = new \WP_REST_Request( 'PUT', '/wp/v2/categories/' . $id );
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return array( 'response' => $response->get_data() );
 				},
 				'permission_callback' => fn() => current_user_can( 'manage_categories' ),
 				'meta'                => array(
@@ -365,7 +365,7 @@ class Posts {
 				'execute_callback'    => function ( $input ) {
 					$request = new \WP_REST_Request( 'DELETE', '/wp/v2/categories/' . $input['id'] );
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return array( 'response' => $response->get_data() );
 				},
 				'permission_callback' => fn() => current_user_can( 'manage_categories' ),
 				'meta'                => array(
@@ -396,7 +396,7 @@ class Posts {
 				'execute_callback'    => function () {
 					$request = new \WP_REST_Request( 'GET', '/wp/v2/tags' );
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return array( 'response' => $response->get_data() );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
@@ -438,7 +438,7 @@ class Posts {
 					$request = new \WP_REST_Request( 'POST', '/wp/v2/tags' );
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return array( 'response' => $response->get_data() );
 				},
 				'permission_callback' => fn() => current_user_can( 'manage_categories' ),
 				'meta'                => array(
@@ -482,7 +482,7 @@ class Posts {
 					$request = new \WP_REST_Request( 'PUT', '/wp/v2/tags/' . $id );
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return array( 'response' => $response->get_data() );
 				},
 				'permission_callback' => fn() => current_user_can( 'manage_categories' ),
 				'meta'                => array(
@@ -515,7 +515,7 @@ class Posts {
 				'execute_callback'    => function ( $input ) {
 					$request = new \WP_REST_Request( 'DELETE', '/wp/v2/tags/' . $input['id'] );
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return array( 'response' => $response->get_data() );
 				},
 				'permission_callback' => fn() => current_user_can( 'manage_categories' ),
 				'meta'                => array(
