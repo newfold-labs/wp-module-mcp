@@ -14,10 +14,10 @@ use BLU\Abilities\SiteInfo;
 use BLU\Abilities\Users;
 use BLU\Abilities\WooOrders;
 use BLU\Abilities\WooProducts;
-use WP\MCP\Core\McpAdapter;
-use WP\MCP\Infrastructure\ErrorHandling\ErrorLogMcpErrorHandler;
-use WP\MCP\Infrastructure\Observability\NullMcpObservabilityHandler;
-use WP\MCP\Transport\HttpTransport;
+use Bluehost\Plugin\WP\MCP\Core\McpAdapter;
+use Bluehost\Plugin\WP\MCP\Infrastructure\ErrorHandling\ErrorLogMcpErrorHandler;
+use Bluehost\Plugin\WP\MCP\Infrastructure\Observability\NullMcpObservabilityHandler;
+use Bluehost\Plugin\WP\MCP\Transport\HttpTransport;
 
 /**
  * MCP Server registration for Bluehost abilities.
