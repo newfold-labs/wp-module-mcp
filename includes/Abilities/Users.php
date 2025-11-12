@@ -54,7 +54,7 @@ class Users {
 						$request->set_query_params( $input );
 					}
 					$response = rest_do_request( $request );
-					return array( 'response' => $response->get_data() );
+					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'list_users' ),
 				'meta'                => array(
@@ -87,7 +87,7 @@ class Users {
 				'execute_callback'    => function ( $input ) {
 					$request = new \WP_REST_Request( 'GET', '/wp/v2/users/' . $input['id'] );
 					$response = rest_do_request( $request );
-					return array( 'response' => $response->get_data() );
+					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'list_users' ),
 				'meta'                => array(
@@ -142,7 +142,7 @@ class Users {
 					$input['context'] = 'edit';
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
-					return array( 'response' => $response->get_data() );
+					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'create_users' ),
 				'meta'                => array(
@@ -194,7 +194,7 @@ class Users {
 					$request = new \WP_REST_Request( 'PUT', '/wp/v2/users/' . $id );
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
-					return array( 'response' => $response->get_data() );
+					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_users' ),
 				'meta'                => array(
@@ -235,7 +235,7 @@ class Users {
 					}
 					$request->set_param( 'force', true );
 					$response = rest_do_request( $request );
-					return array( 'response' => $response->get_data() );
+					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'delete_users' ),
 				'meta'                => array(
@@ -261,7 +261,7 @@ class Users {
 				'execute_callback'    => function () {
 					$request = new \WP_REST_Request( 'GET', '/wp/v2/users/me' );
 					$response = rest_do_request( $request );
-					return array( 'response' => $response->get_data() );
+					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => is_user_logged_in(),
 				'meta'                => array(
@@ -304,7 +304,7 @@ class Users {
 						$request->set_body_params( $input );
 					}
 					$response = rest_do_request( $request );
-					return array( 'response' => $response->get_data() );
+					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => is_user_logged_in(),
 				'meta'                => array(

@@ -45,7 +45,7 @@ class Media {
 						$request->set_query_params( $input );
 					}
 					$response = rest_do_request( $request );
-					return array( 'response' => $response->get_data() );
+					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'upload_files' ),
 				'meta'                => array(
@@ -78,7 +78,7 @@ class Media {
 				'execute_callback'    => function ( $input ) {
 					$request = new \WP_REST_Request( 'GET', '/wp/v2/media/' . $input['id'] );
 					$response = rest_do_request( $request );
-					return array( 'response' => $response->get_data() );
+					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'upload_files' ),
 				'meta'                => array(
@@ -118,7 +118,8 @@ class Media {
 					$file_path = get_attached_file( $id );
 
 					if ( ! file_exists( $file_path ) ) {
-						return array( 'response' => 'File not found' );
+
+						return blu_prepare_ability_response( 404, 'File not found' );
 					}
 
 					if ( 'full' !== $size && 'original' !== $size ) {
@@ -130,17 +131,18 @@ class Media {
 					}
 
 					if ( ! file_exists( $file_path ) ) {
-						return array( 'response' => 'Requested size not found' );
+
+						return blu_prepare_ability_response( 404, 'Requested size not found' );
 					}
 
 					$mime_type = get_post_mime_type( $id );
 					$file_data = file_get_contents( $file_path );
 
-					return array(
+					return blu_prepare_ability_response( 200, array(
 						'results'  => $file_data,
 						'type'     => 'image',
 						'mimeType' => $mime_type,
-					);
+					));
 				},
 				'permission_callback' => fn() => current_user_can( 'upload_files' ),
 				'meta'                => array(
@@ -195,7 +197,7 @@ class Media {
 
 					$file_data = base64_decode( $base64_data, true );
 					if ( false === $file_data ) {
-						return array( 'response' => 'Invalid base64 data' );
+						return blu_prepare_ability_response( 400, 'Invalid base64 data' );
 					}
 
 					// Detect mime type
@@ -208,7 +210,8 @@ class Media {
 					$upload   = wp_upload_bits( $filename, null, $file_data );
 
 					if ( $upload['error'] ) {
-						return array( 'response' => $upload['error'] );
+
+						return blu_prepare_ability_response( 500, 'File upload error: ' . $upload['error'] );
 					}
 
 					// Create attachment
@@ -228,8 +231,8 @@ class Media {
 					if ( ! empty( $input['alt_text'] ) ) {
 						update_post_meta( $attach_id, '_wp_attachment_image_alt', $input['alt_text'] );
 					}
-
-					return array( 'response' => get_post( $attach_id ) );
+					
+					return blu_prepare_ability_response( 201, get_post( $attach_id ) );
 				},
 				'permission_callback' => fn() => current_user_can( 'upload_files' ),
 				'meta'                => array(
@@ -281,7 +284,7 @@ class Media {
 					$request = new \WP_REST_Request( 'POST', '/wp/v2/media/' . $id );
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
-					return array( 'response' => $response->get_data() );
+					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'upload_files' ),
 				'meta'                => array(
@@ -315,7 +318,7 @@ class Media {
 					$request = new \WP_REST_Request( 'DELETE', '/wp/v2/media/' . $input['id'] );
 					$request->set_param( 'force', true );
 					$response = rest_do_request( $request );
-					return array( 'response' => $response->get_data() );
+					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'delete_posts' ),
 				'meta'                => array(
@@ -358,7 +361,7 @@ class Media {
 						$request->set_query_params( $input );
 					}
 					$response = rest_do_request( $request );
-					return array( 'response' => $response->get_data() );
+					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'upload_files' ),
 				'meta'                => array(
