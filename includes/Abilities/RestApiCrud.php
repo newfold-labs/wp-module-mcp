@@ -62,7 +62,7 @@ class RestApiCrud {
 						}
 					}
 
-					return $result;
+					return blu_prepare_ability_response( 200, $result );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
@@ -104,16 +104,16 @@ class RestApiCrud {
 					$routes = rest_get_server()->get_routes();
 
 					if ( ! isset( $routes[ $route ] ) ) {
-						return array( 'message' => 'Route not found' );
+						return blu_prepare_ability_response( 404, 'Route not found' );
 					}
 
 					foreach ( $routes[ $route ] as $endpoint ) {
 						if ( isset( $endpoint['methods'][ $method ] ) ) {
-							return $endpoint;
+							return blu_prepare_ability_response( 200, $endpoint );
 						}
 					}
 
-					return array( 'message' => 'Method not found for this route' );
+					return blu_prepare_ability_response( 404, 'Method not found for this route' );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
@@ -183,7 +183,7 @@ class RestApiCrud {
 					}
 
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(

@@ -49,7 +49,7 @@ class Pages {
 						$request->set_query_params( $input );
 					}
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_pages' ),
 				'meta'                => array(
@@ -82,7 +82,7 @@ class Pages {
 				'execute_callback'    => function ( $input ) {
 					$request = new \WP_REST_Request( 'GET', '/wp/v2/pages/' . $input['id'] );
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_pages' ),
 				'meta'                => array(
@@ -136,7 +136,7 @@ class Pages {
 					$request = new \WP_REST_Request( 'POST', '/wp/v2/pages' );
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_pages' ),
 				'meta'                => array(
@@ -196,7 +196,7 @@ class Pages {
 					$request = new \WP_REST_Request( 'PUT', '/wp/v2/pages/' . $id );
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_pages' ),
 				'meta'                => array(
@@ -229,7 +229,7 @@ class Pages {
 				'execute_callback'    => function ( $input ) {
 					$request = new \WP_REST_Request( 'DELETE', '/wp/v2/pages/' . $input['id'] );
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'delete_pages' ),
 				'meta'                => array(

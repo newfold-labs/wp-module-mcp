@@ -29,7 +29,7 @@ class SiteInfo {
 					'type' => 'object',
 				),
 				'execute_callback'    => function () {
-					return array(
+					return blu_prepare_ability_response( 200, array(
 						'site_name'        => get_bloginfo( 'name' ),
 						'site_url'         => get_bloginfo( 'url' ),
 						'site_description' => get_bloginfo( 'description' ),
@@ -42,7 +42,7 @@ class SiteInfo {
 							'all'    => wp_get_themes(),
 						),
 						'users'            => $this->get_users_info(),
-					);
+					));
 				},
 				'permission_callback' => fn() => current_user_can( 'manage_options' ),
 				'meta'                => array(
