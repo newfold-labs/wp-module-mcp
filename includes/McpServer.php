@@ -5,6 +5,7 @@ declare( strict_types=1 );
 namespace BLU;
 
 use BLU\Abilities\CustomPostTypes;
+use BLU\Abilities\GlobalStyles;
 use BLU\Abilities\Media;
 use BLU\Abilities\Pages;
 use BLU\Abilities\Posts;
@@ -86,6 +87,7 @@ class McpServer {
 		new Settings();
 		new CustomPostTypes();
 		new RestApiCrud();
+		new GlobalStyles();
 		new WooProducts();
 		new WooOrders();
 	}
