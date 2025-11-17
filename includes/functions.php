@@ -187,9 +187,9 @@ function blu_get_abilities_by_namespace( string $namespace ): array {
  */
 function blu_prepare_ability_response( $status, $message ) {
 	return array(
-		'code'		=> $status,
-		'data'  	=> array( 'status' => $status ),
-		'message' 	=> $message
+		'statusCode'	=> $status,
+		'status'  		=> blu_get_status_type( $status ),
+		'message' 		=> $message
 	);
 }
 
@@ -215,4 +215,26 @@ function blu_standardize_rest_response( $response ) {
     } else {
 		return blu_prepare_ability_response( 500, 'Unexpected response format.' );
     }
+}
+/**
+ * Maps an HTTP status code to a simplified status type.
+ *
+ * @param int $status_code The HTTP status code to evaluate.
+ *
+ * @return string The corresponding status type: 'success', 'error', or 'unknown'.
+ */
+function blu_get_status_type( $status_code ) {
+
+	$status = 'unknown';
+
+	if ( $status_code >= 200 && $status_code < 400 ) {
+
+		$status =  'success';
+
+	} elseif ( $status_code >= 400 && $status_code <= 599 ) {
+
+		$status = 'error';
+		
+	} 
+	return $status;
 }
