@@ -58,16 +58,16 @@ class McpServer {
 
 		// Create the server
 		$adapter->create_server(
-			server_id: 'blu-mcp',
-			server_route_namespace: 'blu',
-			server_route: 'mcp',
-			server_name: 'Bluehost MCP Server',
-			server_description: 'MCP server exposing Bluehost WordPress abilities',
-			server_version: '1.0.0',
-			mcp_transports: [ HttpTransport::class ],
-			error_handler: ErrorLogMcpErrorHandler::class,
-			observability_handler: NullMcpObservabilityHandler::class,
-			tools: $abilities
+			'blu-mcp', // server_id
+			'blu', // server_route_namespace
+			'mcp', // server_route
+			'Bluehost MCP Server', // server_name
+			'MCP server exposing Bluehost WordPress abilities', // server_description
+			'1.0.0', // server_version
+			array( HttpTransport::class ), // mcp_transports
+			ErrorLogMcpErrorHandler::class, // error_handler
+			NullMcpObservabilityHandler::class, // observability_handler
+			$abilities // tools
 		);
 	}
 
