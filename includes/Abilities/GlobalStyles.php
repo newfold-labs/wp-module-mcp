@@ -33,55 +33,9 @@ class GlobalStyles {
 	 * @return void
 	 */
 	private function register_abilities(): void {
-		$this->register_list_global_styles();
 		$this->register_get_global_styles();
 		$this->register_update_global_styles();
 		$this->register_get_active_global_styles();
-	}
-
-	/**
-	 * Register ability to list all global styles
-	 *
-	 * @return void
-	 */
-	private function register_list_global_styles(): void {
-		blu_register_ability(
-			'blu/list-global-styles',
-			array(
-				'label'               => 'List Global Styles',
-				'description'         => 'List all global styles configurations. Global styles contain theme.json data and user customizations for Full Site Editing.',
-				'category'            => 'blu-mcp',
-				'input_schema'        => array(
-					'type'       => 'object',
-					'properties' => array(
-						'page'     => array(
-							'type'        => 'integer',
-							'description' => 'Page number for pagination (default: 1)',
-						),
-						'per_page' => array(
-							'type'        => 'integer',
-							'description' => 'Number of items per page (default: 10)',
-						),
-					),
-				),
-				'execute_callback'    => function ( $input = null ) {
-					$request = new \WP_REST_Request( 'GET', '/wp/v2/global-styles' );
-					if ( $input ) {
-						$request->set_query_params( $input );
-					}
-					$response = rest_do_request( $request );
-					return $response->get_data();
-				},
-				'permission_callback' => fn() => current_user_can( 'edit_theme_options' ),
-				'meta'                => array(
-					'annotations' => array(
-						'readonly'    => true,
-						'destructive' => false,
-						'idempotent'  => true,
-					),
-				),
-			)
-		);
 	}
 
 	/**
@@ -110,7 +64,7 @@ class GlobalStyles {
 					$id      = intval( $input['id'] );
 					$request = new \WP_REST_Request( 'GET', '/wp/v2/global-styles/' . $id );
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_theme_options' ),
 				'meta'                => array(
@@ -176,7 +130,7 @@ class GlobalStyles {
 
 					$request->set_body_params( $data );
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_theme_options' ),
 				'meta'                => array(
@@ -204,26 +158,12 @@ class GlobalStyles {
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
-					'properties' => array(),
 				),
 				'execute_callback'    => function ( $input = null ) {
-					// Get all global styles and find the active one
-					$request = new \WP_REST_Request( 'GET', '/wp/v2/global-styles' );
-					$request->set_query_params( array( 'per_page' => 100 ) );
-					$response = rest_do_request( $request );
-					$global_styles = $response->get_data();
 
-					// Find the active global style for the current theme
-					$current_theme = wp_get_theme()->get_stylesheet();
-					foreach ( $global_styles as $style ) {
-						if ( isset( $style['title']['raw'] ) &&
-						     strpos( $style['title']['raw'], $current_theme ) !== false ) {
-							return $style;
-						}
-					}
+					$global_styles = wp_get_global_styles();
 
-					// If not found, return the first one or empty array
-					return ! empty( $global_styles ) ? $global_styles[0] : array();
+					return is_array( $global_styles ) && ! empty( $global_styles ) ? blu_prepare_ability_response( 200, $global_styles) : blu_prepare_ability_response(404, 'No active global styles found.');
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_theme_options' ),
 				'meta'                => array(
