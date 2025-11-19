@@ -32,7 +32,7 @@ class CustomPostTypes {
 				'execute_callback'    => function () {
 					$request = new \WP_REST_Request( 'GET', '/wp/v2/types' );
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
@@ -109,13 +109,13 @@ class CustomPostTypes {
 					}
 
 					$query = new \WP_Query( $args );
-					return array(
+					return blu_prepare_ability_response( 200, array(
 						'results'  => $query->posts,
 						'total'    => $query->found_posts,
 						'pages'    => $query->max_num_pages,
 						'page'     => $page,
 						'per_page' => $per_page,
-					);
+					));
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
@@ -152,9 +152,11 @@ class CustomPostTypes {
 				'execute_callback'    => function ( $input ) {
 					$post = get_post( intval( $input['id'] ) );
 					if ( ! $post || $post->post_type !== $input['post_type'] ) {
-						return array('message' => 'Post not found');
+						
+						return blu_prepare_ability_response( 404, 'Post not found' );
 					}
-					return array( $post );
+					
+					return blu_prepare_ability_response( 200, $post );	
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
@@ -218,10 +220,11 @@ class CustomPostTypes {
 
 					$post_id = wp_insert_post( $post_data );
 					if ( is_wp_error( $post_id ) ) {
-						return array('message' => 'Failed to create post');
+
+						return blu_prepare_ability_response( 500, 'Failed to create post' );
 					}
 
-					return array( get_post( $post_id ) );
+					return blu_prepare_ability_response( 201, get_post( $post_id ) );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
@@ -274,7 +277,7 @@ class CustomPostTypes {
 				'execute_callback'    => function ( $input ) {
 					$post = get_post( intval( $input['id'] ) );
 					if ( ! $post || $post->post_type !== $input['post_type'] ) {
-						return array('message' => 'Post not found');
+						return blu_prepare_ability_response( 404, 'Post not found' );
 					}
 
 					$post_data = array(
@@ -299,10 +302,11 @@ class CustomPostTypes {
 
 					$post_id = wp_update_post( $post_data );
 					if ( is_wp_error( $post_id ) ) {
-						return array('message' => 'Failed to update post');
+
+						return blu_prepare_ability_response( 500, 'Failed to update post' );
 					}
 
-					return array( get_post( $post_id ) );
+					return blu_prepare_ability_response( 200, get_post( $post_id ) );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
@@ -339,15 +343,17 @@ class CustomPostTypes {
 				'execute_callback'    => function ( $input ) {
 					$post = get_post( intval( $input['id'] ) );
 					if ( ! $post || $post->post_type !== $input['post_type'] ) {
-						return array('message' => 'Post not found');
+
+						return blu_prepare_ability_response( 404, 'Post not found' );
 					}
 
 					$result = wp_delete_post( $post->ID, true );
 					if ( ! $result ) {
-						return array('message' => 'Failed to delete post');
+
+						return blu_prepare_ability_response( 500, 'Failed to delete post with ID ' . $post->ID );
 					}
 
-					return array( 'success' => true );
+					return blu_prepare_ability_response( 200, 'Successfully deleted post with ID ' . $post->ID );
 				},
 				'permission_callback' => fn() => current_user_can( 'delete_posts' ),
 				'meta'                => array(

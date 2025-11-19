@@ -1,7 +1,7 @@
 <?php
 
 use BLU\McpServer;
-use WP\MCP\Core\McpAdapter;
+use Bluehost\Plugin\WP\MCP\Core\McpAdapter;
 
 if ( function_exists( 'add_action' ) ) {
 
