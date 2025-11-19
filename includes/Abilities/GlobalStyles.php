@@ -36,6 +36,7 @@ class GlobalStyles {
 		$this->register_get_global_styles();
 		$this->register_update_global_styles();
 		$this->register_get_active_global_styles();
+		$this->register_get_active_theme();
 	}
 
 	/**
@@ -164,6 +165,42 @@ class GlobalStyles {
 					$global_styles = wp_get_global_styles();
 
 					return is_array( $global_styles ) && ! empty( $global_styles ) ? blu_prepare_ability_response( 200, $global_styles) : blu_prepare_ability_response(404, 'No active global styles found.');
+				},
+				'permission_callback' => fn() => current_user_can( 'edit_theme_options' ),
+				'meta'                => array(
+					'annotations' => array(
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
+					),
+				),
+			)
+		);
+	}
+	/**
+	 * Register ability to get the currently active theme information
+	 *
+	 * @return void
+	 */
+	private function register_get_active_theme(): void {
+		blu_register_ability(
+			'blu/get-active-theme',
+			array(
+				'label'               => 'Get Active Theme',
+				'description'         => 'Get the currently active theme information',
+				'category'            => 'blu-mcp',
+				'input_schema'        => array(
+					'type'       => 'object',
+				),
+				'execute_callback'    => function ( $input = null ) {
+					$request = new \WP_REST_Request( 'GET', '/wp/v2/themes');
+
+					$data = array(
+						'status' => 'active',
+					);
+					$request->set_query_params( $data );
+					$response = rest_do_request( $request );
+					return blu_standardize_rest_response( $response);
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_theme_options' ),
 				'meta'                => array(
