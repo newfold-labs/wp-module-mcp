@@ -36,6 +36,7 @@ class GlobalStyles {
 		$this->register_get_global_styles();
 		$this->register_update_global_styles();
 		$this->register_get_active_global_styles();
+		$this->register_get_active_global_styles_id();
 	}
 
 	/**
@@ -164,6 +165,39 @@ class GlobalStyles {
 					$global_styles = wp_get_global_styles();
 
 					return is_array( $global_styles ) && ! empty( $global_styles ) ? blu_prepare_ability_response( 200, $global_styles) : blu_prepare_ability_response(404, 'No active global styles found.');
+				},
+				'permission_callback' => fn() => current_user_can( 'edit_theme_options' ),
+				'meta'                => array(
+					'annotations' => array(
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Register ability to get active global styles for the current theme
+	 *
+	 * @return void
+	 */
+	private function register_get_active_global_styles_id(): void {
+		blu_register_ability(
+			'blu/get-active-global-styles-id',
+			array(
+				'label'               => 'Get Active Global Styles ID',
+				'description'         => 'Get the currently active global styles ID for the current theme. This is used for get or update the global styles.',
+				'category'            => 'blu-mcp',
+				'input_schema'        => array(
+					'type'       => 'object',
+				),
+				'execute_callback'    => function ( $input = null ) {
+
+					$id = \WP_Theme_JSON_Resolver::get_user_global_styles_post_id();
+
+					return is_int( $id ) && $id > 0 ? blu_prepare_ability_response( 200, array( 'id' => $id ) ) : blu_prepare_ability_response(404, 'No active global styles ID found.');
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_theme_options' ),
 				'meta'                => array(
