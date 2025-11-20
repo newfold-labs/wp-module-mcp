@@ -15,6 +15,7 @@ use BLU\Abilities\SiteInfo;
 use BLU\Abilities\Users;
 use BLU\Abilities\WooOrders;
 use BLU\Abilities\WooProducts;
+use BLU\Abilities\Themes;
 use Bluehost\Plugin\WP\MCP\Core\McpAdapter;
 use Bluehost\Plugin\WP\MCP\Infrastructure\ErrorHandling\ErrorLogMcpErrorHandler;
 use Bluehost\Plugin\WP\MCP\Infrastructure\Observability\NullMcpObservabilityHandler;
@@ -90,6 +91,7 @@ class McpServer {
 		new GlobalStyles();
 		new WooProducts();
 		new WooOrders();
+		new Themes();
 	}
 
 	/**
