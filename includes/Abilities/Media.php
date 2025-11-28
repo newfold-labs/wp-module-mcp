@@ -45,7 +45,7 @@ class Media {
 						$request->set_query_params( $input );
 					}
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return array( 'media' => $response->get_data() );
 				},
 				'permission_callback' => fn() => current_user_can( 'upload_files' ),
 				'meta'                => array(
@@ -229,7 +229,7 @@ class Media {
 						update_post_meta( $attach_id, '_wp_attachment_image_alt', $input['alt_text'] );
 					}
 
-					return array( get_post( $attach_id ) );
+					return array( 'media' => get_post( $attach_id ) );
 				},
 				'permission_callback' => fn() => current_user_can( 'upload_files' ),
 				'meta'                => array(
@@ -358,7 +358,7 @@ class Media {
 						$request->set_query_params( $input );
 					}
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return array( 'media' => $response->get_data() );
 				},
 				'permission_callback' => fn() => current_user_can( 'upload_files' ),
 				'meta'                => array(

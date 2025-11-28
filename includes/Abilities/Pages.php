@@ -49,7 +49,7 @@ class Pages {
 						$request->set_query_params( $input );
 					}
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return array( 'pages' => $response->get_data() );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_pages' ),
 				'meta'                => array(

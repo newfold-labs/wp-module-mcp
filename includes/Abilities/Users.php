@@ -54,7 +54,7 @@ class Users {
 						$request->set_query_params( $input );
 					}
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return array( 'users' => $response->get_data() );
 				},
 				'permission_callback' => fn() => current_user_can( 'list_users' ),
 				'meta'                => array(

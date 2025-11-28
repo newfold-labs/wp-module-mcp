@@ -14,6 +14,7 @@ use BLU\Abilities\SiteInfo;
 use BLU\Abilities\Users;
 use BLU\Abilities\WooOrders;
 use BLU\Abilities\WooProducts;
+use BLU\Cli\SessionCommand;
 use Bluehost\Plugin\WP\MCP\Core\McpAdapter;
 use Bluehost\Plugin\WP\MCP\Infrastructure\ErrorHandling\ErrorLogMcpErrorHandler;
 use Bluehost\Plugin\WP\MCP\Infrastructure\Observability\NullMcpObservabilityHandler;
@@ -34,6 +35,7 @@ class McpServer {
 		add_action( 'mcp_adapter_init', [ $this, 'register_server' ] );
 		add_action( 'wp_abilities_api_init', [ $this, 'register_abilities' ] );
 		add_action( 'wp_abilities_api_categories_init', [ $this, 'register_ability_categories' ] );
+		$this->register_cli_commands();
 	}
 
 	/**
@@ -101,6 +103,32 @@ class McpServer {
 			array(
 				'label'       => 'Bluehost MCP',
 				'description' => 'Bluehost-specific abilities for use with MCP',
+			)
+		);
+	}
+
+	/**
+	 * Register WP-CLI commands if WP-CLI is available.
+	 *
+	 * @return void
+	 */
+	private function register_cli_commands(): void {
+		if ( ! defined( 'WP_CLI' ) || ! WP_CLI ) {
+			return;
+		}
+
+		if ( ! class_exists( 'WP_CLI' ) ) {
+			return;
+		}
+
+		\WP_CLI::add_command(
+			'blu-mcp session',
+			SessionCommand::class,
+			array(
+				'shortdesc' => 'Manage MCP sessions for the Bluehost MCP Server.',
+				'longdesc'  => 'Commands for creating, listing, and revoking MCP sessions. ' .
+					'Sessions can be pre-generated and passed to external services for ' .
+					'server-to-server MCP communication without the standard initialization flow.',
 			)
 		);
 	}

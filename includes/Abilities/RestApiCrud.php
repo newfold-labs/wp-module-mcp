@@ -62,7 +62,7 @@ class RestApiCrud {
 						}
 					}
 
-					return $result;
+					return array( 'endpoints' => $result );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
@@ -183,7 +183,12 @@ class RestApiCrud {
 					}
 
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					$data     = $response->get_data();
+					// Wrap array responses in an object for MCP compatibility
+					if ( is_array( $data ) && ! $this->is_assoc_array( $data ) ) {
+						return array( 'results' => $data );
+					}
+					return $data;
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
@@ -195,5 +200,18 @@ class RestApiCrud {
 				),
 			)
 		);
+	}
+
+	/**
+	 * Check if array is associative (object-like) or sequential (list-like).
+	 *
+	 * @param array $arr Array to check.
+	 * @return bool True if associative, false if sequential.
+	 */
+	private function is_assoc_array( array $arr ): bool {
+		if ( empty( $arr ) ) {
+			return true; // Empty arrays are treated as objects
+		}
+		return array_keys( $arr ) !== range( 0, count( $arr ) - 1 );
 	}
 }

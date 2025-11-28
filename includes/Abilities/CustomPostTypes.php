@@ -32,7 +32,7 @@ class CustomPostTypes {
 				'execute_callback'    => function () {
 					$request = new \WP_REST_Request( 'GET', '/wp/v2/types' );
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return array( 'post_types' => $response->get_data() );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
@@ -154,7 +154,7 @@ class CustomPostTypes {
 					if ( ! $post || $post->post_type !== $input['post_type'] ) {
 						return array('message' => 'Post not found');
 					}
-					return array( $post );
+					return array( 'post' => $post );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
@@ -221,7 +221,7 @@ class CustomPostTypes {
 						return array('message' => 'Failed to create post');
 					}
 
-					return array( get_post( $post_id ) );
+					return array( 'post' => get_post( $post_id ) );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
@@ -302,7 +302,7 @@ class CustomPostTypes {
 						return array('message' => 'Failed to update post');
 					}
 
-					return array( get_post( $post_id ) );
+					return array( 'post' => get_post( $post_id ) );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(

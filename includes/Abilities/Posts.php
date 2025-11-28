@@ -51,7 +51,7 @@ class Posts {
 						$request->set_query_params( $input );
 					}
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return array( 'posts' => $response->get_data() );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
@@ -246,7 +246,7 @@ class Posts {
 				'execute_callback'    => function () {
 					$request = new \WP_REST_Request( 'GET', '/wp/v2/categories' );
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return array( 'categories' => $response->get_data() );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
@@ -396,7 +396,7 @@ class Posts {
 				'execute_callback'    => function () {
 					$request = new \WP_REST_Request( 'GET', '/wp/v2/tags' );
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return array( 'tags' => $response->get_data() );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
