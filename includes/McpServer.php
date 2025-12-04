@@ -8,6 +8,8 @@ use BLU\Abilities\CustomPostTypes;
 use BLU\Abilities\Media;
 use BLU\Abilities\Pages;
 use BLU\Abilities\Posts;
+use BLU\Abilities\Prompts;
+use BLU\Abilities\Resources;
 use BLU\Abilities\RestApiCrud;
 use BLU\Abilities\Settings;
 use BLU\Abilities\SiteInfo;
@@ -78,6 +80,8 @@ class McpServer {
 	 */
 	public function register_abilities(): void {
 		// Initialize all ability classes
+		new Prompts();
+		new Resources();
 		new Posts();
 		new Pages();
 		new Media();
