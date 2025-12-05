@@ -107,7 +107,7 @@ class WooProducts {
 			'blu/wc-add-product',
 			array(
 				'label'               => 'Add WooCommerce Product',
-				'description'         => 'Add a new WooCommerce product',
+				'description'         => 'Add new Woocommerce product, ALWAYS first call blu-suggest-product-categories.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',

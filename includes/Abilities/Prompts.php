@@ -30,7 +30,7 @@ class Prompts {
 		blu_register_ability( 'blu/suggest-product-categories', [
 			'label'               => 'Suggest Product Categories',
 			'category'            => 'blu-mcp',
-			'description'         => 'Generate a list of product categories when a new product is created, based on product details',
+			'description'         => 'Generate a list of product categories based on product details',
 			'input_schema'        => array(
 				'type'       => 'object',
 				'properties' => array(
@@ -170,12 +170,22 @@ class Prompts {
 								'type'        => 'text',
 								'text'        => "Generate SEO‑optimized tags for the product $name $desc $categories.\n 
 												- Focus on keywords that improve search visibility and relevance. 
+												- Limit the number of tags to between 5 and 7 items only. 
+												- Do not include unrelated or generic terms.
 												- Include both short‑tail and long‑tail keywords. 
 												- Show the list as numeric list.
 												- Ensure tags are product‑specific, customer‑oriented, and aligned with common search queries. 
-												- Return the tags strictly as an array named `tags`. 
-												- Limit the number of tags to between 5 and 7 items only. 
-												- Do not include unrelated or generic terms.",
+												- Require to customer to select one or more tag from it
+												- Return the customer’s selection strictly as an array named `tags`. 
+											Output format example:
+												{
+												  'tags': [
+												    'tag1',
+												    'tag2',
+												    'tag3',
+												  ]
+												}
+											",
 								'annotations' => [
 									'audience' => [ 'assistant' ],
 									'priority' => 0.9
@@ -251,9 +261,19 @@ class Prompts {
 								'text'        => "Generate SEO‑optimized brand references for the product $name $desc.\n 
 												- Use only well‑known, relevant brands associated with this product category. 
 												- Focus on brands that customers commonly search for in relation to this product. 
-												- Return the brand names strictly as an array named `brands`. 
 												- Limit the number of brands to between 3 and 5 items only. 
-												- Do not invent or include non‑existent brands.",
+												- Do not invent or include non‑existent brands.
+												- Require to customer to select one or more brand from it
+												- Return the customer’s selection strictly as an array named `brands`. 
+											Output format example:
+												{
+												  'brands': [
+												    'brand1',
+												    'brand2',
+												    'brand3',
+												  ]
+												}
+												",
 								'annotations' => [
 									'audience' => [ 'assistant' ],
 									'priority' => 0.9
