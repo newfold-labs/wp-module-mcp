@@ -56,41 +56,57 @@ class Prompts {
 							'role'    => 'user',
 							'content' => [
 								'type'        => 'text',
-								'text'        => "Using **only** the resource returned by abilities blu/google-product-taxonomy, 
-                       identify the most relevant categories for the product $name $desc. 
-                        1 Return categories that match entries from this resource in according of product details.
-						2. Always return the **complete category path** exactly as listed in the resource. 
-						   - Do not truncate or return only subcategories, even if the category exists.
-						   - Every result must include the full hierarchy path from root to leaf.
-						   - CRITICAL: Verify each parent-child relationship exists in the actual JSON structure.
-						 3. **Path Verification Process** (MANDATORY):
-						   - Start at the root level of the taxonomy
-						   - Navigate step-by-step through the JSON structure
-						   - At each level, verify the child category exists under its parent
-						   - Document the navigation path: Root → Level1 → Level2 → ... → Leaf
-						   - Only return paths where every step is confirmed in the taxonomy data
-						   - NEVER combine categories from different branches
-						4 Do not generate, suggest, or accept any custom or user-defined categories. 
-						5 For each entry calculate a numeric confidence score and show near the entry.
-						6 Sort the results by this confidence score (highest first). 
-						7 Present the sorted list to the customer and require them to select one or more categories from it.
-						8 Not add automatically categories to store. Ask always to user for confirmation. 
-						9 Return the customer’s selection strictly as an array named `categories`, 
-						    containing only the selected the full path of category.
-						  - Include a field 'is_google_tax':'true'.
-						  - Include a field 'hierarchical':'true'.
-					   
-					    **Example of correct verification:**
-						- For 'Pens': Verify Office Supplies exists → Verify Office Instruments exists under Office Supplies → Verify Writing & Drawing Instruments exists under Office Instruments → Continue until Pens
-						- If any step fails, that path is INVALID and must not be returned	
-					  Output format example:
-						{
-						  'categories': [
-						    'Food, Beverages & Tobacco > Beverages > Coffee > Coffee Beans'
-						  ],
-						  'is_google_tax': 'true',
-						  'hierarchical': 'true'
-						}",
+								'text'        => "Using **only** the resources returned by abilities `blu/wc-list-product-categories` and `blu/google-product-taxonomy`:
+
+1. **Step 1 – Store Categories First**
+   - Always call `blu/wc-list-product-categories` analyze the store categories returned by the ability and:.
+   - From the store categories, filter and present only those categories that are relevant to the product `$name` and `$desc`.
+   - Build the COMPLETE hierarchical structure by tracing all parent-child relationships using the 'parent' field
+   - For each relevant category, show the FULL path from root to leaf (e.g., Parent > Child > Grandchild)
+   - Present ALL levels of the hierarchy, not just the top-level categories
+   - The return must always be an array named `categories` with this format:
+     { categories: [ 'cat1', 'cat2' ] }
+   - Ask the customer if they want to use one or more of these store categories.
+   - **Important:** If the customer chooses from store categories, do NOT call any add category ability. Simply return their selection.
+
+2. **Step 2 – Google Product Taxonomy (Optional)**
+   - If the customer prefers to check Google taxonomy, then proceed with the taxonomy verification process:
+     - Identify the most relevant categories for the product `$name $desc`.
+     - Always return the **complete category path** exactly as listed in the resource.
+     - Verify each parent-child relationship step-by-step in the JSON structure.
+     - Document the navigation path: Root → Level1 → Level2 → … → Leaf.
+     - Only return paths where every step is confirmed.
+     - Never combine categories from different branches.
+     - Do not generate, suggest, or accept any custom or user-defined categories.
+
+3. **Step 3 – Confidence Scoring**
+   - For each valid Google taxonomy entry, calculate a numeric confidence score.
+   - Sort results by confidence score (highest first).
+   - Present the sorted list to the customer and require them to select one or more categories.
+
+4. **Step 4 – Confirmation**
+   - Do not automatically add categories to the store.
+   - Always ask the customer for confirmation.
+
+5. **Step 5 – Output Format**
+   - Return the customer’s selection strictly as an array named `categories`, containing only the selected full path(s).
+   - Include fields:
+     - `'is_google_tax': 'true'`
+     - `'hierarchical': 'true'`
+
+**Example of correct verification:**
+- For 'Pens': Verify Office Supplies exists → Verify Office Instruments exists under Office Supplies → Verify Writing & Drawing Instruments exists under Office Instruments → Continue until Pens.
+- If any step fails, that path is INVALID and must not be returned.
+
+**Output format example for google product taxonomy:**
+{
+  'categories': [
+    'Food, Beverages & Tobacco > Beverages > Coffee > Coffee Beans'
+  ],
+  'is_google_tax': 'true',
+  'hierarchical': 'true'
+}
+",
 								'annotations' => [
 									'audience' => [ 'assistant' ],
 									'priority' => 0.9

@@ -56,14 +56,15 @@ class WooProducts {
 						$request->set_query_params( $input );
 					}
 					$response = rest_do_request( $request );
+
 					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_products' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => true,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -87,16 +88,17 @@ class WooProducts {
 					'required'   => array( 'id' ),
 				),
 				'execute_callback'    => function ( $input ) {
-					$request = new \WP_REST_Request( 'GET', '/wc/v3/products/' . $input['id'] );
+					$request  = new \WP_REST_Request( 'GET', '/wc/v3/products/' . $input['id'] );
 					$response = rest_do_request( $request );
+
 					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_products' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => true,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -107,24 +109,24 @@ class WooProducts {
 			'blu/wc-add-product',
 			array(
 				'label'               => 'Add WooCommerce Product',
-				'description'         => 'Add new Woocommerce product, ALWAYS first call blu-suggest-product-categories.',
+				'description'         => 'Add new WooCommerce product. MANDATORY PREREQUISITE: Always call blu/suggest-product-categories ability first to generate appropriate categories before adding the product. Never call this function without first getting category suggestions.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
-						'name'        => array(
+						'name'          => array(
 							'type'        => 'string',
 							'description' => 'Product name',
 						),
-						'type'        => array(
+						'type'          => array(
 							'type'        => 'string',
 							'description' => 'Product type',
 						),
-						'description' => array(
+						'description'   => array(
 							'type'        => 'string',
 							'description' => 'Product description',
 						),
-						'regular_price'       => array(
+						'regular_price' => array(
 							'type'        => 'string',
 							'description' => 'Product price',
 						),
@@ -135,14 +137,15 @@ class WooProducts {
 					$request = new \WP_REST_Request( 'POST', '/wc/v3/products' );
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
+
 					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_products' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => false,
-						'idempotent'   => false,
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => false,
 					),
 				),
 			)
@@ -186,7 +189,7 @@ class WooProducts {
 							'type'        => 'string',
 							'description' => 'Product tag to set',
 						),
-						'brand'           => array(
+						'brand'         => array(
 							'type'        => 'string',
 							'description' => 'Product brand to set',
 						)
@@ -200,7 +203,7 @@ class WooProducts {
 						$category = $input['category'];
 
 						$category = $this->get_taxonomy_id_by_name( $category );
-						if( is_wp_error( $category ) | is_array( $category ) ) {
+						if ( is_wp_error( $category ) | is_array( $category ) ) {
 							return $category;
 						}
 
@@ -212,22 +215,22 @@ class WooProducts {
 					if ( isset( $input['tag'] ) ) {
 						$tag = $input['tag'];
 						$tag = $this->get_taxonomy_id_by_name( $tag, 'tags' );
-						if( is_wp_error( $tag ) | is_array( $tag ) ) {
+						if ( is_wp_error( $tag ) | is_array( $tag ) ) {
 							return $tag;
 						}
 						$stored_tag    = $this->get_product_taxonomy_ids( $id, 'tags' );
-						$input['tags'] = array_merge( [ [ 'id' => $tag ]], $stored_tag  );
+						$input['tags'] = array_merge( [ [ 'id' => $tag ] ], $stored_tag );
 						unset( $input['tag'] );
 					}
 
 					if ( isset( $input['brand'] ) ) {
 						$brand = $input['brand'];
 						$brand = $this->get_taxonomy_id_by_name( $brand, 'brands' );
-						if( is_wp_error( $brand ) | is_array( $brand ) ) {
+						if ( is_wp_error( $brand ) | is_array( $brand ) ) {
 							return $tag;
 						}
 						$stored_brand    = $this->get_product_taxonomy_ids( $id, 'brands' );
-						$input['brands'] = array_merge( [ [ 'id' => $brand ] ], $stored_brand  );
+						$input['brands'] = array_merge( [ [ 'id' => $brand ] ], $stored_brand );
 						unset( $input['brand'] );
 					}
 					$request = new \WP_REST_Request( 'PUT', '/wc/v3/products/' . $id );
@@ -239,9 +242,9 @@ class WooProducts {
 				'permission_callback' => fn() => current_user_can( 'edit_products' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -268,14 +271,15 @@ class WooProducts {
 					$request = new \WP_REST_Request( 'DELETE', '/wc/v3/products/' . $input['id'] );
 					$request->set_param( 'force', true );
 					$response = rest_do_request( $request );
+
 					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'delete_products' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => true,
-						'idempotent'   => true,
+						'readonly'    => false,
+						'destructive' => true,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -297,16 +301,31 @@ class WooProducts {
 					'type' => 'object',
 				),
 				'execute_callback'    => function () {
+					$page = 1;
+					$categories  = [];
 					$request = new \WP_REST_Request( 'GET', '/wc/v3/products/categories' );
-					$response = rest_do_request( $request );
-					return blu_standardize_rest_response( $response );
+					do {
+						$request->set_query_params( [ 'page' => $page ] );
+						$response = rest_do_request( $request );
+						if( is_wp_error( $response ) ) {
+							return blu_standardize_rest_response( $response );
+						}
+						$data     = $response->get_data();
+						$total    = count( $data );
+						foreach ( $data as $category ) {
+							$categories[] = [ 'id' => $category['id'], 'name' => $category['name'], 'parent' => $category['parent'] ];
+						}
+						$page ++;
+					}while( $total > 0 );
+					
+					return blu_prepare_ability_response( '200', $categories );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_products' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => true,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -371,9 +390,9 @@ class WooProducts {
 				'permission_callback' => fn() => current_user_can( 'manage_product_terms' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => false,
-						'idempotent'   => false,
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => false,
 					),
 				),
 			)
@@ -406,14 +425,15 @@ class WooProducts {
 					$request = new \WP_REST_Request( 'PUT', '/wc/v3/products/categories/' . $id );
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
+
 					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'manage_product_terms' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -440,14 +460,15 @@ class WooProducts {
 					$request = new \WP_REST_Request( 'DELETE', '/wc/v3/products/categories/' . $input['id'] );
 					$request->set_param( 'force', true );
 					$response = rest_do_request( $request );
+
 					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'delete_product_terms' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => true,
-						'idempotent'   => true,
+						'readonly'    => false,
+						'destructive' => true,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -469,16 +490,17 @@ class WooProducts {
 					'type' => 'object',
 				),
 				'execute_callback'    => function () {
-					$request = new \WP_REST_Request( 'GET', '/wc/v3/products/tags' );
+					$request  = new \WP_REST_Request( 'GET', '/wc/v3/products/tags' );
 					$response = rest_do_request( $request );
+
 					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_products' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => true,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -508,9 +530,9 @@ class WooProducts {
 				'permission_callback' => fn() => current_user_can( 'manage_product_terms' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => false,
-						'idempotent'   => false,
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => false,
 					),
 				),
 			)
@@ -543,14 +565,15 @@ class WooProducts {
 					$request = new \WP_REST_Request( 'PUT', '/wc/v3/products/tags/' . $id );
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
+
 					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'manage_product_terms' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -577,14 +600,15 @@ class WooProducts {
 					$request = new \WP_REST_Request( 'DELETE', '/wc/v3/products/tags/' . $input['id'] );
 					$request->set_param( 'force', true );
 					$response = rest_do_request( $request );
+
 					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'delete_product_terms' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => true,
-						'idempotent'   => true,
+						'readonly'    => false,
+						'destructive' => true,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -606,16 +630,17 @@ class WooProducts {
 					'type' => 'object',
 				),
 				'execute_callback'    => function () {
-					$request = new \WP_REST_Request( 'GET', '/wc/v3/products/brands' );
+					$request  = new \WP_REST_Request( 'GET', '/wc/v3/products/brands' );
 					$response = rest_do_request( $request );
+
 					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_products' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => true,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -644,9 +669,9 @@ class WooProducts {
 				'permission_callback' => fn() => current_user_can( 'manage_product_terms' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => false,
-						'idempotent'   => false,
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => false,
 					),
 				),
 			)
@@ -679,14 +704,15 @@ class WooProducts {
 					$request = new \WP_REST_Request( 'PUT', '/wc/v3/products/brands/' . $id );
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
+
 					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'manage_product_terms' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -713,14 +739,15 @@ class WooProducts {
 					$request = new \WP_REST_Request( 'DELETE', '/wc/v3/products/brands/' . $input['id'] );
 					$request->set_param( 'force', true );
 					$response = rest_do_request( $request );
+
 					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'delete_product_terms' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => true,
-						'idempotent'   => true,
+						'readonly'    => false,
+						'destructive' => true,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -730,6 +757,7 @@ class WooProducts {
 
 
 	// Utilities.
+
 	/**
 	 * Add the product taxonomy with REST API
 	 *
@@ -787,8 +815,8 @@ class WooProducts {
 		if ( is_wp_error( $response ) ) {
 			return $ids;
 		} else {
-			$data = $response->get_data();
-			$uncategorized_id = get_option( 'default_product_cat');
+			$data             = $response->get_data();
+			$uncategorized_id = get_option( 'default_product_cat' );
 			if ( isset( $data[ $taxonomy ] ) && count( $data[ $taxonomy ] ) > 0 ) {
 
 				foreach ( $data[ $taxonomy ] as $tax ) {
@@ -804,35 +832,36 @@ class WooProducts {
 	}
 
 
-
 	/**
 	 * Get the id for a taxonomy by term name
 	 *
 	 * @param string|int $name The name or the id.
-	 * @param string $taxonomy The taxonomy.
+	 * @param string     $taxonomy The taxonomy.
 	 *
 	 * @return \WP_REST_Response|int|array
 	 */
 	private function get_taxonomy_id_by_name( $name, $taxonomy = 'categories' ) {
 
-		if( is_string( $name ) ) {
-			$request = new \WP_REST_Request( 'GET', '/wc/v3/products/'.$taxonomy );
+		if ( is_string( $name ) ) {
+			$request = new \WP_REST_Request( 'GET', '/wc/v3/products/' . $taxonomy );
 			$request->set_query_params( [ 'slug' => sanitize_title( $name ), 'hide_empty' => false ] );
 			$response = rest_do_request( $request );
 			if ( is_wp_error( $response ) ) {
 				return $response;
 			} else {
 				$data = $response->get_data();
-				if ( 1 !== count( $data )  ) {
+				if ( 1 !== count( $data ) ) {
 					return [
 						'statusCode' => 400,
 						'status'     => 'error',
 						'message'    => 'An not unique ' . $taxonomy . ' found for ' . $name,
 					];
 				}
+
 				return $data[0]['id'];
 			}
 		}
+
 		return $name;
 	}
 }
