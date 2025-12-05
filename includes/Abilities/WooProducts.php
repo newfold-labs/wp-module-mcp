@@ -128,6 +128,10 @@ class WooProducts {
 							'type'        => 'string',
 							'description' => 'Product price',
 						),
+						'sale_price'       => array(
+							'type'        => 'string',
+							'description' => 'Product sale price',
+						),
 					),
 					'required'   => array( 'name' ),
 				),
