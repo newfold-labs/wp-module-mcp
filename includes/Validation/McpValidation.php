@@ -7,6 +7,7 @@ namespace BLU\Validation;
 use WP_Error;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
+use WP;
 
 /**
  * Validation class for Blu MCP.
@@ -26,22 +27,13 @@ class McpValidation {
 	 * @var string
 	 */
 	private const BEARER_TOKEN_PATTERN = '/Bearer\s(\S+)/';
+
 	/**
-	 * Public key for JWT validation.
+	 * URL to fetch the public key for JWT validation.
 	 *
 	 * @var string
 	 */
-	private $public_key = <<<'EOD'
------BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuzWHNM5f+amCjQztc5QT
-fJfzCC5J4nuW+L/aOxZ4f8J3FrewM2c/dufrnmedsApb0By7WhaHlcqCh/ScAPyJ
-hzkPYLae7bTVro3hok0zDITR8F6SJGL42JAEUk+ILkPI+DONM0+3vzk6Kvfe548t
-u4czCuqU8BGVOlnp6IqBHhAswNMM78pos/2z0CjPM4tbeXqSTTbNkXRboxjU29vS
-opcT51koWOgiTf3C7nJUoMWZHZI5HqnIhPAG9yv8HAgNk6CMk2CadVHDo4IxjxTz
-TTqo1SCSH2pooJl9O8at6kkRYsrZWwsKlOFE2LUce7ObnXsYihStBUDoeBQlGG/B
-wQIDAQAB
------END PUBLIC KEY-----
-EOD;
+	private const CF_UJWT_PUBLIC_KEY_URL = 'https://jwt-public-key.bluapi.com/public-key';
 
 	/**
 	 * Initializes the class
@@ -196,18 +188,38 @@ EOD;
 		}
 
 		try {
-			$decoded = JWT::decode( $token, new Key( $this->public_key, 'RS256' ) );
-			// The decoded JWT payload is currently unused. If claim validation is needed in the future,
-			// use $decoded to inspect claims such as exp, nbf, iss, aud. For now, we only check if decoding succeeds.
-			// TODO: Add extra validation as needed.
 
-			// if( !isset( $decoded->aud ) || $decoded->aud !== 'QA' ) {
-			// return new WP_Error(
-			// 'invalid_token',
-			// 'Token validation failed.',
-			// array( 'status' => 403 )
-			// );
-			// }
+			$public_key = $this->get_public_key();
+			$decoded = JWT::decode( $token, new Key( $public_key, 'RS256' ) );
+
+			 /*if( !isset( $decoded->aud ) || $decoded->aud !== 'production' ) {
+				return new WP_Error(
+					'invalid_token',
+					'Token validation failed. The audience is invalid.',
+					array( 'status' => 403 )
+				);
+			 }
+
+			 if( !isset( $decoded->iss ) || $decoded->iss !== 'jarvis-jwt' ) {
+				return new WP_Error(
+					'invalid_token',
+					'Token validation failed. The iss is invalid.',
+					array( 'status' => 403 )
+				);
+			 }
+			
+			$userID = $decoded->act->originatorUserId ?? null;
+
+			if ( null === $userID ) {
+				return new WP_Error(
+					'invalid_token',
+					'Token validation failed: originatorUserId missing.',
+					array( 'status' => 403 )
+				);
+			}*/
+
+			// Call the response
+			
 
 			return true;
 		} catch ( \Exception $e ) {
@@ -239,5 +251,43 @@ EOD;
 			'Authentication required. Please provide a Bearer token.',
 			array( 'status' => 401 )
 		);
+	}
+
+	/**
+	 * Get the public key for JWT validation.
+	 *
+	 * @return string
+	 */
+	private function get_public_key(): string|WP_Error {
+
+		$public_key = get_transient( 'blu_jwt_public_key' );
+
+		if ( false === $public_key ) {
+			try {
+				$response = wp_remote_get( self::CF_UJWT_PUBLIC_KEY_URL );
+
+				if ( is_wp_error( $response ) ) {
+					throw new \Exception( 'Failed to fetch public key: ' . $response->get_error_message() );
+				}
+
+				$body = wp_remote_retrieve_body( $response );
+
+				if ( empty( $body ) ) {
+					throw new \Exception( 'Public key response body is empty.' );
+				}
+
+				$public_key = sanitize_text_field( $body );
+				set_transient( 'blu_jwt_public_key', $public_key, HOUR_IN_SECONDS );
+
+			} catch ( \Exception $e ) {
+				// Fallback to hardcoded public key if fetching fails
+				return new WP_Error(
+					'public_key_fetch_error',
+					'Error fetching public key: ' . $e->getMessage(),
+					array( 'status' => 500 )
+				);
+			}
+		}
+		return apply_filters('blu_jwt_public_key', $public_key );
 	}
 }
