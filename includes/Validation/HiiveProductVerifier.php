@@ -45,28 +45,36 @@ class HiiveProductVerifier {
 		}
 
 		$connection = new HiiveConnection();
-		$result = $connection->hiive_request( self::NFD_BLU_JWT_HIIVE_VERIFY_ENDPOINT, array(
+		$response   = $connection->hiive_request( self::NFD_BLU_JWT_HIIVE_VERIFY_ENDPOINT, array(
 			'userId'   => $userId,
 		) );
 
-		if ( is_wp_error( $result ) ) {
-			return $result;
+		if ( is_wp_error( $response ) ) {
+			return $response;
 		}
 
-		if ( isset( $result['verification'] ) ) {
+		$status_code = wp_remote_retrieve_response_code( $response );
+
+		if ( ! in_array( $status_code, array( 200, 201 ), true ) ) {
+			return new WP_Error( $status_code, wp_remote_retrieve_response_message( $response ) );
+		}
+
+		$data = json_decode( wp_remote_retrieve_body( $response ), true );
+
+		if ( isset( $data['response'] ) ) {
 			$value = array(
 				'token'  => $token,
-				'status' => $result['verification']
+				'status' => $data['response']
 			);
 			set_transient( self::NFD_BLU_JWT_VERIFIED_TOKEN_CACHE_KEY . "_$userId", $value, apply_filters( 'blu_jwt_product_verify_cache_ttl', self::NFD_BLU_JWT_VERIFIED_TOKEN_CACHE_TTL ) );
 
-			if ( 'true' === $result['verification'] || true === $result['verification'] ) {
+			if ( 'true' === $data['response'] || true === $data['response'] ) {
 				return true;
 			} else {
-				return new WP_Error( 'hiive_product_verification_failed', 'Product verification failed', array( 'status' => $result['verification'] ) );
+				return new WP_Error( 'hiive_product_verification_failed', 'Product verification failed', $data );
 			}
 		} else {
-			return new WP_Error( 'hiive_product_verification_no_response', 'No verification response from Hiive', $result );
+			return new WP_Error( 'hiive_product_verification_no_response', 'No verification response from Hiive', $data );
 		}
 	}
 }
