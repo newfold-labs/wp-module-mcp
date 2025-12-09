@@ -56,7 +56,7 @@ class WooProducts {
 						$request->set_query_params( $input );
 					}
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_products' ),
 				'meta'                => array(
@@ -89,7 +89,7 @@ class WooProducts {
 				'execute_callback'    => function ( $input ) {
 					$request = new \WP_REST_Request( 'GET', '/wc/v3/products/' . $input['id'] );
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_products' ),
 				'meta'                => array(
@@ -124,9 +124,13 @@ class WooProducts {
 							'type'        => 'string',
 							'description' => 'Product description',
 						),
-						'price'       => array(
+						'regular_price'       => array(
 							'type'        => 'string',
 							'description' => 'Product price',
+						),
+						'sale_price'       => array(
+							'type'        => 'string',
+							'description' => 'Product sale price',
 						),
 					),
 					'required'   => array( 'name' ),
@@ -135,7 +139,7 @@ class WooProducts {
 					$request = new \WP_REST_Request( 'POST', '/wc/v3/products' );
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_products' ),
 				'meta'                => array(
@@ -183,7 +187,7 @@ class WooProducts {
 					$request = new \WP_REST_Request( 'PUT', '/wc/v3/products/' . $id );
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_products' ),
 				'meta'                => array(
@@ -217,7 +221,7 @@ class WooProducts {
 					$request = new \WP_REST_Request( 'DELETE', '/wc/v3/products/' . $input['id'] );
 					$request->set_param( 'force', true );
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'delete_products' ),
 				'meta'                => array(
@@ -248,7 +252,7 @@ class WooProducts {
 				'execute_callback'    => function () {
 					$request = new \WP_REST_Request( 'GET', '/wc/v3/products/categories' );
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_products' ),
 				'meta'                => array(
@@ -282,7 +286,7 @@ class WooProducts {
 					$request = new \WP_REST_Request( 'POST', '/wc/v3/products/categories' );
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'manage_product_terms' ),
 				'meta'                => array(
@@ -322,7 +326,7 @@ class WooProducts {
 					$request = new \WP_REST_Request( 'PUT', '/wc/v3/products/categories/' . $id );
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'manage_product_terms' ),
 				'meta'                => array(
@@ -356,7 +360,7 @@ class WooProducts {
 					$request = new \WP_REST_Request( 'DELETE', '/wc/v3/products/categories/' . $input['id'] );
 					$request->set_param( 'force', true );
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'delete_product_terms' ),
 				'meta'                => array(
@@ -387,7 +391,7 @@ class WooProducts {
 				'execute_callback'    => function () {
 					$request = new \WP_REST_Request( 'GET', '/wc/v3/products/tags' );
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_products' ),
 				'meta'                => array(
@@ -421,7 +425,7 @@ class WooProducts {
 					$request = new \WP_REST_Request( 'POST', '/wc/v3/products/tags' );
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'manage_product_terms' ),
 				'meta'                => array(
@@ -461,7 +465,7 @@ class WooProducts {
 					$request = new \WP_REST_Request( 'PUT', '/wc/v3/products/tags/' . $id );
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'manage_product_terms' ),
 				'meta'                => array(
@@ -495,7 +499,7 @@ class WooProducts {
 					$request = new \WP_REST_Request( 'DELETE', '/wc/v3/products/tags/' . $input['id'] );
 					$request->set_param( 'force', true );
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'delete_product_terms' ),
 				'meta'                => array(
@@ -526,7 +530,7 @@ class WooProducts {
 				'execute_callback'    => function () {
 					$request = new \WP_REST_Request( 'GET', '/wc/v3/products/brands' );
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_products' ),
 				'meta'                => array(
@@ -560,7 +564,7 @@ class WooProducts {
 					$request = new \WP_REST_Request( 'POST', '/wc/v3/products/brands' );
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'manage_product_terms' ),
 				'meta'                => array(
@@ -600,7 +604,7 @@ class WooProducts {
 					$request = new \WP_REST_Request( 'PUT', '/wc/v3/products/brands/' . $id );
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'manage_product_terms' ),
 				'meta'                => array(
@@ -634,7 +638,7 @@ class WooProducts {
 					$request = new \WP_REST_Request( 'DELETE', '/wc/v3/products/brands/' . $input['id'] );
 					$request->set_param( 'force', true );
 					$response = rest_do_request( $request );
-					return $response->get_data();
+					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'delete_product_terms' ),
 				'meta'                => array(

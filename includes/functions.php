@@ -176,3 +176,65 @@ function blu_filter_abilities_by_namespace( array $abilities, string $namespace 
 function blu_get_abilities_by_namespace( string $namespace ): array {
 	return blu_filter_abilities_by_namespace( blu_get_abilities(), $namespace );
 }
+
+/**
+ * Prepares a standardized ability response.
+ *
+ * @param int $status The HTTP status code of the response.
+ * @param mixed $message The response message or data.
+ *
+ * @return array An associative array containing 'status' and 'response' keys.
+ */
+function blu_prepare_ability_response( $status, $message ) {
+	return array(
+		'statusCode'	=> $status,
+		'status'  		=> blu_get_status_type( $status ),
+		'message' 		=> $message
+	);
+}
+
+/**
+ * Standardizes a REST API response into a consistent format.
+ *
+ * @param mixed $response The original response which can be a WP_Error or WP_REST_Response.
+ *
+ * @return array An associative array containing 'status' and 'response' keys.
+ */
+function blu_standardize_rest_response( $response ) {
+
+	if ( is_wp_error( $response ) ) {
+        
+        $status = $response->get_error_code() ? $response->get_error_code() : 500; 
+
+		return blu_prepare_ability_response( $status, $response->get_error_message() );
+        
+    } elseif ( $response instanceof \WP_REST_Response ) {
+
+		return blu_prepare_ability_response( $response->get_status(), $response->get_data() );
+        
+    } else {
+		return blu_prepare_ability_response( 500, 'Unexpected response format.' );
+    }
+}
+/**
+ * Maps an HTTP status code to a simplified status type.
+ *
+ * @param int $status_code The HTTP status code to evaluate.
+ *
+ * @return string The corresponding status type: 'success', 'error', or 'unknown'.
+ */
+function blu_get_status_type( $status_code ) {
+
+	$status = 'unknown';
+
+	if ( $status_code >= 200 && $status_code < 400 ) {
+
+		$status =  'success';
+
+	} elseif ( $status_code >= 400 && $status_code <= 599 ) {
+
+		$status = 'error';
+		
+	} 
+	return $status;
+}

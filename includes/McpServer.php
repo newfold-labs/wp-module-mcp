@@ -14,11 +14,12 @@ use BLU\Abilities\SiteInfo;
 use BLU\Abilities\Users;
 use BLU\Abilities\WooOrders;
 use BLU\Abilities\WooProducts;
+
 use BLU\Validation\McpValidation;
-use WP\MCP\Core\McpAdapter;
-use WP\MCP\Infrastructure\ErrorHandling\ErrorLogMcpErrorHandler;
-use WP\MCP\Infrastructure\Observability\NullMcpObservabilityHandler;
-use WP\MCP\Transport\Http\RestTransport;
+use Bluehost\Plugin\WP\MCP\Core\McpAdapter;
+use Bluehost\Plugin\WP\MCP\Infrastructure\ErrorHandling\ErrorLogMcpErrorHandler;
+use Bluehost\Plugin\WP\MCP\Infrastructure\Observability\NullMcpObservabilityHandler;
+use Bluehost\Plugin\WP\MCP\Transport\HttpTransport;
 
 /**
  * MCP Server registration for Bluehost abilities.
@@ -33,13 +34,13 @@ class McpServer {
 	 */
 	public function __construct() {
 		add_action( 'mcp_adapter_init', [ $this, 'register_server' ] );
-		add_action( 'abilities_api_init', [ $this, 'register_abilities' ] );
-		add_action( 'abilities_api_categories_init', [ $this, 'register_ability_categories' ] );
+		add_action( 'wp_abilities_api_init', [ $this, 'register_abilities' ] );
+		add_action( 'wp_abilities_api_categories_init', [ $this, 'register_ability_categories' ] );
 	}
 
 	/**
 	 * Registers a server with specified configurations, including abilities, transports, and handlers,
-	 * for the Bluehost MCP server functionality.
+	 * for the Blue host MCP server functionality.
 	 *
 	 * @return void
 	 * @throws \Exception
@@ -59,19 +60,19 @@ class McpServer {
 
 		// Create the server
 		$adapter->create_server(
-			server_id: 'blu-mcp',
-			server_route_namespace: 'blu',
-			server_route: 'mcp',
-			server_name: 'Bluehost MCP Server',
-			server_description: 'MCP server exposing Bluehost WordPress abilities',
-			server_version: '1.0.0',
-			mcp_transports: [ RestTransport::class ],
-			error_handler: ErrorLogMcpErrorHandler::class,
-			observability_handler: NullMcpObservabilityHandler::class,
-			tools: $abilities,
-			resources: [],
-			prompts: [],
-			transport_permission_callback: function () {
+			'blu-mcp', // server_id
+			'blu', // server_route_namespace
+			'mcp', // server_route
+			'Bluehost MCP Server', // server_name
+			'MCP server exposing Bluehost WordPress abilities', // server_description
+			'1.0.0', // server_version
+			array( HttpTransport::class ), // mcp_transports
+			ErrorLogMcpErrorHandler::class, // error_handler
+			NullMcpObservabilityHandler::class, // observability_handler
+			$abilities, // tools,
+			[], // resources
+			[], // prompts
+			function () { // transport_permission_callback
 				return McpValidation::get_transport_permission_callback();
 			}
 		);
