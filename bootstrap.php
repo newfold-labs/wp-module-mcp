@@ -1,13 +1,5 @@
 <?php
 
-/**
- * Ensure Composer autoloader is available for this plugin.
- * This makes classes like Firebase\JWT\JWT available.
- */
-if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
-	require_once __DIR__ . '/vendor/autoload.php';
-}
-
 use BLU\McpServer;
 use BLU\Validation\McpValidation;
 use Bluehost\Plugin\WP\MCP\Core\McpAdapter;
