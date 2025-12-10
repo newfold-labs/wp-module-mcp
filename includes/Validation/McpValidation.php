@@ -5,9 +5,9 @@ declare( strict_types=1 );
 namespace BLU\Validation;
 
 use WP_Error;
+use BLU\Validation\HiiveProductVerifier;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
-use WP;
 
 /**
  * Validation class for Blu MCP.
@@ -33,7 +33,7 @@ class McpValidation {
 	 *
 	 * @var string
 	 */
-	private const CF_UJWT_PUBLIC_KEY_URL = 'https://jwt-public-key.bluapi.com/public-key';
+	private const CF_UJWT_PUBLIC_KEY_URL = 'https://pub-e913371c57e646c8aeec80f4936a947b.r2.dev/jwt-public-key.pem';
 
 	/**
 	 * Initializes the class
@@ -155,7 +155,7 @@ class McpValidation {
 	 */
 	private function is_mcp_endpoint(): bool {
 		$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
-		return preg_match( '#^/wp-json/blu/mcp(/|$)#', $request_uri ) === 1;
+		return preg_match( '#blu/mcp(/|$)#', $request_uri ) === 1;
 	}
 
 	/**
@@ -190,38 +190,52 @@ class McpValidation {
 		try {
 
 			$public_key = $this->get_public_key();
+
 			$decoded = JWT::decode( $token, new Key( $public_key, 'RS256' ) );
 
-			 /*if( !isset( $decoded->aud ) || $decoded->aud !== 'production' ) {
+			$userID = null;
+			
+			if( !isset( $decoded->aud ) || $decoded->aud !== 'production' ) {
 				return new WP_Error(
 					'invalid_token',
 					'Token validation failed. The audience is invalid.',
 					array( 'status' => 403 )
 				);
-			 }
+			}
 
-			 if( !isset( $decoded->iss ) || $decoded->iss !== 'jarvis-jwt' ) {
+			if( !isset( $decoded->iss ) || $decoded->iss !== 'jarvis-jwt' ) {
 				return new WP_Error(
 					'invalid_token',
 					'Token validation failed. The iss is invalid.',
 					array( 'status' => 403 )
 				);
-			 }
+			}
 			
-			$userID = $decoded->act->originatorUserId ?? null;
-
+			$sub = $decoded->sub ?? null;
+			if ( null === $sub ) {
+				return new WP_Error(
+					'invalid_token',
+					'Token validation failed: sub claim missing.',
+					array( 'status' => 403 )
+				);
+			} else {
+				$sub_parts = explode( ':', $sub );
+				if( !empty( $sub_parts ) ) {
+					$userID = end( $sub_parts );
+				}
+			}	
 			if ( null === $userID ) {
 				return new WP_Error(
 					'invalid_token',
-					'Token validation failed: originatorUserId missing.',
+					'Token validation failed: UserId missing.',
 					array( 'status' => 403 )
 				);
-			}*/
+			}
 
-			// Call the response
-			
+			// Call the Hiive product verifier.
+			$response = HiiveProductVerifier::verify_product_access( $token, $userID );
 
-			return true;
+			return $response;
 		} catch ( \Exception $e ) {
 			return new WP_Error(
 				'invalid_token',
@@ -264,7 +278,7 @@ class McpValidation {
 
 		if ( false === $public_key ) {
 			try {
-				$response = wp_remote_get( self::CF_UJWT_PUBLIC_KEY_URL );
+				$response = wp_remote_get( self::CF_UJWT_PUBLIC_KEY_URL );				
 
 				if ( is_wp_error( $response ) ) {
 					throw new \Exception( 'Failed to fetch public key: ' . $response->get_error_message() );
@@ -276,16 +290,13 @@ class McpValidation {
 					throw new \Exception( 'Public key response body is empty.' );
 				}
 
-				$public_key = sanitize_text_field( $body );
+				$public_key = $body;
+
 				set_transient( 'blu_jwt_public_key', $public_key, HOUR_IN_SECONDS );
 
 			} catch ( \Exception $e ) {
-				// Fallback to hardcoded public key if fetching fails
-				return new WP_Error(
-					'public_key_fetch_error',
-					'Error fetching public key: ' . $e->getMessage(),
-					array( 'status' => 500 )
-				);
+
+				throw new \Exception( 'Failed to fetch public key: ' . $e->getMessage() );
 			}
 		}
 		return apply_filters('blu_jwt_public_key', $public_key );
