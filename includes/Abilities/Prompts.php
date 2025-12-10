@@ -39,74 +39,23 @@ class Prompts {
 						'description' => 'Product name',
 						'default'     => '',
 					),
-					'description' => array(
-						'type'        => 'string',
-						'description' => 'Product description',
-					)
 				),
 				'required'   => array( 'name' )
 			),
 			'execute_callback'    => function ( $input ) {
-				$name = $input['name'] ?? '';
-				$desc = $input['description'] ?? '';
-				$desc = !empty( $desc ) ? 'and these details :'.$desc : '';
+				$product_name = $input['name'] ?? '';
+				$categories = Resources::get_product_categories();
+				$google_categories = Resources::get_google_taxonomy_resource();
+				$instruction = include_once __DIR__.'/../instructions/product-categories-suggester.php';
+
+
 				return [
 					'messages' => [
 						[
 							'role'    => 'user',
 							'content' => [
 								'type'        => 'text',
-								'text'        => "Using **only** the resources returned by abilities `blu/wc-list-product-categories` and `blu/google-product-taxonomy`:
-
-1. **Step 1 – Store Categories First**
-   - Always call `blu/wc-list-product-categories` analyze the store categories returned by the ability and:.
-   - From the store categories, filter and present only those categories that are relevant to the product `$name` and `$desc`.
-   - Build the COMPLETE hierarchical structure by tracing all parent-child relationships using the 'parent' field
-   - For each relevant category, show the FULL path from root to leaf (e.g., Parent > Child > Grandchild)
-   - Present ALL levels of the hierarchy, not just the top-level categories
-   - The return must always be an array named `categories` with this format:
-     { categories: [ 'cat1', 'cat2' ] }
-   - Ask the customer if they want to use one or more of these store categories.
-   - **Important:** If the customer chooses from store categories, do NOT call any add category ability. Simply return their selection.
-
-2. **Step 2 – Google Product Taxonomy (Optional)**
-   - If the customer prefers to check Google taxonomy, then proceed with the taxonomy verification process:
-     - Identify the most relevant categories for the product `$name $desc`.
-     - Always return the **complete category path** exactly as listed in the resource.
-     - Verify each parent-child relationship step-by-step in the JSON structure.
-     - Document the navigation path: Root → Level1 → Level2 → … → Leaf.
-     - Only return paths where every step is confirmed.
-     - Never combine categories from different branches.
-     - Do not generate, suggest, or accept any custom or user-defined categories.
-
-3. **Step 3 – Confidence Scoring**
-   - For each valid Google taxonomy entry, calculate a numeric confidence score.
-   - Sort results by confidence score (highest first).
-   - Present the sorted list to the customer and require them to select one or more categories.
-
-4. **Step 4 – Confirmation**
-   - Do not automatically add categories to the store.
-   - Always ask the customer for confirmation.
-
-5. **Step 5 – Output Format**
-   - Return the customer’s selection strictly as an array named `categories`, containing only the selected full path(s).
-   - Include fields:
-     - `'is_google_tax': 'true'`
-     - `'hierarchical': 'true'`
-
-**Example of correct verification:**
-- For 'Pens': Verify Office Supplies exists → Verify Office Instruments exists under Office Supplies → Verify Writing & Drawing Instruments exists under Office Instruments → Continue until Pens.
-- If any step fails, that path is INVALID and must not be returned.
-
-**Output format example for google product taxonomy:**
-{
-  'categories': [
-    'Food, Beverages & Tobacco > Beverages > Coffee > Coffee Beans'
-  ],
-  'is_google_tax': 'true',
-  'hierarchical': 'true'
-}
-",
+								'text'        => $instruction,
 								'annotations' => [
 									'audience' => [ 'assistant' ],
 									'priority' => 0.9
