@@ -60,17 +60,7 @@ class Resources {
 						}
 
 						$line = preg_replace('/^\d+\s*-\s*/', '', $line);
-
-						$parts = array_map('trim', explode('>', $line));
-
-						$ref = &$taxonomy;
-						foreach ($parts as $part) {
-							if (!isset($ref[$part])) {
-								$ref[$part] = [];
-							}
-							$ref = &$ref[$part];
-						}
-						unset($ref);
+						$taxonomy[] = $line;
 					}
 					set_transient( 'blu/google-product-taxonomy-' . $locale, $taxonomy, MONTH_IN_SECONDS );
 				}
@@ -89,7 +79,7 @@ class Resources {
 					'readOnlyHint'   => true,
 					'idempotentHint' => true,
 					'audience'       => [ 'user', 'assistant' ],
-					'priority'       => 0.8
+					'priority'       => 0.9
 				],
 				'mcp'         => [
 					'public' => true,      // Expose this ability via MCP
