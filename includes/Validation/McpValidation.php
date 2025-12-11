@@ -33,7 +33,7 @@ class McpValidation {
 	 *
 	 * @var string
 	 */
-	private const CF_UJWT_PUBLIC_KEY_URL = 'https://pub-e913371c57e646c8aeec80f4936a947b.r2.dev/jwt-public-key.pem';
+	private const CF_UJWT_PUBLIC_KEY_URL = 'https://cdn.hiive.space/jwt-public-key.pem';
 
 	/**
 	 * Initializes the class
