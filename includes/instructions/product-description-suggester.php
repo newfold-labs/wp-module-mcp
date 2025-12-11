@@ -6,7 +6,7 @@
  *
  * @package BLU
  *
- * @var string $product_name
+ * @var string $name
  */
 
 
@@ -29,7 +29,7 @@ Ensure the tone is persuasive, clear, and suited for ecommerce buyers.
 Return a JSON object with two fields:
 json
 {
-  `'summary': '...'`,
+  `'short_description': '...'`,
   `'description': '...'`
 }
 Both descriptions must be optimized for search engines and buyer engagement.
