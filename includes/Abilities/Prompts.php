@@ -44,8 +44,7 @@ class Prompts {
 			),
 			'execute_callback'    => function ( $input ) {
 				$product_name = $input['name'] ?? '';
-				$categories = Resources::get_product_categories();
-				$google_categories = Resources::get_google_taxonomy_resource();
+
 				$instruction = include_once __DIR__.'/../instructions/product-categories-suggester.php';
 
 

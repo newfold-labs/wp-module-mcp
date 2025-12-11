@@ -81,6 +81,7 @@ class McpServer {
 	public function register_abilities(): void {
 		// Initialize all ability classes
 		new Prompts();
+		new Resources();
 		new Posts();
 		new Pages();
 		new Media();
