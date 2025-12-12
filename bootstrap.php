@@ -1,7 +1,9 @@
 <?php
 
 use BLU\McpServer;
+use BLU\Validation\McpValidation;
 use Bluehost\Plugin\WP\MCP\Core\McpAdapter;
+
 
 if ( function_exists( 'add_action' ) ) {
 
@@ -11,6 +13,8 @@ if ( function_exists( 'add_action' ) ) {
 			// Initialize MCP adapter (required to register rest_api_init hook)
 			McpAdapter::instance();
 
+			// Initialize Validation
+			new McpValidation();
 			// Initialize MCP server
 			new McpServer();
 		}

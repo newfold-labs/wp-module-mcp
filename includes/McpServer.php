@@ -14,6 +14,8 @@ use BLU\Abilities\SiteInfo;
 use BLU\Abilities\Users;
 use BLU\Abilities\WooOrders;
 use BLU\Abilities\WooProducts;
+
+use BLU\Validation\McpValidation;
 use Bluehost\Plugin\WP\MCP\Core\McpAdapter;
 use Bluehost\Plugin\WP\MCP\Infrastructure\ErrorHandling\ErrorLogMcpErrorHandler;
 use Bluehost\Plugin\WP\MCP\Infrastructure\Observability\NullMcpObservabilityHandler;
@@ -38,13 +40,13 @@ class McpServer {
 
 	/**
 	 * Registers a server with specified configurations, including abilities, transports, and handlers,
-	 * for the Bluehost MCP server functionality.
+	 * for the Blue host MCP server functionality.
 	 *
 	 * @return void
 	 * @throws \Exception
 	 */
 	public function register_server(): void {
-
+	
 		// Get all abilities in the blu-mcp category
 		$abilities = array_map(
 			function ( $ability ) {
@@ -67,7 +69,12 @@ class McpServer {
 			array( HttpTransport::class ), // mcp_transports
 			ErrorLogMcpErrorHandler::class, // error_handler
 			NullMcpObservabilityHandler::class, // observability_handler
-			$abilities // tools
+			$abilities, // tools,
+			[], // resources
+			[], // prompts
+			function () { // transport_permission_callback
+				return McpValidation::get_transport_permission_callback();
+			}
 		);
 	}
 
