@@ -34,7 +34,7 @@ class Resources {
 
 				$locale = str_replace( '_', '-', get_locale() );
 
-				$taxonomy = get_transient( 'blu/google-product-taxonomy-' . $locale );
+				$taxonomy =  get_transient( 'blu/google-product-taxonomy-' . $locale );
 				if ( false === $taxonomy ) {
 
 					$content = $this->retrieve_file( $locale );
@@ -51,7 +51,7 @@ class Resources {
 					// Split into lines
 					$lines = explode( "\n", $content );
 
-					$taxonomy = [];
+					$taxonomy = '';
 
 					foreach ( $lines as $line ) {
 						$line = trim( $line );
@@ -60,7 +60,7 @@ class Resources {
 						}
 
 						$line = preg_replace('/^\d+\s*-\s*/', '', $line);
-						$taxonomy[] = $line;
+						$taxonomy.= $line.'\n';
 					}
 					set_transient( 'blu/google-product-taxonomy-' . $locale, $taxonomy, MONTH_IN_SECONDS );
 				}

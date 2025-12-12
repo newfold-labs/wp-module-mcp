@@ -47,7 +47,6 @@ class Prompts {
 
 				$instruction = include_once __DIR__.'/../instructions/product-categories-suggester.php';
 
-
 				return [
 					'messages' => [
 						[
