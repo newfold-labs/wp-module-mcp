@@ -18,8 +18,6 @@
     ]
   },
   "require": {
-    "wordpress/mcp-adapter": "^0.3.0"
-  },
-  "minimum-stability": "dev",
-  "prefer-stable": false
+    "wordpress/mcp-adapter": "^0.4.0"
+  }
 }
