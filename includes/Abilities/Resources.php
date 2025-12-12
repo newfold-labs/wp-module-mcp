@@ -83,7 +83,7 @@ class Resources {
 				],
 				'mcp'         => [
 					'public' => true,      // Expose this ability via MCP
-					'type'   => 'resource' // Mark as resource for auto-discovery
+					'type'   => 'tool' // Mark as resource for auto-discovery
 				]
 			]
 		] );

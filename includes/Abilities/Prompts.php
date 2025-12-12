@@ -95,8 +95,8 @@ class Prompts {
 					'idempotentHint' => true
 				],
 				'mcp'         => [
-					'public' => true,   // Expose this ability via MCP
-					'type'   => 'prompt' // Mark as prompt for auto-discovery
+					'public' => false,   // Expose this ability via MCP
+					'type'   => 'tool' // Mark as prompt for auto-discovery
 				]
 			]
 		] );
@@ -154,11 +154,6 @@ class Prompts {
 						'name'        => 'name',
 						'description' => 'Product name to check',
 						'required'    => true
-					],
-					[
-						'name'        => 'description',
-						'description' => 'Product description',
-						'required'    => false
 					]
 				],
 				'annotations' => [
@@ -167,10 +162,11 @@ class Prompts {
 				],
 				'mcp'         => [
 					'public' => true,   // Expose this ability via MCP
-					'type'   => 'prompt' // Mark as prompt for auto-discovery
+					'type'   => 'tool' // Mark as prompt for auto-discovery
 				]
 			]
 		] );
+
 	}
 
 	/**
@@ -267,7 +263,7 @@ class Prompts {
 				],
 				'mcp'         => [
 					'public' => true,   // Expose this ability via MCP
-					'type'   => 'prompt' // Mark as prompt for auto-discovery
+					'type'   => 'tool' // Mark as prompt for auto-discovery
 				]
 			]
 		] );
@@ -356,7 +352,7 @@ class Prompts {
 				],
 				'mcp'         => [
 					'public' => true,   // Expose this ability via MCP
-					'type'   => 'prompt' // Mark as prompt for auto-discovery
+					'type'   => 'tool' // Mark as prompt for auto-discovery
 				]
 			]
 		] );
