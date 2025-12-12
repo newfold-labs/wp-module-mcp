@@ -109,7 +109,7 @@ class WooProducts {
 			'blu/wc-add-product',
 			array(
 				'label'               => 'Add WooCommerce Product',
-				'description'         => 'Add new WooCommerce product. MANDATORY PREREQUISITE: Always call blu/suggest-product-categories ability first to generate appropriate categories before adding the product. Never call this function without first getting category suggestions.',
+				'description'         => 'Add new WooCommerce product. Execute the ability blu/add-new-product-prompt',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
@@ -134,10 +134,59 @@ class WooProducts {
 							'type'        => 'string',
 							'description' => 'Product price',
 						),
+						'sale_price'    => array(
+							'type'        => 'string',
+							'description' => 'Product sale price',
+						),
+						'category'      => array(
+							'type'        => 'string',
+							'description' => 'Product category to set',
+						),
+						'tag'           => array(
+							'type'        => 'string',
+							'description' => 'Product tag to set',
+						),
+						'brand'         => array(
+							'type'        => 'string',
+							'description' => 'Product brand to set',
+						)
 					),
 					'required'   => array( 'name' ),
 				),
 				'execute_callback'    => function ( $input ) {
+					if ( isset( $input['category'] ) ) {
+						$category = $input['category'];
+
+						$category = $this->get_taxonomy_id_by_name( $category );
+						if ( is_wp_error( $category ) | is_array( $category ) ) {
+							return $category;
+						}
+
+
+						$input['categories'] =  [ [ 'id' => $category ] ] ;
+						unset( $input['category'] );
+					}
+
+					if ( isset( $input['tag'] ) ) {
+						$tag = $input['tag'];
+						$tag = $this->get_taxonomy_id_by_name( $tag, 'tags' );
+						if ( is_wp_error( $tag ) | is_array( $tag ) ) {
+							return $tag;
+						}
+						$input['tags'] =  [ [ 'id' => $tag ] ];
+						unset( $input['tag'] );
+					}
+
+					if ( isset( $input['brand'] ) ) {
+						$brand = $input['brand'];
+						$brand = $this->get_taxonomy_id_by_name( $brand, 'brands' );
+						if ( is_wp_error( $brand ) | is_array( $brand ) ) {
+							return $brand;
+						}
+
+						$input['brands'] = [ [ 'id' => $brand ] ];
+						unset( $input['brand'] );
+					}
 					$request = new \WP_REST_Request( 'POST', '/wc/v3/products' );
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
@@ -231,7 +280,7 @@ class WooProducts {
 						$brand = $input['brand'];
 						$brand = $this->get_taxonomy_id_by_name( $brand, 'brands' );
 						if ( is_wp_error( $brand ) | is_array( $brand ) ) {
-							return $tag;
+							return $brand;
 						}
 						$stored_brand    = $this->get_product_taxonomy_ids( $id, 'brands' );
 						$input['brands'] = array_merge( [ [ 'id' => $brand ] ], $stored_brand );
