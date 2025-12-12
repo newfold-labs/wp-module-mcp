@@ -25,23 +25,21 @@ Given the product named $product_name, suggest possible product categories.
 
 2. **Customer selection**:
    - Ask the customer to choose one or more categories from the list.
-   - If the customer selects from stored categories or adds a custom category:
-     - Set `'is_google_tax': false`.
-     - Set `'hierarchical'`: false`.'
+   - If the customer selects from stored categories add it then:
+      - Set `'is_google_tax': false`.
+      - Set `'hierarchical'`: false`.'
+    - Otherwise ask if wants to see the google product taxonomy suggestions and wait the response.  
 
 3. **Fallback to Google Product Taxonomy**:
-   - If no categories are found OR the customer wants to search for others:
-     - Call the resource blu://google/product/taxonomy to get the google product taxonomy.
-     - Parse the JSON object, read all and analyze each entry to find the right categories.
-            - NOT Assuming logical paths without verification
-            - NOT Creating paths based on what 'makes sense'
-            - NOT Combining categories that seem related
-            - BEFORE return the entry, check that exist in the resource
-
+     - Call the resource blu://google/product/taxonomy to get the google product taxonomy categories,each category is a single line.
+     - From the taxonomy list (one category per line), select all categories that best match the product name $product_name.
+	 - Each matching category must be chosen as a full single row from the list — do not combine or merge parts of different categories.
+	 - Only return categories where every word or concept is relevant and clearly connected to the product name. Avoid partial or vague matches.
+     - If multiple categories fit independently, include them all in your selection.
      - For each candidate entry, calculate a numeric confidence score (0–100).
      - Sort the list in descending order by confidence score.
      - Present the customer with a list of full category paths, showing the confidence score next to each path.
-     - Ask the customer to select one or more categories.
+     - Ask always to the customer to select one or more categories.
      - If the customer selects from Google Product Taxonomy:
        - Set `'is_google_tax': true`.
        - Set `'hierarchical'`: true`.'

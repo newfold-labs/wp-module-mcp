@@ -47,17 +47,13 @@ class McpServer {
 	 */
 	public function register_server(): void {
 
-		// Get all abilities in the blu-mcp category
-		$abilities = array_map(
-			function ( $ability ) {
-				return $ability->get_name();
-			},
-			blu_get_abilities_by_category( 'blu-mcp' )
-		);
 
 		// Get the MCP adapter instance
 		$adapter = McpAdapter::instance();
 
+		$tools     = $this->discover_abilities_by_type(  );
+		$resources = $this->discover_abilities_by_type( 'resource' );
+		$prompts   = $this->discover_abilities_by_type(  'prompt' );
 		// Create the server
 		$adapter->create_server(
 			'blu-mcp', // server_id
@@ -69,7 +65,9 @@ class McpServer {
 			array( HttpTransport::class ), // mcp_transports
 			ErrorLogMcpErrorHandler::class, // error_handler
 			NullMcpObservabilityHandler::class, // observability_handler
-			$abilities // tools
+			$tools,
+			$resources,
+			$prompts,
 		);
 	}
 
@@ -107,5 +105,43 @@ class McpServer {
 				'description' => 'Bluehost-specific abilities for use with MCP',
 			)
 		);
+	}
+
+	/**
+	 * Discover abilities by MCP type.
+	 *
+	 * Scans all registered abilities and returns those with the specified type
+	 * and public MCP exposure.
+	 *
+	 * @param string $type The MCP type to filter by ('tool', 'resource', or 'prompt').
+	 *
+	 * @return array Array of ability names matching the specified type.
+	 */
+	private function discover_abilities_by_type(  $type = 'tool' ): array {
+		$filtered = array();
+
+		$abilities = blu_get_abilities_by_category( 'blu-mcp' );
+		foreach ( $abilities as $ability ) {
+			$ability_name = $ability->get_name();
+			$meta         = $ability->get_meta();
+
+			$public = $meta['mcp']['public'] ?? true;
+			// Skip if not publicly exposed
+			if ( !$public  ) {
+				continue;
+			}
+
+			// Get the type (defaults to 'tool' if not specified)
+			$ability_type = $meta['mcp']['type'] ?? 'tool';
+
+			// Add to filtered list if type matches
+			if ( $ability_type !== $type ) {
+				continue;
+			}
+
+			$filtered[] = $ability_name;
+		}
+
+		return $filtered;
 	}
 }
