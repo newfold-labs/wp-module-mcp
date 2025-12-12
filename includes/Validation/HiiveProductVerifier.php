@@ -14,7 +14,7 @@ class HiiveProductVerifier {
 	 * Hiive product verification endpoint.
 	 * @var string
 	 */
-	private const NFD_BLU_JWT_HIIVE_VERIFY_ENDPOINT = '/api/sites/v1/customer/products/verify';
+	private const NFD_BLU_JWT_HIIVE_VERIFY_ENDPOINT = 'sites/v2/customer/products/verify';
 	/**
 	 * Cache key for storing verified tokens.
 	 * @var string
