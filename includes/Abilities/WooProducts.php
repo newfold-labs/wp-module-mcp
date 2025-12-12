@@ -126,6 +126,10 @@ class WooProducts {
 							'type'        => 'string',
 							'description' => 'Product description',
 						),
+						'short_description'   => array(
+							'type'        => 'string',
+							'description' => 'Product short description',
+						),
 						'regular_price' => array(
 							'type'        => 'string',
 							'description' => 'Product price',
