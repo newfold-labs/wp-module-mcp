@@ -27,11 +27,12 @@ class HiiveProductVerifier {
 	private const NFD_BLU_JWT_VERIFIED_TOKEN_CACHE_TTL = 600; // 10 minutes
 	/**
 	 * Verifies product access for a user using a token.
+	 *
 	 * @param string $token The token to verify.
 	 * @param string $userId The user ID associated with the token.
 	 * @return bool|WP_Error Returns true if verification is successful, or a WP_Error object if verification fails.
 	 */
-	public static function verify_product_access( string $token, string $userId ): bool|WP_Error {
+	public static function verify_product_access( string $token, string $userId ) {
 
 		$cached = get_transient( self::NFD_BLU_JWT_VERIFIED_TOKEN_CACHE_KEY . "_$userId" );
 		if ( false !== $cached ) {
