@@ -53,7 +53,7 @@ class McpValidation {
 	 *
 	 * @return bool|WP_Error True when authorized; WP_Error('mcp_transport_unauthorized', 'Unauthorized: Invalid API token.', array('status' => 401)) otherwise.
 	 */
-	public static function get_transport_permission_callback(): bool|WP_Error {
+	public static function get_transport_permission_callback() {
 
 		$instance = new self();
 
@@ -72,7 +72,7 @@ class McpValidation {
 	 * @param mixed $result Previous authentication result.
 	 * @return bool|WP_Error|null True if authenticated, WP_Error otherwise.
 	 */
-	public function authenticate_request( $result ): bool|WP_Error|null {
+	public function authenticate_request( $result ) {
 
 		// If a previous authentication check has already returned a result, pass it through.
 		if ( ! empty( $result ) ) {
@@ -176,9 +176,9 @@ class McpValidation {
 	 * @param string $token The JWT token to validate.
 	 * @return bool|WP_Error True if valid, false or WP_Error otherwise.
 	 */
-	private function is_valid_token( string $token ): bool|WP_Error {
+	private function is_valid_token( string $token ) {
 
-		if ( ! str_contains( $token, '.' ) ) {
+		if ( strpos( $token, '.' ) === false ) {
 			// Not a JWT format, return error for invalid token.
 			return new WP_Error(
 				'invalid_token',
@@ -270,9 +270,9 @@ class McpValidation {
 	/**
 	 * Get the public key for JWT validation.
 	 *
-	 * @return string
+	 * @return string|WP_Error
 	 */
-	private function get_public_key(): string|WP_Error {
+	private function get_public_key() {
 
 		$public_key = get_transient( 'blu_jwt_public_key' );
 
