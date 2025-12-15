@@ -16,7 +16,7 @@ class Prompts {
 			return;
 		}
 
-		$this->register_prompt_add_new_product_prompt();
+
 		$this->register_prompt_description();
 		$this->register_prompt_categories();
 		$this->register_prompt_tags();
@@ -99,69 +99,7 @@ class Prompts {
 			]
 		] );
 	}
-	/**
-	 * Create a prompt to instruce the AI the step to follow to suggest the categories
-	 *
-	 * @return void
-	 */
-	private function register_prompt_add_new_product_prompt() {
-		blu_register_ability( 'blu/add-new-product-prompt', [
-			'label'               => 'The Add new Product Prompt',
-			'category'            => 'blu-mcp',
-			'description'         => 'Return all instruction how create new product',
-			'input_schema'        => array(
-				'type'       => 'object',
-				'properties' => array(
-					'name'       => array(
-						'type'        => 'string',
-						'description' => 'Product name',
-						'default'     => '',
-					),
 
-				),
-				'required'   => array( 'name' )
-			),
-			'execute_callback'    => function ( $input ) {
-				$name = $input['name'] ?? '';
-				$instruction = include_once __DIR__.'/../instructions/product-full-flow.php';
-				return [
-					'messages' => [
-						[
-							'role'    => 'user',
-							'content' => [
-								'type'        => 'text',
-								'text'        => $instruction,
-								'annotations' => [
-									'audience' => [ 'assistant' ],
-									'priority' => 0.9
-								]
-							]
-						]
-					]
-				];
-			},
-			'permission_callback' => function () {
-				return current_user_can( 'edit_posts' );
-			},
-			'meta'                => [
-				'arguments'   => [
-					[
-						'name'        => 'name',
-						'description' => 'Product name to check',
-						'required'    => true
-					],
-				],
-				'annotations' => [
-					'readOnlyHint'   => true,
-					'idempotentHint' => true
-				],
-				'mcp'         => [
-					'public' => true,   // Expose this ability via MCP
-					'type'   => 'tool' // Mark as prompt for auto-discovery
-				]
-			]
-		] );
-	}
 
 	/**
 	 * Create a prompt to instruct the AI the step to follow to suggest the categories
@@ -320,7 +258,8 @@ class Prompts {
 				],
 				'annotations' => [
 					'readOnlyHint'   => true,
-					'idempotentHint' => true
+					'idempotentHint' => true,
+					'openWorldHint' => true
 				],
 				'mcp'         => [
 					'public' => true,   // Expose this ability via MCP

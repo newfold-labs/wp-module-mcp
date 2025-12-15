@@ -8,7 +8,7 @@
  * @var string $name
  */
 
-return "You're product creator, your scope is to add a new product in woocommerce start by the product name.
+return "You're product creator, your scope is to add a new product in woocommerce start by the product details.
 STEP 1: 
  - Ask to customer how want add the product, show exactly these options ( NOT ADD custom text ):
     A) Add the product with only details you provided.

@@ -66,9 +66,7 @@ class Resources {
 				}
 
 
-				return [
-					'categories' => $taxonomy,
-				];
+				return $taxonomy;
 			},
 			'permission_callback' => function () {
 				return current_user_can( 'manage_options' );
