@@ -30,11 +30,21 @@ class Resources {
 			'label'               => 'Google Product Taxonomy',
 			'description'         => 'The official Google Product Taxonomy resource',
 			'category'            => 'blu-mcp',
-			'execute_callback'    => function () {
-
+			'input_schema'        => array(
+				'type'       => 'object',
+				'properties' => array(
+					'patterns' => array(
+						'type'        => 'array',
+						'description' => 'List of relevant categories based on product name',
+						'minItems'    => 1,
+						'maxItems'    => 5,
+					)
+				)
+			),
+			'execute_callback'    => function ( $input ) {
 				$locale = str_replace( '_', '-', get_locale() );
 
-				$taxonomy =  get_transient( 'blu/google-product-taxonomy-' . $locale );
+				$taxonomy = false;//get_transient( 'blu/google-product-taxonomy-' . $locale );
 				if ( false === $taxonomy ) {
 
 					$content = $this->retrieve_file( $locale );
@@ -55,29 +65,28 @@ class Resources {
 
 					foreach ( $lines as $line ) {
 						$line = trim( $line );
-						if( '' === $line || strpos( $line, '#' ) === 0 ) {
+						if ( '' === $line || strpos( $line, '#' ) === 0 ) {
 							continue;
 						}
 
-						$line = preg_replace('/^\d+\s*-\s*/', '', $line);
-						$taxonomy.= $line.'\n';
+						$line = preg_replace( '/^\d+\s*-\s*/', '', $line );
+
+						$taxonomy .= $line . "\n";
 					}
 					set_transient( 'blu/google-product-taxonomy-' . $locale, $taxonomy, MONTH_IN_SECONDS );
 				}
 
+				$filtered = $this->filter_google_taxonomies( $taxonomy, $input['patterns'] );
 
-				return $taxonomy;
+				return [ 'categories' => $filtered ];
 			},
 			'permission_callback' => function () {
 				return current_user_can( 'manage_options' );
 			},
 			'meta'                => [
-				'uri'         => 'blu://google/product/taxonomy',  // Required for resources
 				'annotations' => [
 					'readOnlyHint'   => true,
 					'idempotentHint' => true,
-					'audience'       => [ 'user', 'assistant' ],
-					'priority'       => 0.9
 				],
 				'mcp'         => [
 					'public' => true,      // Expose this ability via MCP
@@ -86,6 +95,7 @@ class Resources {
 			]
 		] );
 	}
+
 
 	/**
 	 * Read the google product taxonomy file and get the content
@@ -103,6 +113,52 @@ class Resources {
 		} else {
 			return wp_remote_retrieve_body( $response );
 		}
+	}
+
+	/**
+	 * Filter the Google product taxonomies
+	 *
+	 * @param string $taxonomy The taxonomy.
+	 * @param array  $patterns The patterns
+	 *
+	 * @return array
+	 */
+	private function filter_google_taxonomies( $taxonomy, $patterns ) {
+		$lines = explode( "\n", $taxonomy );
+
+		$filtered = array();
+
+		foreach ( $lines as $line ) {
+			$line = trim( $line );
+
+			if ( '' === $line ) {
+				continue;
+			}
+
+			foreach ( $patterns as $pattern ) {
+
+				if ( @preg_match( $pattern, '' ) !== false ) {
+					$regex = $pattern;
+					if ( substr( $regex, - 1 ) !== 'i' ) {
+						// Ensure case-insensitive
+						$regex = rtrim( $regex, '/' ) . '/i';
+					}
+					if ( preg_match( $regex, $line ) ) {
+						$filtered[] = $line ;
+						break;
+					}
+				} else {
+					// Case-insensitive substring match
+					if ( false !== stripos( $line, $pattern ) ) {
+						$filtered[] =  $line ;
+						break;
+					}
+				}
+			}
+		}
+
+
+		return $filtered;
 	}
 }
 

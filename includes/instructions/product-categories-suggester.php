@@ -27,7 +27,7 @@ STEP 2:
 		- List to customer all filtered categories found with near the confidence score in percentage.
 		- Ask to customer to select one or more categories from this list.
    2.3)  If select the option C:
-        - Get the categories using blu/google-product-taxonomy.
+        - Get the categories using the ability blu/google-product-taxonomy.
         - From this list filter the best categories for the $product_name.
         - For each category found,compute a numeric confidence score ( 0- 100 ).
 		- List to customer all filtered categories found with near the confidence score in percentage.
