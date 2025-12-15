@@ -21,10 +21,11 @@ class Prompts {
 		$this->register_prompt_categories();
 		$this->register_prompt_tags();
 		$this->register_prompt_brands();
+		$this->register_prompt_add_new_product_prompt();
 	}
 
 
-	private function register_prompt_description(){
+	private function register_prompt_description() {
 		blu_register_ability( 'blu/suggest-product-description', [
 			'label'               => 'Suggest Product Description',
 			'category'            => 'blu-mcp',
@@ -49,8 +50,9 @@ class Prompts {
 				'required'   => array( 'name' )
 			),
 			'execute_callback'    => function ( $input ) {
-				$name = $input['name'] ?? '';
-				$instruction = include_once __DIR__.'/../instructions/product-description-suggester.php';;
+				$name        = $input['name'] ?? '';
+				$instruction = include_once __DIR__ . '/../instructions/product-description-suggester.php';;
+
 				return [
 					'messages' => [
 						[
@@ -110,7 +112,7 @@ class Prompts {
 			'input_schema'        => array(
 				'type'       => 'object',
 				'properties' => array(
-					'name'        => array(
+					'name' => array(
 						'type'        => 'string',
 						'description' => 'Product name',
 						'default'     => '',
@@ -121,7 +123,7 @@ class Prompts {
 			'execute_callback'    => function ( $input ) {
 				$product_name = $input['name'] ?? '';
 
-				$instruction = include_once __DIR__.'/../instructions/product-categories-suggester.php';
+				$instruction = include_once __DIR__ . '/../instructions/product-categories-suggester.php';
 
 
 				return [
@@ -251,11 +253,7 @@ class Prompts {
 				'annotations' => [
 					'readOnlyHint'   => true,
 					'idempotentHint' => true,
-					'openWorldHint' => true
-				],
-				'mcp'         => [
-					'public' => true,   // Expose this ability via MCP
-					'type'   => 'tool' // Mark as prompt for auto-discovery
+					'openWorldHint'  => true
 				]
 			]
 		] );
@@ -341,14 +339,71 @@ class Prompts {
 				'annotations' => [
 					'readOnlyHint'   => true,
 					'idempotentHint' => true
-				],
-				'mcp'         => [
-					'public' => true,   // Expose this ability via MCP
-					'type'   => 'tool' // Mark as prompt for auto-discovery
 				]
 			]
 		] );
 	}
 
+	/**
+	 * Create a prompt to instruct the AI the step to follow to suggest the categories
+	 *
+	 * @return void
+	 */
+	private function register_prompt_add_new_product_prompt() {
+		blu_register_ability( 'blu/add-new-product-prompt', [
+				'label'               => 'The Add new Product Prompt',
+				'category'            => 'blu-mcp',
+				'description'         => 'Return all instruction how create new product',
+				'input_schema'        => array(
+					'type'       => 'object',
+					'properties' => array(
+						'name' => array(
+							'type'        => 'string',
+							'description' => 'Product name',
+							'default'     => '',
+						),
+
+					),
+					'required'   => array( 'name' )
+				),
+				'execute_callback'    => function ( $input ) {
+					$name        = $input['name'] ?? '';
+					$instruction = include_once __DIR__ . '/../instructions/product-full-flow.php';
+
+					return [
+						'messages' => [
+							[
+								'role'    => 'user',
+								'content' => [
+									'type'        => 'text',
+									'text'        => $instruction,
+									'annotations' => [
+										'audience' => [ 'assistant' ],
+										'priority' => 0.9
+									]
+								]
+							]
+						]
+					];
+				},
+				'permission_callback' => function () {
+					return current_user_can( 'edit_posts' );
+				},
+				'meta'                => [
+					'arguments'   => [
+						[
+							'name'        => 'name',
+							'description' => 'Product name to check',
+							'required'    => true
+						],
+					],
+					'annotations' => [
+						'readOnlyHint'   => true,
+						'idempotentHint' => true
+					],
+				]
+			]
+		);
+	}
 
 }
