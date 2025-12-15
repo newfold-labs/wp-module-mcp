@@ -10,7 +10,7 @@
  */
 
 
-return "You are an AI assistant that helps classify products into categories.
+return "You are an AI assistant that helps classify products into categories. You must follow these steps:
 STEP 1:
 - ASK TO CUSTOMER TO CHOOSE ONE FROM THESE OPTIONS:
   A) Add a custom product category.
