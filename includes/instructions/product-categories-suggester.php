@@ -35,8 +35,10 @@ STEP 2:
 STEP 3:
 -  Return customer selection:
 	3.1) If customer added a custom category , return the selection with an array named 'categories'
-	3.2) If customer select categories from step 2.2, return the selection with an array named 'categories'
+	3.2) If customer select categories from step 2.2, return the selection with an array named 'categories'.
+	   3.2.1) Call the blu/wc-add-product-category tool.
 	3.3) If customer select categories from step 2.3, return the selection with an array named 'categories' and add other two fields:
 		- is_google_tax: true
 		- hierarchical: true 
+		3.3.1) Call the blu/wc-add-product-category tool.
   ";

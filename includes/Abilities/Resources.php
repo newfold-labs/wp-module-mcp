@@ -44,7 +44,7 @@ class Resources {
 			'execute_callback'    => function ( $input ) {
 				$locale = str_replace( '_', '-', get_locale() );
 
-				$taxonomy = false;//get_transient( 'blu/google-product-taxonomy-' . $locale );
+				$taxonomy = get_transient( 'blu/google-product-taxonomy-' . $locale );
 				if ( false === $taxonomy ) {
 
 					$content = $this->retrieve_file( $locale );
@@ -87,10 +87,6 @@ class Resources {
 				'annotations' => [
 					'readOnlyHint'   => true,
 					'idempotentHint' => true,
-				],
-				'mcp'         => [
-					'public' => true,      // Expose this ability via MCP
-					'type'   => 'tool' // Mark as resource for auto-discovery
 				]
 			]
 		] );

@@ -91,10 +91,6 @@ class Prompts {
 				'annotations' => [
 					'readOnlyHint'   => true,
 					'idempotentHint' => true
-				],
-				'mcp'         => [
-					'public' => true,   // Expose this ability via MCP
-					'type'   => 'tool' // Mark as prompt for auto-discovery
 				]
 			]
 		] );
@@ -158,10 +154,6 @@ class Prompts {
 				'annotations' => [
 					'readOnlyHint'   => true,
 					'idempotentHint' => true
-				],
-				'mcp'         => [
-					'public' => true,   // Expose this ability via MCP
-					'type'   => 'tool' // Mark as prompt for auto-discovery
 				]
 			]
 		] );
