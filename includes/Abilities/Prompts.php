@@ -190,7 +190,9 @@ class Prompts {
 												- Do not include unrelated or generic terms.
 												- Include both short‑tail and long‑tail keywords. 
 												- Show the list as numeric list.
+												- Consider product title, category, and context when generating tags
 												- Ensure tags are product‑specific, customer‑oriented, and aligned with common search queries. 
+												- Be sure to use existing tags if they apply
 												- Require to customer to select one or more tag from it
 												- Return the customer’s selection strictly as an array named `tags`. 
 											Output format example:
