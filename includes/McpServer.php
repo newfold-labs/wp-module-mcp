@@ -47,16 +47,16 @@ class McpServer {
 	 */
 	public function register_server(): void {
 
-		// Get all abilities in the blu-mcp category
+
 		$abilities = array_map(
 			function ( $ability ) {
 				return $ability->get_name();
 			},
 			blu_get_abilities_by_category( 'blu-mcp' )
 		);
-
 		// Get the MCP adapter instance
 		$adapter = McpAdapter::instance();
+
 
 		// Create the server
 		$adapter->create_server(
@@ -69,7 +69,9 @@ class McpServer {
 			array( HttpTransport::class ), // mcp_transports
 			ErrorLogMcpErrorHandler::class, // error_handler
 			NullMcpObservabilityHandler::class, // observability_handler
-			$abilities // tools
+			$abilities,
+			[],
+			[],
 		);
 	}
 
