@@ -21,7 +21,7 @@ STEP 2:
 	2.1) If select the option A:
 	     - ask to customer to enter the category.
 	2.2) If select the option B:
-		- Get the categories using blu/wc-list-product-categories.
+		- Get the categories using blu/wc-list-product-categories add the field patterns with max five elements.
 		- From this list filter the best categories for the $product_name.
 		- For each category found,compute a numeric confidence score ( 0- 100 ).
 		- List to customer all filtered categories found with near the confidence score in percentage.

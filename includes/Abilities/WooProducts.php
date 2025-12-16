@@ -388,8 +388,15 @@ class WooProducts {
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type' => 'object',
+					'properties' => array(
+						'patterns' => array(
+							'type'        => 'array',
+							'description' => 'List of relevant categories based on product name',
+							'maxItems'    => 5,
+						)
+					)
 				),
-				'execute_callback'    => function () {
+				'execute_callback'    => function ( $input ) {
 					$page = 1;
 					$categories  = [];
 					$request = new \WP_REST_Request( 'GET', '/wc/v3/products/categories' );
@@ -406,6 +413,41 @@ class WooProducts {
 						}
 						$page ++;
 					}while( $total > 0 );
+
+					if( isset( $input['patterns'] ) && is_array( $input['patterns'] ) ) {
+						$patterns = $input['patterns'];
+						$filtered_ids = [];
+						foreach ( $categories as $category ) {
+							$cat_name =  trim( $category['name'] );
+
+							foreach ( $patterns as $pattern ) {
+
+								if ( @preg_match( $pattern, '' ) !== false ) {
+									$regex = $pattern;
+									if ( substr( $regex, - 1 ) !== 'i' ) {
+										// Ensure case-insensitive
+										$regex = rtrim( $regex, '/' ) . '/i';
+									}
+									if ( preg_match( $regex, $cat_name ) ) {
+										$filtered_ids[] = $category['id'];
+										break;
+									}
+								} else {
+									// Case-insensitive substring match
+									if ( false !== stripos( $cat_name, $pattern ) ) {
+										$filtered_ids[] = $category['id'];
+										break;
+									}
+								}
+							}
+						}
+
+						if( count( $filtered_ids ) > 0 ) {
+							$categories = array_filter( $categories, function( $category ) use ( $filtered_ids ) {
+								return  in_array( $category['id'], $filtered_ids );
+							});
+						}
+					}
 					
 					return blu_prepare_ability_response( '200', $categories );
 				},
