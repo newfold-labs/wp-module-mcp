@@ -20,6 +20,6 @@
   "require": {
     "wordpress/mcp-adapter": "^0.3.0",
     "wordpress/abilities-api": "^0.4.0",
-    "firebase/php-jwt": "^6.10.0"
+    "firebase/php-jwt": "^7.0.1"
   }
 }
