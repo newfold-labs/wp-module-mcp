@@ -139,16 +139,18 @@ class WooProducts {
 							'description' => 'Product sale price',
 						),
 						'category'      => array(
-							'type'        => 'string',
-							'description' => 'Product category to set',
+							'type'        => 'array',
+							'description' => 'List of product category ids to set',
 						),
 						'tag'           => array(
-							'type'        => 'string',
-							'description' => 'Product tag to set',
+							'type'        => 'array',
+							'description' => 'List of product tag ids to set',
+
 						),
 						'brand'         => array(
-							'type'        => 'string',
-							'description' => 'Product brand to set',
+							'type'        => 'array',
+							'description' => 'List of product brand ids to set',
+
 						),
 						'ready' => array(
 							'type'        => 'boolean',
@@ -162,38 +164,37 @@ class WooProducts {
 					$ready = $input['ready'];
 					if( $ready ) {
 						unset( $input['ready'] );
-						if ( isset( $input['category'] ) ) {
-							$category = $input['category'];
-
-							$category = $this->get_taxonomy_id_by_name( $category );
-							if ( is_wp_error( $category ) | is_array( $category ) ) {
-								return $category;
-							}
-
-
-							$input['categories'] = [ [ 'id' => $category ] ];
+						if ( isset( $input['category'] )  && count( $input['category'] ) > 0 ) {
+							$categories = $input['category'];
 							unset( $input['category'] );
+							$input['categories'] = [];
+
+							foreach( $categories as $category ) {
+								$input['categories'][]=  [ 'id' => $category ] ;
+							}
+
 						}
 
-						if ( isset( $input['tag'] ) ) {
-							$tag = $input['tag'];
-							$tag = $this->get_taxonomy_id_by_name( $tag, 'tags' );
-							if ( is_wp_error( $tag ) | is_array( $tag ) ) {
-								return $tag;
-							}
-							$input['tags'] = [ [ 'id' => $tag ] ];
+						if ( isset( $input['tag'] )  && count( $input['tag'] ) > 0 ) {
+							$tags = $input['tag'];
 							unset( $input['tag'] );
-						}
+							$input['tags'] = [];
 
-						if ( isset( $input['brand'] ) ) {
-							$brand = $input['brand'];
-							$brand = $this->get_taxonomy_id_by_name( $brand, 'brands' );
-							if ( is_wp_error( $brand ) | is_array( $brand ) ) {
-								return $brand;
+							foreach( $tags as $tag ) {
+								$input['tags'][]=  [ 'id' => $tag ] ;
 							}
 
-							$input['brands'] = [ [ 'id' => $brand ] ];
+						}
+
+						if ( isset( $input['brand'] )  && count( $input['brand'] ) > 0 ) {
+							$brands = $input['brand'];
 							unset( $input['brand'] );
+							$input['brands'] = [];
+
+							foreach( $brands as $brand ) {
+								$input['brands'][]=  [ 'id' => $brand ] ;
+							}
+
 						}
 						$request = new \WP_REST_Request( 'POST', '/wc/v3/products' );
 						$request->set_body_params( $input );
@@ -263,57 +264,64 @@ class WooProducts {
 							'description' => 'Product sale price',
 						),
 						'category'      => array(
-							'type'        => 'string',
-							'description' => 'Product category to set',
+							'type'        => 'array',
+							'description' => 'List of product category ids to set',
 						),
 						'tag'           => array(
-							'type'        => 'string',
-							'description' => 'Product tag to set',
+							'type'        => 'array',
+							'description' => 'List of product tag ids to set',
+
 						),
 						'brand'         => array(
-							'type'        => 'string',
-							'description' => 'Product brand to set',
-						)
+							'type'        => 'array',
+							'description' => 'List of product brand ids to set',
+
+						),
 					),
 					'required'   => array( 'id' ),
 				),
 				'execute_callback'    => function ( $input ) {
 					$id = $input['id'];
 					unset( $input['id'] );
-					if ( isset( $input['category'] ) ) {
-						$category = $input['category'];
 
-						$category = $this->get_taxonomy_id_by_name( $category );
-						if ( is_wp_error( $category ) | is_array( $category ) ) {
-							return $category;
-						}
-
+					if ( isset( $input['category'] )  && count( $input['category'] ) > 0 ) {
 						$stored_category     = $this->get_product_taxonomy_ids( $id );
-						$input['categories'] = array_merge( [ [ 'id' => $category ] ], $stored_category );
+						$categories = $input['category'];
 						unset( $input['category'] );
+						$input['categories'] = [];
+
+						foreach( $categories as $category ) {
+							$input['categories'][]=  [ 'id' => $category ] ;
+						}
+
+						$input['categories'] = array_merge(  $input['categories'], $stored_category );
 					}
 
-					if ( isset( $input['tag'] ) ) {
-						$tag = $input['tag'];
-						$tag = $this->get_taxonomy_id_by_name( $tag, 'tags' );
-						if ( is_wp_error( $tag ) | is_array( $tag ) ) {
-							return $tag;
-						}
+					if ( isset( $input['tag'] )  && count( $input['tag'] ) > 0 ) {
+						$tags = $input['tag'];
 						$stored_tag    = $this->get_product_taxonomy_ids( $id, 'tags' );
-						$input['tags'] = array_merge( [ [ 'id' => $tag ] ], $stored_tag );
 						unset( $input['tag'] );
+						$input['tags'] = [];
+
+						foreach( $tags as $tag ) {
+							$input['tags'][]=  [ 'id' => $tag ] ;
+						}
+						$input['tags'] = array_merge( $input['tags'], $stored_tag );
 					}
 
-					if ( isset( $input['brand'] ) ) {
-						$brand = $input['brand'];
-						$brand = $this->get_taxonomy_id_by_name( $brand, 'brands' );
-						if ( is_wp_error( $brand ) | is_array( $brand ) ) {
-							return $brand;
-						}
+					if ( isset( $input['brand'] )  && count( $input['brand'] ) > 0 ) {
+						$brands = $input['brand'];
 						$stored_brand    = $this->get_product_taxonomy_ids( $id, 'brands' );
-						$input['brands'] = array_merge( [ [ 'id' => $brand ] ], $stored_brand );
 						unset( $input['brand'] );
+						$input['brands'] = [];
+
+						foreach( $brands as $brand ) {
+							$input['brands'][]=  [ 'id' => $brand ] ;
+						}
+						$input['brands'] = array_merge( $input['brands'], $stored_brand );
 					}
+
+
 					$request = new \WP_REST_Request( 'PUT', '/wc/v3/products/' . $id );
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
@@ -910,39 +918,5 @@ class WooProducts {
 		}
 
 		return $ids;
-	}
-
-
-	/**
-	 * Get the id for a taxonomy by term name
-	 *
-	 * @param string|int $name The name or the id.
-	 * @param string     $taxonomy The taxonomy.
-	 *
-	 * @return \WP_REST_Response|int|array
-	 */
-	private function get_taxonomy_id_by_name( $name, $taxonomy = 'categories' ) {
-
-		if ( is_string( $name ) ) {
-			$request = new \WP_REST_Request( 'GET', '/wc/v3/products/' . $taxonomy );
-			$request->set_query_params( [ 'slug' => sanitize_title( $name ), 'hide_empty' => false ] );
-			$response = rest_do_request( $request );
-			if ( is_wp_error( $response ) ) {
-				return $response;
-			} else {
-				$data = $response->get_data();
-				if ( 1 !== count( $data ) ) {
-					return [
-						'statusCode' => 400,
-						'status'     => 'error',
-						'message'    => 'An not unique ' . $taxonomy . ' found for ' . $name,
-					];
-				}
-
-				return $data[0]['id'];
-			}
-		}
-
-		return $name;
 	}
 }
