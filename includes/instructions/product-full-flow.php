@@ -29,4 +29,7 @@ STEP 3:
    - If select A use the tool blu/suggest-product-categories
    - If select B  if is selected A , await that the first tool complete then use the tool blu/suggest-product-tag
    - If select C and if is selected A or B , await that the relative tool complete then use the tool blu/suggest-product-description
+STEP 4:
+- Show to customer a recap about the new product, and ask to customer if want to proceed with add the product.
+	-If customer confirm, call the tool blu/wc-add-product and add the field 'read':true.
 ";

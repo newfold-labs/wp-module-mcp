@@ -149,49 +149,77 @@ class WooProducts {
 						'brand'         => array(
 							'type'        => 'string',
 							'description' => 'Product brand to set',
+						),
+						'ready' => array(
+							'type'        => 'boolean',
+							'description' => 'Check if the product is ready after customer interactions',
+							'default'     => false,
 						)
 					),
 					'required'   => array( 'name' ),
 				),
 				'execute_callback'    => function ( $input ) {
-					if ( isset( $input['category'] ) ) {
-						$category = $input['category'];
+					$ready = $input['ready'];
+					if( $ready ) {
+						unset( $input['ready'] );
+						if ( isset( $input['category'] ) ) {
+							$category = $input['category'];
 
-						$category = $this->get_taxonomy_id_by_name( $category );
-						if ( is_wp_error( $category ) | is_array( $category ) ) {
-							return $category;
+							$category = $this->get_taxonomy_id_by_name( $category );
+							if ( is_wp_error( $category ) | is_array( $category ) ) {
+								return $category;
+							}
+
+
+							$input['categories'] = [ [ 'id' => $category ] ];
+							unset( $input['category'] );
 						}
 
-
-						$input['categories'] =  [ [ 'id' => $category ] ] ;
-						unset( $input['category'] );
-					}
-
-					if ( isset( $input['tag'] ) ) {
-						$tag = $input['tag'];
-						$tag = $this->get_taxonomy_id_by_name( $tag, 'tags' );
-						if ( is_wp_error( $tag ) | is_array( $tag ) ) {
-							return $tag;
-						}
-						$input['tags'] =  [ [ 'id' => $tag ] ];
-						unset( $input['tag'] );
-					}
-
-					if ( isset( $input['brand'] ) ) {
-						$brand = $input['brand'];
-						$brand = $this->get_taxonomy_id_by_name( $brand, 'brands' );
-						if ( is_wp_error( $brand ) | is_array( $brand ) ) {
-							return $brand;
+						if ( isset( $input['tag'] ) ) {
+							$tag = $input['tag'];
+							$tag = $this->get_taxonomy_id_by_name( $tag, 'tags' );
+							if ( is_wp_error( $tag ) | is_array( $tag ) ) {
+								return $tag;
+							}
+							$input['tags'] = [ [ 'id' => $tag ] ];
+							unset( $input['tag'] );
 						}
 
-						$input['brands'] = [ [ 'id' => $brand ] ];
-						unset( $input['brand'] );
-					}
-					$request = new \WP_REST_Request( 'POST', '/wc/v3/products' );
-					$request->set_body_params( $input );
-					$response = rest_do_request( $request );
+						if ( isset( $input['brand'] ) ) {
+							$brand = $input['brand'];
+							$brand = $this->get_taxonomy_id_by_name( $brand, 'brands' );
+							if ( is_wp_error( $brand ) | is_array( $brand ) ) {
+								return $brand;
+							}
 
-					return blu_standardize_rest_response( $response );
+							$input['brands'] = [ [ 'id' => $brand ] ];
+							unset( $input['brand'] );
+						}
+						$request = new \WP_REST_Request( 'POST', '/wc/v3/products' );
+						$request->set_body_params( $input );
+						$response = rest_do_request( $request );
+
+						return blu_standardize_rest_response( $response );
+					}else{
+						$name        = $input['name'] ?? '';
+						$instruction = include_once __DIR__ . '/../instructions/product-full-flow.php';
+
+						return [
+							'messages' => [
+								[
+									'role'    => 'user',
+									'content' => [
+										'type'        => 'text',
+										'text'        => $instruction,
+										'annotations' => [
+											'audience' => [ 'assistant' ],
+											'priority' => 0.9
+										]
+									]
+								]
+							]
+						];
+					}
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_products' ),
 				'meta'                => array(
