@@ -109,7 +109,7 @@ class WooProducts {
 			'blu/wc-add-product',
 			array(
 				'label'               => 'Add WooCommerce Product',
-				'description'         => 'Add new WooCommerce product. Execute the ability blu/add-new-product-prompt',
+				'description'         => 'Add new WooCommerce product.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',

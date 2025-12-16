@@ -23,6 +23,11 @@ class Prompts {
 
 	}
 
+	/**
+	 * Create a prompt to instruct the AI the steps to follow to suggest the long and short description
+	 *
+	 * @return void
+	 */
 
 	private function register_prompt_description() {
 		blu_register_ability( 'blu/suggest-product-description', [
@@ -183,7 +188,7 @@ class Prompts {
 						'type'        => 'string',
 						'description' => 'Product description',
 					),
-					'categories'  => array(
+					'categories' => array(
 						'type'        => 'string',
 						'description' => 'A comma separated product categories list',
 					)
@@ -191,15 +196,10 @@ class Prompts {
 				'required'   => array( 'name' )
 			),
 			'execute_callback'    => function ( $input ) {
-				$name       = $input['name'] ?? '';
-				$desc       = $input['description'] ?? '';
-				$desc       = ! empty( $desc )
-					? '.\n Here a short description for this product :' . $desc
-					  . '.\n' : '';
-				$categories = ! empty( $input['categories'] )
-					? '\n The product has these categories :'
-					  . $input['categories'] : '';
-
+				$name = $input['name'] ?? '';
+				$desc = $input['description'] ?? '';
+				$desc = !empty( $desc ) ? '.\n Here a short description for this product :'.$desc.'.\n' : '';
+				$categories = !empty( $input['categories'] )  ? '\n The product has these categories :'.$input['categories']: '';
 				return [
 					'messages' => [
 						[
@@ -212,7 +212,9 @@ class Prompts {
 												- Do not include unrelated or generic terms.
 												- Include both short‑tail and long‑tail keywords. 
 												- Show the list as numeric list.
+												- Consider product title, category, and context when generating tags
 												- Ensure tags are product‑specific, customer‑oriented, and aligned with common search queries. 
+												- Be sure to use existing tags if they apply
 												- Require to customer to select one or more tag from it
 												- Return the customer’s selection strictly as an array named `tags`. 
 											Output format example:
@@ -251,8 +253,7 @@ class Prompts {
 				],
 				'annotations' => [
 					'readOnlyHint'   => true,
-					'idempotentHint' => true,
-					'openWorldHint'  => true
+					'idempotentHint' => true
 				]
 			]
 		] );
