@@ -1,13 +1,12 @@
 <?xml version="1.0"?>
-<ruleset name="Data-Module">
+<ruleset name="MCP-Module">
     <rule ref="Newfold" />
     <config name="testVersion" value="7.4-" />
     <config name="minimum_supported_wp_version" value="6.0" />
     <arg name="extensions" value="php" />
 
     <file>includes</file>
-    <file>upgrades</file>
-    <file>wp-module-data-plugin.php</file>
+    <file>bootstrap.php</file>
 
     <!-- Enforce fewer rules on tests -->
     <!-- json_encode() is discouraged. Use wp_json_encode() instead. -->
