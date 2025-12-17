@@ -39,11 +39,10 @@ class McpValidation {
 	 * Initializes the class
 	 *
 	 * @param \WP_REST_Request $request The request object.
-	 * 
+	 *
 	 * @return void
 	 */
-	public function __construct(\WP_REST_Request $request)
-	{
+	public function __construct( \WP_REST_Request $request ) {
 		$this->request = $request;
 	}
 
@@ -52,32 +51,38 @@ class McpValidation {
 	 *
 	 * @return bool True if authenticated, false if not.
 	 */
-	public function is_authenticated(): bool
-	{
+	public function is_authenticated(): bool {
+		try {
 
-		// Check if the user has already been authenticated.
-		if (is_user_logged_in() && current_user_can('manage_options')) {
-			return true;
-		}
+			// Check if the user has already been authenticated.
+			if ( is_user_logged_in() && current_user_can( 'manage_options' ) ) {
+				return true;
+			}
 
-		// Otherwise, check for JWT token in the Authorization header.
-		$auth_header = $this->get_authorization_header();
+			// Otherwise, check for JWT token in the Authorization header.
+			$auth_header = $this->get_authorization_header();
 
-		// Bail early if no auth header is present.
-		if (empty($auth_header)) {
+			// Bail early if no auth header is present.
+			if ( empty( $auth_header ) ) {
+				throw new \Exception( 'Authorization header is missing.' );
+			}
+
+			// Extract the token from the auth header.
+			$token = $this->extract_bearer_token( $auth_header );
+
+			// Bail early if no token is present.
+			if ( empty( $token ) ) {
+				throw new \Exception( 'Bearer token is missing.' );
+			}
+
+			// Validate the token and return the result.
+			return $this->is_valid_token( $token );
+
+		} catch ( \Exception $e ) {
+			var_dump( $e->getMessage() );
+
 			return false;
 		}
-
-		// Extract the token from the auth header.
-		$token = $this->extract_bearer_token($auth_header);
-
-		// Bail early if no token is present.
-		if (empty($token)) {
-			return false;
-		}
-
-		// Validate the token and return the result.
-		return $this->is_valid_token($token);
 	}
 
 	/**
@@ -85,20 +90,19 @@ class McpValidation {
 	 *
 	 * @return string
 	 */
-	private function get_authorization_header(): string
-	{
-		return $this->request->get_header('Authorization');
+	private function get_authorization_header(): ?string {
+		return $this->request->get_header( 'Authorization' );
 	}
 
 	/**
 	 * Extract the Bearer token from authorization header.
 	 *
 	 * @param string $auth_header Authorization header value.
+	 *
 	 * @return string|null Token if found, null otherwise.
 	 */
-	private function extract_bearer_token(string $auth_header): ?string
-	{
-		if (preg_match(self::BEARER_TOKEN_PATTERN, $auth_header, $matches)) {
+	private function extract_bearer_token( string $auth_header ): ?string {
+		if ( preg_match( self::BEARER_TOKEN_PATTERN, $auth_header, $matches ) ) {
 			return $matches[1];
 		}
 
@@ -109,64 +113,52 @@ class McpValidation {
 	 * Validate the JWT token.
 	 *
 	 * @param string $token The JWT token to validate.
-	 * 
+	 *
 	 * @return bool True if valid, false otherwise.
 	 */
-	private function is_valid_token(string $token): bool
-	{
+	private function is_valid_token( string $token ): bool {
 
 		// Bail early if the token is not in JWT format.
 		if ( strpos( $token, '.' ) === false ) {
-			return false;
+			throw new \Exception( 'Invalid JWT token.' );
 		}
 
-		try {
+		$public_key = $this->get_public_key();
 
-			$public_key = $this->get_public_key();
+		$decoded = JWT::decode( $token, new Key( $public_key, 'RS256' ) );
 
-			$decoded = JWT::decode( $token, new Key( $public_key, 'RS256' ) );
+		$userID = null;
 
-			$userID = null;
-			
-			if( !isset( $decoded->aud ) || $decoded->aud !== 'production' ) {
-				// Token validation failed. The audience is invalid.
-				return false;
-			}
-
-			if( !isset( $decoded->iss ) || $decoded->iss !== 'jarvis-jwt' ) {
-				// Token validation failed. The iss is invalid.
-				return false;
-			}
-			
-			$sub = $decoded->sub ?? null;
-			if ( null === $sub ) {
-				// Token validation failed. The sub claim is missing.
-				return false;
-			} else {
-				$sub_parts = explode( ':', $sub );
-				if( !empty( $sub_parts ) ) {
-					$userID = end( $sub_parts );
-				}
-			}
-
-			if ( null === $userID ) {
-				// Token validation failed. The user ID is missing.
-				return false;
-			}
-
-			// Call the Hiive product verifier.
-			$response = HiiveProductVerifier::verify_product_access( $token, $userID );
-
-			if (true !== $response) {
-				// Bail if the product access is invalid.
-				return false;
-			}
-
-			return true;
-		} catch (\Exception $e) {
-			// Bail if an exception occurs.
-			return false;
+		if ( ! isset( $decoded->aud ) || $decoded->aud !== 'production' ) {
+			throw new \Exception( 'Token validation failed. The audience is invalid.' );
 		}
+
+		if ( ! isset( $decoded->iss ) || $decoded->iss !== 'jarvis-jwt' ) {
+			throw new \Exception( 'Token validation failed. The iss is invalid.' );
+		}
+
+		$sub = $decoded->sub ?? null;
+		if ( null === $sub ) {
+			throw new \Exception( 'Token validation failed. The sub claim is missing.' );
+		} else {
+			$sub_parts = explode( ':', $sub );
+			if ( ! empty( $sub_parts ) ) {
+				$userID = end( $sub_parts );
+			}
+		}
+
+		if ( null === $userID ) {
+			throw new \Exception( 'Token validation failed. The user ID is missing.' );
+		}
+
+		// Call the Hiive product verifier.
+		$response = HiiveProductVerifier::verify_product_access( $token, $userID );
+
+		if ( true !== $response ) {
+			throw new \Exception( 'Token validation failed. The product access is invalid.' );
+		}
+
+		return true;
 	}
 
 	/**
@@ -180,7 +172,7 @@ class McpValidation {
 
 		if ( false === $public_key ) {
 			try {
-				$response = wp_remote_get( self::CF_UJWT_PUBLIC_KEY_URL );				
+				$response = wp_remote_get( self::CF_UJWT_PUBLIC_KEY_URL );
 
 				if ( is_wp_error( $response ) ) {
 					throw new \Exception( 'Failed to fetch public key: ' . $response->get_error_message() );
@@ -201,6 +193,7 @@ class McpValidation {
 				throw new \Exception( 'Failed to fetch public key: ' . $e->getMessage() );
 			}
 		}
-		return apply_filters('blu_jwt_public_key', $public_key );
+
+		return apply_filters( 'blu_jwt_public_key', $public_key );
 	}
 }
