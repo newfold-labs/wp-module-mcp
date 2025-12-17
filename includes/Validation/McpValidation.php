@@ -15,18 +15,11 @@ use Firebase\JWT\Key;
 class McpValidation {
 
 	/**
-	 * MCP endpoint path pattern for authentication.
-	 *
-	 * @var string
-	 */
-	private const BLU_ENDPOINT_PATTERN = 'blu/mcp';
-
-	/**
 	 * Bearer token pattern.
 	 *
 	 * @var string
 	 */
-	private const BEARER_TOKEN_PATTERN = '/Bearer\s(\S+)/';
+	private const BEARER_TOKEN_PATTERN = '/^Bearer\s+(\S+)$/i';
 
 	/**
 	 * URL to fetch the public key for JWT validation.
@@ -36,249 +29,152 @@ class McpValidation {
 	private const CF_UJWT_PUBLIC_KEY_URL = 'https://cdn.hiive.space/jwt-public-key.pem';
 
 	/**
+	 * The request object.
+	 *
+	 * @var \WP_REST_Request
+	 */
+	private $request;
+
+	/**
 	 * Initializes the class
+	 *
+	 * @param \WP_REST_Request $request The request object.
 	 *
 	 * @return void
 	 */
-	public function __construct() {
-
-		add_filter( 'rest_authentication_errors', array( $this, 'authenticate_request' ) );
+	public function __construct( \WP_REST_Request $request ) {
+		$this->request = $request;
 	}
 
 	/**
-	 * Permission callback for transport endpoints.
+	 * Check if the request is authenticated.
 	 *
-	 * Inspects the incoming HTTP Authorization header for a Bearer token and
-	 * determines whether the current request is authorized to use the transport.
-	 *
-	 * @return bool|WP_Error True when authorized; WP_Error('mcp_transport_unauthorized', 'Unauthorized: Invalid API token.', array('status' => 401)) otherwise.
+	 * @return bool True if authenticated, false if not.
 	 */
-	public static function get_transport_permission_callback() {
-
-		$instance = new self();
-
-		$is_valid_token = $instance->handle_token_validation();
-
-		if ( $is_valid_token instanceof WP_Error ) {
-			return new WP_Error( 'mcp_transport_unauthorized', 'Unauthorized: Invalid token authorization.', array( 'status' => 401 ) );
-		}
-
-		return true;
-	}
-
-	/**
-	 * Authenticate incoming requests to MCP endpoints.
-	 *
-	 * @param mixed $result Previous authentication result.
-	 * @return bool|WP_Error|null True if authenticated, WP_Error otherwise.
-	 */
-	public function authenticate_request( $result ) {
-
-		// If a previous authentication check has already returned a result, pass it through.
-		if ( ! empty( $result ) ) {
-			return $result;
-		}
-
-		// Only apply JWT authentication to MCP endpoints.
-		if ( ! $this->is_mcp_endpoint() ) {
-			return $result;
-		}
-
-		$is_valid_token = $this->handle_token_validation();
-
-		if ( $is_valid_token instanceof WP_Error ) {
-			return $is_valid_token;
-		}
-
-		// Set current user to an admin user upon successful token validation.
-		$admin_user    = get_transient( 'ndf_blu_mcp_user' );
-		$valid_user_id = false;
-		if ( $admin_user ) {
-			if ( user_can( $admin_user, 'manage_settings' ) ) {
-				$valid_user_id = true;
-			}
-		}
-
-		if ( ! $valid_user_id ) {
-			$args       = array(
-				'role'   => 'administrator',
-				'fields' => 'ID',
-				'number' => 1,
-			);
-			$admin_user = get_users( $args );
-
-			if ( empty( $admin_user ) ) {
-				return new WP_Error(
-					'unauthorized',
-					'No user found for authentication.',
-					array( 'status' => 401 )
-				);
-			}
-
-			$admin_user = $admin_user[0];
-			set_transient( 'ndf_blu_mcp_user', $admin_user, 2 * HOUR_IN_SECONDS );
-		}
-		wp_set_current_user( $admin_user );
-		return $is_valid_token;
-	}
-
-	/**
-	 * Handle token validation process.
-	 *
-	 * @return bool|WP_Error True if valid, WP_Error otherwise.
-	 */
-	private function handle_token_validation() {
-
-		$auth_header = $this->get_authorization_header();
-
-		if ( empty( $auth_header ) ) {
-			return $this->handle_missing_authorization();
-		}
-
-		$token = $this->extract_bearer_token( $auth_header );
-
-		if ( null === $token ) {
-			return new WP_Error(
-				'unauthorized',
-				'Invalid Authorization header format. Expected "Bearer <token>".',
-				array( 'status' => 401 )
-			);
-		}
-
-		return $this->is_valid_token( $token );
-	}
-
-	/**
-	 * Check if the current request is for an MCP endpoint.
-	 *
-	 * @return bool
-	 */
-	private function is_mcp_endpoint(): bool {
-		$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
-		return preg_match( '#blu/mcp(/|$)#', $request_uri ) === 1;
-	}
-
-	/**
-	 * Extract Bearer token from authorization header.
-	 *
-	 * @param string $auth Authorization header value.
-	 * @return string|null Token if found, null otherwise.
-	 */
-	private function extract_bearer_token( string $auth ): ?string {
-		if ( preg_match( self::BEARER_TOKEN_PATTERN, $auth, $matches ) ) {
-			return $matches[1];
-		}
-		return null;
-	}
-	/**
-	 * Validate the JWT token.
-	 *
-	 * @param string $token The JWT token to validate.
-	 * @return bool|WP_Error True if valid, false or WP_Error otherwise.
-	 */
-	private function is_valid_token( string $token ) {
-
-		if ( strpos( $token, '.' ) === false ) {
-			// Not a JWT format, return error for invalid token.
-			return new WP_Error(
-				'invalid_token',
-				'Token format is invalid.',
-				array( 'status' => 403 )
-			);
-		}
-
+	public function is_authenticated(): bool {
 		try {
 
-			$public_key = $this->get_public_key();
-
-			$decoded = JWT::decode( $token, new Key( $public_key, 'RS256' ) );
-
-			$userID = null;
-			
-			if( !isset( $decoded->aud ) || $decoded->aud !== 'production' ) {
-				return new WP_Error(
-					'invalid_token',
-					'Token validation failed. The audience is invalid.',
-					array( 'status' => 403 )
-				);
+			// Check if the user has already been authenticated.
+			if ( is_user_logged_in() && current_user_can( 'manage_options' ) ) {
+				return true;
 			}
 
-			if( !isset( $decoded->iss ) || $decoded->iss !== 'jarvis-jwt' ) {
-				return new WP_Error(
-					'invalid_token',
-					'Token validation failed. The iss is invalid.',
-					array( 'status' => 403 )
-				);
-			}
-			
-			$sub = $decoded->sub ?? null;
-			if ( null === $sub ) {
-				return new WP_Error(
-					'invalid_token',
-					'Token validation failed: sub claim missing.',
-					array( 'status' => 403 )
-				);
-			} else {
-				$sub_parts = explode( ':', $sub );
-				if( !empty( $sub_parts ) ) {
-					$userID = end( $sub_parts );
-				}
-			}	
-			if ( null === $userID ) {
-				return new WP_Error(
-					'invalid_token',
-					'Token validation failed: UserId missing.',
-					array( 'status' => 403 )
-				);
+			// Otherwise, check for JWT token in the Authorization header.
+			$auth_header = $this->get_authorization_header();
+
+			// Bail early if no auth header is present.
+			if ( empty( $auth_header ) ) {
+				throw new \Exception( 'Authorization header is missing.' );
 			}
 
-			// Call the Hiive product verifier.
-			$response = HiiveProductVerifier::verify_product_access( $token, $userID );
+			// Extract the token from the auth header.
+			$token = $this->extract_bearer_token( $auth_header );
 
-			return $response;
+			// Bail early if no token is present.
+			if ( empty( $token ) ) {
+				throw new \Exception( 'Bearer token is missing.' );
+			}
+
+			// Validate the token and return the result.
+			return $this->is_valid_token( $token );
+
 		} catch ( \Exception $e ) {
-			return new WP_Error(
-				'invalid_token',
-				'Token validation failed: ' . $e->getMessage(),
-				array( 'status' => 403 )
-			);
+			return false;
 		}
 	}
 
 	/**
 	 * Get Authorization header from request.
 	 *
-	 * @return string
+	 * @return string|null
 	 */
-	private function get_authorization_header(): string {
-		return isset( $_SERVER['HTTP_AUTHORIZATION'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_AUTHORIZATION'] ) ) : '';
+	private function get_authorization_header(): ?string {
+		return $this->request->get_header( 'Authorization' );
 	}
 
 	/**
-	 * Handle authentication when no Authorization header is present.
+	 * Extract the Bearer token from the authorization header.
 	 *
-	 * @return mixed Authentication result.
+	 * @param string $auth_header Authorization header value.
+	 *
+	 * @return string|null Token if found, null otherwise.
 	 */
-	private function handle_missing_authorization() {
-		return new WP_Error(
-			'unauthorized',
-			'Authentication required. Please provide a Bearer token.',
-			array( 'status' => 401 )
-		);
+	private function extract_bearer_token( string $auth_header ): ?string {
+		if ( preg_match( self::BEARER_TOKEN_PATTERN, $auth_header, $matches ) ) {
+			return $matches[1];
+		}
+
+		return null;
+	}
+
+	/**
+	 * Validate the JWT token.
+	 *
+	 * @param string $token The JWT token to validate.
+	 *
+	 * @return bool True if valid, false otherwise.
+	 *
+	 * @throws \Exception
+	 */
+	private function is_valid_token( string $token ): bool {
+
+		// Bail early if the token is not in JWT format.
+		if ( strpos( $token, '.' ) === false ) {
+			throw new \Exception( 'Invalid JWT token.' );
+		}
+
+		$public_key = $this->get_public_key();
+
+		$decoded = JWT::decode( $token, new Key( $public_key, 'RS256' ) );
+
+		$userID = null;
+
+		if ( ! isset( $decoded->aud ) || $decoded->aud !== 'production' ) {
+			throw new \Exception( 'Token validation failed. The audience is invalid.' );
+		}
+
+		if ( ! isset( $decoded->iss ) || $decoded->iss !== 'jarvis-jwt' ) {
+			throw new \Exception( 'Token validation failed. The iss is invalid.' );
+		}
+
+		$sub = $decoded->sub ?? null;
+		if ( null === $sub ) {
+			throw new \Exception( 'Token validation failed. The sub claim is missing.' );
+		} else {
+			$sub_parts = explode( ':', $sub );
+			if ( ! empty( $sub_parts ) ) {
+				$userID = end( $sub_parts );
+			}
+		}
+
+		if ( null === $userID ) {
+			throw new \Exception( 'Token validation failed. The user ID is missing.' );
+		}
+
+		// Call the Hiive product verifier.
+		$response = HiiveProductVerifier::verify_product_access( $token, $userID );
+
+		if ( true !== $response ) {
+			throw new \Exception( 'Token validation failed. The product access is invalid.' );
+		}
+
+		return true;
 	}
 
 	/**
 	 * Get the public key for JWT validation.
 	 *
-	 * @return string|WP_Error
+	 * @return string
+	 *
+	 * @throws \Exception
 	 */
-	private function get_public_key() {
+	private function get_public_key(): string {
 
 		$public_key = get_transient( 'blu_jwt_public_key' );
 
 		if ( false === $public_key ) {
 			try {
-				$response = wp_remote_get( self::CF_UJWT_PUBLIC_KEY_URL );				
+				$response = wp_remote_get( self::CF_UJWT_PUBLIC_KEY_URL );
 
 				if ( is_wp_error( $response ) ) {
 					throw new \Exception( 'Failed to fetch public key: ' . $response->get_error_message() );
@@ -299,6 +195,7 @@ class McpValidation {
 				throw new \Exception( 'Failed to fetch public key: ' . $e->getMessage() );
 			}
 		}
-		return apply_filters('blu_jwt_public_key', $public_key );
+
+		return apply_filters( 'blu_jwt_public_key', $public_key );
 	}
 }

@@ -1,6 +1,7 @@
 <?php
 
 namespace BLU\Validation;
+
 use NewfoldLabs\WP\Module\Data\HiiveConnection;
 use WP_Error;
 
@@ -25,14 +26,18 @@ class HiiveProductVerifier {
 	 * @var int
 	 */
 	private const NFD_BLU_JWT_VERIFIED_TOKEN_CACHE_TTL = 600; // 10 minutes
+
 	/**
 	 * Verifies product access for a user using a token.
 	 *
 	 * @param string $token The token to verify.
 	 * @param string $userId The user ID associated with the token.
-	 * @return bool|WP_Error Returns true if verification is successful, or a WP_Error object if verification fails.
+	 *
+	 * @return bool Returns true if verification is successful, or throws an exception if verification fails.
+	 *
+	 * @throws \Exception
 	 */
-	public static function verify_product_access( string $token, string $userId ) {
+	public static function verify_product_access( string $token, string $userId ): bool {
 
 		$cached = get_transient( self::NFD_BLU_JWT_VERIFIED_TOKEN_CACHE_KEY . "_$userId" );
 		if ( false !== $cached ) {
@@ -40,24 +45,24 @@ class HiiveProductVerifier {
 				if ( isset( $cached['status'] ) && ( 'true' === $cached['status'] || true === $cached['status'] ) ) {
 					return true;
 				} else {
-					return new WP_Error( 'hiive_product_verification_failed', 'Product verification failed', array( 'status' => $cached['status'] ) );
+					throw new \Exception( 'Product validation failed. The product access is invalid.' );
 				}
 			}
 		}
 
 		$connection = new HiiveConnection();
 		$response   = $connection->hiive_request( self::NFD_BLU_JWT_HIIVE_VERIFY_ENDPOINT, array(
-			'userId'   => $userId,
+			'userId' => $userId,
 		) );
 
 		if ( is_wp_error( $response ) ) {
-			return $response;
+			throw new \Exception( 'Failed to verify product access: ' . $response->get_error_message() );
 		}
 
 		$status_code = wp_remote_retrieve_response_code( $response );
 
 		if ( ! in_array( $status_code, array( 200, 201 ), true ) ) {
-			return new WP_Error( $status_code, wp_remote_retrieve_response_message( $response ) );
+			throw new \Exception( 'Failed to verify product access: ' . wp_remote_retrieve_response_message( $response ) );
 		}
 
 		$data = json_decode( wp_remote_retrieve_body( $response ), true );
@@ -72,10 +77,10 @@ class HiiveProductVerifier {
 			if ( 'true' === $data['response'] || true === $data['response'] ) {
 				return true;
 			} else {
-				return new WP_Error( 'hiive_product_verification_failed', 'Product verification failed', $data );
+				throw new \Exception( 'Product verification failed. The product access is invalid.' );
 			}
 		} else {
-			return new WP_Error( 'hiive_product_verification_no_response', 'No verification response from Hiive', $data );
+			throw new \Exception( 'Product verification failed. No response from Hiive.' );
 		}
 	}
 }
