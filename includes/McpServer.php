@@ -72,8 +72,8 @@ class McpServer {
 			$abilities, // tools,
 			[], // resources
 			[], // prompts
-			function () { // transport_permission_callback
-				return McpValidation::get_transport_permission_callback();
+			function (\WP_REST_Request $request) { // transport_permission_callback
+				return (new McpValidation($request))->is_authenticated();
 			}
 		);
 	}
