@@ -79,8 +79,6 @@ class McpValidation {
 			return $this->is_valid_token( $token );
 
 		} catch ( \Exception $e ) {
-			var_dump( $e->getMessage() );
-
 			return false;
 		}
 	}
