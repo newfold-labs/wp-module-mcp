@@ -47,7 +47,7 @@
     "lint": "Check files against coding standards."
   },
   "require": {
-    "wordpress/mcp-adapter": "^0.3.0",
+    "wordpress/mcp-adapter": "^0.4.1",
     "wordpress/abilities-api": "^0.4.0",
     "firebase/php-jwt": "^6.10.0",
     "newfold-labs/wp-php-standards": "^1.2"
