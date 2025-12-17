@@ -1,7 +1,6 @@
 <?php
 
 use BLU\McpServer;
-use BLU\Validation\McpValidation;
 use Bluehost\Plugin\WP\MCP\Core\McpAdapter;
 
 
