@@ -86,14 +86,14 @@ class McpValidation {
 	/**
 	 * Get Authorization header from request.
 	 *
-	 * @return string
+	 * @return string|null
 	 */
 	private function get_authorization_header(): ?string {
 		return $this->request->get_header( 'Authorization' );
 	}
 
 	/**
-	 * Extract the Bearer token from authorization header.
+	 * Extract the Bearer token from the authorization header.
 	 *
 	 * @param string $auth_header Authorization header value.
 	 *
@@ -113,6 +113,8 @@ class McpValidation {
 	 * @param string $token The JWT token to validate.
 	 *
 	 * @return bool True if valid, false otherwise.
+	 *
+	 * @throws \Exception
 	 */
 	private function is_valid_token( string $token ): bool {
 
@@ -162,9 +164,11 @@ class McpValidation {
 	/**
 	 * Get the public key for JWT validation.
 	 *
-	 * @return string|WP_Error
+	 * @return string
+	 *
+	 * @throws \Exception
 	 */
-	private function get_public_key() {
+	private function get_public_key(): string {
 
 		$public_key = get_transient( 'blu_jwt_public_key' );
 
