@@ -46,7 +46,7 @@ class McpServer {
 	 * @throws \Exception
 	 */
 	public function register_server(): void {
-	
+
 		// Get all abilities in the blu-mcp category
 		$abilities = array_map(
 			function ( $ability ) {
@@ -72,8 +72,8 @@ class McpServer {
 			$abilities, // tools,
 			[], // resources
 			[], // prompts
-			function (\WP_REST_Request $request) { // transport_permission_callback
-				return (new McpValidation($request))->is_authenticated();
+			function ( \WP_REST_Request $request ) { // transport_permission_callback
+				return ( new McpValidation( $request ) )->is_authenticated();
 			}
 		);
 	}
