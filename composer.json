@@ -17,6 +17,11 @@
       "bootstrap.php"
     ]
   },
+  "config": {
+    "platform": {
+      "php": "7.4"
+    }
+  },
   "require": {
     "wordpress/mcp-adapter": "^0.3.0",
     "wordpress/abilities-api": "^0.4.0",
