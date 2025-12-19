@@ -35,7 +35,7 @@ class Resources {
 				'properties' => array(
 					'patterns' => array(
 						'type'        => 'array',
-						'description' => 'List of relevant categories based on product name',
+						'description' => 'List of relevant categories or relevant regex keywords based on product name',
 						'minItems'    => 1,
 						'maxItems'    => 5,
 					)
