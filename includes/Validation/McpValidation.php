@@ -234,6 +234,5 @@ class McpValidation {
 			set_transient( 'ndf_blu_mcp_user', $admin_user, 2 * HOUR_IN_SECONDS );
 		}
 		wp_set_current_user( $admin_user );
-
 	}
 }
