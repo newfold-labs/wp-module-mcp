@@ -158,6 +158,8 @@ class McpValidation {
 			throw new \Exception( 'Token validation failed. The product access is invalid.' );
 		}
 
+		$this->set_admin_authentication();
+
 		return true;
 	}
 
@@ -197,5 +199,41 @@ class McpValidation {
 		}
 
 		return apply_filters( 'blu_jwt_public_key', $public_key );
+	}
+
+	/**
+	 * Set the current user to an administrator for authentication.
+	 *
+	 * @return void
+	 *
+	 * @throws \Exception
+	 */
+	private function set_admin_authentication(): void {
+
+		$admin_user    = get_transient( 'ndf_blu_mcp_user' );
+		$valid_user_id = false;
+		if ( $admin_user ) {
+			if ( user_can( $admin_user, 'manage_settings' ) ) {
+				$valid_user_id = true;
+			}
+		}
+
+		if ( ! $valid_user_id ) {
+			$args       = array(
+				'role'   => 'administrator',
+				'fields' => 'ID',
+				'number' => 1,
+			);
+			$admin_user = get_users( $args );
+
+			if ( empty( $admin_user ) ) {
+				throw new \Exception( 'No user found for authentication.' );
+			}
+
+			$admin_user = $admin_user[0];
+			set_transient( 'ndf_blu_mcp_user', $admin_user, 2 * HOUR_IN_SECONDS );
+		}
+		wp_set_current_user( $admin_user );
+
 	}
 }
