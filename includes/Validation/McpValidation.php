@@ -49,6 +49,7 @@ class McpValidation {
 	/**
 	 * Check if the request is authenticated.
 	 *
+	 * @throws \Exception If authentication fails.
 	 * @return bool True if authenticated, false if not.
 	 */
 	public function is_authenticated(): bool {
@@ -114,7 +115,7 @@ class McpValidation {
 	 *
 	 * @return bool True if valid, false otherwise.
 	 *
-	 * @throws \Exception
+	 * @throws \Exception If token validation fails.
 	 */
 	private function is_valid_token( string $token ): bool {
 
@@ -127,13 +128,13 @@ class McpValidation {
 
 		$decoded = JWT::decode( $token, new Key( $public_key, 'RS256' ) );
 
-		$userID = null;
+		$user_id = null;
 
-		if ( ! isset( $decoded->aud ) || $decoded->aud !== 'production' ) {
+		if ( ! isset( $decoded->aud ) || 'production' !== $decoded->aud ) {
 			throw new \Exception( 'Token validation failed. The audience is invalid.' );
 		}
 
-		if ( ! isset( $decoded->iss ) || $decoded->iss !== 'jarvis-jwt' ) {
+		if ( ! isset( $decoded->iss ) || 'jarvis-jwt' !== $decoded->iss ) {
 			throw new \Exception( 'Token validation failed. The iss is invalid.' );
 		}
 
@@ -143,16 +144,16 @@ class McpValidation {
 		} else {
 			$sub_parts = explode( ':', $sub );
 			if ( ! empty( $sub_parts ) ) {
-				$userID = end( $sub_parts );
+				$user_id = end( $sub_parts );
 			}
 		}
 
-		if ( null === $userID ) {
+		if ( null === $user_id ) {
 			throw new \Exception( 'Token validation failed. The user ID is missing.' );
 		}
 
 		// Call the Hiive product verifier.
-		$response = HiiveProductVerifier::verify_product_access( $token, $userID );
+		$response = HiiveProductVerifier::verify_product_access( $token, $user_id );
 
 		if ( true !== $response ) {
 			throw new \Exception( 'Token validation failed. The product access is invalid.' );
@@ -168,7 +169,7 @@ class McpValidation {
 	 *
 	 * @return string
 	 *
-	 * @throws \Exception
+	 * @throws \Exception If fetching the public key fails.
 	 */
 	private function get_public_key(): string {
 
@@ -194,7 +195,7 @@ class McpValidation {
 
 			} catch ( \Exception $e ) {
 
-				throw new \Exception( 'Failed to fetch public key: ' . $e->getMessage() );
+				throw new \Exception( 'Failed to fetch public key: ' . esc_html( $e->getMessage() ) );
 			}
 		}
 
@@ -206,7 +207,7 @@ class McpValidation {
 	 *
 	 * @return void
 	 *
-	 * @throws \Exception
+	 * @throws \Exception If no valid admin user is found.
 	 */
 	private function set_admin_authentication(): void {
 
