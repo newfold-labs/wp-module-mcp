@@ -114,94 +114,87 @@ class WooProducts {
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
-						'name'          => array(
+						'name'              => array(
 							'type'        => 'string',
 							'description' => 'Product name',
 						),
-						'type'          => array(
+						'type'              => array(
 							'type'        => 'string',
 							'description' => 'Product type',
 						),
-						'description'   => array(
+						'description'       => array(
 							'type'        => 'string',
 							'description' => 'Product description',
 						),
-						'short_description'   => array(
+						'short_description' => array(
 							'type'        => 'string',
 							'description' => 'Product short description',
 						),
-						'regular_price' => array(
+						'regular_price'     => array(
 							'type'        => 'string',
 							'description' => 'Product price',
 						),
-						'sale_price'    => array(
+						'sale_price'        => array(
 							'type'        => 'string',
 							'description' => 'Product sale price',
 						),
-						'category'      => array(
+						'categories'        => array(
 							'type'        => 'array',
-							'description' => 'List of product category ids to set',
+							'description' => 'List of categories',
+							'items'       => array(
+								'type'       => 'object',
+								'properties' => array(
+									'id' => array(
+										'description' => 'Category ID.',
+										'type'        => 'integer'
+									)
+								)
+							)
 						),
-						'tag'           => array(
+						'tags'              => array(
 							'type'        => 'array',
-							'description' => 'List of product tag ids to set',
-
+							'description' => 'List of tags',
+							'items'       => array(
+								'type'       => 'object',
+								'properties' => array(
+									'id' => array(
+										'description' => 'Tag ID.',
+										'type'        => 'integer'
+									)
+								)
+							)
 						),
-						'brand'         => array(
+						'brands'            => array(
 							'type'        => 'array',
-							'description' => 'List of product brand ids to set',
-
+							'description' => 'List of brands',
+							'items'       => array(
+								'type'       => 'object',
+								'properties' => array(
+									'id' => array(
+										'description' => 'Brand ID.',
+										'type'        => 'integer'
+									)
+								)
+							)
 						),
-						'ready' => array(
+						'ready'             => array(
 							'type'        => 'boolean',
 							'description' => 'Check if the product is ready after customer interactions',
 							'default'     => false,
-						)
+						),
 					),
 					'required'   => array( 'name' ),
 				),
 				'execute_callback'    => function ( $input ) {
 					$ready = $input['ready'];
-					if( $ready ) {
+					if ( $ready ) {
 						unset( $input['ready'] );
-						if ( isset( $input['category'] )  && count( $input['category'] ) > 0 ) {
-							$categories = $input['category'];
-							unset( $input['category'] );
-							$input['categories'] = [];
-
-							foreach( $categories as $category ) {
-								$input['categories'][]=  [ 'id' => $category ] ;
-							}
-
-						}
-
-						if ( isset( $input['tag'] )  && count( $input['tag'] ) > 0 ) {
-							$tags = $input['tag'];
-							unset( $input['tag'] );
-							$input['tags'] = [];
-
-							foreach( $tags as $tag ) {
-								$input['tags'][]=  [ 'id' => $tag ] ;
-							}
-
-						}
-
-						if ( isset( $input['brand'] )  && count( $input['brand'] ) > 0 ) {
-							$brands = $input['brand'];
-							unset( $input['brand'] );
-							$input['brands'] = [];
-
-							foreach( $brands as $brand ) {
-								$input['brands'][]=  [ 'id' => $brand ] ;
-							}
-
-						}
 						$request = new \WP_REST_Request( 'POST', '/wc/v3/products' );
 						$request->set_body_params( $input );
 						$response = rest_do_request( $request );
 
 						return blu_standardize_rest_response( $response );
-					}else{
+					} else {
 						$name        = $input['name'] ?? '';
 						$instruction = include_once __DIR__ . '/../instructions/product-full-flow.php';
 
@@ -284,39 +277,39 @@ class WooProducts {
 					$id = $input['id'];
 					unset( $input['id'] );
 
-					if ( isset( $input['category'] )  && count( $input['category'] ) > 0 ) {
-						$stored_category     = $this->get_product_taxonomy_ids( $id );
-						$categories = $input['category'];
+					if ( isset( $input['category'] ) && count( $input['category'] ) > 0 ) {
+						$stored_category = $this->get_product_taxonomy_ids( $id );
+						$categories      = $input['category'];
 						unset( $input['category'] );
 						$input['categories'] = [];
 
-						foreach( $categories as $category ) {
-							$input['categories'][]=  [ 'id' => $category ] ;
+						foreach ( $categories as $category ) {
+							$input['categories'][] = [ 'id' => $category ];
 						}
 
-						$input['categories'] = array_merge(  $input['categories'], $stored_category );
+						$input['categories'] = array_merge( $input['categories'], $stored_category );
 					}
 
-					if ( isset( $input['tag'] )  && count( $input['tag'] ) > 0 ) {
-						$tags = $input['tag'];
-						$stored_tag    = $this->get_product_taxonomy_ids( $id, 'tags' );
+					if ( isset( $input['tag'] ) && count( $input['tag'] ) > 0 ) {
+						$tags       = $input['tag'];
+						$stored_tag = $this->get_product_taxonomy_ids( $id, 'tags' );
 						unset( $input['tag'] );
 						$input['tags'] = [];
 
-						foreach( $tags as $tag ) {
-							$input['tags'][]=  [ 'id' => $tag ] ;
+						foreach ( $tags as $tag ) {
+							$input['tags'][] = [ 'id' => $tag ];
 						}
 						$input['tags'] = array_merge( $input['tags'], $stored_tag );
 					}
 
-					if ( isset( $input['brand'] )  && count( $input['brand'] ) > 0 ) {
-						$brands = $input['brand'];
-						$stored_brand    = $this->get_product_taxonomy_ids( $id, 'brands' );
+					if ( isset( $input['brand'] ) && count( $input['brand'] ) > 0 ) {
+						$brands       = $input['brand'];
+						$stored_brand = $this->get_product_taxonomy_ids( $id, 'brands' );
 						unset( $input['brand'] );
 						$input['brands'] = [];
 
-						foreach( $brands as $brand ) {
-							$input['brands'][]=  [ 'id' => $brand ] ;
+						foreach ( $brands as $brand ) {
+							$input['brands'][] = [ 'id' => $brand ];
 						}
 						$input['brands'] = array_merge( $input['brands'], $stored_brand );
 					}
@@ -387,7 +380,7 @@ class WooProducts {
 				'description'         => 'List all WooCommerce product categories',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
-					'type' => 'object',
+					'type'       => 'object',
 					'properties' => array(
 						'patterns' => array(
 							'type'        => 'array',
@@ -397,28 +390,32 @@ class WooProducts {
 					)
 				),
 				'execute_callback'    => function ( $input ) {
-					$page = 1;
-					$categories  = [];
-					$request = new \WP_REST_Request( 'GET', '/wc/v3/products/categories' );
+					$page       = 1;
+					$categories = [];
+					$request    = new \WP_REST_Request( 'GET', '/wc/v3/products/categories' );
 					do {
 						$request->set_query_params( [ 'page' => $page ] );
 						$response = rest_do_request( $request );
-						if( is_wp_error( $response ) ) {
+						if ( is_wp_error( $response ) ) {
 							return blu_standardize_rest_response( $response );
 						}
-						$data     = $response->get_data();
-						$total    = count( $data );
+						$data  = $response->get_data();
+						$total = count( $data );
 						foreach ( $data as $category ) {
-							$categories[] = [ 'id' => $category['id'], 'name' => $category['name'], 'parent' => $category['parent'] ];
+							$categories[] = [
+								'id'     => $category['id'],
+								'name'   => $category['name'],
+								'parent' => $category['parent']
+							];
 						}
 						$page ++;
-					}while( $total > 0 );
+					} while ( $total > 0 );
 
-					if( isset( $input['patterns'] ) && is_array( $input['patterns'] ) ) {
-						$patterns = $input['patterns'];
+					if ( isset( $input['patterns'] ) && is_array( $input['patterns'] ) ) {
+						$patterns     = $input['patterns'];
 						$filtered_ids = [];
 						foreach ( $categories as $category ) {
-							$cat_name =  trim( $category['name'] );
+							$cat_name = trim( $category['name'] );
 
 							foreach ( $patterns as $pattern ) {
 
@@ -442,13 +439,13 @@ class WooProducts {
 							}
 						}
 
-						if( count( $filtered_ids ) > 0 ) {
-							$categories = array_filter( $categories, function( $category ) use ( $filtered_ids ) {
-								return  in_array( $category['id'], $filtered_ids );
-							});
+						if ( count( $filtered_ids ) > 0 ) {
+							$categories = array_filter( $categories, function ( $category ) use ( $filtered_ids ) {
+								return in_array( $category['id'], $filtered_ids );
+							} );
 						}
 					}
-					
+
 					return blu_prepare_ability_response( '200', $categories );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_products' ),
