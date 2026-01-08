@@ -248,6 +248,10 @@ class WooProducts {
 							'type'        => 'string',
 							'description' => 'Product description',
 						),
+						'short_description' => array(
+							'type'        => 'string',
+							'description' => 'Product short description',
+						),
 						'regular_price' => array(
 							'type'        => 'string',
 							'description' => 'Product price',
@@ -256,19 +260,44 @@ class WooProducts {
 							'type'        => 'string',
 							'description' => 'Product sale price',
 						),
-						'category'      => array(
+						'categories'        => array(
 							'type'        => 'array',
-							'description' => 'List of product category ids to set',
+							'description' => 'List of categories',
+							'items'       => array(
+								'type'       => 'object',
+								'properties' => array(
+									'id' => array(
+										'description' => 'Category ID.',
+										'type'        => 'integer'
+									)
+								)
+							)
 						),
-						'tag'           => array(
+						'tags'              => array(
 							'type'        => 'array',
-							'description' => 'List of product tag ids to set',
-
+							'description' => 'List of tags',
+							'items'       => array(
+								'type'       => 'object',
+								'properties' => array(
+									'id' => array(
+										'description' => 'Tag ID.',
+										'type'        => 'integer'
+									)
+								)
+							)
 						),
-						'brand'         => array(
+						'brands'            => array(
 							'type'        => 'array',
-							'description' => 'List of product brand ids to set',
-
+							'description' => 'List of brands',
+							'items'       => array(
+								'type'       => 'object',
+								'properties' => array(
+									'id' => array(
+										'description' => 'Brand ID.',
+										'type'        => 'integer'
+									)
+								)
+							)
 						),
 					),
 					'required'   => array( 'id' ),
@@ -277,40 +306,18 @@ class WooProducts {
 					$id = $input['id'];
 					unset( $input['id'] );
 
-					if ( isset( $input['category'] ) && count( $input['category'] ) > 0 ) {
+					if ( isset( $input['categories'] ) && count( $input['categories'] ) > 0 ) {
 						$stored_category = $this->get_product_taxonomy_ids( $id );
-						$categories      = $input['category'];
-						unset( $input['category'] );
-						$input['categories'] = [];
-
-						foreach ( $categories as $category ) {
-							$input['categories'][] = [ 'id' => $category ];
-						}
-
 						$input['categories'] = array_merge( $input['categories'], $stored_category );
 					}
 
-					if ( isset( $input['tag'] ) && count( $input['tag'] ) > 0 ) {
-						$tags       = $input['tag'];
+					if ( isset( $input['tags'] ) && count( $input['tags'] ) > 0 ) {
 						$stored_tag = $this->get_product_taxonomy_ids( $id, 'tags' );
-						unset( $input['tag'] );
-						$input['tags'] = [];
-
-						foreach ( $tags as $tag ) {
-							$input['tags'][] = [ 'id' => $tag ];
-						}
 						$input['tags'] = array_merge( $input['tags'], $stored_tag );
 					}
 
-					if ( isset( $input['brand'] ) && count( $input['brand'] ) > 0 ) {
-						$brands       = $input['brand'];
+					if ( isset( $input['brands'] ) && count( $input['brands'] ) > 0 ) {
 						$stored_brand = $this->get_product_taxonomy_ids( $id, 'brands' );
-						unset( $input['brand'] );
-						$input['brands'] = [];
-
-						foreach ( $brands as $brand ) {
-							$input['brands'][] = [ 'id' => $brand ];
-						}
 						$input['brands'] = array_merge( $input['brands'], $stored_brand );
 					}
 
