@@ -29,27 +29,27 @@ class WooProducts {
 		// Search products
 		blu_register_ability(
 			'blu/wc-products-search',
-			array(
+			[
 				'label'               => 'Search WooCommerce Products',
 				'description'         => 'Search and filter WooCommerce products with pagination',
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
+				'input_schema'        => [
 					'type'       => 'object',
-					'properties' => array(
-						'search'   => array(
+					'properties' => [
+						'search'   => [
 							'type'        => 'string',
 							'description' => 'Search term',
-						),
-						'page'     => array(
+						],
+						'page'     => [
 							'type'        => 'integer',
 							'description' => 'Page number',
-						),
-						'per_page' => array(
+						],
+						'per_page' => [
 							'type'        => 'integer',
 							'description' => 'Products per page',
-						),
-					),
-				),
+						],
+					],
+				],
 				'execute_callback'    => function ( $input = null ) {
 					$request = new \WP_REST_Request( 'GET', '/wc/v3/products' );
 					if ( $input ) {
@@ -60,33 +60,33 @@ class WooProducts {
 					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_products' ),
-				'meta'                => array(
-					'annotations' => array(
+				'meta'                => [
+					'annotations' => [
 						'readonly'    => true,
 						'destructive' => false,
 						'idempotent'  => true,
-					),
-				),
-			)
+					],
+				],
+			]
 		);
 
 		// Get product
 		blu_register_ability(
 			'blu/wc-get-product',
-			array(
+			[
 				'label'               => 'Get WooCommerce Product',
 				'description'         => 'Get a WooCommerce product by ID',
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
+				'input_schema'        => [
 					'type'       => 'object',
-					'properties' => array(
-						'id' => array(
+					'properties' => [
+						'id' => [
 							'type'        => 'integer',
 							'description' => 'Product ID',
-						),
-					),
-					'required'   => array( 'id' ),
-				),
+						],
+					],
+					'required'   => [ 'id' ],
+				],
 				'execute_callback'    => function ( $input ) {
 					$request  = new \WP_REST_Request( 'GET', '/wc/v3/products/' . $input['id'] );
 					$response = rest_do_request( $request );
@@ -94,105 +94,105 @@ class WooProducts {
 					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_products' ),
-				'meta'                => array(
-					'annotations' => array(
+				'meta'                => [
+					'annotations' => [
 						'readonly'    => true,
 						'destructive' => false,
 						'idempotent'  => true,
-					),
-				),
-			)
+					],
+				],
+			]
 		);
 
 		// Add product
 		blu_register_ability(
 			'blu/wc-add-product',
-			array(
+			[
 				'label'               => 'Add WooCommerce Product',
 				'description'         => 'Add new WooCommerce product.',
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
+				'input_schema'        => [
 					'type'       => 'object',
-					'properties' => array(
-						'name'          => array(
+					'properties' => [
+						'name'              => [
 							'type'        => 'string',
 							'description' => 'Product name',
-						),
-						'type'          => array(
+						],
+						'type'              => [
 							'type'        => 'string',
 							'description' => 'Product type',
-						),
-						'description'   => array(
+						],
+						'description'       => [
 							'type'        => 'string',
 							'description' => 'Product description',
-						),
-						'short_description'   => array(
+						],
+						'short_description' => [
 							'type'        => 'string',
 							'description' => 'Product short description',
-						),
-						'regular_price' => array(
+						],
+						'regular_price'     => [
 							'type'        => 'string',
 							'description' => 'Product price',
-						),
-						'sale_price'    => array(
+						],
+						'sale_price'        => [
 							'type'        => 'string',
 							'description' => 'Product sale price',
-						),
-						'category'      => array(
+						],
+						'category'          => [
 							'type'        => 'array',
 							'description' => 'List of product category ids to set',
-						),
-						'tag'           => array(
+						],
+						'tag'               => [
 							'type'        => 'array',
 							'description' => 'List of product tag ids to set',
 
-						),
-						'brand'         => array(
+						],
+						'brand'             => [
 							'type'        => 'array',
 							'description' => 'List of product brand ids to set',
 
-						),
-						'ready' => array(
+						],
+						'ready'             => [
 							'type'        => 'boolean',
 							'description' => 'Check if the product is ready after customer interactions',
 							'default'     => false,
-						)
-					),
-					'required'   => array( 'name' ),
-				),
+						],
+					],
+					'required'   => [ 'name' ],
+				],
 				'execute_callback'    => function ( $input ) {
 					$ready = $input['ready'];
-					if( $ready ) {
+					if ( $ready ) {
 						unset( $input['ready'] );
-						if ( isset( $input['category'] )  && count( $input['category'] ) > 0 ) {
+						if ( isset( $input['category'] ) && count( $input['category'] ) > 0 ) {
 							$categories = $input['category'];
 							unset( $input['category'] );
 							$input['categories'] = [];
 
-							foreach( $categories as $category ) {
-								$input['categories'][]=  [ 'id' => $category ] ;
+							foreach ( $categories as $category ) {
+								$input['categories'][] = [ 'id' => $category ];
 							}
 
 						}
 
-						if ( isset( $input['tag'] )  && count( $input['tag'] ) > 0 ) {
+						if ( isset( $input['tag'] ) && count( $input['tag'] ) > 0 ) {
 							$tags = $input['tag'];
 							unset( $input['tag'] );
 							$input['tags'] = [];
 
-							foreach( $tags as $tag ) {
-								$input['tags'][]=  [ 'id' => $tag ] ;
+							foreach ( $tags as $tag ) {
+								$input['tags'][] = [ 'id' => $tag ];
 							}
 
 						}
 
-						if ( isset( $input['brand'] )  && count( $input['brand'] ) > 0 ) {
+						if ( isset( $input['brand'] ) && count( $input['brand'] ) > 0 ) {
 							$brands = $input['brand'];
 							unset( $input['brand'] );
 							$input['brands'] = [];
 
-							foreach( $brands as $brand ) {
-								$input['brands'][]=  [ 'id' => $brand ] ;
+							foreach ( $brands as $brand ) {
+								$input['brands'][] = [ 'id' => $brand ];
 							}
 
 						}
@@ -201,7 +201,7 @@ class WooProducts {
 						$response = rest_do_request( $request );
 
 						return blu_standardize_rest_response( $response );
-					}else{
+					} else {
 						$name        = $input['name'] ?? '';
 						$instruction = include_once __DIR__ . '/../instructions/product-full-flow.php';
 
@@ -214,109 +214,109 @@ class WooProducts {
 										'text'        => $instruction,
 										'annotations' => [
 											'audience' => [ 'assistant' ],
-											'priority' => 0.9
-										]
-									]
-								]
-							]
+											'priority' => 0.9,
+										],
+									],
+								],
+							],
 						];
 					}
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_products' ),
-				'meta'                => array(
-					'annotations' => array(
+				'meta'                => [
+					'annotations' => [
 						'readonly'    => false,
 						'destructive' => false,
 						'idempotent'  => false,
-					),
-				),
-			)
+					],
+				],
+			]
 		);
 
 		// Update product
 		blu_register_ability(
 			'blu/wc-update-product',
-			array(
+			[
 				'label'               => 'Update WooCommerce Product',
 				'description'         => 'Update a WooCommerce product by ID',
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
+				'input_schema'        => [
 					'type'       => 'object',
-					'properties' => array(
-						'id'            => array(
+					'properties' => [
+						'id'            => [
 							'type'        => 'integer',
 							'description' => 'Product ID',
-						),
-						'name'          => array(
+						],
+						'name'          => [
 							'type'        => 'string',
 							'description' => 'Product name',
-						),
-						'description'   => array(
+						],
+						'description'   => [
 							'type'        => 'string',
 							'description' => 'Product description',
-						),
-						'regular_price' => array(
+						],
+						'regular_price' => [
 							'type'        => 'string',
 							'description' => 'Product price',
-						),
-						'sale_price'    => array(
+						],
+						'sale_price'    => [
 							'type'        => 'string',
 							'description' => 'Product sale price',
-						),
-						'category'      => array(
+						],
+						'category'      => [
 							'type'        => 'array',
 							'description' => 'List of product category ids to set',
-						),
-						'tag'           => array(
+						],
+						'tag'           => [
 							'type'        => 'array',
 							'description' => 'List of product tag ids to set',
 
-						),
-						'brand'         => array(
+						],
+						'brand'         => [
 							'type'        => 'array',
 							'description' => 'List of product brand ids to set',
 
-						),
-					),
-					'required'   => array( 'id' ),
-				),
+						],
+					],
+					'required'   => [ 'id' ],
+				],
 				'execute_callback'    => function ( $input ) {
 					$id = $input['id'];
 					unset( $input['id'] );
 
-					if ( isset( $input['category'] )  && count( $input['category'] ) > 0 ) {
-						$stored_category     = $this->get_product_taxonomy_ids( $id );
-						$categories = $input['category'];
+					if ( isset( $input['category'] ) && count( $input['category'] ) > 0 ) {
+						$stored_category = $this->get_product_taxonomy_ids( $id );
+						$categories      = $input['category'];
 						unset( $input['category'] );
 						$input['categories'] = [];
 
-						foreach( $categories as $category ) {
-							$input['categories'][]=  [ 'id' => $category ] ;
+						foreach ( $categories as $category ) {
+							$input['categories'][] = [ 'id' => $category ];
 						}
 
-						$input['categories'] = array_merge(  $input['categories'], $stored_category );
+						$input['categories'] = array_merge( $input['categories'], $stored_category );
 					}
 
-					if ( isset( $input['tag'] )  && count( $input['tag'] ) > 0 ) {
-						$tags = $input['tag'];
-						$stored_tag    = $this->get_product_taxonomy_ids( $id, 'tags' );
+					if ( isset( $input['tag'] ) && count( $input['tag'] ) > 0 ) {
+						$tags       = $input['tag'];
+						$stored_tag = $this->get_product_taxonomy_ids( $id, 'tags' );
 						unset( $input['tag'] );
 						$input['tags'] = [];
 
-						foreach( $tags as $tag ) {
-							$input['tags'][]=  [ 'id' => $tag ] ;
+						foreach ( $tags as $tag ) {
+							$input['tags'][] = [ 'id' => $tag ];
 						}
 						$input['tags'] = array_merge( $input['tags'], $stored_tag );
 					}
 
-					if ( isset( $input['brand'] )  && count( $input['brand'] ) > 0 ) {
-						$brands = $input['brand'];
-						$stored_brand    = $this->get_product_taxonomy_ids( $id, 'brands' );
+					if ( isset( $input['brand'] ) && count( $input['brand'] ) > 0 ) {
+						$brands       = $input['brand'];
+						$stored_brand = $this->get_product_taxonomy_ids( $id, 'brands' );
 						unset( $input['brand'] );
 						$input['brands'] = [];
 
-						foreach( $brands as $brand ) {
-							$input['brands'][]=  [ 'id' => $brand ] ;
+						foreach ( $brands as $brand ) {
+							$input['brands'][] = [ 'id' => $brand ];
 						}
 						$input['brands'] = array_merge( $input['brands'], $stored_brand );
 					}
@@ -329,33 +329,33 @@ class WooProducts {
 					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_products' ),
-				'meta'                => array(
-					'annotations' => array(
+				'meta'                => [
+					'annotations' => [
 						'readonly'    => false,
 						'destructive' => false,
 						'idempotent'  => true,
-					),
-				),
-			)
+					],
+				],
+			]
 		);
 
 		// Delete product
 		blu_register_ability(
 			'blu/wc-delete-product',
-			array(
+			[
 				'label'               => 'Delete WooCommerce Product',
 				'description'         => 'Delete a WooCommerce product by ID',
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
+				'input_schema'        => [
 					'type'       => 'object',
-					'properties' => array(
-						'id' => array(
+					'properties' => [
+						'id' => [
 							'type'        => 'integer',
 							'description' => 'Product ID',
-						),
-					),
-					'required'   => array( 'id' ),
-				),
+						],
+					],
+					'required'   => [ 'id' ],
+				],
 				'execute_callback'    => function ( $input ) {
 					$request = new \WP_REST_Request( 'DELETE', '/wc/v3/products/' . $input['id'] );
 					$request->set_param( 'force', true );
@@ -364,14 +364,14 @@ class WooProducts {
 					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'delete_products' ),
-				'meta'                => array(
-					'annotations' => array(
+				'meta'                => [
+					'annotations' => [
 						'readonly'    => false,
 						'destructive' => true,
 						'idempotent'  => true,
-					),
-				),
-			)
+					],
+				],
+			]
 		);
 	}
 
@@ -382,43 +382,43 @@ class WooProducts {
 		// List categories
 		blu_register_ability(
 			'blu/wc-list-product-categories',
-			array(
+			[
 				'label'               => 'List WooCommerce Product Categories',
 				'description'         => 'List all WooCommerce product categories',
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
-					'type' => 'object',
-					'properties' => array(
-						'patterns' => array(
+				'input_schema'        => [
+					'type'       => 'object',
+					'properties' => [
+						'patterns' => [
 							'type'        => 'array',
 							'description' => 'List of relevant categories based on product name',
 							'maxItems'    => 5,
-						)
-					)
-				),
+						],
+					],
+				],
 				'execute_callback'    => function ( $input ) {
-					$page = 1;
-					$categories  = [];
-					$request = new \WP_REST_Request( 'GET', '/wc/v3/products/categories' );
+					$page       = 1;
+					$categories = [];
+					$request    = new \WP_REST_Request( 'GET', '/wc/v3/products/categories' );
 					do {
 						$request->set_query_params( [ 'page' => $page ] );
 						$response = rest_do_request( $request );
-						if( is_wp_error( $response ) ) {
+						if ( is_wp_error( $response ) ) {
 							return blu_standardize_rest_response( $response );
 						}
-						$data     = $response->get_data();
-						$total    = count( $data );
+						$data  = $response->get_data();
+						$total = count( $data );
 						foreach ( $data as $category ) {
 							$categories[] = [ 'id' => $category['id'], 'name' => $category['name'], 'parent' => $category['parent'] ];
 						}
 						$page ++;
-					}while( $total > 0 );
+					} while ( $total > 0 );
 
-					if( isset( $input['patterns'] ) && is_array( $input['patterns'] ) ) {
-						$patterns = $input['patterns'];
+					if ( isset( $input['patterns'] ) && is_array( $input['patterns'] ) ) {
+						$patterns     = $input['patterns'];
 						$filtered_ids = [];
 						foreach ( $categories as $category ) {
-							$cat_name =  trim( $category['name'] );
+							$cat_name = trim( $category['name'] );
 
 							foreach ( $patterns as $pattern ) {
 
@@ -442,53 +442,53 @@ class WooProducts {
 							}
 						}
 
-						if( count( $filtered_ids ) > 0 ) {
-							$categories = array_filter( $categories, function( $category ) use ( $filtered_ids ) {
-								return  in_array( $category['id'], $filtered_ids );
-							});
+						if ( count( $filtered_ids ) > 0 ) {
+							$categories = array_filter( $categories, function ( $category ) use ( $filtered_ids ) {
+								return in_array( $category['id'], $filtered_ids );
+							} );
 						}
 					}
-					
+
 					return blu_prepare_ability_response( '200', $categories );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_products' ),
-				'meta'                => array(
-					'annotations' => array(
+				'meta'                => [
+					'annotations' => [
 						'readonly'    => true,
 						'destructive' => false,
 						'idempotent'  => true,
-					),
-				),
-			)
+					],
+				],
+			]
 		);
 
 		// Add category
 		blu_register_ability(
 			'blu/wc-add-product-category',
-			array(
+			[
 				'label'               => 'Add WooCommerce Product Category',
 				'description'         => 'Add one or more new WooCommerce product categories',
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
+				'input_schema'        => [
 					'type'       => 'object',
-					'properties' => array(
-						'categories'    => array(
+					'properties' => [
+						'categories'    => [
 							'type'        => 'array',
 							'description' => 'Product Categories List',
-						),
-						'hierarchical'  => array(
+						],
+						'hierarchical'  => [
 							'type'        => 'boolean',
 							'description' => 'Add the category hierarchically or not.',
 							'default'     => false,
-						),
-						'is_google_tax' => array(
+						],
+						'is_google_tax' => [
 							'type'        => 'boolean',
 							'description' => 'Define is a google taxonomy or not',
 							'default'     => false,
-						)
-					),
-					'required'   => array( 'categories' ),
-				),
+						],
+					],
+					'required'   => [ 'categories' ],
+				],
 				'execute_callback'    => function ( $input ) {
 
 					$all_categories = $input['categories'] ?? [];
@@ -519,37 +519,37 @@ class WooProducts {
 
 				},
 				'permission_callback' => fn() => current_user_can( 'manage_product_terms' ),
-				'meta'                => array(
-					'annotations' => array(
+				'meta'                => [
+					'annotations' => [
 						'readonly'    => false,
 						'destructive' => false,
 						'idempotent'  => false,
-					),
-				),
-			)
+					],
+				],
+			]
 		);
 
 		// Update category
 		blu_register_ability(
 			'blu/wc-update-product-category',
-			array(
+			[
 				'label'               => 'Update WooCommerce Product Category',
 				'description'         => 'Update a WooCommerce product category',
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
+				'input_schema'        => [
 					'type'       => 'object',
-					'properties' => array(
-						'id'   => array(
+					'properties' => [
+						'id'   => [
 							'type'        => 'integer',
 							'description' => 'Category ID',
-						),
-						'name' => array(
+						],
+						'name' => [
 							'type'        => 'string',
 							'description' => 'Category name',
-						),
-					),
-					'required'   => array( 'id' ),
-				),
+						],
+					],
+					'required'   => [ 'id' ],
+				],
 				'execute_callback'    => function ( $input ) {
 					$id = $input['id'];
 					unset( $input['id'] );
@@ -560,33 +560,33 @@ class WooProducts {
 					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'manage_product_terms' ),
-				'meta'                => array(
-					'annotations' => array(
+				'meta'                => [
+					'annotations' => [
 						'readonly'    => false,
 						'destructive' => false,
 						'idempotent'  => true,
-					),
-				),
-			)
+					],
+				],
+			]
 		);
 
 		// Delete category
 		blu_register_ability(
 			'blu/wc-delete-product-category',
-			array(
+			[
 				'label'               => 'Delete WooCommerce Product Category',
 				'description'         => 'Delete a WooCommerce product category',
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
+				'input_schema'        => [
 					'type'       => 'object',
-					'properties' => array(
-						'id' => array(
+					'properties' => [
+						'id' => [
 							'type'        => 'integer',
 							'description' => 'Category ID',
-						),
-					),
-					'required'   => array( 'id' ),
-				),
+						],
+					],
+					'required'   => [ 'id' ],
+				],
 				'execute_callback'    => function ( $input ) {
 					$request = new \WP_REST_Request( 'DELETE', '/wc/v3/products/categories/' . $input['id'] );
 					$request->set_param( 'force', true );
@@ -595,14 +595,14 @@ class WooProducts {
 					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'delete_product_terms' ),
-				'meta'                => array(
-					'annotations' => array(
+				'meta'                => [
+					'annotations' => [
 						'readonly'    => false,
 						'destructive' => true,
 						'idempotent'  => true,
-					),
-				),
-			)
+					],
+				],
+			]
 		);
 	}
 
@@ -613,13 +613,13 @@ class WooProducts {
 		// List tags
 		blu_register_ability(
 			'blu/wc-list-product-tags',
-			array(
+			[
 				'label'               => 'List WooCommerce Product Tags',
 				'description'         => 'List all WooCommerce product tags',
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
+				'input_schema'        => [
 					'type' => 'object',
-				),
+				],
 				'execute_callback'    => function () {
 					$request  = new \WP_REST_Request( 'GET', '/wc/v3/products/tags' );
 					$response = rest_do_request( $request );
@@ -627,69 +627,94 @@ class WooProducts {
 					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_products' ),
-				'meta'                => array(
-					'annotations' => array(
+				'meta'                => [
+					'annotations' => [
 						'readonly'    => true,
 						'destructive' => false,
 						'idempotent'  => true,
-					),
-				),
-			)
+					],
+				],
+			]
 		);
 
 		// Add tag
 		blu_register_ability(
 			'blu/wc-add-product-tag',
-			array(
+			[
 				'label'               => 'Add WooCommerce Product Tag',
 				'description'         => 'Add one or more new WooCommerce product tag',
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
+				'input_schema'        => [
 					'type'       => 'object',
-					'properties' => array(
-						'tags' => array(
+					'properties' => [
+						'tags' => [
 							'type'        => 'array',
 							'description' => 'The Tag name list',
-						),
-					),
-					'required'   => array( 'tags' ),
-				),
+						],
+					],
+					'required'   => [ 'tags' ],
+				],
 				'execute_callback'    => function ( $input ) {
 
-					return $this->add_product_taxonomies( $input['tags'], 'tags' );
+					$all_tags = $input['tags'] ?? [];
+
+					$results = [];
+
+					if ( $input['is_google_tax'] ) {
+
+						foreach ( $all_tags as $tag_path ) {
+							$tags = explode( '>', $tag_path );
+
+							$resp = $this->add_product_taxonomies( $tags, 'tags', $input['hierarchical'] );
+							if ( 201 !== $resp['statusCode'] ) {
+								return $resp;
+							}
+
+							$results[] = $resp;
+						}
+
+						return [
+							'statusCode' => 201,
+							'status'     => 'success',
+							'message'    => $results,
+						];
+					} else {
+						return $this->add_product_taxonomies( $all_tags, 'tags', $input['hierarchical'] );
+					}
+
 				},
 				'permission_callback' => fn() => current_user_can( 'manage_product_terms' ),
-				'meta'                => array(
-					'annotations' => array(
+				'meta'                => [
+					'annotations' => [
 						'readonly'    => false,
 						'destructive' => false,
 						'idempotent'  => false,
-					),
-				),
-			)
+					],
+				],
+			]
 		);
 
 		// Update tag
 		blu_register_ability(
 			'blu/wc-update-product-tag',
-			array(
+			[
 				'label'               => 'Update WooCommerce Product Tag',
 				'description'         => 'Update a WooCommerce product tag',
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
+				'input_schema'        => [
 					'type'       => 'object',
-					'properties' => array(
-						'id'   => array(
+					'properties' => [
+						'id'   => [
 							'type'        => 'integer',
 							'description' => 'Tag ID',
-						),
-						'name' => array(
+						],
+						'name' => [
 							'type'        => 'string',
 							'description' => 'Tag name',
-						),
-					),
-					'required'   => array( 'id' ),
-				),
+						],
+					],
+					'required'   => [ 'id' ],
+				],
 				'execute_callback'    => function ( $input ) {
 					$id = $input['id'];
 					unset( $input['id'] );
@@ -700,33 +725,33 @@ class WooProducts {
 					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'manage_product_terms' ),
-				'meta'                => array(
-					'annotations' => array(
+				'meta'                => [
+					'annotations' => [
 						'readonly'    => false,
 						'destructive' => false,
 						'idempotent'  => true,
-					),
-				),
-			)
+					],
+				],
+			]
 		);
 
 		// Delete tag
 		blu_register_ability(
 			'blu/wc-delete-product-tag',
-			array(
+			[
 				'label'               => 'Delete WooCommerce Product Tag',
 				'description'         => 'Delete a WooCommerce product tag',
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
+				'input_schema'        => [
 					'type'       => 'object',
-					'properties' => array(
-						'id' => array(
+					'properties' => [
+						'id' => [
 							'type'        => 'integer',
 							'description' => 'Tag ID',
-						),
-					),
-					'required'   => array( 'id' ),
-				),
+						],
+					],
+					'required'   => [ 'id' ],
+				],
 				'execute_callback'    => function ( $input ) {
 					$request = new \WP_REST_Request( 'DELETE', '/wc/v3/products/tags/' . $input['id'] );
 					$request->set_param( 'force', true );
@@ -735,14 +760,14 @@ class WooProducts {
 					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'delete_product_terms' ),
-				'meta'                => array(
-					'annotations' => array(
+				'meta'                => [
+					'annotations' => [
 						'readonly'    => false,
 						'destructive' => true,
 						'idempotent'  => true,
-					),
-				),
-			)
+					],
+				],
+			]
 		);
 	}
 
@@ -753,13 +778,13 @@ class WooProducts {
 		// List brands
 		blu_register_ability(
 			'blu/wc-list-product-brands',
-			array(
+			[
 				'label'               => 'List WooCommerce Product Brands',
 				'description'         => 'List all WooCommerce product brands',
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
+				'input_schema'        => [
 					'type' => 'object',
-				),
+				],
 				'execute_callback'    => function () {
 					$request  = new \WP_REST_Request( 'GET', '/wc/v3/products/brands' );
 					$response = rest_do_request( $request );
@@ -767,68 +792,68 @@ class WooProducts {
 					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_products' ),
-				'meta'                => array(
-					'annotations' => array(
+				'meta'                => [
+					'annotations' => [
 						'readonly'    => true,
 						'destructive' => false,
 						'idempotent'  => true,
-					),
-				),
-			)
+					],
+				],
+			]
 		);
 
 		// Add brand
 		blu_register_ability(
 			'blu/wc-add-product-brand',
-			array(
+			[
 				'label'               => 'Add WooCommerce Product Brand',
 				'description'         => 'Add one or more new WooCommerce product brand',
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
+				'input_schema'        => [
 					'type'       => 'object',
-					'properties' => array(
-						'brands' => array(
+					'properties' => [
+						'brands' => [
 							'type'        => 'array',
 							'description' => 'The list of Brand name',
-						),
-					),
-					'required'   => array( 'brands' ),
-				),
+						],
+					],
+					'required'   => [ 'brands' ],
+				],
 				'execute_callback'    => function ( $input ) {
 					return $this->add_product_taxonomies( $input['brands'], 'brands' );
 				},
 				'permission_callback' => fn() => current_user_can( 'manage_product_terms' ),
-				'meta'                => array(
-					'annotations' => array(
+				'meta'                => [
+					'annotations' => [
 						'readonly'    => false,
 						'destructive' => false,
 						'idempotent'  => false,
-					),
-				),
-			)
+					],
+				],
+			]
 		);
 
 		// Update brand
 		blu_register_ability(
 			'blu/wc-update-product-brand',
-			array(
+			[
 				'label'               => 'Update WooCommerce Product Brand',
 				'description'         => 'Update a WooCommerce product brand',
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
+				'input_schema'        => [
 					'type'       => 'object',
-					'properties' => array(
-						'id'   => array(
+					'properties' => [
+						'id'   => [
 							'type'        => 'integer',
 							'description' => 'Brand ID',
-						),
-						'name' => array(
+						],
+						'name' => [
 							'type'        => 'string',
 							'description' => 'Brand name',
-						),
-					),
-					'required'   => array( 'id' ),
-				),
+						],
+					],
+					'required'   => [ 'id' ],
+				],
 				'execute_callback'    => function ( $input ) {
 					$id = $input['id'];
 					unset( $input['id'] );
@@ -839,33 +864,33 @@ class WooProducts {
 					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'manage_product_terms' ),
-				'meta'                => array(
-					'annotations' => array(
+				'meta'                => [
+					'annotations' => [
 						'readonly'    => false,
 						'destructive' => false,
 						'idempotent'  => true,
-					),
-				),
-			)
+					],
+				],
+			]
 		);
 
 		// Delete brand
 		blu_register_ability(
 			'blu/wc-delete-product-brand',
-			array(
+			[
 				'label'               => 'Delete WooCommerce Product Brand',
 				'description'         => 'Delete a WooCommerce product brand',
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
+				'input_schema'        => [
 					'type'       => 'object',
-					'properties' => array(
-						'id' => array(
+					'properties' => [
+						'id' => [
 							'type'        => 'integer',
 							'description' => 'Brand ID',
-						),
-					),
-					'required'   => array( 'id' ),
-				),
+						],
+					],
+					'required'   => [ 'id' ],
+				],
 				'execute_callback'    => function ( $input ) {
 					$request = new \WP_REST_Request( 'DELETE', '/wc/v3/products/brands/' . $input['id'] );
 					$request->set_param( 'force', true );
@@ -874,14 +899,14 @@ class WooProducts {
 					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'delete_product_terms' ),
-				'meta'                => array(
-					'annotations' => array(
+				'meta'                => [
+					'annotations' => [
 						'readonly'    => false,
 						'destructive' => true,
 						'idempotent'  => true,
-					),
-				),
-			)
+					],
+				],
+			]
 		);
 	}
 
@@ -892,8 +917,8 @@ class WooProducts {
 	/**
 	 * Add the product taxonomy with REST API
 	 *
-	 * @param array   $taxonomies The taxonomy to add.
-	 * @param string  $type The REST API type : categories|tags|brands.
+	 * @param array   $taxonomies   The taxonomy to add.
+	 * @param string  $type         The REST API type : categories|tags|brands.
 	 * @param boolean $hierarchical If add the item with hierarchical structure.
 	 *
 	 * @return array
@@ -915,7 +940,7 @@ class WooProducts {
 			$response = blu_standardize_rest_response( $response );
 			if ( 400 == $response ['statusCode'] && 'term_exists' === $response['message']['code'] ) {
 				$parent = $response['message']['data']['resource_id'];
-			} else if ( 201 == $response ['statusCode'] ) {
+			} elseif ( 201 == $response ['statusCode'] ) {
 				$parent    = $response['message']['id'];
 				$results[] = $response['message'];
 			} else {
@@ -935,7 +960,7 @@ class WooProducts {
 	 * Get the taxonomy set to product
 	 *
 	 * @param int    $product_id The product id.
-	 * @param string $taxonomy The taxonomy to return.
+	 * @param string $taxonomy   The taxonomy to return.
 	 *
 	 * @return array|array[]
 	 */
