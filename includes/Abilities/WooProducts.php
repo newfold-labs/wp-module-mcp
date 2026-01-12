@@ -391,7 +391,7 @@ class WooProducts {
 					'properties' => array(
 						'patterns' => array(
 							'type'        => 'array',
-							'description' => 'List of relevant categories based on product name',
+							'description' => 'List of relevant categories and regex based on product name',
 							'maxItems'    => 5,
 						)
 					)
