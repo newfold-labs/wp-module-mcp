@@ -130,7 +130,7 @@ class McpValidation {
 
 		$user_id = null;
 
-		if ( ! isset( $decoded->aud ) || 'production' !== $decoded->aud ) {
+		if ( ! isset( $decoded->aud ) ) {
 			throw new \Exception( 'Token validation failed. The audience is invalid.' );
 		}
 
@@ -153,7 +153,7 @@ class McpValidation {
 		}
 
 		// Call the Hiive product verifier.
-		$response = HiiveProductVerifier::verify_product_access( $token, $user_id );
+		$response = HiiveProductVerifier::verify_product_access( $token, $user_id, $decoded );
 
 		if ( true !== $response ) {
 			throw new \Exception( 'Token validation failed. The product access is invalid.' );
