@@ -23,7 +23,8 @@ STEP 2:
 	2.2) If select the option B:
 		- Get the tags using blu/wc-list-product-tags add the field patterns with max five elements.
 		- From this list filter the best tags for the $product_name $product_desc $product_categories.
-		- For each tag found,compute a numeric confidence score ( 0- 100 ).
+		- If no tag is found then generate between 5 and 7 SEO‑optimized tags.
+		- For each tag found, compute a numeric confidence score ( 0- 100 ).
 		- List to customer all filtered tags found with near the confidence score in percentage.
 		- Ask to customer to select one or more tags from this list.
 STEP 3:
