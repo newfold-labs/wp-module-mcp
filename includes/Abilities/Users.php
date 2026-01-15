@@ -257,6 +257,17 @@ class Users {
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type' => 'object',
+					'properties' => array(
+						'id'       => array(
+							'type'        => 'integer',
+							'description' => 'User ID',
+						),
+						'reassign' => array(
+							'type'        => 'integer',
+							'description' => 'Reassign posts to this user ID',
+						),
+					),
+					'required'   => array( 'id', 'reassign' ),
 				),
 				'execute_callback'    => function () {
 					$request = new \WP_REST_Request( 'GET', '/wp/v2/users/me' );

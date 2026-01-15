@@ -28,6 +28,12 @@ class Settings {
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type' => 'object',
+					'properties' => array(
+						'title'                  => array(
+							'type'        => 'string',
+							'description' => 'Site title',
+						)
+					),
 				),
 				'execute_callback'    => function () {
 					$request = new \WP_REST_Request( 'GET', '/wp/v2/settings' );

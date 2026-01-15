@@ -27,6 +27,12 @@ class SiteInfo {
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type' => 'object',
+					'properties' => array(
+						'domain' => array(
+							'type'        => 'string',
+							'description' => 'Domain of the site',
+						),
+					)
 				),
 				'execute_callback'    => function () {
 					return blu_prepare_ability_response( 200, array(

@@ -28,6 +28,17 @@ class RestApiCrud {
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type' => 'object',
+					'properties' => array(
+						'route'  => array(
+							'type'        => 'string',
+							'description' => 'REST API route (e.g., "/wp/v2/posts")',
+						),
+						'method' => array(
+							'type'        => 'string',
+							'enum'        => array( 'GET', 'POST', 'PATCH', 'DELETE' ),
+							'description' => 'HTTP method',
+						),
+					),
 				),
 				'execute_callback'    => function () {
 					$ignore_routes  = array( '/', '/batch/v1' );

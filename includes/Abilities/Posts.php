@@ -242,6 +242,12 @@ class Posts {
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type' => 'object',
+					'properties' => array(
+						'id' => array(
+							'type'        => 'integer',
+							'description' => 'Post ID',
+						),
+					)
 				),
 				'execute_callback'    => function () {
 					$request = new \WP_REST_Request( 'GET', '/wp/v2/categories' );
@@ -392,6 +398,12 @@ class Posts {
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type' => 'object',
+					'properties' => array(
+						'id' => array(
+							'type'        => 'integer',
+							'description' => 'Post ID',
+						),
+					)
 				),
 				'execute_callback'    => function () {
 					$request = new \WP_REST_Request( 'GET', '/wp/v2/tags' );

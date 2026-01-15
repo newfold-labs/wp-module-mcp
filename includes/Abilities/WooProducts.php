@@ -248,6 +248,12 @@ class WooProducts {
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type' => 'object',
+					'properties' => array(
+						'name' => array(
+							'type'        => 'string',
+							'description' => 'Category name',
+						),
+					),
 				),
 				'execute_callback'    => function () {
 					$request = new \WP_REST_Request( 'GET', '/wc/v3/products/categories' );
@@ -387,6 +393,12 @@ class WooProducts {
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type' => 'object',
+					'properties' => array(
+						'name' => array(
+							'type'        => 'string',
+							'description' => 'Tag name',
+						),
+					)
 				),
 				'execute_callback'    => function () {
 					$request = new \WP_REST_Request( 'GET', '/wc/v3/products/tags' );
@@ -526,6 +538,12 @@ class WooProducts {
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type' => 'object',
+					'properties' => array(
+						'name' => array(
+							'type'        => 'string',
+							'description' => 'Brand name',
+						),
+					),
 				),
 				'execute_callback'    => function () {
 					$request = new \WP_REST_Request( 'GET', '/wc/v3/products/brands' );

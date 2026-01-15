@@ -81,6 +81,12 @@ class WooOrders {
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type' => 'object',
+					'properties' => array(
+						'period' => array(
+							'type'        => 'string',
+							'description' => 'Report period (week, month, year)',
+						),
+					),
 				),
 				'execute_callback'    => function () {
 					$request = new \WP_REST_Request( 'GET', '/wc/v3/reports/coupons/totals' );
@@ -107,6 +113,12 @@ class WooOrders {
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type' => 'object',
+					'properties' => array(
+						'period' => array(
+							'type'        => 'string',
+							'description' => 'Report period (week, month, year)',
+						),
+					),
 				),
 				'execute_callback'    => function () {
 					$request = new \WP_REST_Request( 'GET', '/wc/v3/reports/customers/totals' );
@@ -133,6 +145,12 @@ class WooOrders {
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type' => 'object',
+					'properties' => array(
+						'period' => array(
+							'type'        => 'string',
+							'description' => 'Report period (week, month, year)',
+						),
+					),
 				),
 				'execute_callback'    => function () {
 					$request = new \WP_REST_Request( 'GET', '/wc/v3/reports/orders/totals' );
@@ -159,6 +177,12 @@ class WooOrders {
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type' => 'object',
+					'properties' => array(
+						'period' => array(
+							'type'        => 'string',
+							'description' => 'Report period (week, month, year)',
+						),
+					),
 				),
 				'execute_callback'    => function () {
 					$request = new \WP_REST_Request( 'GET', '/wc/v3/reports/products/totals' );
@@ -185,6 +209,12 @@ class WooOrders {
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type' => 'object',
+					'properties' => array(
+						'period' => array(
+							'type'        => 'string',
+							'description' => 'Report period (week, month, year)',
+						),
+					),
 				),
 				'execute_callback'    => function () {
 					$request = new \WP_REST_Request( 'GET', '/wc/v3/reports/reviews/totals' );

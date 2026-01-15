@@ -28,6 +28,12 @@ class CustomPostTypes {
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type' => 'object',
+					'properties' => array(
+						'post_type' => array(
+							'type'        => 'string',
+							'description' => 'The custom post type to search',
+						)
+					)
 				),
 				'execute_callback'    => function () {
 					$request = new \WP_REST_Request( 'GET', '/wp/v2/types' );
