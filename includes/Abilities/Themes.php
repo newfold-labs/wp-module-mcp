@@ -3,6 +3,7 @@
  * Themes Abilities
  *
  * Provides abilities for managing WordPress Themes
+ *
  * @package BLU
  */
 
@@ -14,7 +15,6 @@ namespace BLU\Abilities;
  * Themes class
  *
  * Registers abilities for getting the active WordPress theme.
- *
  */
 class Themes {
 
@@ -33,7 +33,7 @@ class Themes {
 	private function register_abilities(): void {
 		$this->register_get_active_theme();
 	}
-	
+
 	/**
 	 * Register ability to get the currently active theme information
 	 *
@@ -57,14 +57,14 @@ class Themes {
 					),
 				),
 				'execute_callback'    => function ( $input = null ) {
-					$request = new \WP_REST_Request( 'GET', '/wp/v2/themes');
+					$request = new \WP_REST_Request( 'GET', '/wp/v2/themes' );
 
-					if ( !$input ) {
-						$input = array('status' => 'active');
+					if ( ! $input ) {
+						$input = array( 'status' => 'active' );
 					}
 					$request->set_query_params( $input );
 					$response = rest_do_request( $request );
-					return blu_standardize_rest_response( $response);
+					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_theme_options' ),
 				'meta'                => array(

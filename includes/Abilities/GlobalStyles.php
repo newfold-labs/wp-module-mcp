@@ -158,13 +158,13 @@ class GlobalStyles {
 				'description'         => 'Get the currently active global styles configuration for the current theme. This is a convenience method to get the theme\'s active style variations.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
-					'type'       => 'object',
+					'type' => 'object',
 				),
 				'execute_callback'    => function ( $input = null ) {
 
 					$global_styles = wp_get_global_styles();
 
-					return is_array( $global_styles ) && ! empty( $global_styles ) ? blu_prepare_ability_response( 200, $global_styles) : blu_prepare_ability_response(404, 'No active global styles found.');
+					return is_array( $global_styles ) && ! empty( $global_styles ) ? blu_prepare_ability_response( 200, $global_styles ) : blu_prepare_ability_response( 404, 'No active global styles found.' );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_theme_options' ),
 				'meta'                => array(
@@ -191,13 +191,13 @@ class GlobalStyles {
 				'description'         => 'Get the currently active global styles ID for the current theme. This is used for get or update the global styles.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
-					'type'       => 'object',
+					'type' => 'object',
 				),
 				'execute_callback'    => function ( $input = null ) {
 
 					$id = \WP_Theme_JSON_Resolver::get_user_global_styles_post_id();
 
-					return is_int( $id ) && $id > 0 ? blu_prepare_ability_response( 200, array( 'id' => $id ) ) : blu_prepare_ability_response(404, 'No active global styles ID found.');
+					return is_int( $id ) && $id > 0 ? blu_prepare_ability_response( 200, array( 'id' => $id ) ) : blu_prepare_ability_response( 404, 'No active global styles ID found.' );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_theme_options' ),
 				'meta'                => array(
