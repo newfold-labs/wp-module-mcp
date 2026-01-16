@@ -44,8 +44,8 @@ class McpServer {
 	 * Registers a server with specified configurations, including abilities, transports, and handlers,
 	 * for the Blue host MCP server functionality.
 	 *
-	 * @return void if the server creation is successful
-	 * @throws \Exception if the server creation fails
+	 * @return void If the server creation is successful
+	 * @throws \Exception If the server creation fails
 	 */
 	public function register_server(): void {
 
@@ -74,7 +74,7 @@ class McpServer {
 			$abilities, // tools,
 			array(), // resources
 			array(), // prompts
-			function ( \WP_REST_Request $request ) { 
+			function ( \WP_REST_Request $request ) {
 				// transport_permission_callback
 				return ( new McpValidation( $request ) )->is_authenticated();
 			}
