@@ -45,7 +45,7 @@ class McpServer {
 	 * for the Blue host MCP server functionality.
 	 *
 	 * @return void If the server creation is successful
-	 * @throws \Exception If the server creation fails
+	 * @throws \Exception If the server creation fails.
 	 */
 	public function register_server(): void {
 
