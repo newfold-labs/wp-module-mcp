@@ -186,7 +186,7 @@ class WooProducts {
 					'required'   => array( 'name' ),
 				),
 				'execute_callback'    => function ( $input ) {
-					$ready = $input['ready'];
+					$ready = $input['ready'] ?? false;
 					if ( $ready ) {
 						unset( $input['ready'] );
 						$request = new \WP_REST_Request( 'POST', '/wc/v3/products' );
