@@ -62,8 +62,8 @@ class GlobalStyles {
 					'required'   => array( 'id' ),
 				),
 				'execute_callback'    => function ( $input ) {
-					$id      = intval( $input['id'] );
-					$request = new \WP_REST_Request( 'GET', '/wp/v2/global-styles/' . $id );
+					$id       = intval( $input['id'] );
+					$request  = new \WP_REST_Request( 'GET', '/wp/v2/global-styles/' . $id );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
 				},
@@ -89,56 +89,33 @@ class GlobalStyles {
 			'blu/update-global-styles',
 			array(
 				'label'               => 'Update Global Styles',
-				'description'         => 'Update a global styles configuration. Allows customization of theme.json settings including colors, typography, spacing, and more.',
+				'description'         => 'Update the site global styles using theme.json format. Supports colors (palette), typography (fontFamilies, fontSizes), spacing, layout, and more.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
-						'id'       => array(
-							'type'        => 'integer',
-							'description' => 'Global styles ID to update',
-						),
 						'settings' => array(
 							'type'        => 'object',
-							'description' => 'Settings object containing theme.json configuration (colors, typography, layout, etc.)',
+							'description' => 'Settings object in theme.json format. For colors use: { "color": { "palette": { "custom": [{ "slug": "...", "color": "#...", "name": "..." }] } } }. For typography use: { "typography": { "fontFamilies": [...], "fontSizes": [...] } }',
 						),
 						'styles'   => array(
 							'type'        => 'object',
-							'description' => 'Styles object containing CSS-like declarations for blocks and elements',
-						),
-						'title'    => array(
-							'type'        => 'string',
-							'description' => 'Title for the global styles configuration',
+							'description' => 'Styles object containing CSS-like declarations for root, elements, and blocks.',
 						),
 					),
-					'required'   => array( 'id' ),
+					'required'   => array( 'settings' ),
 				),
-				'execute_callback'    => function ( $input ) {
-					$id = intval( $input['id'] );
-					$request = new \WP_REST_Request( 'POST', '/wp/v2/global-styles/' . $id );
-
-					// Prepare the update data
-					$data = array();
-					if ( isset( $input['settings'] ) ) {
-						$data['settings'] = $input['settings'];
-					}
-					if ( isset( $input['styles'] ) ) {
-						$data['styles'] = $input['styles'];
-					}
-					if ( isset( $input['title'] ) ) {
-						$data['title'] = $input['title'];
-					}
-
-					$request->set_body_params( $data );
-					$response = rest_do_request( $request );
-					return blu_standardize_rest_response( $response );
-				},
+				'execute_callback'    => array( $this, 'execute_update_global_styles' ),
 				'permission_callback' => fn() => current_user_can( 'edit_theme_options' ),
 				'meta'                => array(
 					'annotations' => array(
 						'readonly'    => false,
-						'destructive' => false,
+						'destructive' => true,
 						'idempotent'  => true,
+					),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
 					),
 				),
 			)
@@ -161,10 +138,11 @@ class GlobalStyles {
 					'type' => 'object',
 				),
 				'execute_callback'    => function ( $input = null ) {
-
 					$global_styles = wp_get_global_styles();
 
-					return is_array( $global_styles ) && ! empty( $global_styles ) ? blu_prepare_ability_response( 200, $global_styles ) : blu_prepare_ability_response( 404, 'No active global styles found.' );
+					return is_array( $global_styles ) && ! empty( $global_styles )
+						? blu_prepare_ability_response( 200, $global_styles )
+						: blu_prepare_ability_response( 404, 'No active global styles found.' );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_theme_options' ),
 				'meta'                => array(
@@ -179,7 +157,7 @@ class GlobalStyles {
 	}
 
 	/**
-	 * Register ability to get active global styles for the current theme
+	 * Register ability to get active global styles ID for the current theme
 	 *
 	 * @return void
 	 */
@@ -194,10 +172,11 @@ class GlobalStyles {
 					'type' => 'object',
 				),
 				'execute_callback'    => function ( $input = null ) {
-
 					$id = \WP_Theme_JSON_Resolver::get_user_global_styles_post_id();
 
-					return is_int( $id ) && $id > 0 ? blu_prepare_ability_response( 200, array( 'id' => $id ) ) : blu_prepare_ability_response( 404, 'No active global styles ID found.' );
+					return is_int( $id ) && $id > 0
+						? blu_prepare_ability_response( 200, array( 'id' => $id ) )
+						: blu_prepare_ability_response( 404, 'No active global styles ID found.' );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_theme_options' ),
 				'meta'                => array(
@@ -209,5 +188,53 @@ class GlobalStyles {
 				),
 			)
 		);
+	}
+
+	/**
+	 * Execute update global styles ability.
+	 *
+	 * Uses the WordPress REST API to update global styles.
+	 *
+	 * @param array $input The input parameters.
+	 * @return array The result.
+	 */
+	public function execute_update_global_styles( array $input = array() ): array {
+		if ( ! isset( $input['settings'] ) && ! isset( $input['styles'] ) ) {
+			return blu_prepare_ability_response(
+				400,
+				array(
+					'success' => false,
+					'message' => 'Settings or styles object is required',
+				)
+			);
+		}
+
+		$global_styles_id = \WP_Theme_JSON_Resolver::get_user_global_styles_post_id();
+
+		if ( ! $global_styles_id ) {
+			return blu_prepare_ability_response(
+				500,
+				array(
+					'success' => false,
+					'message' => 'Could not find global styles post',
+				)
+			);
+		}
+
+		$request = new \WP_REST_Request( 'POST', '/wp/v2/global-styles/' . $global_styles_id );
+
+		// Prepare the update data.
+		$data = array();
+		if ( isset( $input['settings'] ) ) {
+			$data['settings'] = $input['settings'];
+		}
+		if ( isset( $input['styles'] ) ) {
+			$data['styles'] = $input['styles'];
+		}
+
+		$request->set_body_params( $data );
+		$response = rest_do_request( $request );
+
+		return blu_standardize_rest_response( $response );
 	}
 }
