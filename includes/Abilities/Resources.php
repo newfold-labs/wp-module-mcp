@@ -85,8 +85,8 @@ class Resources {
 			},
 			'meta'                => [
 				'annotations' => [
-					'readOnlyHint'   => true,
-					'idempotentHint' => true,
+					'readonly'   => true,
+					'idempotent' => true,
 				]
 			]
 		] );

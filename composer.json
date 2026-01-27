@@ -51,7 +51,5 @@
     "wordpress/abilities-api": "^0.4.0",
     "firebase/php-jwt": "^6.10.0",
     "newfold-labs/wp-php-standards": "^1.2"
-  },
-  "minimum-stability": "dev",
-  "prefer-stable": false
+  }
 }
