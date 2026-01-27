@@ -16,6 +16,7 @@ STEP 1 (REQUIRED - MUST COMPLETE FIRST):
     - Show exactly these options (NO custom text):
         A) Add the product with only details you provided.
         B) Add the product with more details.
+    - If the user doesn't provide a regular price, suggest a price for that product.
     - WAIT for user response before proceeding
  
 STEP 2 (EXECUTE ONLY AFTER STEP 1 RESPONSE):
@@ -24,12 +25,16 @@ STEP 2 (EXECUTE ONLY AFTER STEP 1 RESPONSE):
 	 A) Suggest the product categories
 	 B) Suggest the product tags
 	 C) Suggest the description
+	 D) Suggest product variations
+	 
 STEP 3:
 - Get the user selection and for each selection, execute the relative tool.
    - If select A use the tool blu/suggest-product-categories
    - If select B  if is selected A , await that the first tool complete then use the tool blu/suggest-product-tag
    - If select C and if is selected A or B , await that the relative tool complete then use the tool blu/suggest-product-description
+   - If select D and if is selected A or B or C, await that the relative tool complete then use the tool blu/suggest-product-variation-attributes
+
 STEP 4:
 - Show to user a recap about the new product, and ask to user if want to proceed with add the product.
-	-If user confirm, call the tool blu/wc-add-product and add the field 'ready':true.
+- If user confirm, call the tool blu/wc-add-product and add the field 'ready':true.
 ";
