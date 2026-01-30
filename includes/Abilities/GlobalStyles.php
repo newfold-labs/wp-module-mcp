@@ -49,7 +49,7 @@ class GlobalStyles {
 			'blu/get-global-styles',
 			array(
 				'label'               => 'Get Global Styles',
-				'description'         => 'Get a specific global styles configuration by ID. Returns theme.json settings and user customizations.',
+				'description'         => 'Get a specific global styles configuration by ID. Returns theme.json settings and user customizations including colors, typography, and spacing. Use when you already have a global styles ID and need the full configuration.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
@@ -89,14 +89,58 @@ class GlobalStyles {
 			'blu/update-global-styles',
 			array(
 				'label'               => 'Update Global Styles',
-				'description'         => 'Update the site global styles using theme.json format. Supports colors (palette), typography (fontFamilies, fontSizes), spacing, layout, and more.',
+				'description'         => 'Update WordPress global styles (colors, typography, spacing) using theme.json format. Use for: "change color", "update font", "set background", "update styles". COLOR SLUGS: accent-2=Primary, accent-5=Secondary, base=Background (slug "base" NOT "background"), contrast=Text (slug "contrast" NOT "text"). Only include the color slugs you are changing — colors not included are preserved automatically. For accent/primary color changes generate ALL 6 accent shades together via HSL lightness. For background/text changes include ONLY base and/or contrast. FORMAT: {"settings":{"color":{"palette":{"custom":[{"slug":"...","color":"#hex","name":"..."}]}}}}',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
 						'settings' => array(
 							'type'        => 'object',
-							'description' => 'Settings object in theme.json format. For colors use: { "color": { "palette": { "custom": [{ "slug": "...", "color": "#...", "name": "..." }] } } }. For typography use: { "typography": { "fontFamilies": [...], "fontSizes": [...] } }',
+							'description' => 'Settings object in theme.json format.',
+							'properties'  => array(
+								'color' => array(
+									'type'        => 'object',
+									'description' => 'Color settings.',
+									'properties'  => array(
+										'palette' => array(
+											'type'        => 'object',
+											'description' => 'Palette settings.',
+											'properties'  => array(
+												'custom' => array(
+													'type'        => 'array',
+													'description' => 'Array of color entries. Only include slugs you are changing.',
+													'items'       => array(
+														'type'       => 'object',
+														'properties' => array(
+															'slug'  => array(
+																'type'        => 'string',
+																'description' => 'Color slug: accent-1 through accent-6 for accent colors, base for background, contrast for text.',
+															),
+															'color' => array(
+																'type'        => 'string',
+																'description' => 'Hex color value (e.g. #0B3D5B).',
+															),
+															'name'  => array(
+																'type'        => 'string',
+																'description' => 'Display name for the color.',
+															),
+														),
+														'required' => array( 'slug', 'color', 'name' ),
+													),
+												),
+											),
+										),
+									),
+								),
+								'typography' => array(
+									'type'        => 'object',
+									'description' => 'Typography settings (fontFamilies, fontSizes).',
+								),
+								'spacing' => array(
+									'type'        => 'object',
+									'description' => 'Spacing settings.',
+								),
+							),
 						),
 						'styles'   => array(
 							'type'        => 'object',
@@ -132,7 +176,7 @@ class GlobalStyles {
 			'blu/get-active-global-styles',
 			array(
 				'label'               => 'Get Active Global Styles',
-				'description'         => 'Get the currently active global styles configuration for the current theme. This is a convenience method to get the theme\'s active style variations.',
+				'description'         => 'Get the currently active global styles for the current theme, including colors, typography, and spacing. Use for: "show colors", "what fonts are available", "current palette", "list styles". Returns the full styles object with all active customizations.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type' => 'object',
@@ -166,7 +210,7 @@ class GlobalStyles {
 			'blu/get-active-global-styles-id',
 			array(
 				'label'               => 'Get Active Global Styles ID',
-				'description'         => 'Get the currently active global styles ID for the current theme. This is used for get or update the global styles.',
+				'description'         => 'Get the active global styles post ID for the current theme. Use this before calling blu-get-global-styles or when you need the ID for reference. Returns an object with the numeric ID.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type' => 'object',
