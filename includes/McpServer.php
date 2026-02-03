@@ -4,6 +4,7 @@ declare( strict_types=1 );
 
 namespace BLU;
 
+use BLU\Abilities\BlockEditor;
 use BLU\Abilities\CustomPostTypes;
 use BLU\Abilities\GlobalStyles;
 use BLU\Abilities\Media;
@@ -100,6 +101,7 @@ class McpServer {
 		new WooProducts();
 		new WooOrders();
 		new Themes();
+		new BlockEditor();
 	}
 
 	/**
