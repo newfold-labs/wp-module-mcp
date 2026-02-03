@@ -10,7 +10,7 @@ namespace BLU;
 class FunctionsWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 
 	/**
-	 * blu_get_status_type returns success for 2xx and 3xx.
+	 * Verifies blu_get_status_type returns success for 2xx and 3xx.
 	 *
 	 * @return void
 	 */
@@ -21,7 +21,7 @@ class FunctionsWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	}
 
 	/**
-	 * blu_get_status_type returns error for 4xx and 5xx.
+	 * Verifies blu_get_status_type returns error for 4xx and 5xx.
 	 *
 	 * @return void
 	 */
@@ -32,7 +32,7 @@ class FunctionsWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	}
 
 	/**
-	 * blu_get_status_type returns unknown for other codes.
+	 * Verifies blu_get_status_type returns unknown for other codes.
 	 *
 	 * @return void
 	 */
@@ -42,7 +42,7 @@ class FunctionsWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	}
 
 	/**
-	 * blu_prepare_ability_response returns array with statusCode, status, message.
+	 * Verifies blu_prepare_ability_response returns array with statusCode, status, message.
 	 *
 	 * @return void
 	 */
@@ -58,7 +58,7 @@ class FunctionsWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	}
 
 	/**
-	 * blu_standardize_rest_response with WP_Error returns error format.
+	 * Verifies blu_standardize_rest_response with WP_Error returns error format.
 	 *
 	 * @return void
 	 */
@@ -71,7 +71,7 @@ class FunctionsWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	}
 
 	/**
-	 * blu_standardize_rest_response with WP_REST_Response returns response format.
+	 * Verifies blu_standardize_rest_response with WP_REST_Response returns response format.
 	 *
 	 * @return void
 	 */
@@ -85,7 +85,7 @@ class FunctionsWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	}
 
 	/**
-	 * blu_standardize_rest_response with unexpected type returns 500.
+	 * Verifies blu_standardize_rest_response with unexpected type returns 500.
 	 *
 	 * @return void
 	 */
@@ -96,7 +96,7 @@ class FunctionsWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	}
 
 	/**
-	 * blu_get_abilities_by_category with no abilities returns empty array.
+	 * Verifies blu_get_abilities_by_category with no abilities returns empty array.
 	 *
 	 * @return void
 	 */
@@ -106,7 +106,7 @@ class FunctionsWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	}
 
 	/**
-	 * blu_filter_abilities_by_category with empty array returns empty.
+	 * Verifies blu_filter_abilities_by_category with empty array returns empty.
 	 *
 	 * @return void
 	 */
@@ -116,7 +116,7 @@ class FunctionsWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	}
 
 	/**
-	 * blu_filter_abilities_by_namespace with empty array returns empty.
+	 * Verifies blu_filter_abilities_by_namespace with empty array returns empty.
 	 *
 	 * @return void
 	 */
@@ -126,12 +126,157 @@ class FunctionsWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	}
 
 	/**
-	 * blu_get_ability_categories returns array.
+	 * Verifies blu_get_ability_categories returns array.
 	 *
 	 * @return void
 	 */
 	public function test_blu_get_ability_categories_returns_array() {
 		$categories = blu_get_ability_categories();
 		$this->assertIsArray( $categories );
+	}
+
+	/**
+	 * Verifies blu_register_ability returns null when wp_register_ability is unavailable.
+	 *
+	 * @return void
+	 */
+	public function test_blu_register_ability_returns_null_when_wp_unavailable() {
+		$this->assertNull( blu_register_ability( 'test-ability', array( 'label' => 'Test' ) ) );
+	}
+
+	/**
+	 * Verifies blu_unregister_ability returns null when wp_unregister_ability is unavailable.
+	 *
+	 * @return void
+	 */
+	public function test_blu_unregister_ability_returns_null_when_wp_unavailable() {
+		$this->assertNull( blu_unregister_ability( 'test-ability' ) );
+	}
+
+	/**
+	 * Verifies blu_get_ability returns null when wp_get_ability is unavailable.
+	 *
+	 * @return void
+	 */
+	public function test_blu_get_ability_returns_null_when_wp_unavailable() {
+		$this->assertNull( blu_get_ability( 'test-ability' ) );
+	}
+
+	/**
+	 * Verifies blu_register_ability_category returns null when wp_register_ability_category is unavailable.
+	 *
+	 * @return void
+	 */
+	public function test_blu_register_ability_category_returns_null_when_wp_unavailable() {
+		$this->assertNull( blu_register_ability_category( 'test-cat', array( 'label' => 'Test' ) ) );
+	}
+
+	/**
+	 * Verifies blu_unregister_ability_category returns null when wp_unregister_ability_category is unavailable.
+	 *
+	 * @return void
+	 */
+	public function test_blu_unregister_ability_category_returns_null_when_wp_unavailable() {
+		$this->assertNull( blu_unregister_ability_category( 'test-cat' ) );
+	}
+
+	/**
+	 * Verifies blu_get_ability_category returns null when wp_get_ability_category is unavailable.
+	 *
+	 * @return void
+	 */
+	public function test_blu_get_ability_category_returns_null_when_wp_unavailable() {
+		$this->assertNull( blu_get_ability_category( 'test-cat' ) );
+	}
+
+	/**
+	 * Verifies blu_standardize_rest_response with WP_Error and empty code uses 500.
+	 *
+	 * @return void
+	 */
+	public function test_blu_standardize_rest_response_wp_error_empty_code_uses_500() {
+		$error  = new \WP_Error( '', 'Error with no code' );
+		$result = blu_standardize_rest_response( $error );
+		$this->assertSame( 500, $result['statusCode'] );
+		$this->assertSame( 'Error with no code', $result['message'] );
+	}
+
+	/**
+	 * Verifies blu_prepare_ability_response with error status code sets status to error.
+	 *
+	 * @return void
+	 */
+	public function test_blu_prepare_ability_response_error_status() {
+		$result = blu_prepare_ability_response( 404, array( 'error' => 'Not found' ) );
+		$this->assertSame( 404, $result['statusCode'] );
+		$this->assertSame( 'error', $result['status'] );
+	}
+
+	/**
+	 * Verifies blu_filter_abilities_by_category keeps abilities matching the category.
+	 *
+	 * @return void
+	 */
+	public function test_blu_filter_abilities_by_category_filters_by_category() {
+		// phpcs:disable Generic.Commenting.DocComment.MissingShort -- stub for test
+		$match    = new class() {
+			public function get_category() {
+				return 'blu-mcp';
+			}
+			public function get_name() {
+				return 'blu/test';
+			}
+		};
+		$no_match = new class() {
+			public function get_category() {
+				return 'other';
+			}
+			public function get_name() {
+				return 'other/test';
+			}
+		};
+		// phpcs:enable
+		$filtered = blu_filter_abilities_by_category( array( $match, $no_match ), 'blu-mcp' );
+		$this->assertCount( 1, $filtered );
+		$this->assertSame( $match, $filtered[0] );
+	}
+
+	/**
+	 * Verifies blu_filter_abilities_by_namespace keeps abilities matching the namespace.
+	 *
+	 * @return void
+	 */
+	public function test_blu_filter_abilities_by_namespace_filters_by_namespace() {
+		// phpcs:disable Generic.Commenting.DocComment.MissingShort -- stub for test
+		$match    = new class() {
+			public function get_category() {
+				return 'blu-mcp';
+			}
+			public function get_name() {
+				return 'blu/site-info';
+			}
+		};
+		$no_match = new class() {
+			public function get_category() {
+				return 'blu-mcp';
+			}
+			public function get_name() {
+				return 'other/thing';
+			}
+		};
+		// phpcs:enable
+		$filtered = blu_filter_abilities_by_namespace( array( $match, $no_match ), 'blu' );
+		$this->assertCount( 1, $filtered );
+		$this->assertSame( $match, $filtered[0] );
+	}
+
+	/**
+	 * Verifies blu_get_abilities_by_namespace returns array.
+	 *
+	 * @return void
+	 */
+	public function test_blu_get_abilities_by_namespace_returns_array() {
+		$abilities = blu_get_abilities_by_namespace( 'blu' );
+		$this->assertIsArray( $abilities );
 	}
 }
