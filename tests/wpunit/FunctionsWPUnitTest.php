@@ -218,7 +218,7 @@ class FunctionsWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	 * @return void
 	 */
 	public function test_blu_filter_abilities_by_category_filters_by_category() {
-		// phpcs:disable Generic.Commenting.DocComment.MissingShort -- stub for test
+		// phpcs:disable Generic.Commenting.DocComment.MissingShort,Squiz.Commenting.FunctionComment.Missing -- stub for test
 		$match    = new class() {
 			public function get_category() {
 				return 'blu-mcp';
@@ -247,7 +247,7 @@ class FunctionsWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	 * @return void
 	 */
 	public function test_blu_filter_abilities_by_namespace_filters_by_namespace() {
-		// phpcs:disable Generic.Commenting.DocComment.MissingShort -- stub for test
+		// phpcs:disable Generic.Commenting.DocComment.MissingShort,Squiz.Commenting.FunctionComment.Missing -- stub for test
 		$match    = new class() {
 			public function get_category() {
 				return 'blu-mcp';

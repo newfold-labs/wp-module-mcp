@@ -20,7 +20,7 @@ class McpValidationWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$admin_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $admin_id );
 
-		$request   = new \WP_REST_Request();
+		$request = new \WP_REST_Request();
 		$validator = new McpValidation( $request );
 
 		$this->assertTrue( $validator->is_authenticated() );
@@ -34,7 +34,7 @@ class McpValidationWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	public function test_is_authenticated_returns_false_when_no_auth_header() {
 		wp_set_current_user( 0 );
 
-		$request   = new \WP_REST_Request();
+		$request = new \WP_REST_Request();
 		$validator = new McpValidation( $request );
 
 		$this->assertFalse( $validator->is_authenticated() );
@@ -48,7 +48,7 @@ class McpValidationWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	public function test_is_authenticated_returns_false_when_bearer_token_missing() {
 		wp_set_current_user( 0 );
 
-		$request   = new \WP_REST_Request();
+		$request = new \WP_REST_Request();
 		$request->set_header( 'Authorization', 'Bearer ' );
 		$validator = new McpValidation( $request );
 
@@ -63,7 +63,7 @@ class McpValidationWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	public function test_is_authenticated_returns_false_when_auth_header_not_bearer() {
 		wp_set_current_user( 0 );
 
-		$request   = new \WP_REST_Request();
+		$request = new \WP_REST_Request();
 		$request->set_header( 'Authorization', 'Basic dXNlcjpwYXNz' );
 		$validator = new McpValidation( $request );
 
