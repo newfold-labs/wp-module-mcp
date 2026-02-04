@@ -1,14 +1,6 @@
 <?php
 declare( strict_types=1 );
 
-/**
- * Global Styles Abilities
- *
- * Provides abilities for managing WordPress global styles (theme.json customizations).
- *
- * @package BLU
- */
-
 namespace BLU\Abilities;
 
 /**
