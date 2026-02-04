@@ -1,4 +1,3 @@
-@ -1,285 +1,285 @@
 <?php
 /**
  * Global Styles Abilities
