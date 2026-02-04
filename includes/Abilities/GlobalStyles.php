@@ -1,4 +1,6 @@
 <?php
+declare( strict_types=1 );
+
 /**
  * Global Styles Abilities
  *
@@ -6,8 +8,6 @@
  *
  * @package BLU
  */
-
-declare( strict_types=1 );
 
 namespace BLU\Abilities;
 
@@ -98,7 +98,7 @@ class GlobalStyles {
 							'type'        => 'object',
 							'description' => 'Settings object in theme.json format.',
 							'properties'  => array(
-								'color' => array(
+								'color'      => array(
 									'type'        => 'object',
 									'description' => 'Color settings.',
 									'properties'  => array(
@@ -107,9 +107,9 @@ class GlobalStyles {
 											'description' => 'Palette settings.',
 											'properties'  => array(
 												'custom' => array(
-													'type'        => 'array',
+													'type' => 'array',
 													'description' => 'Array of color entries. Only include slugs you are changing.',
-													'items'       => array(
+													'items' => array(
 														'type'       => 'object',
 														'properties' => array(
 															'slug'  => array(
@@ -136,7 +136,7 @@ class GlobalStyles {
 									'type'        => 'object',
 									'description' => 'Typography settings (fontFamilies, fontSizes).',
 								),
-								'spacing' => array(
+								'spacing'    => array(
 									'type'        => 'object',
 									'description' => 'Spacing settings.',
 								),
@@ -181,7 +181,7 @@ class GlobalStyles {
 				'input_schema'        => array(
 					'type' => 'object',
 				),
-				'execute_callback'    => function ( $input = null ) {
+				'execute_callback'    => function () {
 					$global_styles = wp_get_global_styles();
 
 					return is_array( $global_styles ) && ! empty( $global_styles )
@@ -215,7 +215,7 @@ class GlobalStyles {
 				'input_schema'        => array(
 					'type' => 'object',
 				),
-				'execute_callback'    => function ( $input = null ) {
+				'execute_callback'    => function () {
 					$id = \WP_Theme_JSON_Resolver::get_user_global_styles_post_id();
 
 					return is_int( $id ) && $id > 0
