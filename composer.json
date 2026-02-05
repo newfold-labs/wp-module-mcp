@@ -19,11 +19,18 @@
   },
   "config": {
     "platform": {
-      "php": "7.4"
+      "php": "7.4.33"
     },
     "allow-plugins": {
-      "dealerdirect/phpcodesniffer-composer-installer": true
+      "dealerdirect/phpcodesniffer-composer-installer": true,
+      "composer/installers": true,
+      "johnpbloch/wordpress-core-installer": true
     }
+  },
+  "require-dev": {
+    "johnpbloch/wordpress": "@stable",
+    "lucatume/wp-browser": "*",
+    "phpunit/phpcov": "*"
   },
   "repositories": {
     "newfold-labs/*": {
@@ -40,11 +47,15 @@
     ],
     "lint": [
       "vendor/bin/phpcs . --standard=phpcs.xml -s"
-    ]
+    ],
+    "test": "codecept run wpunit",
+    "test-coverage": "codecept run wpunit --coverage wpunit.cov && phpcov merge --php tests/_output/merged.cov --html tests/_output/html tests/_output && echo \"open tests/_output/html/index.html to view the report\""
   },
   "scripts-descriptions": {
     "fix": "Automatically fix coding standards issues where possible.",
-    "lint": "Check files against coding standards."
+    "lint": "Check files against coding standards.",
+    "test": "Run wpunit tests.",
+    "test-coverage": "Run wpunit tests with coverage."
   },
   "require": {
     "wordpress/mcp-adapter": "^0.4.1",
