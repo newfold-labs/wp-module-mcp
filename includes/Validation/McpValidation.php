@@ -81,8 +81,8 @@ class McpValidation {
 				throw new \Exception( 'Bearer token is missing.' );
 			}
 
-			$result = $this->is_valid_token( $token );
-			return $result;
+			// Validate JWT (signature, claims, expiry) and verify product access via Hiive.
+			return $this->is_valid_token( $token );
 
 		} catch ( \Throwable $e ) {
 			return false;
@@ -122,6 +122,7 @@ class McpValidation {
 	 * @return object|null Payload object with aud and exp, or null on failure.
 	 */
 	private function peek_payload( string $token ): ?object {
+		// Decode the payload (middle segment) without verifying the signature.
 		$segments = explode( '.', $token );
 		if ( count( $segments ) !== 3 ) {
 			return null;
@@ -170,10 +171,11 @@ class McpValidation {
 			throw new \Exception( 'Token validation failed. The token is not yet valid.' );
 		}
 
-		// Choose key by audience: qa uses staging key, else production.
+		// Choose key by audience: QA tokens (aud: qa) use staging key; production uses production key.
 		$use_staging = ( null !== $peeked && isset( $peeked->aud ) && 'qa' === $peeked->aud );
 		$public_key  = $this->get_public_key( $use_staging );
 
+		// Verify signature and decode claims.
 		$decoded = JWT::decode( $token, new Key( $public_key, 'RS256' ) );
 
 		$user_id = null;
@@ -186,6 +188,7 @@ class McpValidation {
 			throw new \Exception( 'Token validation failed. The iss is invalid.' );
 		}
 
+		// Extract user ID from sub (e.g. "site:123" or "user:456" -> 123 or 456).
 		$sub = $decoded->sub ?? null;
 		if ( null === $sub ) {
 			throw new \Exception( 'Token validation failed. The sub claim is missing.' );
@@ -200,13 +203,14 @@ class McpValidation {
 			throw new \Exception( 'Token validation failed. The user ID is missing.' );
 		}
 
-		// Call the Hiive product verifier.
+		// Verify product access with Hiive (staging for QA tokens, production otherwise).
 		$response = HiiveProductVerifier::verify_product_access( $token, $user_id, $decoded );
 
 		if ( true !== $response ) {
 			throw new \Exception( 'Token validation failed. The product access is invalid.' );
 		}
 
+		// Set WordPress current user to an admin so the request has the required capabilities.
 		$this->set_admin_authentication();
 
 		return true;
@@ -220,8 +224,7 @@ class McpValidation {
 	 * @return string Normalized PEM key.
 	 */
 	private function normalize_pem_key( string $key ): string {
-		$key = str_replace( array( "\\n", "\\r" ), array( "\n", "\r" ), $key );
-		return trim( $key );
+		return trim( str_replace( array( "\\n", "\\r" ), array( "\n", "\r" ), $key ) );
 	}
 
 	/**
@@ -238,6 +241,7 @@ class McpValidation {
 		$url           = $use_staging ? self::CF_UJWT_PUBLIC_KEY_STAGING_URL : self::CF_UJWT_PUBLIC_KEY_URL;
 		$filter_name   = $use_staging ? 'blu_jwt_public_key_staging' : 'blu_jwt_public_key';
 
+		// Use cached key when available to avoid repeated remote fetches.
 		$public_key = get_transient( $transient_key );
 
 		if ( false === $public_key ) {
@@ -256,6 +260,7 @@ class McpValidation {
 
 				$public_key = $this->normalize_pem_key( $body );
 
+				// Cache the key for 1 hour.
 				set_transient( $transient_key, $public_key, HOUR_IN_SECONDS );
 
 			} catch ( \Exception $e ) {
@@ -274,7 +279,7 @@ class McpValidation {
 	 * @throws \Exception If no valid admin user is found.
 	 */
 	private function set_admin_authentication(): void {
-
+		// Use cached admin user when valid; otherwise resolve the first administrator.
 		$admin_user    = get_transient( 'nfd_blu_mcp_user' );
 		$valid_user_id = false;
 		if ( $admin_user ) {
