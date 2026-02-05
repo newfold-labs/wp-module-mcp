@@ -4,7 +4,6 @@ declare( strict_types=1 );
 
 namespace BLU\Validation;
 
-use WP_Error;
 use BLU\Validation\HiiveProductVerifier;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
