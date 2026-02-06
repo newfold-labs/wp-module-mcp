@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1770275106">
-  <project timestamp="1770275106">
+<coverage generated="1770409806">
+  <project timestamp="1770409806">
     <file name="/home/runner/work/wp-module-mcp/wp-module-mcp/bootstrap.php">
       <line num="9" type="stmt" count="0"/>
       <line num="10" type="stmt" count="0"/>
@@ -3017,111 +3017,135 @@
       <line num="51" type="stmt" count="0"/>
       <line num="52" type="stmt" count="0"/>
       <line num="54" type="stmt" count="0"/>
-      <line num="59" type="stmt" count="0"/>
       <line num="60" type="stmt" count="0"/>
       <line num="61" type="stmt" count="0"/>
       <line num="62" type="stmt" count="0"/>
       <line num="63" type="stmt" count="0"/>
       <line num="64" type="stmt" count="0"/>
       <line num="65" type="stmt" count="0"/>
-      <line num="67" type="stmt" count="0"/>
+      <line num="66" type="stmt" count="0"/>
       <line num="68" type="stmt" count="0"/>
-      <line num="71" type="stmt" count="0"/>
-      <line num="73" type="stmt" count="0"/>
+      <line num="69" type="stmt" count="0"/>
+      <line num="72" type="stmt" count="0"/>
       <line num="74" type="stmt" count="0"/>
-      <line num="77" type="stmt" count="0"/>
-      <line num="79" type="stmt" count="0"/>
+      <line num="75" type="stmt" count="0"/>
+      <line num="78" type="stmt" count="0"/>
       <line num="80" type="stmt" count="0"/>
       <line num="81" type="stmt" count="0"/>
       <line num="82" type="stmt" count="0"/>
       <line num="83" type="stmt" count="0"/>
       <line num="84" type="stmt" count="0"/>
       <line num="86" type="stmt" count="0"/>
-      <line num="87" type="stmt" count="0"/>
+      <line num="88" type="stmt" count="0"/>
       <line num="89" type="stmt" count="0"/>
-      <line num="92" type="stmt" count="0"/>
-      <metrics loc="96" ncloc="63" classes="1" methods="1" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="29" coveredstatements="0" elements="30" coveredelements="0"/>
+      <line num="91" type="stmt" count="0"/>
+      <line num="94" type="stmt" count="0"/>
+      <metrics loc="98" ncloc="62" classes="1" methods="1" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="29" coveredstatements="0" elements="30" coveredelements="0"/>
     </file>
     <file name="/home/runner/work/wp-module-mcp/wp-module-mcp/includes/Validation/McpValidation.php">
       <class name="BLU\Validation\McpValidation" namespace="global">
-        <metrics complexity="29" methods="7" coveredmethods="2" conditionals="0" coveredconditionals="0" statements="68" coveredstatements="14" elements="75" coveredelements="16"/>
+        <metrics complexity="47" methods="9" coveredmethods="2" conditionals="0" coveredconditionals="0" statements="90" coveredstatements="14" elements="99" coveredelements="16"/>
       </class>
-      <line num="45" type="method" name="__construct" visibility="public" complexity="1" crap="1" count="4"/>
-      <line num="46" type="stmt" count="4"/>
-      <line num="55" type="method" name="is_authenticated" visibility="public" complexity="6" crap="6.03" count="4"/>
-      <line num="59" type="stmt" count="4"/>
-      <line num="60" type="stmt" count="1"/>
-      <line num="64" type="stmt" count="3"/>
-      <line num="67" type="stmt" count="3"/>
-      <line num="68" type="stmt" count="1"/>
-      <line num="72" type="stmt" count="2"/>
-      <line num="75" type="stmt" count="2"/>
-      <line num="76" type="stmt" count="2"/>
-      <line num="80" type="stmt" count="0"/>
-      <line num="82" type="stmt" count="3"/>
-      <line num="83" type="stmt" count="3"/>
-      <line num="92" type="method" name="get_authorization_header" visibility="private" complexity="1" crap="1" count="3"/>
-      <line num="93" type="stmt" count="3"/>
-      <line num="103" type="method" name="extract_bearer_token" visibility="private" complexity="2" crap="2.15" count="2"/>
-      <line num="104" type="stmt" count="2"/>
-      <line num="105" type="stmt" count="0"/>
-      <line num="108" type="stmt" count="2"/>
-      <line num="120" type="method" name="is_valid_token" visibility="private" complexity="9" crap="90" count="0"/>
-      <line num="123" type="stmt" count="0"/>
-      <line num="124" type="stmt" count="0"/>
+      <line num="51" type="method" name="__construct" visibility="public" complexity="1" crap="1" count="4"/>
+      <line num="52" type="stmt" count="4"/>
+      <line num="61" type="method" name="is_authenticated" visibility="public" complexity="6" crap="6.03" count="4"/>
+      <line num="64" type="stmt" count="4"/>
+      <line num="65" type="stmt" count="1"/>
+      <line num="69" type="stmt" count="3"/>
+      <line num="72" type="stmt" count="3"/>
+      <line num="73" type="stmt" count="1"/>
+      <line num="77" type="stmt" count="2"/>
+      <line num="80" type="stmt" count="2"/>
+      <line num="81" type="stmt" count="2"/>
+      <line num="85" type="stmt" count="0"/>
+      <line num="87" type="stmt" count="3"/>
+      <line num="88" type="stmt" count="3"/>
+      <line num="97" type="method" name="get_authorization_header" visibility="private" complexity="1" crap="1" count="3"/>
+      <line num="98" type="stmt" count="3"/>
+      <line num="108" type="method" name="extract_bearer_token" visibility="private" complexity="2" crap="2.15" count="2"/>
+      <line num="109" type="stmt" count="2"/>
+      <line num="110" type="stmt" count="0"/>
+      <line num="113" type="stmt" count="2"/>
+      <line num="124" type="method" name="peek_payload" visibility="private" complexity="4" crap="20" count="0"/>
+      <line num="126" type="stmt" count="0"/>
       <line num="127" type="stmt" count="0"/>
-      <line num="129" type="stmt" count="0"/>
+      <line num="128" type="stmt" count="0"/>
       <line num="131" type="stmt" count="0"/>
+      <line num="132" type="stmt" count="0"/>
       <line num="133" type="stmt" count="0"/>
       <line num="134" type="stmt" count="0"/>
-      <line num="137" type="stmt" count="0"/>
+      <line num="135" type="stmt" count="0"/>
       <line num="138" type="stmt" count="0"/>
-      <line num="141" type="stmt" count="0"/>
-      <line num="142" type="stmt" count="0"/>
+      <line num="139" type="stmt" count="0"/>
+      <line num="140" type="stmt" count="0"/>
       <line num="143" type="stmt" count="0"/>
-      <line num="145" type="stmt" count="0"/>
-      <line num="146" type="stmt" count="0"/>
-      <line num="147" type="stmt" count="0"/>
-      <line num="151" type="stmt" count="0"/>
-      <line num="152" type="stmt" count="0"/>
-      <line num="156" type="stmt" count="0"/>
+      <line num="155" type="method" name="is_valid_token" visibility="private" complexity="19" crap="380" count="0"/>
       <line num="158" type="stmt" count="0"/>
       <line num="159" type="stmt" count="0"/>
       <line num="162" type="stmt" count="0"/>
-      <line num="164" type="stmt" count="0"/>
-      <line num="174" type="method" name="get_public_key" visibility="private" complexity="5" crap="30" count="0"/>
+      <line num="165" type="stmt" count="0"/>
+      <line num="166" type="stmt" count="0"/>
+      <line num="170" type="stmt" count="0"/>
+      <line num="171" type="stmt" count="0"/>
+      <line num="175" type="stmt" count="0"/>
       <line num="176" type="stmt" count="0"/>
-      <line num="178" type="stmt" count="0"/>
-      <line num="180" type="stmt" count="0"/>
-      <line num="182" type="stmt" count="0"/>
+      <line num="179" type="stmt" count="0"/>
+      <line num="181" type="stmt" count="0"/>
       <line num="183" type="stmt" count="0"/>
-      <line num="186" type="stmt" count="0"/>
+      <line num="184" type="stmt" count="0"/>
+      <line num="187" type="stmt" count="0"/>
       <line num="188" type="stmt" count="0"/>
-      <line num="189" type="stmt" count="0"/>
       <line num="192" type="stmt" count="0"/>
+      <line num="193" type="stmt" count="0"/>
       <line num="194" type="stmt" count="0"/>
       <line num="196" type="stmt" count="0"/>
+      <line num="197" type="stmt" count="0"/>
       <line num="198" type="stmt" count="0"/>
       <line num="202" type="stmt" count="0"/>
-      <line num="212" type="method" name="set_admin_authentication" visibility="private" complexity="5" crap="30" count="0"/>
+      <line num="203" type="stmt" count="0"/>
+      <line num="207" type="stmt" count="0"/>
+      <line num="209" type="stmt" count="0"/>
+      <line num="210" type="stmt" count="0"/>
       <line num="214" type="stmt" count="0"/>
-      <line num="215" type="stmt" count="0"/>
       <line num="216" type="stmt" count="0"/>
-      <line num="217" type="stmt" count="0"/>
-      <line num="218" type="stmt" count="0"/>
-      <line num="222" type="stmt" count="0"/>
-      <line num="223" type="stmt" count="0"/>
-      <line num="224" type="stmt" count="0"/>
-      <line num="225" type="stmt" count="0"/>
-      <line num="226" type="stmt" count="0"/>
+      <line num="226" type="method" name="normalize_pem_key" visibility="private" complexity="1" crap="2" count="0"/>
       <line num="227" type="stmt" count="0"/>
-      <line num="228" type="stmt" count="0"/>
-      <line num="230" type="stmt" count="0"/>
-      <line num="231" type="stmt" count="0"/>
-      <line num="234" type="stmt" count="0"/>
-      <line num="235" type="stmt" count="0"/>
-      <line num="237" type="stmt" count="0"/>
-      <metrics loc="240" ncloc="166" classes="1" methods="7" coveredmethods="2" conditionals="0" coveredconditionals="0" statements="68" coveredstatements="14" elements="75" coveredelements="16"/>
+      <line num="239" type="method" name="get_public_key" visibility="private" complexity="8" crap="72" count="0"/>
+      <line num="240" type="stmt" count="0"/>
+      <line num="241" type="stmt" count="0"/>
+      <line num="242" type="stmt" count="0"/>
+      <line num="245" type="stmt" count="0"/>
+      <line num="247" type="stmt" count="0"/>
+      <line num="249" type="stmt" count="0"/>
+      <line num="251" type="stmt" count="0"/>
+      <line num="252" type="stmt" count="0"/>
+      <line num="255" type="stmt" count="0"/>
+      <line num="257" type="stmt" count="0"/>
+      <line num="258" type="stmt" count="0"/>
+      <line num="261" type="stmt" count="0"/>
+      <line num="264" type="stmt" count="0"/>
+      <line num="266" type="stmt" count="0"/>
+      <line num="267" type="stmt" count="0"/>
+      <line num="271" type="stmt" count="0"/>
+      <line num="281" type="method" name="set_admin_authentication" visibility="private" complexity="5" crap="30" count="0"/>
+      <line num="283" type="stmt" count="0"/>
+      <line num="284" type="stmt" count="0"/>
+      <line num="285" type="stmt" count="0"/>
+      <line num="286" type="stmt" count="0"/>
+      <line num="287" type="stmt" count="0"/>
+      <line num="291" type="stmt" count="0"/>
+      <line num="292" type="stmt" count="0"/>
+      <line num="293" type="stmt" count="0"/>
+      <line num="294" type="stmt" count="0"/>
+      <line num="295" type="stmt" count="0"/>
+      <line num="296" type="stmt" count="0"/>
+      <line num="297" type="stmt" count="0"/>
+      <line num="299" type="stmt" count="0"/>
+      <line num="300" type="stmt" count="0"/>
+      <line num="303" type="stmt" count="0"/>
+      <line num="304" type="stmt" count="0"/>
+      <line num="306" type="stmt" count="0"/>
+      <metrics loc="309" ncloc="203" classes="1" methods="9" coveredmethods="2" conditionals="0" coveredconditionals="0" statements="90" coveredstatements="14" elements="99" coveredelements="16"/>
     </file>
     <file name="/home/runner/work/wp-module-mcp/wp-module-mcp/includes/functions.php">
       <line num="12" type="stmt" count="0"/>
@@ -3182,6 +3206,6 @@
       <line num="239" type="stmt" count="0"/>
       <metrics loc="241" ncloc="135" classes="0" methods="0" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="56" coveredstatements="0" elements="56" coveredelements="0"/>
     </file>
-    <metrics files="17" loc="4200" ncloc="3675" classes="15" methods="50" coveredmethods="3" conditionals="0" coveredconditionals="0" statements="3035" coveredstatements="17" elements="3085" coveredelements="20"/>
+    <metrics files="17" loc="4271" ncloc="3711" classes="15" methods="52" coveredmethods="3" conditionals="0" coveredconditionals="0" statements="3057" coveredstatements="17" elements="3109" coveredelements="20"/>
   </project>
 </coverage>
