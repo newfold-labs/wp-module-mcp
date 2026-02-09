@@ -253,7 +253,9 @@ class WooProducts {
 								$product->save();
 
 								/**
-								 * @var \WC_Product_Variation
+								 * The variable product
+								 *
+								 * @var $variation \WC_Product_Variation
 								 */
 								$variation = wc_get_product_object( 'variation' );
 								if ( isset( $input['regular_price'] ) ) {
@@ -509,12 +511,9 @@ class WooProducts {
 										$filtered_ids[] = $category['id'];
 										break;
 									}
-								} else {
-									// Case-insensitive substring match
-									if ( false !== stripos( $cat_name, $pattern ) ) {
+								} elseif ( false !== stripos( $cat_name, $pattern ) ) {
 										$filtered_ids[] = $category['id'];
 										break;
-									}
 								}
 							}
 						}
@@ -745,12 +744,9 @@ class WooProducts {
 										$filtered_ids[] = $tag['id'];
 										break;
 									}
-								} else {
-									// Case-insensitive substring match
-									if ( false !== stripos( $cat_name, $pattern ) ) {
+								} elseif ( false !== stripos( $cat_name, $pattern ) ) {
 										$filtered_ids[] = $tag['id'];
 										break;
-									}
 								}
 							}
 						}
