@@ -1,14 +1,12 @@
 <?php
 /**
- *This file contains all the instructions the AI will need to execute to suggest the product description and summary to users,
+ * This file contains all the instructions the AI will need to execute to suggest the product description and summary to users,
  * based on a product's name and others abilities content generated.
- *
  *
  * @package BLU
  *
  * @var string $name
  */
-
 
 return "Use the resources returned by abilities blu/suggest-product-categories, blu/suggest-product-tag only if they have been previously provided or are present in the product data:
 

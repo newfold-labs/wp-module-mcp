@@ -1,7 +1,6 @@
 <?php
 /**
- *This file contains all the instructions the AI will need to execute to improvement the product description and summary to users
- *
+ * This file contains all the instructions the AI will need to execute to improvement the product description and summary to users
  *
  * @package BLU
  *
@@ -10,7 +9,6 @@
  * @var string $name
  * @var string $tone
  */
-
 
 return "You are an expert e‑commerce copywriter. Your task is to rewrite and improve the product description and short description for the product $name.
 Follow these rules:

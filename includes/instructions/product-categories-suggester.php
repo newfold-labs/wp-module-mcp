@@ -1,6 +1,6 @@
 <?php
 /**
- *This file contains all the instructions the AI will need to execute to suggest a list of categories to users,
+ * This file contains all the instructions the AI will need to execute to suggest a list of categories to users,
  * based on a product's name.
  * The suggested categories must be found either from existing ones or from the official Google Product Taxonomy list.
  *
@@ -8,7 +8,6 @@
  *
  * @var string $product_name
  */
-
 
 return "You are an AI assistant that helps found the best categories for product. You must follow these steps:
 STEP 1:

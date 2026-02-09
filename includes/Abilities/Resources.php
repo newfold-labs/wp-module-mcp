@@ -26,70 +26,73 @@ class Resources {
 	 */
 	private function register_google_taxonomy_resource() {
 
-		blu_register_ability( 'blu/google-product-taxonomy', [
-			'label'               => 'Google Product Taxonomy',
-			'description'         => 'The official Google Product Taxonomy resource',
-			'category'            => 'blu-mcp',
-			'input_schema'        => array(
-				'type'       => 'object',
-				'properties' => array(
-					'patterns' => array(
-						'type'        => 'array',
-						'description' => 'List of relevant categories or relevant regex keywords based on product name',
-						'minItems'    => 1,
-						'maxItems'    => 5,
-					)
-				)
-			),
-			'execute_callback'    => function ( $input ) {
-				$locale = str_replace( '_', '-', get_locale() );
+		blu_register_ability(
+			'blu/google-product-taxonomy',
+			array(
+				'label'               => 'Google Product Taxonomy',
+				'description'         => 'The official Google Product Taxonomy resource',
+				'category'            => 'blu-mcp',
+				'input_schema'        => array(
+					'type'       => 'object',
+					'properties' => array(
+						'patterns' => array(
+							'type'        => 'array',
+							'description' => 'List of relevant categories or relevant regex keywords based on product name',
+							'minItems'    => 1,
+							'maxItems'    => 5,
+						),
+					),
+				),
+				'execute_callback'    => function ( $input ) {
+					$locale = str_replace( '_', '-', get_locale() );
 
-				$taxonomy = get_transient( 'blu/google-product-taxonomy-' . $locale );
-				if ( false === $taxonomy ) {
+					$taxonomy = get_transient( 'blu/google-product-taxonomy-' . $locale );
+					if ( false === $taxonomy ) {
 
-					$content = $this->retrieve_file( $locale );
+						$content = $this->retrieve_file( $locale );
 
-					if ( is_wp_error( $content ) ) {
-						return $content;
-					} elseif ( 'not_found' === $content ) {
-						$content = $this->retrieve_file();
 						if ( is_wp_error( $content ) ) {
 							return $content;
-						}
-					}
-
-					// Split into lines
-					$lines = explode( "\n", $content );
-
-					$taxonomy = '';
-
-					foreach ( $lines as $line ) {
-						$line = trim( $line );
-						if ( '' === $line || strpos( $line, '#' ) === 0 ) {
-							continue;
+						} elseif ( 'not_found' === $content ) {
+							$content = $this->retrieve_file();
+							if ( is_wp_error( $content ) ) {
+								return $content;
+							}
 						}
 
-						$line = preg_replace( '/^\d+\s*-\s*/', '', $line );
+						// Split into lines
+						$lines = explode( "\n", $content );
 
-						$taxonomy .= $line . "\n";
+						$taxonomy = '';
+
+						foreach ( $lines as $line ) {
+							$line = trim( $line );
+							if ( '' === $line || strpos( $line, '#' ) === 0 ) {
+								continue;
+							}
+
+							$line = preg_replace( '/^\d+\s*-\s*/', '', $line );
+
+							$taxonomy .= $line . "\n";
+						}
+						set_transient( 'blu/google-product-taxonomy-' . $locale, $taxonomy, MONTH_IN_SECONDS );
 					}
-					set_transient( 'blu/google-product-taxonomy-' . $locale, $taxonomy, MONTH_IN_SECONDS );
-				}
 
-				$filtered = $this->filter_google_taxonomies( $taxonomy, $input['patterns'] );
+					$filtered = $this->filter_google_taxonomies( $taxonomy, $input['patterns'] );
 
-				return [ 'categories' => $filtered ];
-			},
-			'permission_callback' => function () {
-				return current_user_can( 'manage_options' );
-			},
-			'meta'                => [
-				'annotations' => [
-					'readonly'   => true,
-					'idempotent' => true,
-				]
-			]
-		] );
+					return array( 'categories' => $filtered );
+				},
+				'permission_callback' => function () {
+					return current_user_can( 'manage_options' );
+				},
+				'meta'                => array(
+					'annotations' => array(
+						'readonly'   => true,
+						'idempotent' => true,
+					),
+				),
+			)
+		);
 	}
 
 
@@ -104,7 +107,7 @@ class Resources {
 		$response = wp_remote_get( 'https://www.google.com/basepages/producttype/taxonomy-with-ids.' . $locale . '.txt' );
 		if ( is_wp_error( $response ) ) {
 			return $response;
-		} elseif ( 404 == wp_remote_retrieve_response_code( $response ) ) {
+		} elseif ( 404 == wp_remote_retrieve_response_code( $response ) ) { //phpcs:ignore Universal.Operators.StrictComparisons.LooseEqual
 			return 'not_found';
 		} else {
 			return wp_remote_retrieve_body( $response );
@@ -133,28 +136,23 @@ class Resources {
 
 			foreach ( $patterns as $pattern ) {
 
-				if ( @preg_match( $pattern, '' ) !== false ) {
+				if ( preg_match( $pattern, '' ) !== false ) {
 					$regex = $pattern;
 					if ( substr( $regex, - 1 ) !== 'i' ) {
 						// Ensure case-insensitive
 						$regex = rtrim( $regex, '/' ) . '/i';
 					}
 					if ( preg_match( $regex, $line ) ) {
-						$filtered[] = $line ;
+						$filtered[] = $line;
 						break;
 					}
-				} else {
-					// Case-insensitive substring match
-					if ( false !== stripos( $line, $pattern ) ) {
-						$filtered[] =  $line ;
+				} elseif ( false !== stripos( $line, $pattern ) ) {
+						$filtered[] = $line;
 						break;
-					}
 				}
 			}
 		}
 
-
 		return $filtered;
 	}
 }
-

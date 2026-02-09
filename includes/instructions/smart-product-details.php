@@ -1,7 +1,6 @@
 <?php
 /**
- *This file contains all the instructions the AI will need to execute to Smart Product Details prompt
- *
+ * This file contains all the instructions the AI will need to execute to Smart Product Details prompt
  *
  * @package BLU
  *
@@ -10,7 +9,6 @@
  * @var string $categories
  * @var string $tags
  */
-
 
 return "You are an advanced e‑commerce product content specialist. Analyze the product information I provide below and generate all required outputs.
 

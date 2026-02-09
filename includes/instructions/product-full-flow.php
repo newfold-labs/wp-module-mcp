@@ -1,7 +1,6 @@
 <?php
 /**
- *This file contains all the instructions the AI will need to execute to add a new product in the store
- *
+ * This file contains all the instructions the AI will need to execute to add a new product in the store
  *
  * @package BLU
  *

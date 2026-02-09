@@ -209,7 +209,7 @@ class WooProducts {
 						unset( $input['ready'] );
 						$request = new \WP_REST_Request( 'POST', '/wc/v3/products' );
 
-						$variation_attributes = $input['variation_attributes'] ?? [];
+						$variation_attributes = $input['variation_attributes'] ?? array();
 						if ( $variation_attributes ) {
 							$input['type'] = 'variable';
 						}
@@ -218,18 +218,17 @@ class WooProducts {
 							unset( $input['variation_attributes'] );
 						}
 
-
 						$request->set_body_params( $input );
 						$response = rest_do_request( $request );
 
-						if ( ! $response->is_error() && ! ! $variation_attributes ) {
+						if ( ! $response->is_error() && (bool) $variation_attributes ) {
 							$data       = $response->get_data();
 							$product_id = absint( $data['id'] ?? 0 );
 
 							if ( $product_id ) {
 								$product            = wc_get_product( $product_id );
 								$position           = 0;
-								$product_attributes = [];
+								$product_attributes = array();
 
 								foreach ( $variation_attributes as $attribute ) {
 									$attribute_id   = 0;
@@ -273,21 +272,21 @@ class WooProducts {
 						$name        = $input['name'] ?? '';
 						$instruction = include_once __DIR__ . '/../instructions/product-full-flow.php';
 
-						return [
-							'messages' => [
-								[
+						return array(
+							'messages' => array(
+								array(
 									'role'    => 'user',
-									'content' => [
+									'content' => array(
 										'type'        => 'text',
 										'text'        => $instruction,
-										'annotations' => [
-											'audience' => [ 'assistant' ],
+										'annotations' => array(
+											'audience' => array( 'assistant' ),
 											'priority' => 0.9,
-										],
-									],
-								],
-							],
-						];
+										),
+									),
+								),
+							),
+						);
 					}
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_products' ),
@@ -472,10 +471,10 @@ class WooProducts {
 				),
 				'execute_callback'    => function ( $input ) {
 					$page       = 1;
-					$categories = [];
+					$categories = array();
 					$request    = new \WP_REST_Request( 'GET', '/wc/v3/products/categories' );
 					do {
-						$request->set_query_params( [ 'page' => $page ] );
+						$request->set_query_params( array( 'page' => $page ) );
 						$response = rest_do_request( $request );
 						if ( is_wp_error( $response ) ) {
 							return blu_standardize_rest_response( $response );
@@ -483,18 +482,18 @@ class WooProducts {
 						$data  = $response->get_data();
 						$total = count( $data );
 						foreach ( $data as $category ) {
-							$categories[] = [
+							$categories[] = array(
 								'id'     => $category['id'],
 								'name'   => $category['name'],
 								'parent' => $category['parent'],
-							];
+							);
 						}
 						$page++;
 					} while ( $total > 0 );
 
 					if ( isset( $input['patterns'] ) && is_array( $input['patterns'] ) ) {
 						$patterns     = $input['patterns'];
-						$filtered_ids = [];
+						$filtered_ids = array();
 						foreach ( $categories as $category ) {
 							$cat_name = trim( $category['name'] );
 
@@ -521,9 +520,12 @@ class WooProducts {
 						}
 
 						if ( count( $filtered_ids ) > 0 ) {
-							$categories = array_filter( $categories, function ( $category ) use ( $filtered_ids ) {
-								return in_array( $category['id'], $filtered_ids );
-							} );
+							$categories = array_filter(
+								$categories,
+								function ( $category ) use ( $filtered_ids ) {
+									return in_array( $category['id'], $filtered_ids );
+								}
+							);
 						}
 					}
 
@@ -569,9 +571,9 @@ class WooProducts {
 				),
 				'execute_callback'    => function ( $input ) {
 
-					$all_categories = $input['categories'] ?? [];
+					$all_categories = $input['categories'] ?? array();
 
-					$results = [];
+					$results = array();
 
 					if ( $input['is_google_tax'] ) {
 
@@ -586,15 +588,14 @@ class WooProducts {
 							$results[] = $resp;
 						}
 
-						return [
+						return array(
 							'statusCode' => 201,
 							'status'     => 'success',
 							'message'    => $results,
-						];
+						);
 					} else {
 						return $this->add_product_taxonomies( $all_categories, 'categories', $input['hierarchical'] );
 					}
-
 				},
 				'permission_callback' => fn() => current_user_can( 'manage_product_terms' ),
 				'meta'                => array(
@@ -692,10 +693,10 @@ class WooProducts {
 		blu_register_ability(
 			'blu/wc-list-product-tags',
 			array(
-				'label'            => 'List WooCommerce Product Tags',
-				'description'      => 'List all WooCommerce product tags',
-				'category'         => 'blu-mcp',
-				'input_schema'     => array(
+				'label'               => 'List WooCommerce Product Tags',
+				'description'         => 'List all WooCommerce product tags',
+				'category'            => 'blu-mcp',
+				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
 						'patterns' => array(
@@ -705,12 +706,12 @@ class WooProducts {
 						),
 					),
 				),
-				'execute_callback' => function ( $input ) {
+				'execute_callback'    => function ( $input ) {
 					$page    = 1;
-					$tags    = [];
+					$tags    = array();
 					$request = new \WP_REST_Request( 'GET', '/wc/v3/products/tags' );
 					do {
-						$request->set_query_params( [ 'page' => $page ] );
+						$request->set_query_params( array( 'page' => $page ) );
 						$response = rest_do_request( $request );
 						if ( is_wp_error( $response ) ) {
 							return blu_standardize_rest_response( $response );
@@ -718,14 +719,17 @@ class WooProducts {
 						$data  = $response->get_data();
 						$total = count( $data );
 						foreach ( $data as $tag ) {
-							$tags[] = [ 'id' => $tag['id'], 'name' => $tag['name'] ];
+							$tags[] = array(
+								'id'   => $tag['id'],
+								'name' => $tag['name'],
+							);
 						}
 						$page++;
 					} while ( $total > 0 );
 
 					if ( isset( $input['patterns'] ) && is_array( $input['patterns'] ) ) {
 						$patterns     = $input['patterns'];
-						$filtered_ids = [];
+						$filtered_ids = array();
 						foreach ( $tags as $tag ) {
 							$cat_name = trim( $tag['name'] );
 
@@ -752,9 +756,12 @@ class WooProducts {
 						}
 
 						if ( count( $filtered_ids ) > 0 ) {
-							$tags = array_filter( $tags, function ( $tag ) use ( $filtered_ids ) {
-								return in_array( $tag['id'], $filtered_ids );
-							} );
+							$tags = array_filter(
+								$tags,
+								function ( $tag ) use ( $filtered_ids ) {
+									return in_array( $tag['id'], $filtered_ids );
+								}
+							);
 						}
 					}
 
@@ -1037,11 +1044,11 @@ class WooProducts {
 		$hierarchical = 'categories' === $type ? $hierarchical : false;
 		$parent       = 0;
 		$request      = new \WP_REST_Request( 'POST', '/wc/v3/products/' . $type );
-		$results      = [];
+		$results      = array();
 		foreach ( $taxonomies as $taxonomy ) {
-			$args = [
+			$args = array(
 				'name' => trim( $taxonomy ),
-			];
+			);
 			if ( $hierarchical ) {
 				$args['parent'] = $parent;
 			}
@@ -1050,20 +1057,19 @@ class WooProducts {
 			$response = blu_standardize_rest_response( $response );
 			if ( 400 == $response ['statusCode'] && 'term_exists' === $response['message']['code'] ) {
 				$parent = $response['message']['data']['resource_id'];
-			} else if ( 201 == $response ['statusCode'] ) {
+			} elseif ( 201 == $response ['statusCode'] ) {
 				$parent    = $response['message']['id'];
 				$results[] = $response['message'];
 			} else {
 				return $response;
 			}
-
 		}
 
-		return [
+		return array(
 			'statusCode' => 201,
 			'status'     => 'success',
 			'message'    => $results,
-		];
+		);
 	}
 
 	/**
@@ -1077,7 +1083,7 @@ class WooProducts {
 	private function get_product_taxonomy_ids( $product_id, $taxonomy = 'categories' ) {
 		$request  = new \WP_REST_Request( 'GET', '/wc/v3/products/' . $product_id );
 		$response = rest_do_request( $request );
-		$ids      = [];
+		$ids      = array();
 		if ( is_wp_error( $response ) ) {
 			return $ids;
 		} else {
@@ -1087,11 +1093,10 @@ class WooProducts {
 
 				foreach ( $data[ $taxonomy ] as $tax ) {
 					if ( isset( $tax['id'] ) && $uncategorized_id != $tax['id'] ) {
-						$ids[] = [ 'id' => $tax['id'] ];
+						$ids[] = array( 'id' => $tax['id'] );
 					}
 				}
 			}
-
 		}
 
 		return $ids;
