@@ -51,7 +51,6 @@ class McpServer {
 	 */
 	public function register_server(): void {
 
-
 		$abilities = array_map(
 			function ( $ability ) {
 				return $ability->get_name();
@@ -60,7 +59,6 @@ class McpServer {
 		);
 		// Get the MCP adapter instance
 		$adapter = McpAdapter::instance();
-
 
 		// Create the server
 		$adapter->create_server(
