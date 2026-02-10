@@ -81,7 +81,7 @@ class GlobalStyles {
 			'blu/update-global-styles',
 			array(
 				'label'               => 'Update Global Styles',
-				'description'         => 'Update WordPress global styles (colors, typography, spacing) using theme.json format. Call this tool DIRECTLY — it resolves the global styles ID automatically, so you do NOT need to call blu/get-global-styles or blu/get-active-global-styles-id first. Use for: "change color", "update font", "set background", "update styles". COLOR SLUGS: accent-2=Primary (this is the main accent/brand color — when the user says "accent color" they mean this), accent-5=Secondary, base=Background (slug "base" NOT "background"), contrast=Text (slug "contrast" NOT "text"). Only include the color slugs you are changing — colors not included are preserved automatically. ACCENT COLORS: When changing any accent/primary/brand color, you MUST generate ALL 6 accent shades (accent-1 through accent-6) as a cohesive palette derived from the chosen color via HSL lightness variations. Never include only one accent slug. COLOR GUIDELINES: "base" (background) MUST be white or near-white (#FFFFFF, #FAFAFA, #F5F5F5) for light themes, or dark grey / near-black (#1A1A1A, #212121, #2C2C2C) for dark themes. "contrast" (text) MUST be the opposite — dark for light themes, light for dark themes. These two should always have high contrast for readability. Background tints are acceptable but keep them very subtle and mostly neutral/grey. FORMAT: {"settings":{"color":{"palette":{"custom":[{"slug":"...","color":"#hex","name":"..."}]}}}}',
+				'description'         => 'Update WordPress global styles (colors, typography, spacing) using theme.json format. Call this tool DIRECTLY — it resolves the global styles ID automatically, so you do NOT need to call blu/get-global-styles or blu/get-active-global-styles-id first. Use for: "change color", "update font", "set background", "update styles". COLOR SLUGS: accent-2=Primary (this is the main accent/brand color — when the user says "accent color" they mean this), accent-5=Secondary, base=Background (slug "base" NOT "background"), contrast=Text (slug "contrast" NOT "text"). Only include the color slugs you are changing — colors not included are preserved automatically. ACCENT COLORS: When changing any accent/primary/brand color, you MUST generate ALL 6 accent shades (accent-1 through accent-6) as a cohesive palette derived from the chosen color via HSL lightness variations. Never include only one accent slug. COLOR GUIDELINES: "base" (background) MUST be white or near-white (#FFFFFF, #FAFAFA, #F5F5F5) for light themes, or dark grey / near-black (#1A1A1A, #212121, #2C2C2C) for dark themes. "contrast" (text) MUST be the opposite — dark for light themes, light for dark themes. These two should always have high contrast for readability. Background tints are acceptable but keep them very subtle and mostly neutral/grey. FORMAT: {"settings":{"color":{"palette":{"theme":[{"slug":"...","color":"#hex","name":"..."}]}}}}',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
@@ -98,9 +98,9 @@ class GlobalStyles {
 											'type'        => 'object',
 											'description' => 'Palette settings.',
 											'properties'  => array(
-												'custom' => array(
+												'theme' => array(
 													'type' => 'array',
-													'description' => 'Array of color entries. Only include slugs you are changing.',
+													'description' => 'Array of theme palette color entries. Only include slugs you are changing.',
 													'items' => array(
 														'type'       => 'object',
 														'properties' => array(
