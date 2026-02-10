@@ -9,6 +9,8 @@ use BLU\Abilities\GlobalStyles;
 use BLU\Abilities\Media;
 use BLU\Abilities\Pages;
 use BLU\Abilities\Posts;
+use BLU\Abilities\Prompts;
+use BLU\Abilities\Resources;
 use BLU\Abilities\RestApiCrud;
 use BLU\Abilities\Settings;
 use BLU\Abilities\SiteInfo;
@@ -49,14 +51,12 @@ class McpServer {
 	 */
 	public function register_server(): void {
 
-		// Get all abilities in the blu-mcp category
 		$abilities = array_map(
 			function ( $ability ) {
 				return $ability->get_name();
 			},
 			blu_get_abilities_by_category( 'blu-mcp' )
 		);
-
 		// Get the MCP adapter instance
 		$adapter = McpAdapter::instance();
 
@@ -88,6 +88,8 @@ class McpServer {
 	 */
 	public function register_abilities(): void {
 		// Initialize all ability classes
+		new Prompts();
+		new Resources();
 		new Posts();
 		new Pages();
 		new Media();
