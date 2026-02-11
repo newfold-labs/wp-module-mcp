@@ -117,7 +117,7 @@ class BlockEditor {
 			'blu/add-section',
 			array(
 				'label'               => 'Add New Section',
-				'description'         => 'Insert new block content at a specific position in the page. Use this when the user asks to add a new section, component, or content area. Set after_client_id to a block\'s clientId to insert after it, or null to insert at the very top of the page. The block_content MUST be valid WordPress block markup. You can include multiple blocks (e.g., a group with inner blocks). Always generate complete, well-structured sections with proper nesting.',
+				'description'         => 'Insert new block content at a specific position in the page. Use this when the user asks to add a new section, component, or content area. Set after_client_id to a block\'s clientId to insert after it, or null to insert at the very top of the page. Provide EITHER pattern_slug (to insert a pattern from the library) OR block_content (to insert custom markup). When using a pattern, always prefer pattern_slug — the system will fetch the markup directly.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
@@ -126,17 +126,21 @@ class BlockEditor {
 							'type'        => array( 'string', 'null' ),
 							'description' => 'The clientId of the block to insert after (from the block tree context). Use null to insert at the very top of the page.',
 						),
+						'pattern_slug'    => array(
+							'type'        => 'string',
+							'description' => 'Slug of a pattern from the library to insert. The system fetches the full markup directly — do NOT pass block_content when using this.',
+						),
 						'block_content'   => array(
 							'type'        => 'string',
-							'description' => 'Complete WordPress block markup for the new section with proper block comments. Can include multiple blocks with nesting (e.g., a group containing headings, paragraphs, columns).',
+							'description' => 'Complete WordPress block markup for custom (non-pattern) sections. Only use this when not using pattern_slug.',
 						),
 					),
-					'required'   => array( 'block_content' ),
+					'required'   => array(),
 				),
 				'execute_callback'    => function ( $input ) {
-					// Validate required fields
-					if ( empty( $input['block_content'] ) ) {
-						return blu_prepare_ability_response( 400, array( 'message' => 'block_content is required' ) );
+					// Validate: need either pattern_slug or block_content
+					if ( empty( $input['pattern_slug'] ) && empty( $input['block_content'] ) ) {
+						return blu_prepare_ability_response( 400, array( 'message' => 'Either pattern_slug or block_content is required' ) );
 					}
 
 					// after_client_id can be null (top of page) or a string

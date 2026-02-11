@@ -17,6 +17,7 @@ use BLU\Abilities\Users;
 use BLU\Abilities\WooOrders;
 use BLU\Abilities\WooProducts;
 use BLU\Abilities\Themes;
+use BLU\Abilities\PatternLibrary;
 
 use BLU\Validation\McpValidation;
 use Bluehost\Plugin\WP\MCP\Core\McpAdapter;
@@ -102,6 +103,7 @@ class McpServer {
 		new WooOrders();
 		new Themes();
 		new BlockEditor();
+		new PatternLibrary();
 	}
 
 	/**
