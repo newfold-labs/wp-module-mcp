@@ -44,7 +44,7 @@ class HiiveProductVerifier {
 	 * @throws \Exception If verification fails or an error occurs.
 	 */
 	public static function verify_product_access( string $token, string $user_id, stdClass $decoded ): bool {
-
+		// Return cached result when the same token was already verified (avoids hitting Hiive on every request).
 		$cached = get_transient( self::NFD_BLU_JWT_VERIFIED_TOKEN_CACHE_KEY . "_$user_id" );
 		if ( false !== $cached ) {
 			if ( isset( $cached['token'] ) && $cached['token'] === $token ) {
@@ -56,6 +56,7 @@ class HiiveProductVerifier {
 			}
 		}
 
+		// HiiveConnection uses the appropriate Hiive environment (staging vs production) per site config.
 		$connection = new HiiveConnection();
 		$response   = $connection->hiive_request(
 			self::NFD_BLU_JWT_HIIVE_VERIFY_ENDPOINT,
@@ -81,6 +82,7 @@ class HiiveProductVerifier {
 				'token'  => $token,
 				'status' => $data['response'],
 			);
+			// Cache verification result so we don't call Hiive on every MCP request.
 			set_transient( self::NFD_BLU_JWT_VERIFIED_TOKEN_CACHE_KEY . "_$user_id", $value, apply_filters( 'blu_jwt_product_verify_cache_ttl', self::NFD_BLU_JWT_VERIFIED_TOKEN_CACHE_TTL ) );
 
 			if ( 'true' === $data['response'] || true === $data['response'] ) {

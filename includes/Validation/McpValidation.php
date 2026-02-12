@@ -4,7 +4,6 @@ declare( strict_types=1 );
 
 namespace BLU\Validation;
 
-use WP_Error;
 use BLU\Validation\HiiveProductVerifier;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
@@ -27,6 +26,13 @@ class McpValidation {
 	 * @var string
 	 */
 	private const CF_UJWT_PUBLIC_KEY_URL = 'https://cdn.hiive.space/jwt-public-key.pem';
+
+	/**
+	 * URL to fetch the staging public key for JWT validation (aud: qa).
+	 *
+	 * @var string
+	 */
+	private const CF_UJWT_PUBLIC_KEY_STAGING_URL = 'https://cdn.hiive.space/jwt-public-key-staging.pem';
 
 	/**
 	 * The request object.
@@ -54,13 +60,12 @@ class McpValidation {
 	 */
 	public function is_authenticated(): bool {
 		try {
-
-			// Check if the user has already been authenticated.
+			// If already logged in as admin, allow.
 			if ( is_user_logged_in() && current_user_can( 'manage_options' ) ) {
 				return true;
 			}
 
-			// Otherwise, check for JWT token in the Authorization header.
+			// Otherwise require JWT in the Authorization header.
 			$auth_header = $this->get_authorization_header();
 
 			// Bail early if no auth header is present.
@@ -76,10 +81,10 @@ class McpValidation {
 				throw new \Exception( 'Bearer token is missing.' );
 			}
 
-			// Validate the token and return the result.
+			// Validate JWT (signature, claims, expiry) and verify product access via Hiive.
 			return $this->is_valid_token( $token );
 
-		} catch ( \Exception $e ) {
+		} catch ( \Throwable $e ) {
 			return false;
 		}
 	}
@@ -109,6 +114,36 @@ class McpValidation {
 	}
 
 	/**
+	 * Peek at the JWT payload without verifying the signature.
+	 * Used only for key choice (aud) and early expired check (exp); never to accept a token.
+	 *
+	 * @param string $token The JWT token.
+	 *
+	 * @return object|null Payload object with aud and exp, or null on failure.
+	 */
+	private function peek_payload( string $token ): ?object {
+		// Decode the payload (middle segment) without verifying the signature.
+		$segments = explode( '.', $token );
+		if ( count( $segments ) !== 3 ) {
+			return null;
+		}
+
+		$payload_b64url = $segments[1];
+		$payload_b64    = strtr( $payload_b64url, '-_', '+/' );
+		$payload_raw    = base64_decode( $payload_b64, true );
+		if ( false === $payload_raw ) {
+			return null;
+		}
+
+		$payload = json_decode( $payload_raw );
+		if ( ! is_object( $payload ) ) {
+			return null;
+		}
+
+		return $payload;
+	}
+
+	/**
 	 * Validate the JWT token.
 	 *
 	 * @param string $token The JWT token to validate.
@@ -124,8 +159,23 @@ class McpValidation {
 			throw new \Exception( 'Invalid JWT token.' );
 		}
 
-		$public_key = $this->get_public_key();
+		$peeked = $this->peek_payload( $token );
 
+		// Early exit for expired tokens (no key fetch, no Hiive).
+		if ( null !== $peeked && isset( $peeked->exp ) && is_numeric( $peeked->exp ) && (int) $peeked->exp < time() ) {
+			throw new \Exception( 'Token validation failed. The token has expired.' );
+		}
+
+		// Early exit for not-yet-valid tokens (nbf).
+		if ( null !== $peeked && isset( $peeked->nbf ) && is_numeric( $peeked->nbf ) && (int) $peeked->nbf > time() ) {
+			throw new \Exception( 'Token validation failed. The token is not yet valid.' );
+		}
+
+		// Choose key by audience: QA tokens (aud: qa) use staging key; production uses production key.
+		$use_staging = ( null !== $peeked && isset( $peeked->aud ) && 'qa' === $peeked->aud );
+		$public_key  = $this->get_public_key( $use_staging );
+
+		// Verify signature and decode claims.
 		$decoded = JWT::decode( $token, new Key( $public_key, 'RS256' ) );
 
 		$user_id = null;
@@ -138,6 +188,7 @@ class McpValidation {
 			throw new \Exception( 'Token validation failed. The iss is invalid.' );
 		}
 
+		// Extract user ID from sub (e.g. "site:123" or "user:456" -> 123 or 456).
 		$sub = $decoded->sub ?? null;
 		if ( null === $sub ) {
 			throw new \Exception( 'Token validation failed. The sub claim is missing.' );
@@ -152,32 +203,50 @@ class McpValidation {
 			throw new \Exception( 'Token validation failed. The user ID is missing.' );
 		}
 
-		// Call the Hiive product verifier.
+		// Verify product access with Hiive (staging for QA tokens, production otherwise).
 		$response = HiiveProductVerifier::verify_product_access( $token, $user_id, $decoded );
 
 		if ( true !== $response ) {
 			throw new \Exception( 'Token validation failed. The product access is invalid.' );
 		}
 
+		// Set WordPress current user to an admin so the request has the required capabilities.
 		$this->set_admin_authentication();
 
 		return true;
 	}
 
 	/**
+	 * Normalize a PEM key so OpenSSL accepts it (e.g. convert literal \n to newlines).
+	 *
+	 * @param string $key Raw key content, possibly with escaped newlines.
+	 *
+	 * @return string Normalized PEM key.
+	 */
+	private function normalize_pem_key( string $key ): string {
+		return trim( str_replace( array( "\\n", "\\r" ), array( "\n", "\r" ), $key ) );
+	}
+
+	/**
 	 * Get the public key for JWT validation.
+	 *
+	 * @param bool $use_staging True to use staging key (aud: qa), false for production.
 	 *
 	 * @return string
 	 *
 	 * @throws \Exception If fetching the public key fails.
 	 */
-	private function get_public_key(): string {
+	private function get_public_key( bool $use_staging = false ): string {
+		$transient_key = $use_staging ? 'blu_jwt_public_key_staging' : 'blu_jwt_public_key';
+		$url           = $use_staging ? self::CF_UJWT_PUBLIC_KEY_STAGING_URL : self::CF_UJWT_PUBLIC_KEY_URL;
+		$filter_name   = $use_staging ? 'blu_jwt_public_key_staging' : 'blu_jwt_public_key';
 
-		$public_key = get_transient( 'blu_jwt_public_key' );
+		// Use cached key when available to avoid repeated remote fetches.
+		$public_key = get_transient( $transient_key );
 
 		if ( false === $public_key ) {
 			try {
-				$response = wp_remote_get( self::CF_UJWT_PUBLIC_KEY_URL );
+				$response = wp_remote_get( $url );
 
 				if ( is_wp_error( $response ) ) {
 					throw new \Exception( 'Failed to fetch public key: ' . $response->get_error_message() );
@@ -189,17 +258,17 @@ class McpValidation {
 					throw new \Exception( 'Public key response body is empty.' );
 				}
 
-				$public_key = $body;
+				$public_key = $this->normalize_pem_key( $body );
 
-				set_transient( 'blu_jwt_public_key', $public_key, HOUR_IN_SECONDS );
+				// Cache the key for 1 hour.
+				set_transient( $transient_key, $public_key, HOUR_IN_SECONDS );
 
 			} catch ( \Exception $e ) {
-
 				throw new \Exception( 'Failed to fetch public key: ' . esc_html( $e->getMessage() ) );
 			}
 		}
 
-		return apply_filters( 'blu_jwt_public_key', $public_key );
+		return apply_filters( $filter_name, $this->normalize_pem_key( $public_key ) );
 	}
 
 	/**
@@ -210,7 +279,7 @@ class McpValidation {
 	 * @throws \Exception If no valid admin user is found.
 	 */
 	private function set_admin_authentication(): void {
-
+		// Use cached admin user when valid; otherwise resolve the first administrator.
 		$admin_user    = get_transient( 'nfd_blu_mcp_user' );
 		$valid_user_id = false;
 		if ( $admin_user ) {
