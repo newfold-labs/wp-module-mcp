@@ -33,11 +33,20 @@ class PatternLibrary {
 	 * Register the blu/search-patterns ability.
 	 */
 	private function register_search_patterns(): void {
+		// phpcs:disable Generic.Files.LineLength.TooLong -- Tool description includes inline rules for AI context.
+		$description = <<<'DESC'
+		Search the pattern library for layouts matching a query. Returns results with title, slug, description, and categories (no markup). Use this when the user asks to add a section, layout, or design element (hero, pricing, testimonials, FAQ, CTA, features, team, gallery, contact, footer, header, etc.). After picking a match, call blu/get-pattern-markup to get the full block markup. Pick a DIFFERENT pattern each time the user asks for the same type of section — avoid repeating the same design.
+
+		ADDITIONAL RULES:
+		- PATTERN LIBRARY WORKFLOW: When the user asks to add a new section, layout, or design element, follow this exact sequence: a) Search the pattern library with blu/search-patterns. b) Review ALL returned results — pick the one whose title and description best fit the user's request. If the user has previously used a pattern, pick a DIFFERENT one to provide variety. c) Insert the chosen pattern using blu/add-section with the pattern_slug parameter. Do NOT call blu/get-pattern-markup or pass block_content — the system fetches the markup and automatically customizes the text to fit the page. If the search returns zero results, generate the section markup from scratch using block_content — do NOT tell the user no patterns were found, just build it yourself. Only skip the pattern library for very simple requests (e.g., "add a paragraph").
+		DESC;
+		// phpcs:enable Generic.Files.LineLength.TooLong
+
 		blu_register_ability(
 			'blu/search-patterns',
 			array(
 				'label'               => 'Search Patterns',
-				'description'         => 'Search the pattern library for layouts matching a query. Returns up to 5 results with title, slug, description, and categories (no markup). Use this when the user asks to add a section, layout, or design element (hero, pricing, testimonials, FAQ, CTA, features, team, gallery, contact, footer, header, etc.). After picking a match, call blu/get-pattern-markup to get the full block markup.',
+				'description'         => $description,
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
@@ -52,7 +61,7 @@ class PatternLibrary {
 						),
 						'limit'    => array(
 							'type'        => 'integer',
-							'description' => 'Maximum number of results to return. Defaults to 5.',
+							'description' => 'Maximum number of results to return. Defaults to 15.',
 						),
 					),
 					'required'   => array( 'query' ),
@@ -60,7 +69,7 @@ class PatternLibrary {
 				'execute_callback'    => function ( $input = null ) {
 					$query    = $input['query'] ?? '';
 					$category = $input['category'] ?? '';
-					$limit    = $input['limit'] ?? 5;
+					$limit    = $input['limit'] ?? 15;
 
 					if ( empty( $query ) ) {
 						return blu_prepare_ability_response( 400, 'Missing required parameter: query' );
@@ -77,29 +86,29 @@ class PatternLibrary {
 						return blu_prepare_ability_response( 503, $data->get_error_message() );
 					}
 
-					// Strip content and limit results
-					$results = array_slice(
-						array_map(
-							function ( $pattern ) {
-								return array(
-									'slug'        => $pattern['slug'] ?? '',
-									'title'       => $pattern['title'] ?? '',
-									'description' => $pattern['description'] ?? '',
-									'categories'  => $pattern['categories'] ?? array(),
-									'tags'        => $pattern['tags'] ?? array(),
-								);
-							},
-							$data
-						),
-						0,
-						(int) $limit
+					// Strip content field from results
+					$all_results = array_map(
+						function ( $pattern ) {
+							return array(
+								'slug'        => $pattern['slug'] ?? '',
+								'title'       => $pattern['title'] ?? '',
+								'description' => $pattern['description'] ?? '',
+								'categories'  => $pattern['categories'] ?? array(),
+								'tags'        => $pattern['tags'] ?? array(),
+							);
+						},
+						$data
 					);
+
+					$total_matches = count( $all_results );
+					$results       = array_slice( $all_results, 0, (int) $limit );
 
 					return blu_prepare_ability_response(
 						200,
 						array(
-							'patterns' => $results,
-							'count'    => count( $results ),
+							'patterns'     => $results,
+							'count'        => count( $results ),
+							'totalMatches' => $total_matches,
 						)
 					);
 				},
