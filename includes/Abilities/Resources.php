@@ -136,7 +136,7 @@ class Resources {
 
 			foreach ( $patterns as $pattern ) {
 
-				if ( preg_match( $pattern, '' ) !== false ) {
+				if ( @preg_match( $pattern, '' ) !== false ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors
 					$regex = $pattern;
 					if ( substr( $regex, - 1 ) !== 'i' ) {
 						// Ensure case-insensitive
