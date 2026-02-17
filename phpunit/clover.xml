@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1770758968">
-  <project timestamp="1770758968">
+<coverage generated="1771344035">
+  <project timestamp="1771344035">
     <file name="/home/runner/work/wp-module-mcp/wp-module-mcp/bootstrap.php">
       <line num="9" type="stmt" count="0"/>
       <line num="10" type="stmt" count="0"/>
@@ -1965,7 +1965,7 @@
       <line num="150" type="stmt" count="0"/>
       <line num="151" type="stmt" count="0"/>
       <line num="156" type="stmt" count="0"/>
-      <metrics loc="159" ncloc="125" classes="1" methods="4" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="76" coveredstatements="0" elements="80" coveredelements="0"/>
+      <metrics loc="159" ncloc="124" classes="1" methods="4" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="76" coveredstatements="0" elements="80" coveredelements="0"/>
     </file>
     <file name="/home/runner/work/wp-module-mcp/wp-module-mcp/includes/Abilities/RestApiCrud.php">
       <class name="BLU\Abilities\RestApiCrud" namespace="global">
@@ -4049,6 +4049,6 @@
       <line num="97" type="stmt" count="0"/>
       <metrics loc="98" ncloc="88" classes="0" methods="0" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="6" coveredstatements="0" elements="6" coveredelements="0"/>
     </file>
-    <metrics files="25" loc="5702" ncloc="4983" classes="17" methods="66" coveredmethods="3" conditionals="0" coveredconditionals="0" statements="3856" coveredstatements="17" elements="3922" coveredelements="20"/>
+    <metrics files="25" loc="5702" ncloc="4982" classes="17" methods="66" coveredmethods="3" conditionals="0" coveredconditionals="0" statements="3856" coveredstatements="17" elements="3922" coveredelements="20"/>
   </project>
 </coverage>
