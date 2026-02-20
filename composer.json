@@ -30,7 +30,8 @@
   "require-dev": {
     "johnpbloch/wordpress": "@stable",
     "lucatume/wp-browser": "*",
-    "phpunit/phpcov": "*"
+    "phpunit/phpcov": "*",
+    "newfold-labs/wp-php-standards": "^1.2"
   },
   "repositories": {
     "newfold-labs/*": {
@@ -60,7 +61,6 @@
   "require": {
     "wordpress/mcp-adapter": "^0.4.1",
     "wordpress/abilities-api": "^0.4.0",
-    "firebase/php-jwt": "^6.10.0",
-    "newfold-labs/wp-php-standards": "^1.2"
+    "firebase/php-jwt": "^6.10.0"
   }
 }
