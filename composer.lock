@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "7d5baeb2a7406de3e96fd86b90e3cf84",
+    "content-hash": "80971772c151f3b07af9312b2f201625",
     "packages": [
         {
             "name": "firebase/php-jwt",
@@ -140,6 +140,7 @@
                 "issues": "https://github.com/WordPress/abilities-api/issues",
                 "source": "https://github.com/WordPress/abilities-api"
             },
+            "abandoned": true,
             "time": "2025-10-29T05:35:31+00:00"
         },
         {
@@ -1155,7 +1156,7 @@
                     "homepage": "https://github.com/Nyholm"
                 },
                 {
-                    "name": "M\u00e1rk S\u00e1gi-Kaz\u00e1r",
+                    "name": "Márk Sági-Kazár",
                     "email": "mark.sagikazar@gmail.com",
                     "homepage": "https://github.com/sagikazarmark"
                 },
@@ -1350,7 +1351,7 @@
                     "homepage": "https://github.com/Nyholm"
                 },
                 {
-                    "name": "M\u00e1rk S\u00e1gi-Kaz\u00e1r",
+                    "name": "Márk Sági-Kazár",
                     "email": "mark.sagikazar@gmail.com",
                     "homepage": "https://github.com/sagikazarmark"
                 },
@@ -1360,7 +1361,7 @@
                     "homepage": "https://github.com/Tobion"
                 },
                 {
-                    "name": "M\u00e1rk S\u00e1gi-Kaz\u00e1r",
+                    "name": "Márk Sági-Kazár",
                     "email": "mark.sagikazar@gmail.com",
                     "homepage": "https://sagikazarmark.hu"
                 }
@@ -1605,16 +1606,16 @@
         },
         {
             "name": "lucatume/wp-browser",
-            "version": "3.7.16",
+            "version": "3.7.18",
             "source": {
                 "type": "git",
                 "url": "https://github.com/lucatume/wp-browser.git",
-                "reference": "3d389ffec2b7eb8294d01e7cacca67715533cac3"
+                "reference": "5dc5ae77f019a77f5870f849e29ea581290ded45"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/lucatume/wp-browser/zipball/3d389ffec2b7eb8294d01e7cacca67715533cac3",
-                "reference": "3d389ffec2b7eb8294d01e7cacca67715533cac3",
+                "url": "https://api.github.com/repos/lucatume/wp-browser/zipball/5dc5ae77f019a77f5870f849e29ea581290ded45",
+                "reference": "5dc5ae77f019a77f5870f849e29ea581290ded45",
                 "shasum": ""
             },
             "require": {
@@ -1690,7 +1691,7 @@
             ],
             "support": {
                 "issues": "https://github.com/lucatume/wp-browser/issues",
-                "source": "https://github.com/lucatume/wp-browser/tree/3.7.16"
+                "source": "https://github.com/lucatume/wp-browser/tree/3.7.18"
             },
             "funding": [
                 {
@@ -1698,7 +1699,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2025-11-22T18:10:49+00:00"
+            "time": "2026-02-19T09:55:08+00:00"
         },
         {
             "name": "myclabs/deep-copy",
@@ -4599,7 +4600,7 @@
                     "email": "fabien@symfony.com"
                 },
                 {
-                    "name": "Jean-Fran\u00e7ois Simon",
+                    "name": "Jean-François Simon",
                     "email": "jeanfrancois.simon@sensiolabs.com"
                 },
                 {
@@ -6084,5 +6085,5 @@
     "platform-overrides": {
         "php": "7.4.33"
     },
-    "plugin-api-version": "2.6.0"
+    "plugin-api-version": "2.9.0"
 }
