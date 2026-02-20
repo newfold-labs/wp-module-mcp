@@ -25,12 +25,10 @@
       "dealerdirect/phpcodesniffer-composer-installer": true,
       "composer/installers": true,
       "johnpbloch/wordpress-core-installer": true
+    },
+    "audit": {
+      "ignore": ["PKSA-y2cr-5h3j-g3ys"]
     }
-  },
-  "require-dev": {
-    "johnpbloch/wordpress": "@stable",
-    "lucatume/wp-browser": "*",
-    "phpunit/phpcov": "*"
   },
   "repositories": {
     "newfold-labs/*": {
@@ -60,7 +58,12 @@
   "require": {
     "wordpress/mcp-adapter": "^0.4.1",
     "wordpress/abilities-api": "^0.4.0",
-    "firebase/php-jwt": "^6.10.0",
+    "firebase/php-jwt": "^6.10.0"
+  },
+  "require-dev": {
+    "johnpbloch/wordpress": "@stable",
+    "lucatume/wp-browser": "*",
+    "phpunit/phpcov": "*",
     "newfold-labs/wp-php-standards": "^1.2"
   }
 }
