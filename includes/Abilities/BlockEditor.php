@@ -56,13 +56,15 @@ class BlockEditor {
 		ADDITIONAL RULES:
 		- VALID MARKUP: Every block_content you provide MUST be valid WordPress block markup with proper <!-- wp:name {attrs} --> comments. Never output plain HTML without block comments.
 		- INNER BLOCKS: When editing a block that has inner blocks, include ALL inner blocks in your replacement markup unless the user specifically asked to remove them.
-		- COLORS: This rule applies to EVERY block in your output — the target block AND every inner block you include. Scan the ENTIRE block_content for color violations before returning it. The ONLY valid values for "backgroundColor" and "textColor" attributes are the exact theme palette slugs: base, contrast, accent-1, accent-2, accent-3, accent-4, accent-5, accent-6. No other slugs exist. If the existing markup has an invalid slug (e.g., "backgroundColor":"red"), you MUST fix it. For any color that is NOT one of those theme slugs, REMOVE the "backgroundColor"/"textColor" attribute and use the style object with a HEX value instead: {"style":{"color":{"background":"#ff0000"}}} or {"style":{"color":{"text":"#ff0000"}}}. This also applies inside "elements" objects (e.g., link color). Replace any named color like "green" with its HEX equivalent. In the HTML portion of block markup, class names like "has-red-background-color" must be replaced with the generic "has-background" and the color applied via the inline style attribute. To reference a theme preset inside the style object use "var:preset|color|<slug>" (e.g., "var:preset|color|accent-1"). In inline CSS use var(--wp--preset--color--<slug>). Common color name to HEX: red=#ff0000, blue=#0000ff, green=#008000, yellow=#ffff00, orange=#ff8c00, purple=#800080, pink=#ff69b4, black=#000000, white=#ffffff.
+		- CONTAINER BLOCKS: Container blocks (core/group, core/columns, core/column, core/cover, core/row, core/stack, core/buttons) render content using WordPress InnerBlocks. ALL visible content inside them MUST be wrapped in proper block comments. NEVER put raw HTML like <p>, <h2>, <ul>, or <figure> directly inside a container wrapper — it will be silently stripped and the block will appear empty. WRONG: <!-- wp:group --> <div class="wp-block-group"><p>Hello</p></div> <!-- /wp:group -->. RIGHT: <!-- wp:group --> <div class="wp-block-group"><!-- wp:paragraph --> <p>Hello</p> <!-- /wp:paragraph --></div> <!-- /wp:group -->.
+		- COLORS: ALWAYS use the site's theme palette colors — NEVER invent arbitrary hex colors (like yellow #ffcc00 or blue #0066cc). The available palette slugs are: base, contrast, accent-1, accent-2, accent-3, accent-4, accent-5, accent-6. Apply them via "backgroundColor" and "textColor" attributes (e.g., "backgroundColor":"accent-1", "textColor":"contrast"). Only use custom hex values when the user explicitly requests a specific color. To reference a palette color in the style object use "var:preset|color|<slug>". In inline CSS use var(--wp--preset--color--<slug>). In HTML, use has-<slug>-background-color / has-<slug>-color classes. If the existing markup has an invalid slug (e.g., "backgroundColor":"red"), fix it by replacing with the nearest palette slug or removing the attribute and using the style object with a HEX value: {"style":{"color":{"background":"#ff0000"}}}. This rule applies to EVERY block in your output — scan the ENTIRE block_content before returning it.
 		- NFD UTILITY CLASSES: Do NOT add new nfd-* classes to blocks. When editing a block that has existing nfd-* classes, PRESERVE all nfd-* classes unless the user specifically asks to change the property they control. If the user asks to change a property controlled by an nfd-* class (e.g., "change the padding"), remove the nfd-* class for that property and apply the styling using WordPress block attributes instead. If the editor context includes an nfd class reference section, use it to understand what each class does. Key rules: NEVER remove nfd-container (controls container width), nfd-theme-* (controls color scheme), nfd-wb-*/nfd-delay-* (controls animations), nfd-bg-effect-* (controls decorative backgrounds), nfd-divider-* (controls section dividers). When replacing an nfd-* spacing/color/typography class, use the resolved CSS value from the reference (not a guess) to set the equivalent WordPress block attribute. Preserve: nfd-bg-surface, nfd-bg-primary, nfd-bg-subtle, nfd-text-faded, nfd-text-contrast, nfd-text-primary, nfd-btn-*, nfd-rounded-*, nfd-shadow-*.
 		- IMAGE ASPECT RATIO: When the user asks to change an image's aspect ratio, use the "aspectRatio" and "scale" attributes — NEVER set fixed "width"/"height" in pixels. Valid aspect ratios: "1/1", "4/3", "3/4", "3/2", "2/3", "16/9", "9/16". Example: <!-- wp:image {"aspectRatio":"16/9","scale":"cover","sizeSlug":"full"} --> <figure class="wp-block-image size-full"><img src="..." alt="" style="aspect-ratio:16/9;object-fit:cover"/></figure> <!-- /wp:image -->. The inline style on the <img> tag MUST match: style="aspect-ratio:{ratio};object-fit:{scale}". Remove any existing "width" and "height" attributes and "is-resized" class when switching to aspect ratio.
 		- COVER BLOCK OVERLAY: The cover block overlay color is controlled ONLY through block comment attributes — NEVER add inline styles to the overlay <span>. The <span> must only have classes, no style attribute. For theme palette colors: use "overlayColor":"<slug>" in the block comment and add class has-<slug>-background-color to the span. For custom colors: use "customOverlayColor":"#hex" in the block comment. The span gets NO inline style — WordPress handles it. Overlay opacity is set via "dimRatio" (0-100) in the block comment. The span class reflects it: has-background-dim-{value} has-background-dim. WRONG: style="background-color:rgba(...)" on the span — this causes block validation failure.
 		- GRADIENTS: To add a gradient background to a block, use the style.color.gradient attribute in the block comment — NEVER put background-image in the inline style. Block comment: {"style":{"color":{"gradient":"linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%)"}}}. HTML: style="background:linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%)" (use background: not background-image:). Add has-background class. For theme presets use: {"gradient":"vivid-cyan-blue-to-vivid-purple"}. WRONG: {"style":{"elements":{"background":{"backgroundImage":"..."}}}} or style="background-image:linear-gradient(...)".
 		- FONT SIZE: When changing a block's font size, ALWAYS remove any existing font-size selection first — then apply the new one. Preset slugs and custom values are mutually exclusive; combining them causes the preset to silently win via CSS specificity. CUSTOM size: REMOVE "fontSize" attribute and has-*-font-size class, then set "style":{"typography":{"fontSize":"4.5rem"}} and style="font-size:4.5rem". PRESET size: REMOVE style.typography.fontSize and inline font-size, then set "fontSize":"x-large" and add has-x-large-font-size class. WRONG: {"fontSize":"x-large","style":{"typography":{"fontSize":"4.5rem"}}}.
 		- ALIGNMENT & CENTERING: The core/group block does NOT support the align attribute for centering — do NOT set "align":"center" on a group. For flex containers (core/columns, core/buttons): use "align":"center" directly. For core/row or core/stack: set "layout":{"type":"flex","justifyContent":"center"}. For content inside a group: set alignment on inner blocks — core/image and core/buttons support "align":"center"; core/heading and core/paragraph use "textAlign":"center". WRONG: <!-- wp:group {"align":"center"} -->.
+		- TEMPLATE PARTS: When REPLACING an entire header or footer design, use edit-block on the template-part clientId (the core/template-part block) with pattern_slug or block_content. When ADDING content to a template part (e.g., a top bar above the header), use blu/add-section with before_client_id or after_client_id pointing to a block INSIDE the template part — do NOT rewrite the entire template part just to add content, because rewriting loses layout attributes and breaks the design.
 		DESC;
 		// phpcs:enable Generic.Files.LineLength.TooLong
 
@@ -83,16 +85,20 @@ class BlockEditor {
 							'type'        => 'string',
 							'description' => 'Complete WordPress block markup with block comments. Must include <!-- wp:blockname {...} --> opening and <!-- /wp:blockname --> closing comments. Include all inner blocks if the target has children.',
 						),
+						'pattern_slug'  => array(
+							'type'        => 'string',
+							'description' => 'Slug of a pattern from the library to use as the new content. The system fetches the markup directly — do NOT pass block_content when using this.',
+						),
 					),
-					'required'   => array( 'client_id', 'block_content' ),
+					'required'   => array( 'client_id' ),
 				),
 				'execute_callback'    => function ( $input ) {
 					// Validate required fields
 					if ( empty( $input['client_id'] ) ) {
 						return blu_prepare_ability_response( 400, array( 'message' => 'client_id is required' ) );
 					}
-					if ( empty( $input['block_content'] ) ) {
-						return blu_prepare_ability_response( 400, array( 'message' => 'block_content is required' ) );
+					if ( empty( $input['block_content'] ) && empty( $input['pattern_slug'] ) ) {
+						return blu_prepare_ability_response( 400, array( 'message' => 'Either block_content or pattern_slug is required' ) );
 					}
 
 					// Return action data for client-side execution
@@ -101,7 +107,7 @@ class BlockEditor {
 						array(
 							'action'        => 'edit_block',
 							'client_id'     => sanitize_text_field( $input['client_id'] ),
-							'block_content' => $input['block_content'], // Don't sanitize - it's block HTML
+							'block_content' => $input['block_content'] ?? '', // Don't sanitize - it's block HTML
 							'message'       => 'Block edit ready for execution',
 						)
 					);
@@ -132,12 +138,14 @@ class BlockEditor {
 	private function register_add_section(): void {
 		// phpcs:disable Generic.Files.LineLength.TooLong -- Tool description includes inline rules for AI context.
 		$description = <<<'DESC'
-		Insert new block content at a specific position in the page. Use this when the user asks to add a new section, component, or content area. Set after_client_id to a block's clientId to insert after it, or null to insert at the very top of the page. Provide EITHER pattern_slug (to insert a pattern from the library) OR block_content (to insert custom markup). When using a pattern, always prefer pattern_slug — the system will fetch the markup directly.
+		Insert new block content at a specific position in the page. Use this when the user asks to add a new section, component, or content area. Use after_client_id to insert after a block, before_client_id to insert before a block, or set both to null to insert at the very top of the page. Provide EITHER pattern_slug (to insert a pattern from the library) OR block_content (to insert custom markup). When using a pattern, always prefer pattern_slug — the system will fetch the markup directly.
 
 		ADDITIONAL RULES:
 		- VALID MARKUP: Every block_content you provide MUST be valid WordPress block markup with proper <!-- wp:name {attrs} --> comments. Never output plain HTML without block comments.
-		- ADDING SECTIONS: You can insert content after ANY block at any nesting depth — not just top-level blocks. When the user specifies a position (e.g., "add a paragraph below this heading", "add a section after the hero"), use that block's client_id as after_client_id. When the user does NOT specify a position, insert at the top level of the page (use after_client_id of the last top-level block in the tree, or null for the very top).
-		- COLORS: This rule applies to EVERY block in your output. Scan the ENTIRE block_content for color violations before returning it. The ONLY valid values for "backgroundColor" and "textColor" attributes are the exact theme palette slugs: base, contrast, accent-1, accent-2, accent-3, accent-4, accent-5, accent-6. No other slugs exist. For any color that is NOT one of those theme slugs, REMOVE the "backgroundColor"/"textColor" attribute and use the style object with a HEX value instead: {"style":{"color":{"background":"#ff0000"}}} or {"style":{"color":{"text":"#ff0000"}}}. In the HTML portion of block markup, class names like "has-red-background-color" must be replaced with the generic "has-background" and the color applied via the inline style attribute. To reference a theme preset inside the style object use "var:preset|color|<slug>" (e.g., "var:preset|color|accent-1"). In inline CSS use var(--wp--preset--color--<slug>). Common color name to HEX: red=#ff0000, blue=#0000ff, green=#008000, yellow=#ffff00, orange=#ff8c00, purple=#800080, pink=#ff69b4, black=#000000, white=#ffffff.
+		- CONTAINER BLOCKS: Container blocks (core/group, core/columns, core/column, core/cover, core/row, core/stack, core/buttons) render content using WordPress InnerBlocks. ALL visible content inside them MUST be wrapped in proper block comments. NEVER put raw HTML like <p>, <h2>, <ul>, or <figure> directly inside a container wrapper — it will be silently stripped and the block will appear empty. WRONG: <!-- wp:group --> <div class="wp-block-group"><p>Hello</p></div> <!-- /wp:group -->. RIGHT: <!-- wp:group --> <div class="wp-block-group"><!-- wp:paragraph --> <p>Hello</p> <!-- /wp:paragraph --></div> <!-- /wp:group -->.
+		- ADDING SECTIONS: You can insert content before or after ANY block at any nesting depth — not just top-level blocks. Use after_client_id to insert after a specific block, or before_client_id to insert before it. When the user does NOT specify a position, insert at the top level of the page (use after_client_id of the last top-level block in the tree, or null for the very top).
+		- TEMPLATE PARTS: When adding content to a template part (e.g., adding a top bar above a header, or a banner inside a footer), use blu/add-section with before_client_id or after_client_id pointing to a block INSIDE the template part. This preserves all existing blocks and their layout. Do NOT rewrite the entire template part with blu/edit-block just to add new content — rewriting risks losing layout attributes (flex, gap, etc.) and breaking the design. Only use blu/edit-block on a template part when replacing ALL of its content with a completely different design.
+		- COLORS: ALWAYS use the site's theme palette colors — NEVER invent arbitrary hex colors (like yellow #ffcc00 or blue #0066cc). The available palette slugs are: base, contrast, accent-1, accent-2, accent-3, accent-4, accent-5, accent-6. Apply them via "backgroundColor" and "textColor" attributes (e.g., "backgroundColor":"accent-1", "textColor":"contrast"). Only use custom hex values when the user explicitly requests a specific color. To reference a palette color in the style object use "var:preset|color|<slug>". In inline CSS use var(--wp--preset--color--<slug>). In HTML, use has-<slug>-background-color / has-<slug>-color classes. This rule applies to EVERY block in your output — scan the ENTIRE block_content before returning it.
 		- PATTERN LIBRARY: When the user asks to add a new section, layout, or design element (hero, pricing, testimonials, FAQ, CTA, features, team, gallery, contact, etc.), follow this exact sequence: a) Search the pattern library with blu/search-patterns. b) Review ALL returned results — pick the one whose title and description best fit the user's request. If the user has previously used a pattern, pick a DIFFERENT one to provide variety. c) Insert the chosen pattern using blu/add-section with the pattern_slug parameter. Do NOT call blu/get-pattern-markup or pass block_content — the system fetches the markup and automatically customizes the text to fit the page. If the search returns zero results, generate the section markup from scratch using block_content — do NOT tell the user no patterns were found, just build it yourself. Only skip the pattern library for very simple requests (e.g., "add a paragraph").
 		DESC;
 		// phpcs:enable Generic.Files.LineLength.TooLong
@@ -151,11 +159,15 @@ class BlockEditor {
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
-						'after_client_id' => array(
+						'after_client_id'  => array(
 							'type'        => array( 'string', 'null' ),
-							'description' => 'The clientId of the block to insert after (from the block tree context). Use null to insert at the very top of the page.',
+							'description' => 'The clientId of the block to insert AFTER. Use null to insert at the very top of the page. Mutually exclusive with before_client_id.',
 						),
-						'pattern_slug'    => array(
+						'before_client_id' => array(
+							'type'        => 'string',
+							'description' => 'The clientId of the block to insert BEFORE. Use this when adding content above the first block inside a template part or at the start of a section. Mutually exclusive with after_client_id.',
+						),
+						'pattern_slug'     => array(
 							'type'        => 'string',
 							'description' => 'Slug of a pattern from the library to insert. The system fetches the full markup directly — do NOT pass block_content when using this.',
 						),
