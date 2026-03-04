@@ -188,18 +188,25 @@ class McpValidation {
 			throw new \Exception( 'Token validation failed. The iss is invalid.' );
 		}
 
-		// Extract user ID from sub (e.g. "site:123" or "user:456" -> 123 or 456).
-		$sub = $decoded->sub ?? null;
-		if ( null === $sub ) {
-			throw new \Exception( 'Token validation failed. The sub claim is missing.' );
-		} else {
-			$sub_parts = explode( ':', $sub );
-			if ( ! empty( $sub_parts ) ) {
-				$user_id = end( $sub_parts );
-			}
+		// Extract user ID: prefer act.sub (acting user, e.g. "urn:jarvis:bluehost:user:549716553")
+		// over top-level sub (account, e.g. "urn:jarvis:bluehost:account:152665891").
+		$sub_source = null;
+		if ( isset( $decoded->act, $decoded->act->sub ) && is_string( $decoded->act->sub ) ) {
+			$sub_source = $decoded->act->sub;
+		} elseif ( isset( $decoded->sub ) && is_string( $decoded->sub ) ) {
+			$sub_source = $decoded->sub;
 		}
 
-		if ( null === $user_id ) {
+		if ( null === $sub_source ) {
+			throw new \Exception( 'Token validation failed. The sub claim is missing.' );
+		}
+
+		$sub_parts = explode( ':', $sub_source );
+		if ( ! empty( $sub_parts ) ) {
+			$user_id = end( $sub_parts );
+		}
+
+		if ( empty( $user_id ) ) {
 			throw new \Exception( 'Token validation failed. The user ID is missing.' );
 		}
 
@@ -283,7 +290,7 @@ class McpValidation {
 		$admin_user    = get_transient( 'nfd_blu_mcp_user' );
 		$valid_user_id = false;
 		if ( $admin_user ) {
-			if ( user_can( $admin_user, 'manage_settings' ) ) {
+			if ( user_can( $admin_user, 'manage_options' ) ) {
 				$valid_user_id = true;
 			}
 		}
