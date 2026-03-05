@@ -21,6 +21,144 @@ class PatternLibrary {
 		$this->register_abilities();
 	}
 
+	private const CACHE_KEY = 'blu_pattern_index';
+
+	/**
+	 * Fetch patterns, using a local cache as fallback when the API is unreachable.
+	 *
+	 * @param array $args Optional arguments for Items::get().
+	 * @return array Pattern data (may be empty on total failure).
+	 */
+	private static function get_patterns( array $args = array() ): array {
+		$data = Items::get( 'patterns', $args );
+
+		if ( ! \is_wp_error( $data ) && is_array( $data ) && ! empty( $data ) ) {
+			// Persist a lightweight copy so the MCP ability works even when the API is down.
+			$index = array_map(
+				function ( $p ) {
+					return array(
+						'slug'        => $p['slug'] ?? '',
+						'title'       => $p['title'] ?? '',
+						'description' => $p['description'] ?? '',
+						'categories'  => $p['categories'] ?? array(),
+						'tags'        => $p['tags'] ?? array(),
+					);
+				},
+				$data
+			);
+			update_option( self::CACHE_KEY, $index, false );
+			return $data;
+		}
+
+		// API failed — try the local cache.
+		$cached = get_option( self::CACHE_KEY );
+		if ( is_array( $cached ) && ! empty( $cached ) ) {
+			return $cached;
+		}
+
+		return array();
+	}
+
+	/**
+	 * Score patterns against a query using word-level matching.
+	 *
+	 * Mirrors the client-side scoring in patternLibrary.js — splits the query
+	 * into individual words and scores each word against categories, tags,
+	 * title, and description. Returns only patterns with a positive score,
+	 * sorted by relevance (highest first).
+	 *
+	 * @param array  $patterns All patterns from Items::get().
+	 * @param string $query    Search query string.
+	 * @return array Scored and filtered patterns (without content), sorted by relevance.
+	 */
+	private static function score_patterns( array $patterns, string $query ): array {
+		$query_words = array_filter( preg_split( '/\s+/', strtolower( $query ) ) );
+		$full_query  = implode( ' ', $query_words );
+
+		$scored = array();
+
+		foreach ( $patterns as $pattern ) {
+			$score = 0;
+			$title = strtolower( $pattern['title'] ?? '' );
+			$desc  = strtolower( $pattern['description'] ?? '' );
+			$tags  = array_map( 'strtolower', (array) ( $pattern['tags'] ?? array() ) );
+			$cats  = array_map( 'strtolower', (array) ( $pattern['categories'] ?? array() ) );
+
+			foreach ( $query_words as $word ) {
+				// Category exact match.
+				foreach ( $cats as $cat ) {
+					if ( $cat === $word ) {
+						$score += 10;
+					}
+				}
+
+				// Tag: exact match bonus vs partial.
+				$tag_exact   = false;
+				$tag_partial = false;
+				foreach ( $tags as $tag ) {
+					if ( $tag === $word ) {
+						$tag_exact = true;
+					} elseif ( false !== strpos( $tag, $word ) ) {
+						$tag_partial = true;
+					}
+				}
+				if ( $tag_exact ) {
+					$score += 6;
+				} elseif ( $tag_partial ) {
+					$score += 3;
+				}
+
+				// Title: word boundary match.
+				if ( preg_match( '/\b' . preg_quote( $word, '/' ) . '/', $title ) ) {
+					$score += 5;
+				}
+
+				// Description: contains match.
+				if ( false !== strpos( $desc, $word ) ) {
+					$score += 2;
+				}
+			}
+
+			// Multi-word phrase bonus.
+			if ( count( $query_words ) > 1 ) {
+				if ( false !== strpos( $title, $full_query ) ) {
+					$score += 8;
+				}
+				if ( false !== strpos( $desc, $full_query ) ) {
+					$score += 4;
+				}
+			}
+
+			if ( $score > 0 ) {
+				$scored[] = array(
+					'slug'        => $pattern['slug'] ?? '',
+					'title'       => $pattern['title'] ?? '',
+					'description' => $pattern['description'] ?? '',
+					'categories'  => $pattern['categories'] ?? array(),
+					'tags'        => $pattern['tags'] ?? array(),
+					'_score'      => $score,
+				);
+			}
+		}
+
+		// Sort by score descending.
+		usort(
+			$scored,
+			function ( $a, $b ) {
+				return $b['_score'] - $a['_score'];
+			}
+		);
+
+		// Remove internal score field before returning.
+		return array_map(
+			function ( $item ) {
+				unset( $item['_score'] );
+				return $item;
+			},
+			$scored
+		);
+	}
+
 	/**
 	 * Register pattern library abilities.
 	 */
@@ -35,10 +173,15 @@ class PatternLibrary {
 	private function register_search_patterns(): void {
 		// phpcs:disable Generic.Files.LineLength.TooLong -- Tool description includes inline rules for AI context.
 		$description = <<<'DESC'
-		Search the pattern library for layouts matching a query. Returns results with title, slug, description, and categories (no markup). Use this when the user asks to add a section, layout, or design element (hero, pricing, testimonials, FAQ, CTA, features, team, gallery, contact, footer, header, etc.). After picking a match, call blu/get-pattern-markup to get the full block markup. Pick a DIFFERENT pattern each time the user asks for the same type of section — avoid repeating the same design.
+		Search the pattern library for layouts matching a query. Returns results with title, slug, description, and categories (no markup).
 
-		ADDITIONAL RULES:
-		- PATTERN LIBRARY WORKFLOW: When the user asks to add a new section, layout, or design element, follow this exact sequence: a) Search the pattern library with blu/search-patterns. b) Review ALL returned results — pick the one whose title and description best fit the user's request. If the user has previously used a pattern, pick a DIFFERENT one to provide variety. c) Insert the chosen pattern using blu/add-section with the pattern_slug parameter. Do NOT call blu/get-pattern-markup or pass block_content — the system fetches the markup and automatically customizes the text to fit the page. If the search returns zero results, generate the section markup from scratch using block_content — do NOT tell the user no patterns were found, just build it yourself. Only skip the pattern library for very simple requests (e.g., "add a paragraph").
+		WHEN TO CALL: You MUST call this tool BEFORE blu/add-section or blu/edit-block whenever the user asks to add, replace, or redesign any section or multi-block layout. This includes: hero, pricing, team, FAQ, CTA, features, gallery, contact, header, footer, testimonials, about, stats, logos, services sections, or any request involving multiple blocks. Only skip this for single-block additions (paragraph, heading, image, button).
+
+		WORKFLOW:
+		a) Call this tool with a descriptive query.
+		b) Pick the result whose title and description best fit the request. Pick a DIFFERENT pattern each time the user asks for the same type.
+		c) Pass the chosen pattern_slug to blu/add-section or blu/edit-block — the system fetches markup and customizes text automatically. Do NOT call blu/get-pattern-markup.
+		d) If zero results are returned or the search fails, generate markup yourself with block_content — do NOT mention the library or any errors to the user.
 		DESC;
 		// phpcs:enable Generic.Files.LineLength.TooLong
 
@@ -68,40 +211,17 @@ class PatternLibrary {
 				),
 				'execute_callback'    => function ( $input = null ) {
 					$query    = $input['query'] ?? '';
-					$category = $input['category'] ?? '';
 					$limit    = $input['limit'] ?? 15;
 
 					if ( empty( $query ) ) {
 						return blu_prepare_ability_response( 400, 'Missing required parameter: query' );
 					}
 
-					$args = array( 'keywords' => $query );
-					if ( ! empty( $category ) ) {
-						$args['category'] = $category;
-					}
+					$data   = self::get_patterns();
+					$scored = self::score_patterns( $data, $query );
 
-					$data = Items::get( 'patterns', $args );
-
-					if ( \is_wp_error( $data ) ) {
-						return blu_prepare_ability_response( 503, $data->get_error_message() );
-					}
-
-					// Strip content field from results
-					$all_results = array_map(
-						function ( $pattern ) {
-							return array(
-								'slug'        => $pattern['slug'] ?? '',
-								'title'       => $pattern['title'] ?? '',
-								'description' => $pattern['description'] ?? '',
-								'categories'  => $pattern['categories'] ?? array(),
-								'tags'        => $pattern['tags'] ?? array(),
-							);
-						},
-						$data
-					);
-
-					$total_matches = count( $all_results );
-					$results       = array_slice( $all_results, 0, (int) $limit );
+					$total_matches = count( $scored );
+					$results       = array_slice( $scored, 0, (int) $limit );
 
 					return blu_prepare_ability_response(
 						200,
@@ -118,6 +238,10 @@ class PatternLibrary {
 						'readonly'    => true,
 						'destructive' => false,
 						'idempotent'  => true,
+					),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
 					),
 				),
 			)
@@ -151,11 +275,7 @@ class PatternLibrary {
 						return blu_prepare_ability_response( 400, 'Missing required parameter: slug' );
 					}
 
-					$data = Items::get( 'patterns' );
-
-					if ( \is_wp_error( $data ) ) {
-						return blu_prepare_ability_response( 503, $data->get_error_message() );
-					}
+					$data = self::get_patterns();
 
 					// Find pattern by slug
 					$match = null;
@@ -188,6 +308,10 @@ class PatternLibrary {
 						'readonly'    => true,
 						'destructive' => false,
 						'idempotent'  => true,
+					),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
 					),
 				),
 			)
