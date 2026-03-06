@@ -179,11 +179,11 @@ class BlockEditor {
 							'type'        => 'string',
 							'description' => 'Slug of a pattern from the library to insert. The system fetches the full markup and automatically customizes text to fit the site — do NOT pass block_content when using this.',
 						),
-						'block_content'   => array(
+						'block_content'    => array(
 							'type'        => 'string',
 							'description' => 'Complete WordPress block markup. For section requests, only use this if blu/search-patterns returned zero results.',
 						),
-						'image_urls'      => array(
+						'image_urls'       => array(
 							'type'        => 'array',
 							'items'       => array( 'type' => 'string' ),
 							'description' => 'Array of image URLs (e.g. from search_images) to replace placeholder/stock images in the pattern. Used together with pattern_slug — the system replaces images in order. Do NOT use with block_content.',
@@ -506,6 +506,11 @@ class BlockEditor {
 		);
 	}
 
+	/**
+	 * Register ability to rewrite text content within a block.
+	 *
+	 * @return void
+	 */
 	private function register_rewrite_text(): void {
 		blu_register_ability(
 			'blu/rewrite-text',
@@ -810,19 +815,19 @@ class BlockEditor {
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
-						'block_name'      => array(
+						'block_name'       => array(
 							'type'        => 'string',
 							'description' => 'Block type name (e.g., "core/heading", "core/paragraph", "core/image", "core/button", "core/spacer", "core/separator").',
 						),
-						'attributes'      => array(
+						'attributes'       => array(
 							'type'        => 'object',
 							'description' => 'Block attributes (e.g., {"level": 2, "textAlign": "center"} for a heading, {"url": "...", "alt": "..."} for an image, {"height": "50px"} for a spacer).',
 						),
-						'content'         => array(
+						'content'          => array(
 							'type'        => 'string',
 							'description' => 'Optional text content for text blocks (heading, paragraph, button, list-item). Plain text — HTML formatting like <strong> is allowed.',
 						),
-						'after_client_id' => array(
+						'after_client_id'  => array(
 							'type'        => 'string',
 							'description' => 'Insert after this block. Mutually exclusive with before_client_id.',
 						),
@@ -871,6 +876,11 @@ class BlockEditor {
 		);
 	}
 
+	/**
+	 * Register ability to get block markup.
+	 *
+	 * @return void
+	 */
 	private function register_get_block_markup(): void {
 		blu_register_ability(
 			'blu/get-block-markup',
