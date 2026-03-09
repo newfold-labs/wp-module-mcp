@@ -1,0 +1,611 @@
+<?php
+
+namespace BLU;
+
+use BLU\Abilities\BlockEditor;
+
+/**
+ * Tests for BlockEditor abilities.
+ *
+ * @covers \BLU\Abilities\BlockEditor
+ */
+class BlockEditorWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
+
+	/**
+	 * Helper: execute a registered ability by name with an admin user.
+	 *
+	 * @param string $ability_name The registered ability name.
+	 * @param array  $input        Input to pass to the ability.
+	 * @return mixed The result of the ability execution.
+	 */
+	private function execute_ability( string $ability_name, array $input ) {
+		if ( ! function_exists( 'wp_register_ability' ) ) {
+			$this->markTestSkipped( 'WP Abilities API is not available.' );
+		}
+
+		new BlockEditor();
+
+		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$ability = blu_get_ability( $ability_name );
+		$this->assertNotNull( $ability, "Ability {$ability_name} should be registered." );
+
+		return $ability->execute( $input );
+	}
+
+	// ── Constructor ───────────────────────────────────────────────────
+
+	/**
+	 * Verifies constructor registers all abilities without fatal.
+	 */
+	public function test_constructor_does_not_fatal() {
+		$instance = new BlockEditor();
+		$this->assertInstanceOf( BlockEditor::class, $instance );
+	}
+
+	// ── blu/edit-block ────────────────────────────────────────────────
+
+	/**
+	 * Verifies edit-block returns 400 when client_id is missing.
+	 */
+	public function test_edit_block_requires_client_id() {
+		$result = $this->execute_ability( 'blu/edit-block', array( 'block_content' => '<!-- wp:paragraph --><p>Test</p><!-- /wp:paragraph -->' ) );
+
+		$this->assertSame( 400, $result['statusCode'] );
+		$this->assertSame( 'error', $result['status'] );
+	}
+
+	/**
+	 * Verifies edit-block returns 400 when neither block_content nor pattern_slug is provided.
+	 */
+	public function test_edit_block_requires_content_or_pattern() {
+		$result = $this->execute_ability( 'blu/edit-block', array( 'client_id' => 'abc-123' ) );
+
+		$this->assertSame( 400, $result['statusCode'] );
+	}
+
+	/**
+	 * Verifies edit-block returns 200 with block_content.
+	 */
+	public function test_edit_block_success_with_block_content() {
+		$result = $this->execute_ability(
+			'blu/edit-block',
+			array(
+				'client_id'     => 'abc-123',
+				'block_content' => '<!-- wp:paragraph --><p>Hello</p><!-- /wp:paragraph -->',
+			)
+		);
+
+		$this->assertSame( 200, $result['statusCode'] );
+		$this->assertSame( 'success', $result['status'] );
+		$this->assertSame( 'edit_block', $result['message']['action'] );
+		$this->assertSame( 'abc-123', $result['message']['client_id'] );
+	}
+
+	/**
+	 * Verifies edit-block returns 200 with pattern_slug.
+	 */
+	public function test_edit_block_success_with_pattern_slug() {
+		$result = $this->execute_ability(
+			'blu/edit-block',
+			array(
+				'client_id'    => 'abc-123',
+				'pattern_slug' => 'hero-bold',
+			)
+		);
+
+		$this->assertSame( 200, $result['statusCode'] );
+		$this->assertSame( 'edit_block', $result['message']['action'] );
+	}
+
+	// ── blu/add-section ───────────────────────────────────────────────
+
+	/**
+	 * Verifies add-section returns 400 when neither pattern_slug nor block_content is provided.
+	 */
+	public function test_add_section_requires_content_or_pattern() {
+		$result = $this->execute_ability( 'blu/add-section', array( 'after_client_id' => 'abc-123' ) );
+
+		$this->assertSame( 400, $result['statusCode'] );
+	}
+
+	/**
+	 * Verifies add-section returns 400 when both after and before are provided.
+	 */
+	public function test_add_section_mutually_exclusive_position() {
+		$result = $this->execute_ability(
+			'blu/add-section',
+			array(
+				'block_content'    => '<!-- wp:paragraph --><p>Test</p><!-- /wp:paragraph -->',
+				'after_client_id'  => 'abc-123',
+				'before_client_id' => 'def-456',
+			)
+		);
+
+		$this->assertSame( 400, $result['statusCode'] );
+	}
+
+	/**
+	 * Verifies add-section returns 200 with after_client_id.
+	 */
+	public function test_add_section_success_with_after() {
+		$result = $this->execute_ability(
+			'blu/add-section',
+			array(
+				'block_content'   => '<!-- wp:paragraph --><p>New</p><!-- /wp:paragraph -->',
+				'after_client_id' => 'abc-123',
+			)
+		);
+
+		$this->assertSame( 200, $result['statusCode'] );
+		$this->assertSame( 'add_section', $result['message']['action'] );
+		$this->assertSame( 'abc-123', $result['message']['after_client_id'] );
+	}
+
+	/**
+	 * Verifies add-section returns 200 with before_client_id.
+	 */
+	public function test_add_section_success_with_before() {
+		$result = $this->execute_ability(
+			'blu/add-section',
+			array(
+				'block_content'    => '<!-- wp:paragraph --><p>New</p><!-- /wp:paragraph -->',
+				'before_client_id' => 'def-456',
+			)
+		);
+
+		$this->assertSame( 200, $result['statusCode'] );
+		$this->assertSame( 'add_section', $result['message']['action'] );
+		$this->assertSame( 'def-456', $result['message']['before_client_id'] );
+	}
+
+	/**
+	 * Verifies add-section returns 200 with pattern_slug.
+	 */
+	public function test_add_section_success_with_pattern_slug() {
+		$result = $this->execute_ability(
+			'blu/add-section',
+			array(
+				'pattern_slug'    => 'hero-split',
+				'after_client_id' => 'abc-123',
+			)
+		);
+
+		$this->assertSame( 200, $result['statusCode'] );
+		$this->assertSame( 'hero-split', $result['message']['pattern_slug'] );
+	}
+
+	/**
+	 * Verifies add-section forwards image_urls when provided.
+	 */
+	public function test_add_section_forwards_image_urls() {
+		$urls   = array( 'https://example.com/img1.jpg', 'https://example.com/img2.jpg' );
+		$result = $this->execute_ability(
+			'blu/add-section',
+			array(
+				'pattern_slug'    => 'hero-split',
+				'after_client_id' => 'abc-123',
+				'image_urls'      => $urls,
+			)
+		);
+
+		$this->assertSame( 200, $result['statusCode'] );
+		$this->assertCount( 2, $result['message']['image_urls'] );
+	}
+
+	/**
+	 * Verifies add-section with null after_client_id (top of page).
+	 */
+	public function test_add_section_null_after_inserts_at_top() {
+		$result = $this->execute_ability(
+			'blu/add-section',
+			array(
+				'block_content'   => '<!-- wp:paragraph --><p>Top</p><!-- /wp:paragraph -->',
+				'after_client_id' => null,
+			)
+		);
+
+		$this->assertSame( 200, $result['statusCode'] );
+		$this->assertArrayNotHasKey( 'after_client_id', $result['message'] );
+		$this->assertArrayNotHasKey( 'before_client_id', $result['message'] );
+	}
+
+	// ── blu/delete-block ──────────────────────────────────────────────
+
+	/**
+	 * Verifies delete-block returns 400 when client_id is missing.
+	 */
+	public function test_delete_block_requires_client_id() {
+		$result = $this->execute_ability( 'blu/delete-block', array() );
+
+		$this->assertSame( 400, $result['statusCode'] );
+	}
+
+	/**
+	 * Verifies delete-block returns 200 with valid input.
+	 */
+	public function test_delete_block_success() {
+		$result = $this->execute_ability( 'blu/delete-block', array( 'client_id' => 'abc-123' ) );
+
+		$this->assertSame( 200, $result['statusCode'] );
+		$this->assertSame( 'delete_block', $result['message']['action'] );
+		$this->assertSame( 'abc-123', $result['message']['client_id'] );
+	}
+
+	// ── blu/move-block ────────────────────────────────────────────────
+
+	/**
+	 * Verifies move-block returns 400 when client_id is missing.
+	 */
+	public function test_move_block_requires_client_id() {
+		$result = $this->execute_ability(
+			'blu/move-block',
+			array(
+				'target_client_id' => 'def-456',
+				'position'         => 'after',
+			)
+		);
+
+		$this->assertSame( 400, $result['statusCode'] );
+	}
+
+	/**
+	 * Verifies move-block returns 400 when target_client_id is missing.
+	 */
+	public function test_move_block_requires_target_client_id() {
+		$result = $this->execute_ability(
+			'blu/move-block',
+			array(
+				'client_id' => 'abc-123',
+				'position'  => 'after',
+			)
+		);
+
+		$this->assertSame( 400, $result['statusCode'] );
+	}
+
+	/**
+	 * Verifies move-block returns 400 when position is invalid.
+	 */
+	public function test_move_block_requires_valid_position() {
+		$result = $this->execute_ability(
+			'blu/move-block',
+			array(
+				'client_id'        => 'abc-123',
+				'target_client_id' => 'def-456',
+				'position'         => 'inside',
+			)
+		);
+
+		$this->assertSame( 400, $result['statusCode'] );
+	}
+
+	/**
+	 * Verifies move-block returns 200 with valid input.
+	 */
+	public function test_move_block_success() {
+		$result = $this->execute_ability(
+			'blu/move-block',
+			array(
+				'client_id'        => 'abc-123',
+				'target_client_id' => 'def-456',
+				'position'         => 'before',
+			)
+		);
+
+		$this->assertSame( 200, $result['statusCode'] );
+		$this->assertSame( 'move_block', $result['message']['action'] );
+		$this->assertSame( 'abc-123', $result['message']['client_id'] );
+		$this->assertSame( 'def-456', $result['message']['target_client_id'] );
+		$this->assertSame( 'before', $result['message']['position'] );
+	}
+
+	// ── blu/get-block-markup ──────────────────────────────────────────
+
+	/**
+	 * Verifies get-block-markup returns 400 when client_id is missing.
+	 */
+	public function test_get_block_markup_requires_client_id() {
+		$result = $this->execute_ability( 'blu/get-block-markup', array() );
+
+		$this->assertSame( 400, $result['statusCode'] );
+	}
+
+	/**
+	 * Verifies get-block-markup returns 200 with valid input.
+	 */
+	public function test_get_block_markup_success() {
+		$result = $this->execute_ability( 'blu/get-block-markup', array( 'client_id' => 'abc-123' ) );
+
+		$this->assertSame( 200, $result['statusCode'] );
+		$this->assertSame( 'get_block_markup', $result['message']['action'] );
+		$this->assertSame( 'abc-123', $result['message']['client_id'] );
+	}
+
+	// ── blu/highlight-block ───────────────────────────────────────────
+
+	/**
+	 * Verifies highlight-block returns 400 when client_id is missing.
+	 */
+	public function test_highlight_block_requires_client_id() {
+		$result = $this->execute_ability( 'blu/highlight-block', array() );
+
+		$this->assertSame( 400, $result['statusCode'] );
+	}
+
+	/**
+	 * Verifies highlight-block returns 200 with valid input.
+	 */
+	public function test_highlight_block_success() {
+		$result = $this->execute_ability( 'blu/highlight-block', array( 'client_id' => 'abc-123' ) );
+
+		$this->assertSame( 200, $result['statusCode'] );
+		$this->assertSame( 'highlight_block', $result['message']['action'] );
+	}
+
+	// ── blu/rewrite-text ──────────────────────────────────────────────
+
+	/**
+	 * Verifies rewrite-text returns 400 when required fields are missing.
+	 */
+	public function test_rewrite_text_requires_fields() {
+		$result = $this->execute_ability( 'blu/rewrite-text', array( 'client_id' => 'abc-123' ) );
+
+		$this->assertSame( 400, $result['statusCode'] );
+	}
+
+	/**
+	 * Verifies rewrite-text returns 200 with valid input.
+	 */
+	public function test_rewrite_text_success() {
+		$result = $this->execute_ability(
+			'blu/rewrite-text',
+			array(
+				'client_id'    => 'abc-123',
+				'instructions' => 'Make it about coffee',
+			)
+		);
+
+		$this->assertSame( 200, $result['statusCode'] );
+		$this->assertSame( 'rewrite_text', $result['message']['action'] );
+		$this->assertSame( 'abc-123', $result['message']['client_id'] );
+		$this->assertSame( 'Make it about coffee', $result['message']['instructions'] );
+	}
+
+	// ── blu/update-block-attrs ────────────────────────────────────────
+
+	/**
+	 * Verifies update-block-attrs returns 400 when required fields are missing.
+	 */
+	public function test_update_block_attrs_requires_fields() {
+		$result = $this->execute_ability( 'blu/update-block-attrs', array( 'client_id' => 'abc-123' ) );
+
+		$this->assertSame( 400, $result['statusCode'] );
+	}
+
+	/**
+	 * Verifies update-block-attrs returns 200 with valid input.
+	 */
+	public function test_update_block_attrs_success() {
+		$attrs  = array(
+			'backgroundColor' => 'accent-1',
+			'textColor'       => 'contrast',
+		);
+		$result = $this->execute_ability(
+			'blu/update-block-attrs',
+			array(
+				'client_id'  => 'abc-123',
+				'attributes' => $attrs,
+			)
+		);
+
+		$this->assertSame( 200, $result['statusCode'] );
+		$this->assertSame( 'update_block_attrs', $result['message']['action'] );
+		$this->assertSame( $attrs, $result['message']['attributes'] );
+	}
+
+	// ── blu/replace-image ─────────────────────────────────────────────
+
+	/**
+	 * Verifies replace-image returns 400 when required fields are missing.
+	 */
+	public function test_replace_image_requires_fields() {
+		$result = $this->execute_ability( 'blu/replace-image', array( 'client_id' => 'abc-123' ) );
+
+		$this->assertSame( 400, $result['statusCode'] );
+	}
+
+	/**
+	 * Verifies replace-image returns 200 with valid input.
+	 */
+	public function test_replace_image_success() {
+		$result = $this->execute_ability(
+			'blu/replace-image',
+			array(
+				'client_id' => 'abc-123',
+				'url'       => 'https://example.com/image.jpg',
+			)
+		);
+
+		$this->assertSame( 200, $result['statusCode'] );
+		$this->assertSame( 'replace_image', $result['message']['action'] );
+		$this->assertSame( 'https://example.com/image.jpg', $result['message']['url'] );
+	}
+
+	/**
+	 * Verifies replace-image forwards alt text when provided.
+	 */
+	public function test_replace_image_includes_alt() {
+		$result = $this->execute_ability(
+			'blu/replace-image',
+			array(
+				'client_id' => 'abc-123',
+				'url'       => 'https://example.com/image.jpg',
+				'alt'       => 'A beautiful sunset',
+			)
+		);
+
+		$this->assertSame( 200, $result['statusCode'] );
+		$this->assertSame( 'A beautiful sunset', $result['message']['alt'] );
+	}
+
+	// ── blu/update-text ───────────────────────────────────────────────
+
+	/**
+	 * Verifies update-text returns 400 when required fields are missing.
+	 */
+	public function test_update_text_requires_fields() {
+		$result = $this->execute_ability( 'blu/update-text', array( 'client_id' => 'abc-123' ) );
+
+		$this->assertSame( 400, $result['statusCode'] );
+	}
+
+	/**
+	 * Verifies update-text returns 200 with valid input.
+	 */
+	public function test_update_text_success() {
+		$result = $this->execute_ability(
+			'blu/update-text',
+			array(
+				'client_id' => 'abc-123',
+				'text'      => 'Updated heading text',
+			)
+		);
+
+		$this->assertSame( 200, $result['statusCode'] );
+		$this->assertSame( 'update_text', $result['message']['action'] );
+		$this->assertSame( 'Updated heading text', $result['message']['text'] );
+	}
+
+	// ── blu/duplicate-block ───────────────────────────────────────────
+
+	/**
+	 * Verifies duplicate-block returns 400 when client_id is missing.
+	 */
+	public function test_duplicate_block_requires_client_id() {
+		$result = $this->execute_ability( 'blu/duplicate-block', array() );
+
+		$this->assertSame( 400, $result['statusCode'] );
+	}
+
+	/**
+	 * Verifies duplicate-block returns 200 with valid input.
+	 */
+	public function test_duplicate_block_success() {
+		$result = $this->execute_ability( 'blu/duplicate-block', array( 'client_id' => 'abc-123' ) );
+
+		$this->assertSame( 200, $result['statusCode'] );
+		$this->assertSame( 'duplicate_block', $result['message']['action'] );
+		$this->assertSame( 'abc-123', $result['message']['client_id'] );
+	}
+
+	// ── blu/batch-update-attrs ────────────────────────────────────────
+
+	/**
+	 * Verifies batch-update-attrs returns 400 when updates is missing.
+	 */
+	public function test_batch_update_attrs_requires_updates() {
+		$result = $this->execute_ability( 'blu/batch-update-attrs', array() );
+
+		$this->assertSame( 400, $result['statusCode'] );
+	}
+
+	/**
+	 * Verifies batch-update-attrs returns 200 with valid input.
+	 */
+	public function test_batch_update_attrs_success() {
+		$updates = array(
+			array(
+				'client_id'  => 'abc-123',
+				'attributes' => array( 'textAlign' => 'center' ),
+			),
+			array(
+				'client_id'  => 'def-456',
+				'attributes' => array( 'textAlign' => 'center' ),
+			),
+		);
+		$result  = $this->execute_ability( 'blu/batch-update-attrs', array( 'updates' => $updates ) );
+
+		$this->assertSame( 200, $result['statusCode'] );
+		$this->assertSame( 'batch_update_attrs', $result['message']['action'] );
+		$this->assertCount( 2, $result['message']['updates'] );
+	}
+
+	// ── blu/insert-block ──────────────────────────────────────────────
+
+	/**
+	 * Verifies insert-block returns 400 when block_name is missing.
+	 */
+	public function test_insert_block_requires_block_name() {
+		$result = $this->execute_ability( 'blu/insert-block', array() );
+
+		$this->assertSame( 400, $result['statusCode'] );
+	}
+
+	/**
+	 * Verifies insert-block returns 200 with valid input.
+	 */
+	public function test_insert_block_success() {
+		$result = $this->execute_ability(
+			'blu/insert-block',
+			array(
+				'block_name' => 'core/heading',
+				'attributes' => array( 'level' => 2 ),
+				'content'    => 'Hello World',
+			)
+		);
+
+		$this->assertSame( 200, $result['statusCode'] );
+		$this->assertSame( 'insert_block', $result['message']['action'] );
+		$this->assertSame( 'core/heading', $result['message']['block_name'] );
+		$this->assertSame( 'Hello World', $result['message']['content'] );
+	}
+
+	/**
+	 * Verifies insert-block forwards positional parameters.
+	 */
+	public function test_insert_block_with_position() {
+		$result = $this->execute_ability(
+			'blu/insert-block',
+			array(
+				'block_name'      => 'core/paragraph',
+				'content'         => 'New paragraph',
+				'after_client_id' => 'abc-123',
+			)
+		);
+
+		$this->assertSame( 200, $result['statusCode'] );
+		$this->assertSame( 'abc-123', $result['message']['after_client_id'] );
+	}
+
+	/**
+	 * Verifies insert-block with before_client_id.
+	 */
+	public function test_insert_block_with_before_position() {
+		$result = $this->execute_ability(
+			'blu/insert-block',
+			array(
+				'block_name'       => 'core/spacer',
+				'attributes'       => array( 'height' => '50px' ),
+				'before_client_id' => 'def-456',
+			)
+		);
+
+		$this->assertSame( 200, $result['statusCode'] );
+		$this->assertSame( 'def-456', $result['message']['before_client_id'] );
+	}
+
+	/**
+	 * Verifies insert-block defaults attributes to empty array when not provided.
+	 */
+	public function test_insert_block_default_attributes() {
+		$result = $this->execute_ability(
+			'blu/insert-block',
+			array( 'block_name' => 'core/separator' )
+		);
+
+		$this->assertSame( 200, $result['statusCode'] );
+		$this->assertSame( array(), $result['message']['attributes'] );
+	}
+}
