@@ -69,4 +69,70 @@ class McpValidationWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 
 		$this->assertFalse( $validator->is_authenticated() );
 	}
+
+	/**
+	 * Verifies localhost bypass is disabled by default (constant not defined).
+	 *
+	 * @return void
+	 */
+	public function test_localhost_bypass_disabled_by_default() {
+		wp_set_current_user( 0 );
+		$_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+
+		$request = new \WP_REST_Request();
+		$request->set_header( 'Authorization', 'Bearer some-token' );
+		$validator = new McpValidation( $request );
+
+		$this->assertFalse( $validator->is_authenticated() );
+
+		unset( $_SERVER['REMOTE_ADDR'] );
+	}
+
+	/**
+	 * Verifies localhost bypass works when BLU_ALLOW_LOCALHOST_BYPASS is enabled
+	 * and request originates from localhost.
+	 *
+	 * @return void
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_localhost_bypass_authenticates_when_enabled_and_localhost() {
+		wp_set_current_user( 0 );
+		$this->factory()->user->create( array( 'role' => 'administrator' ) );
+
+		define( 'BLU_ALLOW_LOCALHOST_BYPASS', true );
+		$_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+
+		$request = new \WP_REST_Request();
+		$request->set_header( 'Authorization', 'Bearer some-token' );
+		$validator = new McpValidation( $request );
+
+		$this->assertTrue( $validator->is_authenticated() );
+
+		unset( $_SERVER['REMOTE_ADDR'] );
+	}
+
+	/**
+	 * Verifies localhost bypass does not authenticate when request is not from localhost.
+	 *
+	 * @return void
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_localhost_bypass_does_not_authenticate_non_local_request() {
+		wp_set_current_user( 0 );
+
+		define( 'BLU_ALLOW_LOCALHOST_BYPASS', true );
+		$_SERVER['REMOTE_ADDR'] = '203.0.113.50';
+
+		$request = new \WP_REST_Request();
+		$request->set_header( 'Authorization', 'Bearer some-token' );
+		$validator = new McpValidation( $request );
+
+		$this->assertFalse( $validator->is_authenticated() );
+
+		unset( $_SERVER['REMOTE_ADDR'] );
+	}
 }
