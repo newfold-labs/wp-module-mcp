@@ -364,6 +364,7 @@ class Posts {
 				),
 				'execute_callback'    => function ( $input ) {
 					$request = new \WP_REST_Request( 'DELETE', '/wp/v2/categories/' . $input['id'] );
+					$request->set_query_params( array( 'force' => true ) );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
 				},
@@ -514,6 +515,7 @@ class Posts {
 				),
 				'execute_callback'    => function ( $input ) {
 					$request = new \WP_REST_Request( 'DELETE', '/wp/v2/tags/' . $input['id'] );
+					$request->set_query_params( array( 'force' => true ) );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
 				},
