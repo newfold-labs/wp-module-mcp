@@ -51,14 +51,15 @@ class Posts {
 				),
 				'execute_callback'    => function ( $input = null ) {
 					$request = new \WP_REST_Request( 'GET', '/wp/v2/posts' );
+					$all_statuses = 'publish,future,draft,pending,private';
 					if ( $input ) {
-						// Default to all statuses when not specified (WP defaults to publish only).
-						if ( ! isset( $input['status'] ) ) {
-							$input['status'] = 'publish,future,draft,pending,private';
+						// Default to all statuses when not specified or empty (WP defaults to publish only).
+						if ( ! isset( $input['status'] ) || $input['status'] === '' ) {
+							$input['status'] = $all_statuses;
 						}
 						$request->set_query_params( $input );
 					} else {
-						$request->set_param( 'status', 'publish,future,draft,pending,private' );
+						$request->set_param( 'status', $all_statuses );
 					}
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
