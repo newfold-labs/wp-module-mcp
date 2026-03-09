@@ -478,7 +478,7 @@ class BlockEditor {
 						),
 						'attributes' => array(
 							'type'        => 'object',
-							'description' => 'Attributes to merge into the block. Nested objects are deep-merged. Set a key to null to remove it (e.g., {"fontSize": null} removes the preset size).',
+							'description' => 'An object containing the attributes to merge into the block. All attribute keys (style, className, color, fontSize, etc.) MUST be nested inside this "attributes" object — never place them at the top level alongside client_id. Nested objects are deep-merged. Set a key to null to remove it. Correct: {"attributes": {"style": {"color": {"background": "#fff"}}}}. Wrong: {"style": {"color": {"background": "#fff"}}}.',
 						),
 					),
 					'required'   => array( 'client_id', 'attributes' ),
