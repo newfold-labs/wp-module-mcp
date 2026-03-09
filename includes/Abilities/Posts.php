@@ -54,7 +54,7 @@ class Posts {
 					$all_statuses = 'publish,future,draft,pending,private';
 					if ( $input ) {
 						// Default to all statuses when not specified or empty (WP defaults to publish only).
-						if ( ! isset( $input['status'] ) || $input['status'] === '' ) {
+						if ( ! isset( $input['status'] ) || '' === $input['status'] ) {
 							$input['status'] = $all_statuses;
 						}
 						$request->set_query_params( $input );
@@ -67,9 +67,9 @@ class Posts {
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => true,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -100,9 +100,9 @@ class Posts {
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => true,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -146,9 +146,9 @@ class Posts {
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => false,
-						'idempotent'   => false,
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => false,
 					),
 				),
 			)
@@ -198,9 +198,9 @@ class Posts {
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -231,9 +231,9 @@ class Posts {
 				'permission_callback' => fn() => current_user_can( 'delete_posts' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => true,
-						'idempotent'   => true,
+						'readonly'    => false,
+						'destructive' => true,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -262,9 +262,9 @@ class Posts {
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => true,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -304,9 +304,9 @@ class Posts {
 				'permission_callback' => fn() => current_user_can( 'manage_categories' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => false,
-						'idempotent'   => false,
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => false,
 					),
 				),
 			)
@@ -348,9 +348,9 @@ class Posts {
 				'permission_callback' => fn() => current_user_can( 'manage_categories' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -381,9 +381,9 @@ class Posts {
 				'permission_callback' => fn() => current_user_can( 'manage_categories' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => true,
-						'idempotent'   => true,
+						'readonly'    => false,
+						'destructive' => true,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -412,9 +412,9 @@ class Posts {
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => true,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -454,9 +454,9 @@ class Posts {
 				'permission_callback' => fn() => current_user_can( 'manage_categories' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => false,
-						'idempotent'   => false,
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => false,
 					),
 				),
 			)
@@ -498,9 +498,9 @@ class Posts {
 				'permission_callback' => fn() => current_user_can( 'manage_categories' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -531,9 +531,9 @@ class Posts {
 				'permission_callback' => fn() => current_user_can( 'manage_categories' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => true,
-						'idempotent'   => true,
+						'readonly'    => false,
+						'destructive' => true,
+						'idempotent'  => true,
 					),
 				),
 			)
