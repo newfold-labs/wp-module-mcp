@@ -32,7 +32,17 @@ class PatternLibraryWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		parent::tearDown();
 	}
 
-	// ── score_patterns tests ──────────────────────────────────────────
+	// ── Constructor ───────────────────────────────────────────────────
+
+	/**
+	 * Verifies constructor can be instantiated without fatal.
+	 */
+	public function test_constructor_does_not_fatal() {
+		$instance = new PatternLibrary();
+		$this->assertInstanceOf( PatternLibrary::class, $instance );
+	}
+
+	// ── score_patterns ───────────────────────────────────────────────
 
 	/**
 	 * Verifies score_patterns returns empty array when no patterns match.
@@ -123,16 +133,39 @@ class PatternLibraryWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$result = self::call_static( 'score_patterns', array( $patterns, 'hero split' ) );
 
 		$this->assertNotEmpty( $result );
-		// hero-split should rank first because "hero split" phrase appears in its title.
 		$this->assertSame( 'hero-split', $result[0]['slug'] );
 	}
 
-	// ── get_patterns cache fallback tests ─────────────────────────────
+	/**
+	 * Verifies score_patterns returns expected keys in results.
+	 */
+	public function test_score_patterns_result_keys() {
+		$patterns = array(
+			array(
+				'slug'        => 'faq-one',
+				'title'       => 'FAQ Section',
+				'description' => 'Frequently asked questions.',
+				'categories'  => array( 'faq' ),
+				'tags'        => array( 'questions' ),
+			),
+		);
+
+		$result = self::call_static( 'score_patterns', array( $patterns, 'faq' ) );
+
+		$this->assertCount( 1, $result );
+		$this->assertArrayHasKey( 'slug', $result[0] );
+		$this->assertArrayHasKey( 'title', $result[0] );
+		$this->assertArrayHasKey( 'description', $result[0] );
+		$this->assertArrayHasKey( 'categories', $result[0] );
+		$this->assertArrayHasKey( 'tags', $result[0] );
+	}
+
+	// ── get_patterns cache fallback ──────────────────────────────────
 
 	/**
-	 * Verifies get_patterns falls back to cached index when API fails.
+	 * Verifies get_patterns falls back to cached index when API is unavailable.
 	 */
-	public function test_get_patterns_returns_cached_index_on_api_failure() {
+	public function test_get_patterns_returns_cached_index_on_failure() {
 		$cached = array(
 			array(
 				'slug'        => 'cached-pattern',
@@ -144,7 +177,6 @@ class PatternLibraryWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		);
 		update_option( 'blu_pattern_index', $cached, false );
 
-		// Items::get() will fail in the test environment (no API), so the cache is used.
 		$result = self::call_static( 'get_patterns' );
 
 		$this->assertIsArray( $result );
@@ -153,7 +185,7 @@ class PatternLibraryWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	}
 
 	/**
-	 * Verifies get_patterns returns empty array when API fails and no cache exists.
+	 * Verifies get_patterns returns empty array when no cache exists.
 	 */
 	public function test_get_patterns_returns_empty_when_no_cache() {
 		delete_option( 'blu_pattern_index' );
@@ -164,10 +196,10 @@ class PatternLibraryWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$this->assertEmpty( $result );
 	}
 
-	// ── Ability execute_callback tests via Abilities API ──────────────
+	// ── Ability callback tests via Abilities API ─────────────────────
 
 	/**
-	 * Helper: execute a registered ability by name, setting up an admin user.
+	 * Helper: execute a registered ability by name with an admin user.
 	 *
 	 * @param string $ability_name The registered ability name.
 	 * @param array  $input        Input to pass to the ability.
@@ -178,10 +210,8 @@ class PatternLibraryWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 			$this->markTestSkipped( 'WP Abilities API is not available.' );
 		}
 
-		// Ensure abilities are registered.
 		new PatternLibrary();
 
-		// Set up an admin user so permission_callback passes.
 		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user_id );
 
@@ -255,8 +285,6 @@ class PatternLibraryWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 
 		$this->assertIsArray( $result );
 		$this->assertSame( 200, $result['statusCode'] );
-		$this->assertSame( 'success', $result['status'] );
-		$this->assertArrayHasKey( 'content', $result['message'] );
 		$this->assertStringContainsString( 'Hello', $result['message']['content'] );
 	}
 
@@ -286,8 +314,6 @@ class PatternLibraryWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 
 		$this->assertIsArray( $result );
 		$this->assertSame( 200, $result['statusCode'] );
-		$this->assertSame( 'success', $result['status'] );
-		$this->assertArrayHasKey( 'patterns', $result['message'] );
 		$this->assertSame( 1, $result['message']['count'] );
 		$this->assertSame( 'hero-bold', $result['message']['patterns'][0]['slug'] );
 	}

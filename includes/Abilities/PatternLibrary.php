@@ -30,6 +30,11 @@ class PatternLibrary {
 	 * @return array Pattern data (may be empty on total failure).
 	 */
 	private static function get_patterns( array $args = array() ): array {
+		if ( ! class_exists( Items::class ) ) {
+			$cached = get_option( self::CACHE_KEY );
+			return is_array( $cached ) && ! empty( $cached ) ? $cached : array();
+		}
+
 		$data = Items::get( 'patterns', $args );
 
 		if ( ! \is_wp_error( $data ) && is_array( $data ) && ! empty( $data ) ) {
