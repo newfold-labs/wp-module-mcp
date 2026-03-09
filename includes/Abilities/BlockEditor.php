@@ -454,22 +454,6 @@ class BlockEditor {
 	}
 
 	/**
-	 * Register ability to get block markup
-	 *
-	 * Fetches the full HTML markup of a specific block and its inner blocks.
-	 * This is a read-only tool used before editing non-selected blocks.
-	 *
-	 * @return void
-	 */
-	/**
-	 * Register ability to rewrite text content within a block/section.
-	 *
-	 * Rewrites all text (headings, paragraphs, buttons, list items) inside
-	 * the target block while preserving all HTML structure, classes, and styles.
-	 *
-	 * @return void
-	 */
-	/**
 	 * Register ability to update block attributes without replacing markup.
 	 *
 	 * Deep-merges new attributes into the existing block — no need to read
