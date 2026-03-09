@@ -35,6 +35,10 @@ class Posts {
 							'type'        => 'string',
 							'description' => 'Search term',
 						),
+						'status'   => array(
+							'type'        => 'string',
+							'description' => 'Post status(es): publish, draft, pending, future, private. Comma-separated for multiple. Omit to search all statuses.',
+						),
 						'page'     => array(
 							'type'        => 'integer',
 							'description' => 'Page number',
@@ -48,7 +52,13 @@ class Posts {
 				'execute_callback'    => function ( $input = null ) {
 					$request = new \WP_REST_Request( 'GET', '/wp/v2/posts' );
 					if ( $input ) {
+						// Default to all statuses when not specified (WP defaults to publish only).
+						if ( ! isset( $input['status'] ) ) {
+							$input['status'] = 'publish,future,draft,pending,private';
+						}
 						$request->set_query_params( $input );
+					} else {
+						$request->set_param( 'status', 'publish,future,draft,pending,private' );
 					}
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
