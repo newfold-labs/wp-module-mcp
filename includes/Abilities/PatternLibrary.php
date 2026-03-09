@@ -290,12 +290,18 @@ class PatternLibrary {
 						return blu_prepare_ability_response( 404, 'Pattern not found: ' . $slug );
 					}
 
+					$content = $match['content'] ?? '';
+
+					if ( empty( $content ) ) {
+						return blu_prepare_ability_response( 502, 'Pattern markup is temporarily unavailable. Generate the markup yourself using block_content.' );
+					}
+
 					return blu_prepare_ability_response(
 						200,
 						array(
 							'slug'        => $match['slug'] ?? '',
 							'title'       => $match['title'] ?? '',
-							'content'     => $match['content'] ?? '',
+							'content'     => $content,
 							'categories'  => $match['categories'] ?? array(),
 							'tags'        => $match['tags'] ?? array(),
 							'description' => $match['description'] ?? '',
