@@ -20,7 +20,7 @@ class McpValidationWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$admin_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $admin_id );
 
-		$request = new \WP_REST_Request();
+		$request   = new \WP_REST_Request();
 		$validator = new McpValidation( $request );
 
 		$this->assertTrue( $validator->is_authenticated() );
@@ -34,7 +34,7 @@ class McpValidationWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	public function test_is_authenticated_returns_false_when_no_auth_header() {
 		wp_set_current_user( 0 );
 
-		$request = new \WP_REST_Request();
+		$request   = new \WP_REST_Request();
 		$validator = new McpValidation( $request );
 
 		$this->assertFalse( $validator->is_authenticated() );
@@ -68,5 +68,75 @@ class McpValidationWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$validator = new McpValidation( $request );
 
 		$this->assertFalse( $validator->is_authenticated() );
+	}
+
+	/**
+	 * Verifies localhost bypass is disabled by default (constant not defined).
+	 *
+	 * @return void
+	 */
+	public function test_localhost_bypass_disabled_by_default() {
+		// Skip if constant was already defined by a previous test run.
+		if ( defined( 'BLU_ALLOW_LOCALHOST_BYPASS' ) ) {
+			$this->markTestSkipped( 'BLU_ALLOW_LOCALHOST_BYPASS is already defined.' );
+		}
+
+		wp_set_current_user( 0 );
+		$_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+
+		$request   = new \WP_REST_Request();
+		$request->set_header( 'Authorization', 'Bearer some-token' );
+		$validator = new McpValidation( $request );
+
+		$this->assertFalse( $validator->is_authenticated() );
+
+		unset( $_SERVER['REMOTE_ADDR'] );
+	}
+
+	/**
+	 * Verifies localhost bypass does not authenticate when request is not from localhost,
+	 * even when the bypass constant is enabled.
+	 *
+	 * @return void
+	 */
+	public function test_localhost_bypass_does_not_authenticate_non_local_request() {
+		if ( ! defined( 'BLU_ALLOW_LOCALHOST_BYPASS' ) ) {
+			define( 'BLU_ALLOW_LOCALHOST_BYPASS', true );
+		}
+
+		wp_set_current_user( 0 );
+		$_SERVER['REMOTE_ADDR'] = '203.0.113.50';
+
+		$request   = new \WP_REST_Request();
+		$request->set_header( 'Authorization', 'Bearer some-token' );
+		$validator = new McpValidation( $request );
+
+		$this->assertFalse( $validator->is_authenticated() );
+
+		unset( $_SERVER['REMOTE_ADDR'] );
+	}
+
+	/**
+	 * Verifies localhost bypass does not authenticate when forwarded headers are present,
+	 * even from localhost with the bypass constant enabled.
+	 *
+	 * @return void
+	 */
+	public function test_localhost_bypass_rejects_forwarded_headers() {
+		if ( ! defined( 'BLU_ALLOW_LOCALHOST_BYPASS' ) ) {
+			define( 'BLU_ALLOW_LOCALHOST_BYPASS', true );
+		}
+
+		wp_set_current_user( 0 );
+		$_SERVER['REMOTE_ADDR']          = '127.0.0.1';
+		$_SERVER['HTTP_X_FORWARDED_FOR'] = '203.0.113.50';
+
+		$request   = new \WP_REST_Request();
+		$request->set_header( 'Authorization', 'Bearer some-token' );
+		$validator = new McpValidation( $request );
+
+		$this->assertFalse( $validator->is_authenticated() );
+
+		unset( $_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_X_FORWARDED_FOR'] );
 	}
 }
