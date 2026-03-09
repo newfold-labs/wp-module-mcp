@@ -84,9 +84,11 @@ class McpValidation {
 			// Development-only: allow localhost requests with a valid Bearer token to bypass
 			// full JWT signature validation when explicitly enabled. The naf-gateway signs
 			// tokens with its own key which differs from the jarvis-jwt key used in production.
+			// Requires local environment type and rejects requests with forwarded headers.
 			if (
 				defined( 'BLU_ALLOW_LOCALHOST_BYPASS' )
 				&& BLU_ALLOW_LOCALHOST_BYPASS
+				&& 'local' === wp_get_environment_type()
 				&& $this->is_localhost_request()
 				&& ! empty( $token )
 			) {
@@ -294,10 +296,16 @@ class McpValidation {
 
 	/**
 	 * Check if the request originates from localhost.
+	 * Rejects requests that include forwarded headers to prevent proxy bypass.
 	 *
 	 * @return bool
 	 */
 	private function is_localhost_request(): bool {
+		// Reject if forwarded headers are present (likely proxied from external client).
+		if ( ! empty( $_SERVER['HTTP_X_FORWARDED_FOR'] ) || ! empty( $_SERVER['HTTP_FORWARDED'] ) ) {
+			return false;
+		}
+
 		$remote_addr = isset( $_SERVER['REMOTE_ADDR'] ) ? $_SERVER['REMOTE_ADDR'] : '';
 		$localhost   = array( '127.0.0.1', '::1', 'localhost' );
 		return in_array( $remote_addr, $localhost, true );
