@@ -197,18 +197,42 @@ class BlockEditor {
 						return blu_prepare_ability_response( 400, array( 'message' => 'Either pattern_slug or block_content is required' ) );
 					}
 
+					// Validate: after_client_id and before_client_id are mutually exclusive
+					$has_after_param  = array_key_exists( 'after_client_id', $input );
+					$has_before_param = array_key_exists( 'before_client_id', $input ) && '' !== $input['before_client_id'];
+					if ( $has_after_param && $has_before_param ) {
+						return blu_prepare_ability_response(
+							400,
+							array(
+								'message' => 'after_client_id and before_client_id are mutually exclusive. Provide only one.',
+							)
+						);
+					}
+
 					// after_client_id can be null (top of page) or a string
-					$after_client_id = isset( $input['after_client_id'] ) && ! empty( $input['after_client_id'] )
+					$after_client_id = isset( $input['after_client_id'] ) && '' !== $input['after_client_id']
 						? sanitize_text_field( $input['after_client_id'] )
+						: null;
+
+					// before_client_id is used to insert BEFORE a given block
+					$before_client_id = isset( $input['before_client_id'] ) && '' !== $input['before_client_id']
+						? sanitize_text_field( $input['before_client_id'] )
 						: null;
 
 					// Return action data for client-side execution
 					$response_data = array(
-						'action'          => 'add_section',
-						'after_client_id' => $after_client_id,
-						'block_content'   => $input['block_content'] ?? '',
-						'message'         => 'Section add ready for execution',
+						'action'        => 'add_section',
+						'block_content' => $input['block_content'] ?? '',
+						'message'       => 'Section add ready for execution',
 					);
+
+					// Forward positional information based on which parameter is used
+					if ( null !== $after_client_id ) {
+						$response_data['after_client_id'] = $after_client_id;
+					}
+					if ( null !== $before_client_id ) {
+						$response_data['before_client_id'] = $before_client_id;
+					}
 
 					// Forward pattern_slug and image_urls to the client
 					if ( ! empty( $input['pattern_slug'] ) ) {
