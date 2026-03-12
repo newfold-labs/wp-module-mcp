@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1773312338">
-  <project timestamp="1773312338">
+<coverage generated="1773312369">
+  <project timestamp="1773312369">
     <file name="/home/runner/work/wp-module-mcp/wp-module-mcp/bootstrap.php">
       <line num="9" type="stmt" count="0"/>
       <line num="10" type="stmt" count="0"/>
@@ -785,11 +785,11 @@
     </file>
     <file name="/home/runner/work/wp-module-mcp/wp-module-mcp/includes/Abilities/Pages.php">
       <class name="BLU\Abilities\Pages" namespace="global">
-        <metrics complexity="3" methods="2" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="213" coveredstatements="0" elements="215" coveredelements="0"/>
+        <metrics complexity="5" methods="2" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="221" coveredstatements="0" elements="223" coveredelements="0"/>
       </class>
       <line num="14" type="method" name="__construct" visibility="public" complexity="1" crap="2" count="0"/>
       <line num="15" type="stmt" count="0"/>
-      <line num="21" type="method" name="register_abilities" visibility="private" complexity="2" crap="6" count="0"/>
+      <line num="21" type="method" name="register_abilities" visibility="private" complexity="4" crap="20" count="0"/>
       <line num="23" type="stmt" count="0"/>
       <line num="24" type="stmt" count="0"/>
       <line num="25" type="stmt" count="0"/>
@@ -817,19 +817,18 @@
       <line num="47" type="stmt" count="0"/>
       <line num="48" type="stmt" count="0"/>
       <line num="49" type="stmt" count="0"/>
+      <line num="50" type="stmt" count="0"/>
       <line num="51" type="stmt" count="0"/>
       <line num="52" type="stmt" count="0"/>
       <line num="53" type="stmt" count="0"/>
-      <line num="54" type="stmt" count="0"/>
       <line num="55" type="stmt" count="0"/>
       <line num="56" type="stmt" count="0"/>
-      <line num="57" type="stmt" count="0"/>
       <line num="58" type="stmt" count="0"/>
-      <line num="59" type="stmt" count="0"/>
       <line num="60" type="stmt" count="0"/>
-      <line num="61" type="stmt" count="0"/>
       <line num="62" type="stmt" count="0"/>
       <line num="63" type="stmt" count="0"/>
+      <line num="64" type="stmt" count="0"/>
+      <line num="65" type="stmt" count="0"/>
       <line num="66" type="stmt" count="0"/>
       <line num="67" type="stmt" count="0"/>
       <line num="68" type="stmt" count="0"/>
@@ -839,8 +838,6 @@
       <line num="72" type="stmt" count="0"/>
       <line num="73" type="stmt" count="0"/>
       <line num="74" type="stmt" count="0"/>
-      <line num="75" type="stmt" count="0"/>
-      <line num="76" type="stmt" count="0"/>
       <line num="77" type="stmt" count="0"/>
       <line num="78" type="stmt" count="0"/>
       <line num="79" type="stmt" count="0"/>
@@ -861,6 +858,8 @@
       <line num="94" type="stmt" count="0"/>
       <line num="95" type="stmt" count="0"/>
       <line num="96" type="stmt" count="0"/>
+      <line num="97" type="stmt" count="0"/>
+      <line num="98" type="stmt" count="0"/>
       <line num="99" type="stmt" count="0"/>
       <line num="100" type="stmt" count="0"/>
       <line num="101" type="stmt" count="0"/>
@@ -870,8 +869,6 @@
       <line num="105" type="stmt" count="0"/>
       <line num="106" type="stmt" count="0"/>
       <line num="107" type="stmt" count="0"/>
-      <line num="108" type="stmt" count="0"/>
-      <line num="109" type="stmt" count="0"/>
       <line num="110" type="stmt" count="0"/>
       <line num="111" type="stmt" count="0"/>
       <line num="112" type="stmt" count="0"/>
@@ -913,6 +910,8 @@
       <line num="148" type="stmt" count="0"/>
       <line num="149" type="stmt" count="0"/>
       <line num="150" type="stmt" count="0"/>
+      <line num="151" type="stmt" count="0"/>
+      <line num="152" type="stmt" count="0"/>
       <line num="153" type="stmt" count="0"/>
       <line num="154" type="stmt" count="0"/>
       <line num="155" type="stmt" count="0"/>
@@ -922,8 +921,6 @@
       <line num="159" type="stmt" count="0"/>
       <line num="160" type="stmt" count="0"/>
       <line num="161" type="stmt" count="0"/>
-      <line num="162" type="stmt" count="0"/>
-      <line num="163" type="stmt" count="0"/>
       <line num="164" type="stmt" count="0"/>
       <line num="165" type="stmt" count="0"/>
       <line num="166" type="stmt" count="0"/>
@@ -971,6 +968,8 @@
       <line num="208" type="stmt" count="0"/>
       <line num="209" type="stmt" count="0"/>
       <line num="210" type="stmt" count="0"/>
+      <line num="211" type="stmt" count="0"/>
+      <line num="212" type="stmt" count="0"/>
       <line num="213" type="stmt" count="0"/>
       <line num="214" type="stmt" count="0"/>
       <line num="215" type="stmt" count="0"/>
@@ -980,8 +979,6 @@
       <line num="219" type="stmt" count="0"/>
       <line num="220" type="stmt" count="0"/>
       <line num="221" type="stmt" count="0"/>
-      <line num="222" type="stmt" count="0"/>
-      <line num="223" type="stmt" count="0"/>
       <line num="224" type="stmt" count="0"/>
       <line num="225" type="stmt" count="0"/>
       <line num="226" type="stmt" count="0"/>
@@ -1002,11 +999,22 @@
       <line num="241" type="stmt" count="0"/>
       <line num="242" type="stmt" count="0"/>
       <line num="243" type="stmt" count="0"/>
-      <metrics loc="246" ncloc="232" classes="1" methods="2" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="213" coveredstatements="0" elements="215" coveredelements="0"/>
+      <line num="244" type="stmt" count="0"/>
+      <line num="245" type="stmt" count="0"/>
+      <line num="246" type="stmt" count="0"/>
+      <line num="247" type="stmt" count="0"/>
+      <line num="248" type="stmt" count="0"/>
+      <line num="249" type="stmt" count="0"/>
+      <line num="250" type="stmt" count="0"/>
+      <line num="251" type="stmt" count="0"/>
+      <line num="252" type="stmt" count="0"/>
+      <line num="253" type="stmt" count="0"/>
+      <line num="254" type="stmt" count="0"/>
+      <metrics loc="257" ncloc="242" classes="1" methods="2" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="221" coveredstatements="0" elements="223" coveredelements="0"/>
     </file>
     <file name="/home/runner/work/wp-module-mcp/wp-module-mcp/includes/Abilities/Posts.php">
       <class name="BLU\Abilities\Posts" namespace="global">
-        <metrics complexity="7" methods="4" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="481" coveredstatements="0" elements="485" coveredelements="0"/>
+        <metrics complexity="7" methods="4" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="483" coveredstatements="0" elements="487" coveredelements="0"/>
       </class>
       <line num="14" type="method" name="__construct" visibility="public" complexity="1" crap="2" count="0"/>
       <line num="15" type="stmt" count="0"/>
@@ -1355,8 +1363,8 @@
       <line num="388" type="stmt" count="0"/>
       <line num="389" type="stmt" count="0"/>
       <line num="390" type="stmt" count="0"/>
-      <line num="396" type="method" name="register_tag_abilities" visibility="private" complexity="1" crap="2" count="0"/>
-      <line num="398" type="stmt" count="0"/>
+      <line num="391" type="stmt" count="0"/>
+      <line num="397" type="method" name="register_tag_abilities" visibility="private" complexity="1" crap="2" count="0"/>
       <line num="399" type="stmt" count="0"/>
       <line num="400" type="stmt" count="0"/>
       <line num="401" type="stmt" count="0"/>
@@ -1380,7 +1388,7 @@
       <line num="419" type="stmt" count="0"/>
       <line num="420" type="stmt" count="0"/>
       <line num="421" type="stmt" count="0"/>
-      <line num="424" type="stmt" count="0"/>
+      <line num="422" type="stmt" count="0"/>
       <line num="425" type="stmt" count="0"/>
       <line num="426" type="stmt" count="0"/>
       <line num="427" type="stmt" count="0"/>
@@ -1420,7 +1428,7 @@
       <line num="461" type="stmt" count="0"/>
       <line num="462" type="stmt" count="0"/>
       <line num="463" type="stmt" count="0"/>
-      <line num="466" type="stmt" count="0"/>
+      <line num="464" type="stmt" count="0"/>
       <line num="467" type="stmt" count="0"/>
       <line num="468" type="stmt" count="0"/>
       <line num="469" type="stmt" count="0"/>
@@ -1462,7 +1470,7 @@
       <line num="505" type="stmt" count="0"/>
       <line num="506" type="stmt" count="0"/>
       <line num="507" type="stmt" count="0"/>
-      <line num="510" type="stmt" count="0"/>
+      <line num="508" type="stmt" count="0"/>
       <line num="511" type="stmt" count="0"/>
       <line num="512" type="stmt" count="0"/>
       <line num="513" type="stmt" count="0"/>
@@ -1493,7 +1501,9 @@
       <line num="538" type="stmt" count="0"/>
       <line num="539" type="stmt" count="0"/>
       <line num="540" type="stmt" count="0"/>
-      <metrics loc="543" ncloc="514" classes="1" methods="4" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="481" coveredstatements="0" elements="485" coveredelements="0"/>
+      <line num="541" type="stmt" count="0"/>
+      <line num="542" type="stmt" count="0"/>
+      <metrics loc="545" ncloc="516" classes="1" methods="4" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="483" coveredstatements="0" elements="487" coveredelements="0"/>
     </file>
     <file name="/home/runner/work/wp-module-mcp/wp-module-mcp/includes/Abilities/Prompts.php">
       <class name="BLU\Abilities\Prompts" namespace="global">
@@ -4061,6 +4071,6 @@
       <line num="97" type="stmt" count="0"/>
       <metrics loc="98" ncloc="88" classes="0" methods="0" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="6" coveredstatements="0" elements="6" coveredelements="0"/>
     </file>
-    <metrics files="25" loc="5720" ncloc="4998" classes="17" methods="66" coveredmethods="3" conditionals="0" coveredconditionals="0" statements="3868" coveredstatements="17" elements="3934" coveredelements="20"/>
+    <metrics files="25" loc="5733" ncloc="5010" classes="17" methods="66" coveredmethods="3" conditionals="0" coveredconditionals="0" statements="3878" coveredstatements="17" elements="3944" coveredelements="20"/>
   </project>
 </coverage>
