@@ -320,6 +320,7 @@ class BlockEditor {
 	 * Register ability to move a block
 	 *
 	 * Moves a block (with all inner blocks) to a new position.
+	 * Supports sibling mode (before/after another block) and child mode (into a container block).
 	 *
 	 * @return void
 	 */
@@ -328,7 +329,7 @@ class BlockEditor {
 			'blu/move-block',
 			array(
 				'label'               => 'Move Block',
-				'description'         => 'Move a block (with all its inner blocks) to a new position relative to another block. Use this when the user asks to reorder sections, move content up/down, or rearrange the page layout. The moved block keeps all its content and inner blocks intact.',
+				'description'         => 'Move a block (with all its inner blocks) to a new position. Two modes: (1) Sibling mode: provide target_client_id + position to place before/after another block. (2) Child mode: provide as_child_of to move the block inside a container block (e.g. move a column into a columns block). Use this when the user asks to reorder sections, move content up/down, rearrange page layout, or restructure blocks into new containers.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
@@ -339,39 +340,56 @@ class BlockEditor {
 						),
 						'target_client_id' => array(
 							'type'        => 'string',
-							'description' => 'The clientId of the target block to position relative to, from the block tree context',
+							'description' => 'Sibling mode: the clientId of the block to position relative to. Required when using position.',
 						),
 						'position'         => array(
 							'type'        => 'string',
 							'enum'        => array( 'before', 'after' ),
-							'description' => 'Where to place the block relative to the target: "before" or "after"',
+							'description' => 'Sibling mode: where to place the block relative to the target: "before" or "after"',
+						),
+						'as_child_of'      => array(
+							'type'        => 'string',
+							'description' => 'Child mode: the clientId of the container block to move into (e.g. a core/columns block). The block is appended as the last child. Use this to restructure layouts, e.g. moving columns between different columns blocks.',
 						),
 					),
-					'required'   => array( 'client_id', 'target_client_id', 'position' ),
+					'required'   => array( 'client_id' ),
 				),
 				'execute_callback'    => function ( $input ) {
 					// Validate required fields
 					if ( empty( $input['client_id'] ) ) {
 						return blu_prepare_ability_response( 400, array( 'message' => 'client_id is required' ) );
 					}
-					if ( empty( $input['target_client_id'] ) ) {
-						return blu_prepare_ability_response( 400, array( 'message' => 'target_client_id is required' ) );
+
+					$has_sibling_mode = ! empty( $input['target_client_id'] ) && ! empty( $input['position'] );
+					$has_child_mode   = ! empty( $input['as_child_of'] );
+
+					if ( $has_sibling_mode && $has_child_mode ) {
+						return blu_prepare_ability_response( 400, array( 'message' => 'Cannot use both sibling mode and child mode' ) );
 					}
-					if ( empty( $input['position'] ) || ! in_array( $input['position'], array( 'before', 'after' ), true ) ) {
+
+					if ( ! $has_sibling_mode && ! $has_child_mode ) {
+						return blu_prepare_ability_response( 400, array( 'message' => 'Provide either (target_client_id + position) for sibling mode or as_child_of for child mode' ) );
+					}
+
+					if ( $has_sibling_mode && ! in_array( $input['position'], array( 'before', 'after' ), true ) ) {
 						return blu_prepare_ability_response( 400, array( 'message' => 'position must be "before" or "after"' ) );
 					}
 
-					// Return action data for client-side execution
-					return blu_prepare_ability_response(
-						200,
-						array(
-							'action'           => 'move_block',
-							'client_id'        => sanitize_text_field( $input['client_id'] ),
-							'target_client_id' => sanitize_text_field( $input['target_client_id'] ),
-							'position'         => sanitize_text_field( $input['position'] ),
-							'message'          => 'Block move ready for execution',
-						)
+					$response_data = array(
+						'action'    => 'move_block',
+						'client_id' => sanitize_text_field( $input['client_id'] ),
+						'message'   => 'Block move ready for execution',
 					);
+
+					if ( $has_child_mode ) {
+						$response_data['as_child_of'] = sanitize_text_field( $input['as_child_of'] );
+					} else {
+						$response_data['target_client_id'] = sanitize_text_field( $input['target_client_id'] );
+						$response_data['position']         = sanitize_text_field( $input['position'] );
+					}
+
+					// Return action data for client-side execution
+					return blu_prepare_ability_response( 200, $response_data );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
@@ -818,7 +836,7 @@ class BlockEditor {
 			'blu/insert-block',
 			array(
 				'label'               => 'Insert Block',
-				'description'         => 'Insert a single block by type name and attributes — no need to write full block markup. The block is created from the WordPress block registry. Use for simple blocks: heading, paragraph, image, button, spacer, separator, list, quote.',
+				'description'         => 'Insert a single block by type name and attributes — no need to write full block markup. The block is created from the WordPress block registry. Use for simple blocks: heading, paragraph, image, button, spacer, separator, list, quote. Also use to add a core/column with content to an existing core/columns block — set after_client_id to the core/columns client_id and provide block_content with the inner block markup for the column.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
@@ -843,6 +861,10 @@ class BlockEditor {
 							'type'        => 'string',
 							'description' => 'Insert before this block. Mutually exclusive with after_client_id.',
 						),
+						'block_content'    => array(
+							'type'        => 'string',
+							'description' => 'Optional block markup for inner blocks. Use when inserting a container block (e.g. core/column) that needs child content. The markup is parsed and inserted as inner blocks of the created block.',
+						),
 					),
 					'required'   => array( 'block_name' ),
 				),
@@ -859,6 +881,9 @@ class BlockEditor {
 					);
 					if ( ! empty( $input['content'] ) ) {
 						$data['content'] = wp_kses_post( $input['content'] );
+					}
+					if ( ! empty( $input['block_content'] ) ) {
+						$data['block_content'] = wp_kses_post( $input['block_content'] );
 					}
 					if ( ! empty( $input['after_client_id'] ) ) {
 						$data['after_client_id'] = sanitize_text_field( $input['after_client_id'] );
