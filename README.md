@@ -2,6 +2,8 @@
 
 A Composer package that exposes WordPress functionality through the Model Context Protocol (MCP), enabling AI assistants to interact with your WordPress site.
 
+**Developer documentation:** see **[docs/index.md](docs/index.md)** (table of contents) and **[AGENTS.md](AGENTS.md)** for agents and repo orientation.
+
 ## Overview
 
 This plugin registers a comprehensive set of WordPress abilities as MCP tools, allowing remote AI assistants to:
