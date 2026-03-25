@@ -1,10 +1,10 @@
 <?php
 /**
- * Bootstrap file for wpunit tests
+ * Bootstrap file for wpunit tests.
  *
- * @package BLU\Tests
+ * @package BLU
  */
 
-// Load the module bootstrap
-require_once dirname( dirname( __DIR__ ) ) . '/bootstrap.php';
+$module_root = dirname( dirname( __DIR__ ) );
 
+require_once $module_root . '/vendor/autoload.php';

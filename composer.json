@@ -17,32 +17,55 @@
       "bootstrap.php"
     ]
   },
-  "autoload-dev": {
-    "psr-4": {
-      "BLU\\Tests\\": "tests/"
+  "config": {
+    "platform": {
+      "php": "7.4.33"
+    },
+    "allow-plugins": {
+      "dealerdirect/phpcodesniffer-composer-installer": true,
+      "composer/installers": true,
+      "johnpbloch/wordpress-core-installer": true
+    },
+    "audit": {
+      "ignore": [
+        "PKSA-y2cr-5h3j-g3ys"
+      ]
     }
   },
+  "repositories": {
+    "newfold-labs/*": {
+      "type": "composer",
+      "url": "https://newfold-labs.github.io/satis/",
+      "only": [
+        "newfold-labs/*"
+      ]
+    }
+  },
+  "scripts": {
+    "fix": [
+      "vendor/bin/phpcbf . --standard=phpcs.xml"
+    ],
+    "lint": [
+      "vendor/bin/phpcs . --standard=phpcs.xml -s"
+    ],
+    "test": "codecept run wpunit",
+    "test-coverage": "codecept run wpunit --coverage wpunit.cov && phpcov merge --php tests/_output/merged.cov --html tests/_output/html tests/_output && echo \"open tests/_output/html/index.html to view the report\""
+  },
+  "scripts-descriptions": {
+    "fix": "Automatically fix coding standards issues where possible.",
+    "lint": "Check files against coding standards.",
+    "test": "Run wpunit tests.",
+    "test-coverage": "Run wpunit tests with coverage."
+  },
   "require": {
-    "wordpress/mcp-adapter": "^0.3.0",
+    "wordpress/mcp-adapter": "^0.4.1",
     "wordpress/abilities-api": "^0.4.0",
     "firebase/php-jwt": "^6.10.0"
   },
   "require-dev": {
-    "phpunit/phpunit": "^9.6",
-    "yoast/phpunit-polyfills": "^1.1",
-    "brain/monkey": "^2.6"
-  },
-  "config": {
-    "platform": {
-      "php": "8.1"
-    },
-    "allow-plugins": {
-      "dealerdirect/phpcodesniffer-composer-installer": true
-    }
-  },
-  "scripts": {
-    "test": "phpunit --testsuite=unit",
-    "test:all": "phpunit",
-    "test:coverage": "phpunit --coverage-html tests/_output/coverage"
+    "johnpbloch/wordpress": "@stable",
+    "lucatume/wp-browser": "*",
+    "phpunit/phpcov": "*",
+    "newfold-labs/wp-php-standards": "^1.2"
   }
 }
