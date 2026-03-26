@@ -21,6 +21,10 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	/**
 	 * Set up test fixtures.
 	 *
+	 * Ensures the Abilities API registry is initialized (which fires
+	 * wp_abilities_api_init) so that wp_register_ability() calls succeed.
+	 * In test environments the bootstrap skips automatic initialization.
+	 *
 	 * @return void
 	 */
 	public function set_up(): void {
@@ -34,11 +38,10 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user_id );
 
-		// Calling blu_get_abilities() ensures WP_Abilities_Registry::get_instance()
-		// has been called, which fires wp_abilities_api_init if it hasn't run yet.
-		// After this, did_action('wp_abilities_api_init') >= 1, so wp_register_ability()
-		// calls inside new AbilityGateway() will pass the timing guard.
-		blu_get_abilities();
+		// The abilities API bootstrap skips initialization in test environments.
+		// Manually trigger the registry singleton so wp_abilities_api_init fires
+		// and did_action('wp_abilities_api_init') >= 1 for wp_register_ability().
+		\WP_Abilities_Registry::get_instance();
 	}
 
 	/**
@@ -47,8 +50,11 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	 * @return void
 	 */
 	public function tear_down(): void {
+		$registry = \WP_Abilities_Registry::get_instance();
 		foreach ( $this->registered_abilities as $name ) {
-			blu_unregister_ability( $name );
+			if ( $registry && $registry->is_registered( $name ) ) {
+				blu_unregister_ability( $name );
+			}
 		}
 		$this->registered_abilities = array();
 		parent::tear_down();
