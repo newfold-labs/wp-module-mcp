@@ -12,6 +12,86 @@ use BLU\Abilities\AbilityGateway;
 class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 
 	/**
+	 * Names of abilities registered during tests that need cleanup.
+	 *
+	 * @var string[]
+	 */
+	private $registered_abilities = array();
+
+	/**
+	 * Set up test fixtures.
+	 *
+	 * @return void
+	 */
+	public function set_up(): void {
+		parent::set_up();
+
+		if ( ! function_exists( 'wp_register_ability' ) ) {
+			$this->markTestSkipped( 'WP Abilities API is not available.' );
+		}
+
+		// Need an administrator for permission checks (edit_posts capability).
+		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		// Calling blu_get_abilities() ensures WP_Abilities_Registry::get_instance()
+		// has been called, which fires wp_abilities_api_init if it hasn't run yet.
+		// After this, did_action('wp_abilities_api_init') >= 1, so wp_register_ability()
+		// calls inside new AbilityGateway() will pass the timing guard.
+		blu_get_abilities();
+	}
+
+	/**
+	 * Clean up abilities registered during tests.
+	 *
+	 * @return void
+	 */
+	public function tear_down(): void {
+		foreach ( $this->registered_abilities as $name ) {
+			blu_unregister_ability( $name );
+		}
+		$this->registered_abilities = array();
+		parent::tear_down();
+	}
+
+	/**
+	 * Register the gateway abilities and track them for cleanup.
+	 *
+	 * @return void
+	 */
+	private function register_gateway(): void {
+		new AbilityGateway();
+		$this->registered_abilities = array_merge(
+			$this->registered_abilities,
+			array( 'blu/list-abilities', 'blu/get-ability-schema', 'blu/call-ability' )
+		);
+	}
+
+	/**
+	 * Register a test ability and track it for cleanup.
+	 *
+	 * @param string   $name     Ability name.
+	 * @param string   $category Ability category.
+	 * @param callable $execute  Execute callback.
+	 *
+	 * @return void
+	 */
+	private function register_test_ability( string $name, string $category, callable $execute ): void {
+		blu_register_ability(
+			$name,
+			array(
+				'label'               => 'Test Ability',
+				'description'         => 'A test ability',
+				'category'            => $category,
+				'input_schema'        => array( 'type' => 'object' ),
+				'execute_callback'    => $execute,
+				'permission_callback' => fn() => true,
+			)
+		);
+		$this->registered_abilities[] = $name;
+	}
+
+	/**
 	 * Verifies AbilityGateway class exists.
 	 *
 	 * @return void
@@ -21,25 +101,12 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	}
 
 	/**
-	 * Verifies AbilityGateway constructor runs without errors.
-	 *
-	 * @return void
-	 */
-	public function test_constructor_runs_without_errors() {
-		$gateway = new AbilityGateway();
-		$this->assertInstanceOf( AbilityGateway::class, $gateway );
-	}
-
-	/**
-	 * Verifies gateway registers blu/list-abilities when abilities API is available.
+	 * Verifies gateway registers blu/list-abilities.
 	 *
 	 * @return void
 	 */
 	public function test_registers_list_abilities() {
-		if ( ! function_exists( 'wp_register_ability' ) ) {
-			$this->markTestSkipped( 'WP Abilities API is not available.' );
-		}
-		new AbilityGateway();
+		$this->register_gateway();
 		$ability = blu_get_ability( 'blu/list-abilities' );
 		$this->assertNotNull( $ability );
 		$this->assertSame( 'List Abilities', $ability->get_label() );
@@ -47,15 +114,12 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	}
 
 	/**
-	 * Verifies gateway registers blu/get-ability-schema when abilities API is available.
+	 * Verifies gateway registers blu/get-ability-schema.
 	 *
 	 * @return void
 	 */
 	public function test_registers_get_ability_schema() {
-		if ( ! function_exists( 'wp_register_ability' ) ) {
-			$this->markTestSkipped( 'WP Abilities API is not available.' );
-		}
-		new AbilityGateway();
+		$this->register_gateway();
 		$ability = blu_get_ability( 'blu/get-ability-schema' );
 		$this->assertNotNull( $ability );
 		$this->assertSame( 'Get Ability Schema', $ability->get_label() );
@@ -63,15 +127,12 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	}
 
 	/**
-	 * Verifies gateway registers blu/call-ability when abilities API is available.
+	 * Verifies gateway registers blu/call-ability.
 	 *
 	 * @return void
 	 */
 	public function test_registers_call_ability() {
-		if ( ! function_exists( 'wp_register_ability' ) ) {
-			$this->markTestSkipped( 'WP Abilities API is not available.' );
-		}
-		new AbilityGateway();
+		$this->register_gateway();
 		$ability = blu_get_ability( 'blu/call-ability' );
 		$this->assertNotNull( $ability );
 		$this->assertSame( 'Call Ability', $ability->get_label() );
@@ -84,10 +145,7 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	 * @return void
 	 */
 	public function test_list_abilities_has_readonly_annotations() {
-		if ( ! function_exists( 'wp_register_ability' ) ) {
-			$this->markTestSkipped( 'WP Abilities API is not available.' );
-		}
-		new AbilityGateway();
+		$this->register_gateway();
 		$ability     = blu_get_ability( 'blu/list-abilities' );
 		$annotations = $ability->get_meta_item( 'annotations' );
 		$this->assertTrue( $annotations['readonly'] );
@@ -101,10 +159,7 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	 * @return void
 	 */
 	public function test_get_ability_schema_has_readonly_annotations() {
-		if ( ! function_exists( 'wp_register_ability' ) ) {
-			$this->markTestSkipped( 'WP Abilities API is not available.' );
-		}
-		new AbilityGateway();
+		$this->register_gateway();
 		$ability     = blu_get_ability( 'blu/get-ability-schema' );
 		$annotations = $ability->get_meta_item( 'annotations' );
 		$this->assertTrue( $annotations['readonly'] );
@@ -118,10 +173,7 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	 * @return void
 	 */
 	public function test_call_ability_has_conservative_annotations() {
-		if ( ! function_exists( 'wp_register_ability' ) ) {
-			$this->markTestSkipped( 'WP Abilities API is not available.' );
-		}
-		new AbilityGateway();
+		$this->register_gateway();
 		$ability     = blu_get_ability( 'blu/call-ability' );
 		$annotations = $ability->get_meta_item( 'annotations' );
 		$this->assertFalse( $annotations['readonly'] );
@@ -135,10 +187,7 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	 * @return void
 	 */
 	public function test_get_ability_schema_requires_ability_name() {
-		if ( ! function_exists( 'wp_register_ability' ) ) {
-			$this->markTestSkipped( 'WP Abilities API is not available.' );
-		}
-		new AbilityGateway();
+		$this->register_gateway();
 		$ability = blu_get_ability( 'blu/get-ability-schema' );
 		$schema  = $ability->get_input_schema();
 		$this->assertContains( 'ability_name', $schema['required'] );
@@ -150,10 +199,7 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	 * @return void
 	 */
 	public function test_call_ability_requires_ability_name() {
-		if ( ! function_exists( 'wp_register_ability' ) ) {
-			$this->markTestSkipped( 'WP Abilities API is not available.' );
-		}
-		new AbilityGateway();
+		$this->register_gateway();
 		$ability = blu_get_ability( 'blu/call-ability' );
 		$schema  = $ability->get_input_schema();
 		$this->assertContains( 'ability_name', $schema['required'] );
@@ -165,10 +211,7 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	 * @return void
 	 */
 	public function test_list_abilities_has_namespace_property() {
-		if ( ! function_exists( 'wp_register_ability' ) ) {
-			$this->markTestSkipped( 'WP Abilities API is not available.' );
-		}
-		new AbilityGateway();
+		$this->register_gateway();
 		$ability = blu_get_ability( 'blu/list-abilities' );
 		$schema  = $ability->get_input_schema();
 		$this->assertArrayHasKey( 'namespace', $schema['properties'] );
@@ -181,10 +224,7 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	 * @return void
 	 */
 	public function test_call_ability_has_parameters_property() {
-		if ( ! function_exists( 'wp_register_ability' ) ) {
-			$this->markTestSkipped( 'WP Abilities API is not available.' );
-		}
-		new AbilityGateway();
+		$this->register_gateway();
 		$ability = blu_get_ability( 'blu/call-ability' );
 		$schema  = $ability->get_input_schema();
 		$this->assertArrayHasKey( 'parameters', $schema['properties'] );
@@ -192,11 +232,12 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	}
 
 	/**
-	 * Verifies blu_mcp_allowed_namespaces filter can add namespaces.
+	 * Verifies blu_mcp_allowed_namespaces filter is called with defaults.
 	 *
 	 * @return void
 	 */
 	public function test_allowed_namespaces_filter() {
+		$this->register_gateway();
 		$filter_called = false;
 		$callback      = function ( $namespaces ) use ( &$filter_called ) {
 			$filter_called = true;
@@ -207,16 +248,6 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		};
 		add_filter( 'blu_mcp_allowed_namespaces', $callback );
 
-		// Trigger the filter by calling list-abilities execute callback.
-		if ( ! function_exists( 'wp_register_ability' ) ) {
-			// Even without the API, we can verify the filter hook name is correct
-			// by checking that our callback was registered.
-			$this->assertNotFalse( has_filter( 'blu_mcp_allowed_namespaces', $callback ) );
-			remove_filter( 'blu_mcp_allowed_namespaces', $callback );
-			$this->markTestSkipped( 'WP Abilities API is not available to fully test filter.' );
-		}
-
-		new AbilityGateway();
 		$ability = blu_get_ability( 'blu/list-abilities' );
 		$ability->execute();
 		$this->assertTrue( $filter_called );
@@ -224,11 +255,12 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	}
 
 	/**
-	 * Verifies blu_mcp_allowed_categories filter can add categories.
+	 * Verifies blu_mcp_allowed_categories filter is called with defaults.
 	 *
 	 * @return void
 	 */
 	public function test_allowed_categories_filter() {
+		$this->register_gateway();
 		$filter_called = false;
 		$callback      = function ( $categories ) use ( &$filter_called ) {
 			$filter_called = true;
@@ -238,13 +270,6 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		};
 		add_filter( 'blu_mcp_allowed_categories', $callback );
 
-		if ( ! function_exists( 'wp_register_ability' ) ) {
-			$this->assertNotFalse( has_filter( 'blu_mcp_allowed_categories', $callback ) );
-			remove_filter( 'blu_mcp_allowed_categories', $callback );
-			$this->markTestSkipped( 'WP Abilities API is not available to fully test filter.' );
-		}
-
-		new AbilityGateway();
 		$ability = blu_get_ability( 'blu/list-abilities' );
 		$ability->execute();
 		$this->assertTrue( $filter_called );
@@ -257,10 +282,7 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	 * @return void
 	 */
 	public function test_get_ability_schema_returns_404_for_unknown_ability() {
-		if ( ! function_exists( 'wp_register_ability' ) ) {
-			$this->markTestSkipped( 'WP Abilities API is not available.' );
-		}
-		new AbilityGateway();
+		$this->register_gateway();
 		$ability = blu_get_ability( 'blu/get-ability-schema' );
 		$result  = $ability->execute( array( 'ability_name' => 'nonexistent/tool' ) );
 		$this->assertSame( 404, $result['statusCode'] );
@@ -273,10 +295,7 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	 * @return void
 	 */
 	public function test_call_ability_returns_404_for_non_whitelisted_ability() {
-		if ( ! function_exists( 'wp_register_ability' ) ) {
-			$this->markTestSkipped( 'WP Abilities API is not available.' );
-		}
-		new AbilityGateway();
+		$this->register_gateway();
 		$ability = blu_get_ability( 'blu/call-ability' );
 		$result  = $ability->execute( array( 'ability_name' => 'nonexistent/tool' ) );
 		$this->assertSame( 404, $result['statusCode'] );
@@ -289,10 +308,7 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	 * @return void
 	 */
 	public function test_list_abilities_returns_success() {
-		if ( ! function_exists( 'wp_register_ability' ) ) {
-			$this->markTestSkipped( 'WP Abilities API is not available.' );
-		}
-		new AbilityGateway();
+		$this->register_gateway();
 		$ability = blu_get_ability( 'blu/list-abilities' );
 		$result  = $ability->execute();
 		$this->assertSame( 200, $result['statusCode'] );
@@ -306,10 +322,7 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	 * @return void
 	 */
 	public function test_list_abilities_includes_gateway_tools() {
-		if ( ! function_exists( 'wp_register_ability' ) ) {
-			$this->markTestSkipped( 'WP Abilities API is not available.' );
-		}
-		new AbilityGateway();
+		$this->register_gateway();
 		$ability = blu_get_ability( 'blu/list-abilities' );
 		$result  = $ability->execute();
 		$names   = array_column( $result['message'], 'name' );
@@ -324,10 +337,7 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	 * @return void
 	 */
 	public function test_list_abilities_entries_have_expected_keys() {
-		if ( ! function_exists( 'wp_register_ability' ) ) {
-			$this->markTestSkipped( 'WP Abilities API is not available.' );
-		}
-		new AbilityGateway();
+		$this->register_gateway();
 		$ability = blu_get_ability( 'blu/list-abilities' );
 		$result  = $ability->execute();
 		$this->assertNotEmpty( $result['message'] );
@@ -345,25 +355,15 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	 * @return void
 	 */
 	public function test_list_abilities_namespace_filter() {
-		if ( ! function_exists( 'wp_register_ability' ) ) {
-			$this->markTestSkipped( 'WP Abilities API is not available.' );
-		}
-		// Register a test ability in a different namespace.
-		blu_register_ability(
+		$this->register_test_ability(
 			'testns/test-tool',
-			array(
-				'label'               => 'Test Tool',
-				'description'         => 'A test tool in testns namespace',
-				'category'            => 'blu-mcp',
-				'input_schema'        => array( 'type' => 'object' ),
-				'execute_callback'    => function () {
-					return blu_prepare_ability_response( 200, 'ok' );
-				},
-				'permission_callback' => fn() => true,
-			)
+			'blu-mcp',
+			function () {
+				return blu_prepare_ability_response( 200, 'ok' );
+			}
 		);
+		$this->register_gateway();
 
-		new AbilityGateway();
 		$ability = blu_get_ability( 'blu/list-abilities' );
 
 		// Filter by blu/ namespace should not include testns/test-tool.
@@ -375,8 +375,6 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		foreach ( $names as $name ) {
 			$this->assertStringStartsWith( 'blu/', $name );
 		}
-
-		blu_unregister_ability( 'testns/test-tool' );
 	}
 
 	/**
@@ -385,10 +383,7 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	 * @return void
 	 */
 	public function test_get_ability_schema_returns_schema_for_gateway_tool() {
-		if ( ! function_exists( 'wp_register_ability' ) ) {
-			$this->markTestSkipped( 'WP Abilities API is not available.' );
-		}
-		new AbilityGateway();
+		$this->register_gateway();
 		$ability = blu_get_ability( 'blu/get-ability-schema' );
 		$result  = $ability->execute( array( 'ability_name' => 'blu/list-abilities' ) );
 		$this->assertSame( 200, $result['statusCode'] );
@@ -403,12 +398,9 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	 * @return void
 	 */
 	public function test_call_ability_executes_whitelisted_ability() {
-		if ( ! function_exists( 'wp_register_ability' ) ) {
-			$this->markTestSkipped( 'WP Abilities API is not available.' );
-		}
-		new AbilityGateway();
+		$this->register_gateway();
 		$ability = blu_get_ability( 'blu/call-ability' );
-		// Call list-abilities through the gateway — it requires no special permissions beyond edit_posts.
+		// Call list-abilities through the gateway.
 		$result = $ability->execute(
 			array(
 				'ability_name' => 'blu/list-abilities',
@@ -425,31 +417,19 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	 * @return void
 	 */
 	public function test_non_whitelisted_abilities_excluded_from_list() {
-		if ( ! function_exists( 'wp_register_ability' ) ) {
-			$this->markTestSkipped( 'WP Abilities API is not available.' );
-		}
-		// Register an ability in a non-whitelisted namespace and category.
-		blu_register_ability(
+		$this->register_test_ability(
 			'secret/hidden-tool',
-			array(
-				'label'               => 'Hidden Tool',
-				'description'         => 'Should not appear in gateway',
-				'category'            => 'other-category',
-				'input_schema'        => array( 'type' => 'object' ),
-				'execute_callback'    => function () {
-					return blu_prepare_ability_response( 200, 'hidden' );
-				},
-				'permission_callback' => fn() => true,
-			)
+			'other-category',
+			function () {
+				return blu_prepare_ability_response( 200, 'hidden' );
+			}
 		);
+		$this->register_gateway();
 
-		new AbilityGateway();
 		$ability = blu_get_ability( 'blu/list-abilities' );
 		$result  = $ability->execute();
 		$names   = array_column( $result['message'], 'name' );
 		$this->assertNotContains( 'secret/hidden-tool', $names );
-
-		blu_unregister_ability( 'secret/hidden-tool' );
 	}
 
 	/**
@@ -458,29 +438,18 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	 * @return void
 	 */
 	public function test_get_ability_schema_blocks_non_whitelisted() {
-		if ( ! function_exists( 'wp_register_ability' ) ) {
-			$this->markTestSkipped( 'WP Abilities API is not available.' );
-		}
-		blu_register_ability(
+		$this->register_test_ability(
 			'secret/hidden-tool',
-			array(
-				'label'               => 'Hidden Tool',
-				'description'         => 'Should not be accessible',
-				'category'            => 'other-category',
-				'input_schema'        => array( 'type' => 'object' ),
-				'execute_callback'    => function () {
-					return blu_prepare_ability_response( 200, 'hidden' );
-				},
-				'permission_callback' => fn() => true,
-			)
+			'other-category',
+			function () {
+				return blu_prepare_ability_response( 200, 'hidden' );
+			}
 		);
+		$this->register_gateway();
 
-		new AbilityGateway();
 		$ability = blu_get_ability( 'blu/get-ability-schema' );
 		$result  = $ability->execute( array( 'ability_name' => 'secret/hidden-tool' ) );
 		$this->assertSame( 404, $result['statusCode'] );
-
-		blu_unregister_ability( 'secret/hidden-tool' );
 	}
 
 	/**
@@ -489,29 +458,18 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	 * @return void
 	 */
 	public function test_call_ability_blocks_non_whitelisted() {
-		if ( ! function_exists( 'wp_register_ability' ) ) {
-			$this->markTestSkipped( 'WP Abilities API is not available.' );
-		}
-		blu_register_ability(
+		$this->register_test_ability(
 			'secret/hidden-tool',
-			array(
-				'label'               => 'Hidden Tool',
-				'description'         => 'Should not be callable',
-				'category'            => 'other-category',
-				'input_schema'        => array( 'type' => 'object' ),
-				'execute_callback'    => function () {
-					return blu_prepare_ability_response( 200, 'hidden' );
-				},
-				'permission_callback' => fn() => true,
-			)
+			'other-category',
+			function () {
+				return blu_prepare_ability_response( 200, 'hidden' );
+			}
 		);
+		$this->register_gateway();
 
-		new AbilityGateway();
 		$ability = blu_get_ability( 'blu/call-ability' );
 		$result  = $ability->execute( array( 'ability_name' => 'secret/hidden-tool' ) );
 		$this->assertSame( 404, $result['statusCode'] );
-
-		blu_unregister_ability( 'secret/hidden-tool' );
 	}
 
 	/**
