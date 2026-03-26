@@ -38,10 +38,17 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user_id );
 
-		// The abilities API bootstrap skips initialization in test environments.
-		// Manually trigger the registry singleton so wp_abilities_api_init fires
-		// and did_action('wp_abilities_api_init') >= 1 for wp_register_ability().
-		\WP_Abilities_Registry::get_instance();
+		// The abilities API bootstrap skips automatic initialization in test
+		// environments (it checks for WP_PHPUNIT__DIR / WP_RUN_CORE_TESTS),
+		// so wp_abilities_api_init never fires and wp_register_ability() fails.
+		// Manually fire both required actions to satisfy the did_action() checks
+		// in wp_register_ability() and wp_register_ability_category().
+		if ( ! did_action( 'wp_abilities_api_categories_init' ) ) {
+			do_action( 'wp_abilities_api_categories_init' );
+		}
+		if ( ! did_action( 'wp_abilities_api_init' ) ) {
+			do_action( 'wp_abilities_api_init' );
+		}
 	}
 
 	/**
