@@ -41,27 +41,30 @@ class Users {
 							'type'        => 'integer',
 							'description' => 'Users per page',
 						),
-						'role'     => array(
-							'type'        => 'string',
-							'description' => 'Filter by role',
+						'roles'    => array(
+							'type'        => 'array',
+							'description' => 'Limit to users with at least one of these role slugs (WordPress REST collection param `roles`).',
+							'items'       => array(
+								'type' => 'string',
+							),
 						),
 					),
 				),
 				'execute_callback'    => function ( $input = null ) {
 					$request = new \WP_REST_Request( 'GET', '/wp/v2/users' );
-					if ( $input ) {
-						$input['context'] = 'edit';
-						$request->set_query_params( $input );
-					}
+					$query   = is_array( $input ) ? $input : array();
+					unset( $query['context'] );
+					$query['context'] = 'edit';
+					$request->set_query_params( $query );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'list_users' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => true,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -85,16 +88,18 @@ class Users {
 					'required'   => array( 'id' ),
 				),
 				'execute_callback'    => function ( $input ) {
-					$request = new \WP_REST_Request( 'GET', '/wp/v2/users/' . $input['id'] );
+					$user_id = (int) $input['id'];
+					$request = new \WP_REST_Request( 'GET', '/wp/v2/users/' . $user_id );
+					$request->set_query_params( array( 'context' => 'edit' ) );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'list_users' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => true,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -130,26 +135,31 @@ class Users {
 							'type'        => 'string',
 							'description' => 'Last name',
 						),
-						'role'       => array(
-							'type'        => 'string',
-							'description' => 'User role',
+						'roles'      => array(
+							'type'        => 'array',
+							'description' => 'WordPress REST `roles`: one or more role slugs (e.g. ["editor"], ["subscriber"]).',
+							'items'       => array(
+								'type' => 'string',
+							),
+							'minItems'    => 1,
 						),
 					),
-					'required'   => array( 'username', 'email', 'password' ),
+					'required'   => array( 'username', 'email', 'password', 'roles' ),
 				),
 				'execute_callback'    => function ( $input ) {
 					$request = new \WP_REST_Request( 'POST', '/wp/v2/users' );
-					$input['context'] = 'edit';
+					unset( $input['context'] );
 					$request->set_body_params( $input );
+					$request->set_query_params( array( 'context' => 'edit' ) );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'create_users' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => false,
-						'idempotent'   => false,
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => false,
 					),
 				),
 			)
@@ -181,27 +191,32 @@ class Users {
 							'type'        => 'string',
 							'description' => 'Last name',
 						),
-						'role'       => array(
-							'type'        => 'string',
-							'description' => 'User role',
+						'roles'      => array(
+							'type'        => 'array',
+							'description' => 'WordPress REST `roles` when updating roles; omit if not changing roles.',
+							'items'       => array(
+								'type' => 'string',
+							),
 						),
 					),
 					'required'   => array( 'id' ),
 				),
 				'execute_callback'    => function ( $input ) {
-					$id = $input['id'];
+					$user_id = (int) $input['id'];
 					unset( $input['id'] );
-					$request = new \WP_REST_Request( 'PUT', '/wp/v2/users/' . $id );
+					unset( $input['context'] );
+					$request = new \WP_REST_Request( 'PUT', '/wp/v2/users/' . $user_id );
 					$request->set_body_params( $input );
+					$request->set_query_params( array( 'context' => 'edit' ) );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_users' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -223,16 +238,16 @@ class Users {
 						),
 						'reassign' => array(
 							'type'        => 'integer',
-							'description' => 'Reassign posts to this user ID',
+							'description' => 'User ID to reassign posts to; omit or use 0 / false for no reassignment (the REST API always receives a `reassign` value).',
 						),
 					),
-					'required'   => array( 'id', 'reassign' ),
+					'required'   => array( 'id' ),
 				),
 				'execute_callback'    => function ( $input ) {
-					$request = new \WP_REST_Request( 'DELETE', '/wp/v2/users/' . $input['id'] );
-					if ( isset( $input['reassign'] ) ) {
-						$request->set_param( 'reassign', $input['reassign'] );
-					}
+					$user_id = (int) $input['id'];
+					$request = new \WP_REST_Request( 'DELETE', '/wp/v2/users/' . $user_id );
+					$reassign = array_key_exists( 'reassign', $input ) ? $input['reassign'] : false;
+					$request->set_param( 'reassign', $reassign );
 					$request->set_param( 'force', true );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
@@ -240,9 +255,9 @@ class Users {
 				'permission_callback' => fn() => current_user_can( 'delete_users' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => true,
-						'idempotent'   => true,
+						'readonly'    => false,
+						'destructive' => true,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -260,15 +275,16 @@ class Users {
 				),
 				'execute_callback'    => function () {
 					$request = new \WP_REST_Request( 'GET', '/wp/v2/users/me' );
+					$request->set_query_params( array( 'context' => 'edit' ) );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => is_user_logged_in(),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => true,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -300,18 +316,20 @@ class Users {
 				),
 				'execute_callback'    => function ( $input = null ) {
 					$request = new \WP_REST_Request( 'PUT', '/wp/v2/users/me' );
-					if ( $input ) {
+					if ( is_array( $input ) ) {
+						unset( $input['context'] );
 						$request->set_body_params( $input );
 					}
+					$request->set_query_params( array( 'context' => 'edit' ) );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => is_user_logged_in(),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
