@@ -103,47 +103,6 @@ class AbilityGateway {
 	}
 
 	/**
-	 * Rewrite `namespace/slug` tokens in prose to the MCP hyphen form.
-	 *
-	 * Uses the same generic pattern as the WP ability name regex ([a-z0-9-]+/[a-z0-9-]+)
-	 * so no namespace needs to be hardcoded. Aligns inline copy with MCP tools/list naming.
-	 *
-	 * @param string $text Raw description or schema string.
-	 *
-	 * @return string
-	 */
-	private function mcp_format_inline_ability_names( string $text ): string {
-		if ( '' === $text ) {
-			return $text;
-		}
-
-		// Match the WP ability name format: [a-z0-9-]+/[a-z0-9-]+, then replace / with -.
-		return (string) preg_replace( '#\b([a-z][a-z0-9-]*)\/([a-z0-9][a-z0-9-]*)\b#', '$1-$2', $text );
-	}
-
-	/**
-	 * Apply {@see mcp_format_inline_ability_names()} to all string values in a nested array (e.g. JSON Schema).
-	 *
-	 * @param mixed $value Schema fragment or scalar.
-	 *
-	 * @return mixed
-	 */
-	private function sanitize_json_schema_strings_for_mcp_display( $value ) {
-		if ( is_string( $value ) ) {
-			return $this->mcp_format_inline_ability_names( $value );
-		}
-		if ( is_array( $value ) ) {
-			$out = array();
-			foreach ( $value as $k => $v ) {
-				$out[ $k ] = $this->sanitize_json_schema_strings_for_mcp_display( $v );
-			}
-			return $out;
-		}
-
-		return $value;
-	}
-
-	/**
 	 * Normalize an ability reference from MCP hyphen form to WordPress slash form.
 	 *
 	 * If the name already contains `/`, it is returned unchanged. Otherwise split on the
@@ -214,20 +173,21 @@ class AbilityGateway {
 					'properties' => array(
 						'namespace' => array(
 							'type'        => 'string',
-							'description' => 'Optional namespace prefix to filter abilities (e.g., "wc/" for WooCommerce abilities only)',
+							'description' => 'Optional namespace to filter abilities, e.g. "wc" for WooCommerce only. Matches the prefix of the hyphen-form names returned by this tool.',
 						),
 					),
 				),
 				'execute_callback'    => function ( $input = null ) {
 					$abilities = $this->get_whitelisted_abilities();
 
-					// Apply optional namespace filter.
+					// Apply optional namespace filter. Accept "wc", "wc/", or "wc-" — normalise
+					// to the hyphen-form prefix and match against the MCP tool name.
 					if ( ! empty( $input['namespace'] ) ) {
-						$namespace_prefix = rtrim( $input['namespace'], '/' ) . '/';
-						$abilities        = array_filter(
+						$ns_prefix = rtrim( $input['namespace'], '/-' ) . '-';
+						$abilities  = array_filter(
 							$abilities,
-							function ( $ability ) use ( $namespace_prefix ) {
-								return str_starts_with( $ability->get_name(), $namespace_prefix );
+							function ( $ability ) use ( $ns_prefix ) {
+								return str_starts_with( $this->ability_name_to_mcp_tool_name( $ability->get_name() ), $ns_prefix );
 							}
 						);
 					}
@@ -237,11 +197,10 @@ class AbilityGateway {
 						$meta        = $ability->get_meta();
 						$annotations = isset( $meta['annotations'] ) ? $meta['annotations'] : array();
 
-						$wp_name   = $ability->get_name();
 						$result[] = array(
-							'name'        => $this->ability_name_to_mcp_tool_name( $wp_name ),
+							'name'        => $this->ability_name_to_mcp_tool_name( $ability->get_name() ),
 							'label'       => $ability->get_label(),
-							'description' => $this->mcp_format_inline_ability_names( (string) $ability->get_description() ),
+							'description' => $ability->get_description(),
 							'annotations' => $annotations,
 						);
 					}
@@ -298,18 +257,13 @@ class AbilityGateway {
 					$meta        = $ability->get_meta();
 					$annotations = isset( $meta['annotations'] ) ? $meta['annotations'] : array();
 
-					$input_schema = $ability->get_input_schema();
-					if ( is_array( $input_schema ) ) {
-						$input_schema = $this->sanitize_json_schema_strings_for_mcp_display( $input_schema );
-					}
-
 					return blu_prepare_ability_response(
 						200,
 						array(
 							'name'         => $this->ability_name_to_mcp_tool_name( $ability->get_name() ),
 							'label'        => $ability->get_label(),
-							'description'  => $this->mcp_format_inline_ability_names( (string) $ability->get_description() ),
-							'input_schema' => $input_schema,
+							'description'  => $ability->get_description(),
+							'input_schema' => $ability->get_input_schema(),
 							'annotations'  => $annotations,
 						)
 					);

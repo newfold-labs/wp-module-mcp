@@ -400,9 +400,9 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$ability = blu_get_ability( 'blu/list-abilities' );
 		$result  = $ability->execute( array() );
 		$names   = array_column( $result['message'], 'name' );
-		$this->assertContains( 'blu/list-abilities', $names );
-		$this->assertContains( 'blu/get-ability-schema', $names );
-		$this->assertContains( 'blu/call-ability', $names );
+		$this->assertContains( 'blu-list-abilities', $names );
+		$this->assertContains( 'blu-get-ability-schema', $names );
+		$this->assertContains( 'blu-call-ability', $names );
 	}
 
 	/**
@@ -443,11 +443,11 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		// Filter by blu/ namespace should not include testns/test-tool.
 		$result = $ability->execute( array( 'namespace' => 'blu/' ) );
 		$names  = array_column( $result['message'], 'name' );
-		$this->assertNotContains( 'testns/test-tool', $names );
+		$this->assertNotContains( 'testns-test-tool', $names );
 
-		// All abilities in the result should start with blu/.
+		// All abilities in the result should use blu- prefix (hyphen form).
 		foreach ( $names as $name ) {
-			$this->assertStringStartsWith( 'blu/', $name );
+			$this->assertStringStartsWith( 'blu-', $name );
 		}
 	}
 
@@ -461,9 +461,58 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$ability = blu_get_ability( 'blu/get-ability-schema' );
 		$result  = $ability->execute( array( 'ability_name' => 'blu/list-abilities' ) );
 		$this->assertSame( 200, $result['statusCode'] );
-		$this->assertSame( 'blu/list-abilities', $result['message']['name'] );
+		$this->assertSame( 'blu-list-abilities', $result['message']['name'] );
 		$this->assertArrayHasKey( 'input_schema', $result['message'] );
 		$this->assertArrayHasKey( 'annotations', $result['message'] );
+	}
+
+	/**
+	 * Verifies get-ability-schema accepts MCP hyphen ability_name.
+	 *
+	 * @return void
+	 */
+	public function test_get_ability_schema_accepts_mcp_hyphen_name() {
+		$this->register_gateway();
+		$ability = blu_get_ability( 'blu/get-ability-schema' );
+		$result  = $ability->execute( array( 'ability_name' => 'blu-list-abilities' ) );
+		$this->assertSame( 200, $result['statusCode'] );
+		$this->assertSame( 'blu-list-abilities', $result['message']['name'] );
+	}
+
+	/**
+	 * Verifies hyphen in the segment after namespace (e.g. blu/add-cpt → blu-add-cpt) resolves correctly.
+	 *
+	 * @return void
+	 */
+	public function test_get_ability_schema_resolves_hyphen_after_namespace() {
+		$this->register_test_ability(
+			'blu/add-mock',
+			'blu-mcp',
+			function () {
+				return blu_prepare_ability_response( 200, 'ok' );
+			}
+		);
+		$this->register_gateway();
+		$ability = blu_get_ability( 'blu/get-ability-schema' );
+		$result  = $ability->execute( array( 'ability_name' => 'blu-add-mock' ) );
+		$this->assertSame( 200, $result['statusCode'] );
+		$this->assertSame( 'blu-add-mock', $result['message']['name'] );
+	}
+
+	/**
+	 * Verifies list-abilities name field uses hyphen form only.
+	 *
+	 * @return void
+	 */
+	public function test_list_abilities_name_uses_hyphen_form() {
+		$this->register_gateway();
+		$ability = blu_get_ability( 'blu/list-abilities' );
+		$result  = $ability->execute( array() );
+		$this->assertNotEmpty( $result['message'] );
+		foreach ( $result['message'] as $row ) {
+			$this->assertArrayHasKey( 'name', $row );
+			$this->assertStringNotContainsString( '/', $row['name'] );
+		}
 	}
 
 	/**
@@ -479,6 +528,41 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 			array(
 				'ability_name' => 'blu/list-abilities',
 				'parameters'   => array(),
+			)
+		);
+		$this->assertSame( 200, $result['statusCode'] );
+		$this->assertSame( 'success', $result['status'] );
+	}
+
+	/**
+	 * Verifies call-ability accepts MCP hyphen ability_name.
+	 *
+	 * @return void
+	 */
+	public function test_call_ability_accepts_mcp_hyphen_name() {
+		$this->register_gateway();
+		$ability = blu_get_ability( 'blu/call-ability' );
+		$result  = $ability->execute(
+			array(
+				'ability_name' => 'blu-list-abilities',
+				'parameters'   => array(),
+			)
+		);
+		$this->assertSame( 200, $result['statusCode'] );
+		$this->assertSame( 'success', $result['status'] );
+	}
+
+	/**
+	 * Verifies call-ability omits parameters key still delegates with an empty object (not null).
+	 *
+	 * @return void
+	 */
+	public function test_call_ability_omitted_parameters_normalizes_to_empty_object() {
+		$this->register_gateway();
+		$ability = blu_get_ability( 'blu/call-ability' );
+		$result  = $ability->execute(
+			array(
+				'ability_name' => 'blu/list-abilities',
 			)
 		);
 		$this->assertSame( 200, $result['statusCode'] );
@@ -503,7 +587,7 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$ability = blu_get_ability( 'blu/list-abilities' );
 		$result  = $ability->execute( array() );
 		$names   = array_column( $result['message'], 'name' );
-		$this->assertNotContains( 'secret/hidden-tool', $names );
+		$this->assertNotContains( 'secret-hidden-tool', $names );
 	}
 
 	/**
