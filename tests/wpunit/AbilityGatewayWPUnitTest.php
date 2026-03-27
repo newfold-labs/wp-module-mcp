@@ -19,11 +19,20 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	private $registered_abilities = array();
 
 	/**
+	 * Temporary callbacks on wp_abilities_api_init (must be removed after do_action).
+	 *
+	 * @var callable[]
+	 */
+	private $test_ability_hooks = array();
+
+	/**
 	 * Set up test fixtures.
 	 *
-	 * Ensures the Abilities API registry is initialized (which fires
-	 * wp_abilities_api_init) so that wp_register_ability() calls succeed.
-	 * In test environments the bootstrap skips automatic initialization.
+	 * WordPress 6.9+ requires abilities to be registered during the
+	 * {@see 'wp_abilities_api_init'} action. Instantiating {@see AbilityGateway}
+	 * after that action has finished causes registration to fail. Tests register
+	 * via {@see self::register_gateway()} which hooks into that action and runs
+	 * {@see do_action( 'wp_abilities_api_init' )} — do not fire that action here.
 	 *
 	 * @return void
 	 */
@@ -38,16 +47,42 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user_id );
 
-		// The abilities API bootstrap skips automatic initialization in test
-		// environments (it checks for WP_PHPUNIT__DIR / WP_RUN_CORE_TESTS),
-		// so wp_abilities_api_init never fires and wp_register_ability() fails.
-		// Manually fire both required actions to satisfy the did_action() checks
-		// in wp_register_ability() and wp_register_ability_category().
-		if ( ! did_action( 'wp_abilities_api_categories_init' ) ) {
-			do_action( 'wp_abilities_api_categories_init' );
+		$this->ensure_test_ability_categories();
+	}
+
+	/**
+	 * Registers ability categories used by the gateway and test abilities.
+	 *
+	 * WordPress only runs {@see 'wp_abilities_api_categories_init'} when the
+	 * categories registry is first bootstrapped. Manual {@see do_action()} does not
+	 * use the same bootstrap path, and {@see wp_register_ability_category()} only
+	 * works during that hook. For tests we register directly on the registry after
+	 * {@see 'init'} (mirrors McpServer::register_ability_categories).
+	 *
+	 * @return void
+	 */
+	private function ensure_test_ability_categories(): void {
+		$registry = \WP_Ability_Categories_Registry::get_instance();
+		if ( ! $registry ) {
+			return;
 		}
-		if ( ! did_action( 'wp_abilities_api_init' ) ) {
-			do_action( 'wp_abilities_api_init' );
+
+		$categories = array(
+			'blu-mcp'        => array(
+				'label'       => 'Bluehost MCP',
+				'description' => 'Bluehost-specific abilities for use with MCP',
+			),
+			'other-category' => array(
+				'label'       => 'Other',
+				'description' => 'Test category',
+			),
+		);
+
+		foreach ( $categories as $slug => $args ) {
+			if ( $registry->is_registered( $slug ) ) {
+				continue;
+			}
+			$registry->register( $slug, $args );
 		}
 	}
 
@@ -73,7 +108,29 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	 * @return void
 	 */
 	private function register_gateway(): void {
-		new AbilityGateway();
+		$gateway_cb = function () {
+			new AbilityGateway();
+		};
+		add_action( 'wp_abilities_api_init', $gateway_cb, 10 );
+
+		// First WP_Abilities_Registry::get_instance() fires wp_abilities_api_init internally.
+		// If the registry was already bootstrapped earlier in the request, get_instance() does not
+		// fire the action again — run it manually so our hooks execute.
+		$abilities_init_count_before = did_action( 'wp_abilities_api_init' );
+		$abilities_registry          = \WP_Abilities_Registry::get_instance();
+		if (
+			$abilities_registry
+			&& did_action( 'wp_abilities_api_init' ) === $abilities_init_count_before
+		) {
+			do_action( 'wp_abilities_api_init', $abilities_registry );
+		}
+
+		remove_action( 'wp_abilities_api_init', $gateway_cb, 10 );
+		foreach ( $this->test_ability_hooks as $tb ) {
+			remove_action( 'wp_abilities_api_init', $tb, 5 );
+		}
+		$this->test_ability_hooks = array();
+
 		$this->registered_abilities = array_merge(
 			$this->registered_abilities,
 			array( 'blu/list-abilities', 'blu/get-ability-schema', 'blu/call-ability' )
@@ -90,17 +147,21 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	 * @return void
 	 */
 	private function register_test_ability( string $name, string $category, callable $execute ): void {
-		blu_register_ability(
-			$name,
-			array(
-				'label'               => 'Test Ability',
-				'description'         => 'A test ability',
-				'category'            => $category,
-				'input_schema'        => array( 'type' => 'object' ),
-				'execute_callback'    => $execute,
-				'permission_callback' => fn() => true,
-			)
-		);
+		$cb = function () use ( $name, $category, $execute ) {
+			blu_register_ability(
+				$name,
+				array(
+					'label'               => 'Test Ability',
+					'description'         => 'A test ability',
+					'category'            => $category,
+					'input_schema'        => array( 'type' => 'object' ),
+					'execute_callback'    => $execute,
+					'permission_callback' => fn() => true,
+				)
+			);
+		};
+		add_action( 'wp_abilities_api_init', $cb, 5 );
+		$this->test_ability_hooks[] = $cb;
 		$this->registered_abilities[] = $name;
 	}
 
@@ -262,7 +323,7 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		add_filter( 'blu_mcp_allowed_namespaces', $callback );
 
 		$ability = blu_get_ability( 'blu/list-abilities' );
-		$ability->execute();
+		$ability->execute( array() );
 		$this->assertTrue( $filter_called );
 		remove_filter( 'blu_mcp_allowed_namespaces', $callback );
 	}
@@ -284,7 +345,7 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		add_filter( 'blu_mcp_allowed_categories', $callback );
 
 		$ability = blu_get_ability( 'blu/list-abilities' );
-		$ability->execute();
+		$ability->execute( array() );
 		$this->assertTrue( $filter_called );
 		remove_filter( 'blu_mcp_allowed_categories', $callback );
 	}
@@ -323,7 +384,7 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	public function test_list_abilities_returns_success() {
 		$this->register_gateway();
 		$ability = blu_get_ability( 'blu/list-abilities' );
-		$result  = $ability->execute();
+		$result  = $ability->execute( array() );
 		$this->assertSame( 200, $result['statusCode'] );
 		$this->assertSame( 'success', $result['status'] );
 		$this->assertIsArray( $result['message'] );
@@ -337,7 +398,7 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	public function test_list_abilities_includes_gateway_tools() {
 		$this->register_gateway();
 		$ability = blu_get_ability( 'blu/list-abilities' );
-		$result  = $ability->execute();
+		$result  = $ability->execute( array() );
 		$names   = array_column( $result['message'], 'name' );
 		$this->assertContains( 'blu/list-abilities', $names );
 		$this->assertContains( 'blu/get-ability-schema', $names );
@@ -352,7 +413,7 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	public function test_list_abilities_entries_have_expected_keys() {
 		$this->register_gateway();
 		$ability = blu_get_ability( 'blu/list-abilities' );
-		$result  = $ability->execute();
+		$result  = $ability->execute( array() );
 		$this->assertNotEmpty( $result['message'] );
 		$entry = $result['message'][0];
 		$this->assertArrayHasKey( 'name', $entry );
@@ -440,7 +501,7 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$this->register_gateway();
 
 		$ability = blu_get_ability( 'blu/list-abilities' );
-		$result  = $ability->execute();
+		$result  = $ability->execute( array() );
 		$names   = array_column( $result['message'], 'name' );
 		$this->assertNotContains( 'secret/hidden-tool', $names );
 	}
