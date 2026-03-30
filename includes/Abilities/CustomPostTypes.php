@@ -24,7 +24,7 @@ class CustomPostTypes {
 			'blu/list-post-types',
 			array(
 				'label'               => 'List Post Types',
-				'description'         => 'List all available WordPress custom post types',
+				'description'         => 'List all registered WordPress post types (built-in and custom). Use this to discover which post type slugs exist before creating or searching items.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type' => 'object',
@@ -49,8 +49,8 @@ class CustomPostTypes {
 		blu_register_ability(
 			'blu/cpt-search',
 			array(
-				'label'               => 'Search Custom Post Types',
-				'description'         => 'Search and filter WordPress custom post types with pagination',
+				'label'               => 'Search Custom Post Type Items',
+				'description'         => 'Search and filter content items within a custom post type with pagination. Use blu-list-post-types to find valid post_type slugs first.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
@@ -135,8 +135,8 @@ class CustomPostTypes {
 		blu_register_ability(
 			'blu/get-cpt',
 			array(
-				'label'               => 'Get Custom Post Type',
-				'description'         => 'Get a WordPress custom post type by ID',
+				'label'               => 'Get Custom Post Type Item',
+				'description'         => 'Get a single content item from a custom post type by its ID.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
@@ -177,7 +177,7 @@ class CustomPostTypes {
 			'blu/add-cpt',
 			array(
 				'label'               => 'Add Custom Post Type Item',
-				'description'         => 'Create a new post for an existing custom post type. This does not register a new post type in WordPress—the post_type slug must already exist (registered via register_post_type in a theme or plugin). Use blu-list-post-types to see which types are available before creating content.',
+				'description'         => 'Create a new content item within an existing custom post type (e.g. add a new menu item, event, or recipe). This does NOT register a new post type — use blu-list-post-types to find valid post_type slugs.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
@@ -256,8 +256,8 @@ class CustomPostTypes {
 		blu_register_ability(
 			'blu/update-cpt',
 			array(
-				'label'               => 'Update Custom Post Type',
-				'description'         => 'Update a WordPress custom post type by ID',
+				'label'               => 'Update Custom Post Type Item',
+				'description'         => 'Update an existing content item in a custom post type by its ID.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
@@ -338,8 +338,8 @@ class CustomPostTypes {
 		blu_register_ability(
 			'blu/delete-cpt',
 			array(
-				'label'               => 'Delete Custom Post Type',
-				'description'         => 'Delete a WordPress custom post type by ID',
+				'label'               => 'Delete Custom Post Type Item',
+				'description'         => 'Permanently delete a content item from a custom post type by its ID.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
