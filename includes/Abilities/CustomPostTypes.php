@@ -37,9 +37,9 @@ class CustomPostTypes {
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => true,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -109,20 +109,23 @@ class CustomPostTypes {
 					}
 
 					$query = new \WP_Query( $args );
-					return blu_prepare_ability_response( 200, array(
-						'results'  => $query->posts,
-						'total'    => $query->found_posts,
-						'pages'    => $query->max_num_pages,
-						'page'     => $page,
-						'per_page' => $per_page,
-					));
+					return blu_prepare_ability_response(
+						200,
+						array(
+							'results'  => $query->posts,
+							'total'    => $query->found_posts,
+							'pages'    => $query->max_num_pages,
+							'page'     => $page,
+							'per_page' => $per_page,
+						)
+					);
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => true,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -152,18 +155,18 @@ class CustomPostTypes {
 				'execute_callback'    => function ( $input ) {
 					$post = get_post( intval( $input['id'] ) );
 					if ( ! $post || $post->post_type !== $input['post_type'] ) {
-						
+
 						return blu_prepare_ability_response( 404, 'Post not found' );
 					}
-					
-					return blu_prepare_ability_response( 200, $post );	
+
+					return blu_prepare_ability_response( 200, $post );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => true,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -173,15 +176,15 @@ class CustomPostTypes {
 		blu_register_ability(
 			'blu/add-cpt',
 			array(
-				'label'               => 'Add Custom Post Type',
-				'description'         => 'Add a new WordPress custom post type',
+				'label'               => 'Add Custom Post Type Item',
+				'description'         => 'Create a new post for an existing custom post type. This does not register a new post type in WordPress—the post_type slug must already exist (registered via register_post_type in a theme or plugin). Use blu-list-post-types to see which types are available before creating content.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
 						'post_type' => array(
 							'type'        => 'string',
-							'description' => 'The custom post type',
+							'description' => 'Registered custom post type slug (must match an existing post type, e.g. from blu-list-post-types).',
 						),
 						'title'     => array(
 							'type'        => 'string',
@@ -203,8 +206,20 @@ class CustomPostTypes {
 					'required'   => array( 'post_type', 'title', 'content' ),
 				),
 				'execute_callback'    => function ( $input ) {
+					$post_type_slug = sanitize_text_field( $input['post_type'] );
+					if ( ! post_type_exists( $post_type_slug ) ) {
+						return blu_prepare_ability_response(
+							400,
+							sprintf(
+								/* translators: %s: requested post type slug */
+								'Unknown or unregistered post type "%s". Register it with register_post_type (or a plugin) first, or pick a slug from blu-list-post-types.',
+								$post_type_slug
+							)
+						);
+					}
+
 					$post_data = array(
-						'post_type'    => sanitize_text_field( $input['post_type'] ),
+						'post_type'    => $post_type_slug,
 						'post_title'   => sanitize_text_field( $input['title'] ),
 						'post_content' => wp_kses_post( $input['content'] ),
 						'post_status'  => 'draft',
@@ -229,9 +244,9 @@ class CustomPostTypes {
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => false,
-						'idempotent'   => false,
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => false,
 					),
 				),
 			)
@@ -311,9 +326,9 @@ class CustomPostTypes {
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -358,9 +373,9 @@ class CustomPostTypes {
 				'permission_callback' => fn() => current_user_can( 'delete_posts' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => true,
-						'idempotent'   => true,
+						'readonly'    => false,
+						'destructive' => true,
+						'idempotent'  => true,
 					),
 				),
 			)
