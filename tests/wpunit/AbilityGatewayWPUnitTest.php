@@ -317,7 +317,6 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 			$filter_called = true;
 			$this->assertIsArray( $namespaces );
 			$this->assertContains( 'blu/', $namespaces );
-			$this->assertContains( 'wc/', $namespaces );
 			return $namespaces;
 		};
 		add_filter( 'blu_mcp_allowed_namespaces', $callback );

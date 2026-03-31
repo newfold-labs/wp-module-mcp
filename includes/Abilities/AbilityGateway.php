@@ -32,7 +32,6 @@ class AbilityGateway {
 			'blu_mcp_allowed_namespaces',
 			array(
 				'blu/',
-				'wc/',
 			)
 		);
 
@@ -69,16 +68,22 @@ class AbilityGateway {
 	/**
 	 * Checks whether a given ability name is whitelisted.
 	 *
-	 * @param string $ability_name The ability name to check.
+	 * Accepts both slash form (blu/posts-search) and hyphen form (blu-posts-search).
+	 * Uses forward conversion (slash→hyphen) for matching, which is unambiguous
+	 * unlike the reverse (hyphen→slash) which breaks for hyphenated namespaces.
+	 *
+	 * @param string $ability_name The ability name to check (either format).
 	 *
 	 * @return \WP_Ability|null The ability if whitelisted, null otherwise.
 	 */
 	private function get_whitelisted_ability( string $ability_name ) {
-		$canonical = $this->normalize_mcp_tool_name_to_ability_name( $ability_name );
-		$whitelisted = $this->get_whitelisted_abilities();
+		$ability_name = trim( $ability_name );
+		$whitelisted  = $this->get_whitelisted_abilities();
 
 		foreach ( $whitelisted as $ability ) {
-			if ( $ability->get_name() === $canonical ) {
+			$name = $ability->get_name();
+			// Match against both the canonical slash form and the MCP hyphen form.
+			if ( $name === $ability_name || $this->ability_name_to_mcp_tool_name( $name ) === $ability_name ) {
 				return $ability;
 			}
 		}
@@ -100,32 +105,6 @@ class AbilityGateway {
 	 */
 	private function ability_name_to_mcp_tool_name( string $name ): string {
 		return str_replace( '/', '-', trim( $name ) );
-	}
-
-	/**
-	 * Normalize an ability reference from MCP hyphen form to WordPress slash form.
-	 *
-	 * If the name already contains `/`, it is returned unchanged. Otherwise split on the
-	 * first hyphen only so names like blu-add-cpt map to blu/add-cpt (not blu-add/cpt).
-	 *
-	 * @param string $name Ability name as sent by the client (either format).
-	 *
-	 * @return string Canonical WordPress ability name for lookup.
-	 */
-	private function normalize_mcp_tool_name_to_ability_name( string $name ): string {
-		$name = trim( $name );
-		if ( str_contains( $name, '/' ) ) {
-			return $name;
-		}
-
-		// Split only on the first hyphen. A regex like ^([a-z][a-z0-9_-]*)- is wrong here because
-		// the character class includes '-', so blu-add-cpt is parsed as blu-add + / + cpt.
-		$parts = explode( '-', $name, 2 );
-		if ( count( $parts ) < 2 ) {
-			return $name;
-		}
-
-		return $parts[0] . '/' . $parts[1];
 	}
 
 	/**
@@ -173,21 +152,26 @@ class AbilityGateway {
 					'properties' => array(
 						'namespace' => array(
 							'type'        => 'string',
-							'description' => 'Optional namespace to filter abilities, e.g. "wc" for WooCommerce only. Matches the prefix of the hyphen-form names returned by this tool.',
+							'description' => 'Optional namespace to filter abilities by their provider, e.g. "blu" for Bluehost abilities. Matches the namespace prefix before the slash in ability names.',
 						),
 					),
 				),
 				'execute_callback'    => function ( $input = null ) {
 					$abilities = $this->get_whitelisted_abilities();
 
-					// Apply optional namespace filter. Accept "wc", "wc/", or "wc-" — normalise
-					// to the hyphen-form prefix and match against the MCP tool name.
+					// Apply optional namespace filter. Accept "blu", "blu/", or "blu-" — normalise
+					// and match against the actual ability namespace (part before the slash).
 					if ( ! empty( $input['namespace'] ) ) {
-						$ns_prefix = rtrim( $input['namespace'], '/-' ) . '-';
-						$abilities  = array_filter(
+						$ns = rtrim( $input['namespace'], '/-' );
+						$abilities = array_filter(
 							$abilities,
-							function ( $ability ) use ( $ns_prefix ) {
-								return str_starts_with( $this->ability_name_to_mcp_tool_name( $ability->get_name() ), $ns_prefix );
+							function ( $ability ) use ( $ns ) {
+								$name      = $ability->get_name();
+								$slash_pos = strpos( $name, '/' );
+								if ( false === $slash_pos ) {
+									return false;
+								}
+								return substr( $name, 0, $slash_pos ) === $ns;
 							}
 						);
 					}
@@ -197,8 +181,12 @@ class AbilityGateway {
 						$meta        = $ability->get_meta();
 						$annotations = isset( $meta['annotations'] ) ? $meta['annotations'] : array();
 
+						$ability_name = $ability->get_name();
+						$slash_pos    = strpos( $ability_name, '/' );
+
 						$result[] = array(
-							'name'        => $this->ability_name_to_mcp_tool_name( $ability->get_name() ),
+							'name'        => $this->ability_name_to_mcp_tool_name( $ability_name ),
+							'namespace'   => false !== $slash_pos ? substr( $ability_name, 0, $slash_pos ) : '',
 							'label'       => $ability->get_label(),
 							'description' => $ability->get_description(),
 							'annotations' => $annotations,
