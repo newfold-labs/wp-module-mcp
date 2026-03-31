@@ -2,6 +2,8 @@
 
 The Bluehost MCP module exposes tools via the **Bluehost MCP Server** at `/wp-json/blu/mcp`. These are WordPress abilities exposed as MCP tools for AI assistants and MCP clients.
 
+**Developer documentation:** see **[docs/index.md](docs/index.md)** (table of contents) and **[AGENTS.md](AGENTS.md)** for agents and repo orientation.
+
 **MCP tool naming:** Abilities registered as `blu/<something>` are exposed as MCP tools named `blu-<something>` (slash replaced with hyphen). For example, ability `blu/posts-search` becomes MCP tool `blu-posts-search`. This hyphen form is what appears in `tools/list` and what the gateway returns.
 
 ---
