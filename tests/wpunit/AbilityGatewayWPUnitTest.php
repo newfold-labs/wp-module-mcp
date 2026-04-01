@@ -512,6 +512,13 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	 * @return void
 	 */
 	public function test_list_abilities_name_uses_hyphen_form() {
+		$this->register_test_ability(
+			'blu/test-hyphen',
+			'blu-mcp',
+			function () {
+				return blu_prepare_ability_response( 200, 'ok' );
+			}
+		);
 		$this->register_gateway();
 		$ability = blu_get_ability( 'blu/list-abilities' );
 		$result  = $ability->execute( array() );
