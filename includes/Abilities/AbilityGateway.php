@@ -19,7 +19,7 @@ class AbilityGateway {
 	 * Used for registration, recursion guard, and list-abilities exclusion.
 	 * Add new gateway abilities here — everything else derives from this list.
 	 */
-	private const GATEWAY_ABILITIES = array(
+	public const GATEWAY_ABILITIES = array(
 		'blu/list-abilities',
 		'blu/get-ability-schema',
 		'blu/call-ability',

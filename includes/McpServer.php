@@ -55,12 +55,7 @@ class McpServer {
 		$use_gateway = apply_filters( 'blu_mcp_use_gateway', true );
 
 		if ( $use_gateway ) {
-			// Only expose the 3 gateway tools.
-			$abilities = array(
-				'blu/list-abilities',
-				'blu/get-ability-schema',
-				'blu/call-ability',
-			);
+			$abilities = AbilityGateway::GATEWAY_ABILITIES;
 		} else {
 			// Legacy: expose all individual tools directly.
 			$abilities = array_map(
