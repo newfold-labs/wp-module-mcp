@@ -390,18 +390,18 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	}
 
 	/**
-	 * Verifies list-abilities includes the gateway tools themselves.
+	 * Verifies list-abilities excludes gateway tools (they are already in tools/list).
 	 *
 	 * @return void
 	 */
-	public function test_list_abilities_includes_gateway_tools() {
+	public function test_list_abilities_excludes_gateway_tools() {
 		$this->register_gateway();
 		$ability = blu_get_ability( 'blu/list-abilities' );
 		$result  = $ability->execute( array() );
 		$names   = array_column( $result['message'], 'name' );
-		$this->assertContains( 'blu-list-abilities', $names );
-		$this->assertContains( 'blu-get-ability-schema', $names );
-		$this->assertContains( 'blu-call-ability', $names );
+		$this->assertNotContains( 'blu-list-abilities', $names );
+		$this->assertNotContains( 'blu-get-ability-schema', $names );
+		$this->assertNotContains( 'blu-call-ability', $names );
 	}
 
 	/**
@@ -410,12 +410,20 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	 * @return void
 	 */
 	public function test_list_abilities_entries_have_expected_keys() {
+		$this->register_test_ability(
+			'blu/test-keys',
+			'blu-mcp',
+			function () {
+				return blu_prepare_ability_response( 200, 'ok' );
+			}
+		);
 		$this->register_gateway();
 		$ability = blu_get_ability( 'blu/list-abilities' );
 		$result  = $ability->execute( array() );
 		$this->assertNotEmpty( $result['message'] );
 		$entry = $result['message'][0];
 		$this->assertArrayHasKey( 'name', $entry );
+		$this->assertArrayHasKey( 'namespace', $entry );
 		$this->assertArrayHasKey( 'label', $entry );
 		$this->assertArrayHasKey( 'description', $entry );
 		$this->assertArrayHasKey( 'annotations', $entry );
@@ -520,12 +528,18 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	 * @return void
 	 */
 	public function test_call_ability_executes_whitelisted_ability() {
+		$this->register_test_ability(
+			'blu/test-echo',
+			'blu-mcp',
+			function ( $input ) {
+				return blu_prepare_ability_response( 200, 'echo-ok' );
+			}
+		);
 		$this->register_gateway();
 		$ability = blu_get_ability( 'blu/call-ability' );
-		// Call list-abilities through the gateway.
-		$result = $ability->execute(
+		$result  = $ability->execute(
 			array(
-				'ability_name' => 'blu/list-abilities',
+				'ability_name' => 'blu/test-echo',
 				'parameters'   => array(),
 			)
 		);
@@ -539,11 +553,18 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	 * @return void
 	 */
 	public function test_call_ability_accepts_mcp_hyphen_name() {
+		$this->register_test_ability(
+			'blu/test-echo',
+			'blu-mcp',
+			function ( $input ) {
+				return blu_prepare_ability_response( 200, 'echo-ok' );
+			}
+		);
 		$this->register_gateway();
 		$ability = blu_get_ability( 'blu/call-ability' );
 		$result  = $ability->execute(
 			array(
-				'ability_name' => 'blu-list-abilities',
+				'ability_name' => 'blu-test-echo',
 				'parameters'   => array(),
 			)
 		);
@@ -557,15 +578,44 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	 * @return void
 	 */
 	public function test_call_ability_omitted_parameters_normalizes_to_empty_object() {
+		$this->register_test_ability(
+			'blu/test-echo',
+			'blu-mcp',
+			function ( $input ) {
+				return blu_prepare_ability_response( 200, 'echo-ok' );
+			}
+		);
 		$this->register_gateway();
 		$ability = blu_get_ability( 'blu/call-ability' );
 		$result  = $ability->execute(
 			array(
-				'ability_name' => 'blu/list-abilities',
+				'ability_name' => 'blu/test-echo',
 			)
 		);
 		$this->assertSame( 200, $result['statusCode'] );
 		$this->assertSame( 'success', $result['status'] );
+	}
+
+	/**
+	 * Verifies call-ability blocks calls to gateway tools (prevents recursion).
+	 *
+	 * @return void
+	 */
+	public function test_call_ability_blocks_gateway_tools() {
+		$this->register_gateway();
+		$ability = blu_get_ability( 'blu/call-ability' );
+
+		// Self-call (would cause infinite recursion).
+		$result = $ability->execute( array( 'ability_name' => 'blu-call-ability' ) );
+		$this->assertSame( 400, $result['statusCode'] );
+
+		// Other gateway tools (slash form).
+		$result = $ability->execute( array( 'ability_name' => 'blu/list-abilities' ) );
+		$this->assertSame( 400, $result['statusCode'] );
+
+		// Other gateway tools (hyphen form).
+		$result = $ability->execute( array( 'ability_name' => 'blu-get-ability-schema' ) );
+		$this->assertSame( 400, $result['statusCode'] );
 	}
 
 	/**

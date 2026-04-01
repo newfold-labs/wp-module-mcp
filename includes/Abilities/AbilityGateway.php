@@ -14,13 +14,29 @@ namespace BLU\Abilities;
 class AbilityGateway {
 
 	/**
-	 * Constructor - registers the 3 gateway abilities.
+	 * Canonical names of the gateway abilities (slash form).
+	 *
+	 * Used for registration, recursion guard, and list-abilities exclusion.
+	 * Add new gateway abilities here — everything else derives from this list.
+	 */
+	private const GATEWAY_ABILITIES = array(
+		'blu/list-abilities',
+		'blu/get-ability-schema',
+		'blu/call-ability',
+	);
+
+	/**
+	 * Constructor — registers all gateway abilities.
 	 */
 	public function __construct() {
 		$this->register_list_abilities();
 		$this->register_get_ability_schema();
 		$this->register_call_ability();
 	}
+
+	// ──────────────────────────────────────────────
+	//  Whitelist helpers
+	// ──────────────────────────────────────────────
 
 	/**
 	 * Returns the list of whitelisted abilities based on allowed namespaces and categories.
@@ -82,8 +98,7 @@ class AbilityGateway {
 
 		foreach ( $whitelisted as $ability ) {
 			$name = $ability->get_name();
-			// Match against both the canonical slash form and the MCP hyphen form.
-			if ( $name === $ability_name || $this->ability_name_to_mcp_tool_name( $name ) === $ability_name ) {
+			if ( $name === $ability_name || $this->to_mcp_name( $name ) === $ability_name ) {
 				return $ability;
 			}
 		}
@@ -91,33 +106,68 @@ class AbilityGateway {
 		return null;
 	}
 
+	// ──────────────────────────────────────────────
+	//  Name conversion helpers
+	// ──────────────────────────────────────────────
+
 	/**
 	 * Convert an internal ability name to the MCP tool name.
 	 *
-	 * Mirrors {@see RegisterAbilityAsMcpTool::get_data()} line:
+	 * Mirrors {@see RegisterAbilityAsMcpTool::get_data()}:
 	 *   str_replace( '/', '-', trim( $ability->get_name() ) )
 	 *
-	 * Examples: blu/posts-search → blu-posts-search, wc/order-create → wc-order-create.
-	 *
-	 * @param string $name Ability name from WP_Ability::get_name().
+	 * @param string $name Ability name (slash form).
 	 *
 	 * @return string MCP tool name (hyphen form).
 	 */
-	private function ability_name_to_mcp_tool_name( string $name ): string {
+	private function to_mcp_name( string $name ): string {
 		return str_replace( '/', '-', trim( $name ) );
 	}
 
 	/**
+	 * Extract the namespace from an ability name (part before the first slash).
+	 *
+	 * @param string $name Ability name (slash form).
+	 *
+	 * @return string Namespace, or empty string if no slash.
+	 */
+	private function get_namespace( string $name ): string {
+		$slash_pos = strpos( $name, '/' );
+		return false !== $slash_pos ? substr( $name, 0, $slash_pos ) : '';
+	}
+
+	/**
+	 * Check whether an ability name (slash or hyphen form) is a gateway ability.
+	 *
+	 * @param string $name Ability name to check.
+	 *
+	 * @return bool True if it's a gateway ability.
+	 */
+	private function is_gateway_ability( string $name ): bool {
+		$name = trim( $name );
+		foreach ( self::GATEWAY_ABILITIES as $gw ) {
+			if ( $gw === $name || $this->to_mcp_name( $gw ) === $name ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	// ──────────────────────────────────────────────
+	//  Parameter helpers
+	// ──────────────────────────────────────────────
+
+	/**
 	 * Normalize delegated parameters for WP_Ability::execute().
 	 *
-	 * Abilities declare JSON Schema `type: object` for inputs. Passing null (e.g. when
-	 * `parameters` is omitted when calling blu-call-ability) fails validation with "input is not of type object".
+	 * Abilities declare JSON Schema `type: object` for inputs. Passing null
+	 * fails validation with "input is not of type object".
 	 *
 	 * @param mixed $parameters Raw parameters from the gateway call.
 	 *
 	 * @return array Associative array suitable as a JSON object payload.
 	 */
-	private function normalize_call_ability_parameters( $parameters ): array {
+	private function normalize_parameters( $parameters ): array {
 		if ( null === $parameters ) {
 			return array();
 		}
@@ -133,6 +183,10 @@ class AbilityGateway {
 
 		return array();
 	}
+
+	// ──────────────────────────────────────────────
+	//  Gateway ability registration
+	// ──────────────────────────────────────────────
 
 	/**
 	 * Register the blu/list-abilities gateway tool.
@@ -159,19 +213,23 @@ class AbilityGateway {
 				'execute_callback'    => function ( $input = null ) {
 					$abilities = $this->get_whitelisted_abilities();
 
-					// Apply optional namespace filter. Accept "blu", "blu/", or "blu-" — normalise
-					// and match against the actual ability namespace (part before the slash).
+					// Exclude gateway abilities — they are already exposed as
+					// direct MCP tools via tools/list and cannot be called through
+					// blu-call-ability, so listing them is redundant and confusing.
+					$abilities = array_filter(
+						$abilities,
+						function ( $ability ) {
+							return ! $this->is_gateway_ability( $ability->get_name() );
+						}
+					);
+
+					// Apply optional namespace filter. Accept "blu", "blu/", or "blu-".
 					if ( ! empty( $input['namespace'] ) ) {
 						$ns = rtrim( $input['namespace'], '/-' );
 						$abilities = array_filter(
 							$abilities,
 							function ( $ability ) use ( $ns ) {
-								$name      = $ability->get_name();
-								$slash_pos = strpos( $name, '/' );
-								if ( false === $slash_pos ) {
-									return false;
-								}
-								return substr( $name, 0, $slash_pos ) === $ns;
+								return $this->get_namespace( $ability->get_name() ) === $ns;
 							}
 						);
 					}
@@ -180,13 +238,11 @@ class AbilityGateway {
 					foreach ( $abilities as $ability ) {
 						$meta        = $ability->get_meta();
 						$annotations = isset( $meta['annotations'] ) ? $meta['annotations'] : array();
-
-						$ability_name = $ability->get_name();
-						$slash_pos    = strpos( $ability_name, '/' );
+						$name        = $ability->get_name();
 
 						$result[] = array(
-							'name'        => $this->ability_name_to_mcp_tool_name( $ability_name ),
-							'namespace'   => false !== $slash_pos ? substr( $ability_name, 0, $slash_pos ) : '',
+							'name'        => $this->to_mcp_name( $name ),
+							'namespace'   => $this->get_namespace( $name ),
 							'label'       => $ability->get_label(),
 							'description' => $ability->get_description(),
 							'annotations' => $annotations,
@@ -210,7 +266,6 @@ class AbilityGateway {
 	/**
 	 * Register the blu/get-ability-schema gateway ability.
 	 *
-	 * The MCP adapter exposes WordPress ability names `blu/<segment>` as MCP tools `blu-<segment>`.
 	 * Returns the full input schema for a specific whitelisted ability so the LLM
 	 * knows what parameters to pass when calling it.
 	 */
@@ -226,7 +281,7 @@ class AbilityGateway {
 					'properties' => array(
 						'ability_name' => array(
 							'type'        => 'string',
-							'description' => 'Exact ability name from list-abilities (hyphen form, same as tools/list), e.g. "blu-posts-search" or "blu-call-ability".',
+							'description' => 'Exact ability name from list-abilities (hyphen form, same as tools/list), e.g. "blu-posts-search".',
 						),
 					),
 					'required'   => array( 'ability_name' ),
@@ -248,7 +303,7 @@ class AbilityGateway {
 					return blu_prepare_ability_response(
 						200,
 						array(
-							'name'         => $this->ability_name_to_mcp_tool_name( $ability->get_name() ),
+							'name'         => $this->to_mcp_name( $ability->get_name() ),
 							'label'        => $ability->get_label(),
 							'description'  => $ability->get_description(),
 							'input_schema' => $ability->get_input_schema(),
@@ -286,7 +341,7 @@ class AbilityGateway {
 					'properties' => array(
 						'ability_name' => array(
 							'type'        => 'string',
-							'description' => 'Exact ability name from list-abilities (hyphen form, same as tools/list), e.g. "blu-posts-search" or "blu-call-ability".',
+							'description' => 'Exact ability name from list-abilities (hyphen form), e.g. "blu-posts-search". Gateway tools (list-abilities, get-ability-schema, call-ability) cannot be called here.',
 						),
 						'parameters'   => array(
 							'type'        => 'object',
@@ -300,18 +355,23 @@ class AbilityGateway {
 						return blu_prepare_ability_response( 400, 'The ability_name parameter is required.' );
 					}
 
+					if ( $this->is_gateway_ability( $input['ability_name'] ) ) {
+						return blu_prepare_ability_response(
+							400,
+							'Gateway tools cannot be called through blu-call-ability. Call them directly as MCP tools.'
+						);
+					}
+
 					$ability = $this->get_whitelisted_ability( $input['ability_name'] );
 
 					if ( ! $ability ) {
 						return blu_prepare_ability_response( 404, 'Ability not found or not available.' );
 					}
 
-					$parameters = $this->normalize_call_ability_parameters(
+					$parameters = $this->normalize_parameters(
 						isset( $input['parameters'] ) ? $input['parameters'] : null
 					);
 
-					// Delegate to the ability's own execute method which handles
-					// input validation, permission checking, and execution.
 					$result = $ability->execute( $parameters );
 
 					if ( is_wp_error( $result ) ) {
