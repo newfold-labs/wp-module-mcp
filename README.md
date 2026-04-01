@@ -1,236 +1,458 @@
-# WordPress MCP
+# BLU MCP
 
-A Composer package that exposes WordPress functionality through the Model Context Protocol (MCP), enabling AI assistants to interact with your WordPress site.
+The Bluehost MCP module exposes tools via the **Bluehost MCP Server** at `/wp-json/blu/mcp`. These are WordPress abilities exposed as MCP tools for AI assistants and MCP clients.
 
 **Developer documentation:** see **[docs/index.md](docs/index.md)** (table of contents) and **[AGENTS.md](AGENTS.md)** for agents and repo orientation.
 
-## Overview
+**MCP tool naming:** Abilities registered as `blu/<something>` are exposed as MCP tools named `blu-<something>` (slash replaced with hyphen). For example, ability `blu/posts-search` becomes MCP tool `blu-posts-search`. This hyphen form is what appears in `tools/list` and what the gateway returns.
 
-This plugin registers a comprehensive set of WordPress abilities as MCP tools, allowing remote AI assistants to:
+---
 
-- Manage posts, pages, and custom post types (including categories and tags)
-- Handle media uploads, retrieval, and management
-- Create and manage users
-- Configure site settings and retrieve site info
-- Manage themes and block editor global styles
-- Work with WooCommerce products, orders, and reports (when WooCommerce is active)
-- Use AI-assisted content prompts (product descriptions, categories, tags, brands, variation attributes)
-- Access resources such as the Google Product Taxonomy
-- Execute generic WordPress REST API operations
+## Gateway mode (default)
 
-Tools located here were extracted from the [WordPress MCP](https://github.com/Automattic/wordpress-mcp) plugin.
+The server exposes **3 gateway tools** instead of ~83 individual tools. This reduces token usage by ~96% — the LLM discovers and calls abilities on demand rather than receiving all tool schemas upfront.
 
-## Dependencies
-- WordPress Abilities API plugin (https://github.com/WordPress/abilities-api)
-- WordPress MCP Adapter plugin (https://github.com/WordPress/mcp-adapter)
+### Gateway tools (exposed via `tools/list`)
 
-## Installation
+The server registers exactly 3 gateway tools. The default names are shown below, but **MCP clients must not hardcode these names**. Instead, call `tools/list` and identify the 3 gateway roles by their input schema shape:
 
-1. Download or clone this plugin to your WordPress plugins directory
-2. Ensure the WordPress MCP plugin (abilities API) is installed and activated
-3. Activate the "Blu MCP" plugin from the WordPress admin panel
+| Role | Default name | How to identify (from `tools/list` inputSchema) |
+|------|-------------|------------------------------------------------|
+| **List** | `blu-list-abilities` | Has optional `namespace` property (string), no `ability_name` |
+| **Schema** | `blu-get-ability-schema` | Requires `ability_name` (string), no `parameters` property |
+| **Call** | `blu-call-ability` | Requires `ability_name` (string) and has optional `parameters` (object) |
 
-## Remote Connection Setup
+### Session setup (one-time)
 
-To connect to your WordPress site remotely using MCP, you'll use the [@automattic/mcp-wordpress-remote](https://github.com/Automattic/mcp-wordpress-remote) package.
+Before calling any tools, establish an MCP session:
 
-### Configuration
+1. Send `initialize` → server returns `Mcp-Session-Id` header
+2. Send `notifications/initialized` with that session ID
+3. Use the same `Mcp-Session-Id` in all subsequent requests until it expires (24h inactivity timeout)
 
-Add the following configuration to your MCP client settings (e.g., Claude Desktop's `claude_desktop_config.json`):
+You do **not** need to re-initialize for each tool call — reuse the session ID.
 
+### Usage flow
+
+Once a session is established, call `tools/list` to get the 3 gateway tools and identify them by schema shape. Then interact in 3 steps:
+
+**1. Discover** — call the **List** tool to see what's available:
 ```json
 {
-  "mcpServers": {
-    "wordpress": {
-      "command": "npx",
-      "args": ["-y", "@automattic/mcp-wordpress-remote"],
-      "env": {
-        "WP_API_URL": "https://wp.lndo.site/wp-json/blu/mcp",
-        "WP_API_USERNAME": "admin",
-        "WP_API_PASSWORD": "password",
-        "OAUTH_ENABLED": "false",
-        "NODE_TLS_REJECT_UNAUTHORIZED": "0"
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/call",
+  "params": {
+    "name": "blu-list-abilities",
+    "arguments": {}
+  }
+}
+```
+Response:
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"statusCode\":200,\"status\":\"success\",\"message\":[...]}"
       }
+    ],
+    "structuredContent": {
+      "statusCode": 200,
+      "status": "success",
+      "message": [
+        {
+          "name": "blu-posts-search",
+          "namespace": "blu",
+          "label": "Search Posts",
+          "description": "Search and filter WordPress posts with pagination",
+          "annotations": { "readonly": true }
+        }
+      ]
     }
   }
 }
 ```
+The ability list is in `result.structuredContent.message` (parsed) or `result.content[0].text` (JSON string). Each entry includes `name` (hyphen-form, use this with `blu-get-ability-schema` and `blu-call-ability`), `namespace`, `label`, `description`, and `annotations`.
 
-### Configuration Parameters
+**2. Inspect** — call the **Schema** tool to learn what parameters an ability accepts:
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "method": "tools/call",
+  "params": {
+    "name": "blu-get-ability-schema",
+    "arguments": { "ability_name": "blu-posts-search" }
+  }
+}
+```
+Response `result.structuredContent.message` contains:
+```json
+{
+  "name": "blu-posts-search",
+  "label": "Search Posts",
+  "description": "Search and filter WordPress posts with pagination",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "search": { "type": "string", "description": "Search term" },
+      "per_page": { "type": "integer", "description": "Posts per page" }
+    }
+  },
+  "annotations": { "readonly": true }
+}
+```
 
-- **WP_API_URL**: Your WordPress site's MCP endpoint URL. Replace with your site's URL, keeping the `/wp-json/blu/mcp` path.
-- **WP_API_USERNAME**: Your WordPress admin username
-- **WP_API_PASSWORD**: Your WordPress user's application password (recommended) or account password
-- **OAUTH_ENABLED**: Set to `"false"` to use basic authentication
-- **NODE_TLS_REJECT_UNAUTHORIZED**: Set to `"0"` for local development environments with self-signed certificates. Remove or set to `"1"` for production.
+**3. Execute** — call the **Call** tool with the ability name and parameters:
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "method": "tools/call",
+  "params": {
+    "name": "blu-call-ability",
+    "arguments": {
+      "ability_name": "blu-posts-search",
+      "parameters": { "search": "hello", "per_page": 5 }
+    }
+  }
+}
+```
+Response `result.structuredContent` contains the ability's result (format varies by ability).
 
-## Available Tools
+> **Important:** Never call ability names directly as MCP tool names (e.g. `"name": "blu-posts-search"` at the `tools/call` level). Abilities are only accessible through the **Call** gateway tool. The only valid MCP tool names are the 3 gateway tools returned by `tools/list`.
 
-Once connected, the following tools will be available to your MCP client, organized by category.
+### Namespace filter
 
-### Content Management — Posts
+Filter abilities by provider namespace:
+```json
+{
+  "method": "tools/call",
+  "params": {
+    "name": "blu-list-abilities",
+    "arguments": { "namespace": "blu" }
+  }
+}
+```
+Accepts `"blu"`, `"blu/"`, or `"blu-"` — all normalised to match the ability namespace.
 
-| Tool | Description |
-|------|-------------|
-| `blu/posts-search` | Search and filter WordPress posts with pagination |
-| `blu/get-post` | Get a WordPress post by ID |
-| `blu/add-post` | Add a new WordPress post |
-| `blu/update-post` | Update a WordPress post by ID |
-| `blu/delete-post` | Delete a WordPress post by ID |
-| `blu/list-categories` | List all WordPress post categories |
-| `blu/add-category` | Add a new WordPress post category |
-| `blu/update-category` | Update a WordPress post category |
-| `blu/delete-category` | Delete a WordPress post category |
-| `blu/list-tags` | List all WordPress post tags |
-| `blu/add-tag` | Add a new WordPress post tag |
-| `blu/update-tag` | Update a WordPress post tag |
-| `blu/delete-tag` | Delete a WordPress post tag |
+### Whitelist
 
-### Content Management — Pages
+The gateway only exposes abilities matching allowed namespaces or categories:
 
-| Tool | Description |
-|------|-------------|
-| `blu/pages-search` | Search and filter WordPress pages with pagination |
-| `blu/get-page` | Get a WordPress page by ID |
-| `blu/add-page` | Add a new WordPress page |
-| `blu/update-page` | Update a WordPress page by ID |
-| `blu/delete-page` | Delete a WordPress page by ID |
+- **Namespaces:** `blu/` (configurable via `blu_mcp_allowed_namespaces` filter)
+- **Categories:** `blu-mcp` (configurable via `blu_mcp_allowed_categories` filter)
 
-### Content Management — Custom Post Types
+To add a new namespace:
 
-| Tool | Description |
-|------|-------------|
-| `blu/list-post-types` | List all available WordPress custom post types |
-| `blu/cpt-search` | Search and filter WordPress custom post types with pagination |
-| `blu/get-cpt` | Get a WordPress custom post type by ID |
-| `blu/add-cpt` | Add a new WordPress custom post type |
-| `blu/update-cpt` | Update a WordPress custom post type by ID |
-| `blu/delete-cpt` | Delete a WordPress custom post type by ID |
+```php
+add_filter( 'blu_mcp_allowed_namespaces', function ( $namespaces ) {
+    $namespaces[] = 'myplugin/';
+    return $namespaces;
+} );
+```
 
-### Media
+### Legacy mode
 
-| Tool | Description |
-|------|-------------|
-| `blu/list-media` | List WordPress media items with pagination and filtering |
-| `blu/get-media` | Get a WordPress media item details by ID |
-| `blu/get-media-file` | Get the actual file content (blob) of a WordPress media item |
-| `blu/upload-media` | Upload a new media file to WordPress |
-| `blu/update-media` | Update a WordPress media item |
-| `blu/delete-media` | Delete a WordPress media item permanently |
-| `blu/search-media` | Search WordPress media items by title, caption, or description |
+To bypass the gateway and expose all individual tools directly (previous behavior):
 
-### Users
+```php
+add_filter( 'blu_mcp_use_gateway', '__return_false' );
+```
 
-| Tool | Description |
-|------|-------------|
-| `blu/users-search` | Search and filter WordPress users with pagination |
-| `blu/get-user` | Get a WordPress user by ID |
-| `blu/add-user` | Add a new WordPress user |
-| `blu/update-user` | Update a WordPress user by ID |
-| `blu/delete-user` | Delete a WordPress user by ID |
-| `blu/get-current-user` | Get the current logged-in user |
-| `blu/update-current-user` | Update the current logged-in user |
+---
 
-### Site Management
+## Available abilities
 
-| Tool | Description |
-|------|-------------|
-| `blu/get-site-info` | Get detailed information about the WordPress site (name, URL, description, admin email, plugins, themes, users, etc.) |
-| `blu/get-general-settings` | Get WordPress general site settings |
-| `blu/update-general-settings` | Update WordPress general site settings |
+All abilities below are accessible through the gateway. The **Ability name** column shows the internal registration name. The **MCP tool name** column shows the hyphen-form name to use with `blu-call-ability` and `blu-get-ability-schema`.
+
+### Content management
+
+#### Posts
+
+| Ability name | MCP tool name | Description |
+|-------------|---------------|-------------|
+| `blu/posts-search` | `blu-posts-search` | Search and filter WordPress posts with pagination |
+| `blu/get-post` | `blu-get-post` | Get a WordPress post by ID |
+| `blu/add-post` | `blu-add-post` | Add a new WordPress post |
+| `blu/update-post` | `blu-update-post` | Update a WordPress post by ID |
+| `blu/delete-post` | `blu-delete-post` | Delete a WordPress post by ID |
+
+#### Post categories
+
+| Ability name | MCP tool name | Description |
+|-------------|---------------|-------------|
+| `blu/list-categories` | `blu-list-categories` | List all WordPress post categories |
+| `blu/add-category` | `blu-add-category` | Add a new WordPress post category |
+| `blu/update-category` | `blu-update-category` | Update a WordPress post category |
+| `blu/delete-category` | `blu-delete-category` | Delete a WordPress post category |
+
+#### Post tags
+
+| Ability name | MCP tool name | Description |
+|-------------|---------------|-------------|
+| `blu/list-tags` | `blu-list-tags` | List all WordPress post tags |
+| `blu/add-tag` | `blu-add-tag` | Add a new WordPress post tag |
+| `blu/update-tag` | `blu-update-tag` | Update a WordPress post tag |
+| `blu/delete-tag` | `blu-delete-tag` | Delete a WordPress post tag |
+
+#### Pages
+
+| Ability name | MCP tool name | Description |
+|-------------|---------------|-------------|
+| `blu/pages-search` | `blu-pages-search` | Search and filter WordPress pages with pagination |
+| `blu/get-page` | `blu-get-page` | Get a WordPress page by ID |
+| `blu/add-page` | `blu-add-page` | Add a new WordPress page |
+| `blu/update-page` | `blu-update-page` | Update a WordPress page by ID |
+| `blu/delete-page` | `blu-delete-page` | Delete a WordPress page by ID |
+
+#### Media
+
+| Ability name | MCP tool name | Description |
+|-------------|---------------|-------------|
+| `blu/list-media` | `blu-list-media` | List WordPress media items with pagination and filtering |
+| `blu/get-media` | `blu-get-media` | Get a WordPress media item by ID |
+| `blu/get-media-file` | `blu-get-media-file` | Get the actual file content (blob) of a WordPress media item |
+| `blu/upload-media` | `blu-upload-media` | Upload a new media file to WordPress |
+| `blu/update-media` | `blu-update-media` | Update a WordPress media item |
+| `blu/delete-media` | `blu-delete-media` | Delete a WordPress media item permanently |
+| `blu/search-media` | `blu-search-media` | Search WordPress media by title, caption, or description |
+
+#### Custom post types
+
+| Ability name | MCP tool name | Description |
+|-------------|---------------|-------------|
+| `blu/list-post-types` | `blu-list-post-types` | List all registered WordPress post types (built-in and custom) |
+| `blu/cpt-search` | `blu-cpt-search` | Search and filter content items within a custom post type with pagination |
+| `blu/get-cpt` | `blu-get-cpt` | Get a single content item from a custom post type by ID |
+| `blu/add-cpt` | `blu-add-cpt` | Create a new content item within an existing custom post type |
+| `blu/update-cpt` | `blu-update-cpt` | Update an existing content item in a custom post type by ID |
+| `blu/delete-cpt` | `blu-delete-cpt` | Permanently delete a content item from a custom post type by ID |
+
+---
+
+### Site management
+
+#### Users
+
+| Ability name | MCP tool name | Description |
+|-------------|---------------|-------------|
+| `blu/users-search` | `blu-users-search` | Search and filter WordPress users with pagination |
+| `blu/get-user` | `blu-get-user` | Get a WordPress user by ID |
+| `blu/add-user` | `blu-add-user` | Add a new WordPress user |
+| `blu/update-user` | `blu-update-user` | Update a WordPress user by ID |
+| `blu/delete-user` | `blu-delete-user` | Delete a WordPress user by ID |
+
+#### Settings
+
+| Ability name | MCP tool name | Description |
+|-------------|---------------|-------------|
+| `blu/get-general-settings` | `blu-get-general-settings` | Get WordPress general site settings |
+| `blu/update-general-settings` | `blu-update-general-settings` | Update WordPress general site settings |
+
+#### Site info
+
+| Ability name | MCP tool name | Description |
+|-------------|---------------|-------------|
+| `blu/get-site-info` | `blu-get-site-info` | Get detailed site information (name, URL, description, admin email, plugins, themes, users, etc.) |
+
+---
+
+### Global styles
+
+| Ability name | MCP tool name | Description |
+|-------------|---------------|-------------|
+| `blu/get-global-styles` | `blu-get-global-styles` | Get a global styles configuration by ID |
+| `blu/update-global-styles` | `blu-update-global-styles` | Update a global styles configuration (colors, typography, spacing, etc.) |
+| `blu/get-active-global-styles` | `blu-get-active-global-styles` | Get the currently active global styles for the current theme |
+| `blu/get-active-global-styles-id` | `blu-get-active-global-styles-id` | Get the active global styles ID (for get/update) |
+
+---
 
 ### Themes
 
-| Tool | Description |
-|------|-------------|
-| `blu/get-active-theme` | Get the active theme information |
+| Ability name | MCP tool name | Description |
+|-------------|---------------|-------------|
+| `blu/get-active-theme` | `blu-get-active-theme` | Get the active theme information |
 
-### Global Styles (Block Editor)
+---
 
-| Tool | Description |
-|------|-------------|
-| `blu/get-global-styles` | Get a specific global styles configuration by ID (theme.json settings and user customizations) |
-| `blu/update-global-styles` | Update global styles (colors, typography, spacing, etc.) |
-| `blu/get-active-global-styles` | Get the currently active global styles configuration for the current theme |
-| `blu/get-active-global-styles-id` | Get the active global styles ID (used for get/update operations) |
+### WooCommerce (when WooCommerce is active)
 
-### REST API
+These are Bluehost wrapper abilities for WooCommerce operations. They are registered under the `blu/` namespace with a `wc-` segment prefix.
 
-| Tool | Description |
-|------|-------------|
-| `blu/list-api-functions` | List all available WordPress REST API endpoints that support CRUD operations |
-| `blu/get-function-details` | Get detailed metadata for a specific REST API endpoint and HTTP method |
-| `blu/run-api-function` | Execute a REST API function by providing the endpoint route, HTTP method, and parameters |
+> **Note:** WooCommerce 10.3+ also registers its own native abilities under the `woocommerce/` namespace (e.g. `woocommerce/products-list`). Those are **not** exposed through the gateway by default — only the `blu/wc-*` wrappers below are whitelisted. To expose WooCommerce native abilities, add `woocommerce/` to the `blu_mcp_allowed_namespaces` filter.
 
-### Resources
+#### Products
 
-| Tool | Description |
-|------|-------------|
-| `blu/google-product-taxonomy` | The official Google Product Taxonomy resource |
+| Ability name | MCP tool name | Description |
+|-------------|---------------|-------------|
+| `blu/wc-products-search` | `blu-wc-products-search` | Search WooCommerce products |
+| `blu/wc-get-product` | `blu-wc-get-product` | Get a WooCommerce product by ID |
+| `blu/wc-add-product` | `blu-wc-add-product` | Add a WooCommerce product |
+| `blu/wc-update-product` | `blu-wc-update-product` | Update a WooCommerce product |
+| `blu/wc-delete-product` | `blu-wc-delete-product` | Delete a WooCommerce product |
 
-### AI-Assisted Content (Prompts)
+#### Product categories
 
-| Tool | Description |
-|------|-------------|
-| `blu/suggest-product-description` | Generate a description and short description from product details |
-| `blu/improve-product-description` | Improve existing product description and short description |
-| `blu/suggest-product-categories` | Generate product category suggestions from product details |
-| `blu/suggest-product-tag` | Generate product tag suggestions from product details |
-| `blu/suggest-product-brand` | Generate product brand suggestions from product details |
-| `blu/smart-product-details` | Merchant Content Intelligence Generator — generates required materials, size charts, care instructions, warranty info, ingredient lists from product ID and details |
-| `blu/suggest-product-variation-attributes` | Generate product terms and attributes for variations from product details |
+| Ability name | MCP tool name | Description |
+|-------------|---------------|-------------|
+| `blu/wc-list-product-categories` | `blu-wc-list-product-categories` | List WooCommerce product categories |
+| `blu/wc-add-product-category` | `blu-wc-add-product-category` | Add a WooCommerce product category |
+| `blu/wc-update-product-category` | `blu-wc-update-product-category` | Update a WooCommerce product category |
+| `blu/wc-delete-product-category` | `blu-wc-delete-product-category` | Delete a WooCommerce product category |
 
-### WooCommerce — Products (when WooCommerce is active)
+#### Product tags
 
-| Tool | Description |
-|------|-------------|
-| `blu/wc-products-search` | Search and filter WooCommerce products with pagination |
-| `blu/wc-get-product` | Get a WooCommerce product by ID |
-| `blu/wc-add-product` | Add a new WooCommerce product |
-| `blu/wc-update-product` | Update a WooCommerce product by ID |
-| `blu/wc-delete-product` | Delete a WooCommerce product by ID |
-| `blu/wc-list-product-categories` | List all WooCommerce product categories |
-| `blu/wc-add-product-category` | Add one or more WooCommerce product categories |
-| `blu/wc-update-product-category` | Update a WooCommerce product category |
-| `blu/wc-delete-product-category` | Delete a WooCommerce product category |
-| `blu/wc-list-product-tags` | List all WooCommerce product tags |
-| `blu/wc-add-product-tag` | Add one or more WooCommerce product tags |
-| `blu/wc-update-product-tag` | Update a WooCommerce product tag |
-| `blu/wc-delete-product-tag` | Delete a WooCommerce product tag |
-| `blu/wc-list-product-brands` | List all WooCommerce product brands |
-| `blu/wc-add-product-brand` | Add one or more WooCommerce product brands |
-| `blu/wc-update-product-brand` | Update a WooCommerce product brand |
-| `blu/wc-delete-product-brand` | Delete a WooCommerce product brand |
+| Ability name | MCP tool name | Description |
+|-------------|---------------|-------------|
+| `blu/wc-list-product-tags` | `blu-wc-list-product-tags` | List WooCommerce product tags |
+| `blu/wc-add-product-tag` | `blu-wc-add-product-tag` | Add a WooCommerce product tag |
+| `blu/wc-update-product-tag` | `blu-wc-update-product-tag` | Update a WooCommerce product tag |
+| `blu/wc-delete-product-tag` | `blu-wc-delete-product-tag` | Delete a WooCommerce product tag |
 
-### WooCommerce — Orders & Reports (when WooCommerce is active)
+#### Product brands
 
-| Tool | Description |
-|------|-------------|
-| `blu/wc-orders-search` | Get a list of WooCommerce orders |
-| `blu/wc-reports-coupons-totals` | Get WooCommerce coupons totals report |
-| `blu/wc-reports-customers-totals` | Get WooCommerce customers totals report |
-| `blu/wc-reports-orders-totals` | Get WooCommerce orders totals report |
-| `blu/wc-reports-products-totals` | Get WooCommerce products totals report |
-| `blu/wc-reports-reviews-totals` | Get WooCommerce reviews totals report |
-| `blu/wc-reports-sales` | Get WooCommerce sales report |
+| Ability name | MCP tool name | Description |
+|-------------|---------------|-------------|
+| `blu/wc-list-product-brands` | `blu-wc-list-product-brands` | List WooCommerce product brands |
+| `blu/wc-add-product-brand` | `blu-wc-add-product-brand` | Add a WooCommerce product brand |
+| `blu/wc-update-product-brand` | `blu-wc-update-product-brand` | Update a WooCommerce product brand |
+| `blu/wc-delete-product-brand` | `blu-wc-delete-product-brand` | Delete a WooCommerce product brand |
 
-## Usage
+#### Orders and reports
 
-After configuring your MCP client, restart it to establish the connection. The tools will appear in your AI assistant's available tools, organized by the category "Bluehost MCP".
+| Ability name | MCP tool name | Description |
+|-------------|---------------|-------------|
+| `blu/wc-orders-search` | `blu-wc-orders-search` | Get a list of WooCommerce orders |
+| `blu/wc-reports-coupons-totals` | `blu-wc-reports-coupons-totals` | Get WooCommerce coupons totals report |
+| `blu/wc-reports-customers-totals` | `blu-wc-reports-customers-totals` | Get WooCommerce customers totals report |
+| `blu/wc-reports-orders-totals` | `blu-wc-reports-orders-totals` | Get WooCommerce orders totals report |
+| `blu/wc-reports-products-totals` | `blu-wc-reports-products-totals` | Get WooCommerce products totals report |
+| `blu/wc-reports-reviews-totals` | `blu-wc-reports-reviews-totals` | Get WooCommerce reviews totals report |
+| `blu/wc-reports-sales` | `blu-wc-reports-sales` | Get WooCommerce sales report |
 
-You can then ask your AI assistant to perform WordPress tasks, such as:
-- "Create a new blog post about..."
-- "Upload this image to the media library"
-- "Show me the latest orders"
-- "Update the site tagline to..."
+---
 
-## Testing
-- Use the [MCP Inspector](https://modelcontextprotocol.io/docs/tools/inspector) to test specific calls
+### Advanced: REST API CRUD
 
-## Support
+| Ability name | MCP tool name | Description |
+|-------------|---------------|-------------|
+| `blu/list-api-functions` | `blu-list-api-functions` | List all available WordPress REST API endpoints that support CRUD |
+| `blu/get-function-details` | `blu-get-function-details` | Get detailed metadata for a specific REST API route and HTTP method |
+| `blu/run-api-function` | `blu-run-api-function` | Execute a REST API request by route, method, and parameters |
 
-For issues or questions, please contact the plugin author or refer to the WordPress MCP documentation.
+---
 
-## License
+## Integration requirements
 
-GPL V2 or later
+Any MCP client connecting to this server must handle the following. This applies regardless of the LLM being used.
+
+### Endpoint
+
+- **URL:** `https://YOUR-SITE.com/wp-json/blu/mcp`
+- **Methods:** POST (messages), GET (SSE, currently 405), DELETE (session termination)
+- **Authentication:** Required (e.g. WordPress Application Password or JWT via Hiive)
+
+### Session lifecycle
+
+1. POST `initialize` request → server returns `Mcp-Session-Id` response header
+2. POST `notifications/initialized` notification (no `id` field, no response expected) with that session header
+3. Include `Mcp-Session-Id` header on **every** subsequent request
+4. Sessions expire after 24 hours of inactivity (max 32 per user)
+5. On "Invalid or expired session" error, re-run steps 1–2
+
+```
+POST /wp-json/blu/mcp
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"my-client","version":"1.0"}}}
+```
+Response includes `Mcp-Session-Id: <id>` header.
+
+```
+POST /wp-json/blu/mcp
+Authorization: Bearer <token>
+Mcp-Session-Id: <id>
+Content-Type: application/json
+
+{"jsonrpc":"2.0","method":"notifications/initialized"}
+```
+
+### JSON-RPC 2.0 envelope
+
+Every request and response uses the JSON-RPC 2.0 format:
+
+```
+Request:  { "jsonrpc": "2.0", "id": <int|string>, "method": "<method>", "params": {...} }
+Response: { "jsonrpc": "2.0", "id": <int|string>, "result": {...} }
+Error:    { "jsonrpc": "2.0", "id": <int|string>, "error": { "code": <int>, "message": "<string>" } }
+```
+
+Batch requests (array of messages) are supported per the JSON-RPC 2.0 spec.
+
+### Response format for `tools/call`
+
+Successful tool calls return a nested response that clients must unwrap:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "content": [
+      { "type": "text", "text": "<JSON string of the result>" }
+    ],
+    "structuredContent": { ... }
+  }
+}
+```
+
+- **`result.structuredContent`** — the parsed result object (preferred)
+- **`result.content[0].text`** — the same result as a JSON string (fallback)
+- Image results use `content[0].type: "image"` with base64 `data` and `mimeType`
+
+### Error shapes
+
+Errors come in two forms that clients must distinguish:
+
+**Protocol errors** (tool not found, invalid request) — JSON-RPC error format:
+```json
+{ "jsonrpc": "2.0", "id": 1, "error": { "code": -32602, "message": "Tool not found: foo" } }
+```
+
+**Tool execution errors** (permission denied, ability failure) — MCP `isError` format:
+```json
+{
+  "jsonrpc": "2.0", "id": 1,
+  "result": {
+    "content": [{ "type": "text", "text": "Access denied for tool: blu-call-ability" }],
+    "isError": true
+  }
+}
+```
+
+### Ability response wrapper
+
+Inside `structuredContent`, gateway abilities return a consistent wrapper:
+
+```json
+{
+  "statusCode": 200,
+  "status": "success",
+  "message": [ ... ]
+}
+```
+
+- `statusCode` — HTTP-style status (200, 400, 404, 500)
+- `status` — `"success"` or `"error"`
+- `message` — the actual payload (array for lists, object for single items, string for errors)
+
+### SSE
+
+The MCP 2025-06-18 spec defines GET for SSE streaming. This server currently returns HTTP 405 for GET requests (not implemented), but spec-compliant clients should be prepared to handle SSE in future versions.
