@@ -34,9 +34,7 @@ class AbilityGateway {
 		$this->register_call_ability();
 	}
 
-	// ──────────────────────────────────────────────
-	//  Whitelist helpers
-	// ──────────────────────────────────────────────
+	/* Whitelist helpers */
 
 	/**
 	 * Returns the list of whitelisted abilities based on allowed namespaces and categories.
@@ -106,9 +104,7 @@ class AbilityGateway {
 		return null;
 	}
 
-	// ──────────────────────────────────────────────
-	//  Name conversion helpers
-	// ──────────────────────────────────────────────
+	/* Name conversion helpers */
 
 	/**
 	 * Convert an internal ability name to the MCP tool name.
@@ -153,9 +149,7 @@ class AbilityGateway {
 		return false;
 	}
 
-	// ──────────────────────────────────────────────
-	//  Parameter helpers
-	// ──────────────────────────────────────────────
+	/* Parameter helpers */
 
 	/**
 	 * Normalize delegated parameters for WP_Ability::execute().
@@ -184,9 +178,7 @@ class AbilityGateway {
 		return array();
 	}
 
-	// ──────────────────────────────────────────────
-	//  Gateway ability registration
-	// ──────────────────────────────────────────────
+	/* Gateway ability registration */
 
 	/**
 	 * Register the blu/list-abilities gateway tool.

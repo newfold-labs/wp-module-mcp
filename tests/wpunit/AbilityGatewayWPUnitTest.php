@@ -161,7 +161,7 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 			);
 		};
 		add_action( 'wp_abilities_api_init', $cb, 5 );
-		$this->test_ability_hooks[] = $cb;
+		$this->test_ability_hooks[]   = $cb;
 		$this->registered_abilities[] = $name;
 	}
 
@@ -531,7 +531,7 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$this->register_test_ability(
 			'blu/test-echo',
 			'blu-mcp',
-			function ( $input ) {
+			function () {
 				return blu_prepare_ability_response( 200, 'echo-ok' );
 			}
 		);
@@ -556,7 +556,7 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$this->register_test_ability(
 			'blu/test-echo',
 			'blu-mcp',
-			function ( $input ) {
+			function () {
 				return blu_prepare_ability_response( 200, 'echo-ok' );
 			}
 		);
@@ -581,7 +581,7 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$this->register_test_ability(
 			'blu/test-echo',
 			'blu-mcp',
-			function ( $input ) {
+			function () {
 				return blu_prepare_ability_response( 200, 'echo-ok' );
 			}
 		);
