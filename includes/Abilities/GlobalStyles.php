@@ -81,7 +81,7 @@ class GlobalStyles {
 			'blu/update-global-styles',
 			array(
 				'label'               => 'Update Global Styles',
-				'description'         => 'Update WordPress global styles (colors, typography, spacing) using theme.json format. Call this tool DIRECTLY — it resolves the global styles ID automatically, so you do NOT need to call blu/get-global-styles or blu/get-active-global-styles-id first. Use for: "change color", "update font", "set background", "update styles". COLOR SLUGS: accent-2=Primary (this is the main accent/brand color — when the user says "accent color" they mean this), accent-5=Secondary, base=Background (slug "base" NOT "background"), contrast=Text (slug "contrast" NOT "text"). Only include the color slugs you are changing — colors not included are preserved automatically. ACCENT COLORS: When changing any accent/primary/brand color, you MUST generate ALL 6 accent shades (accent-1 through accent-6) as a cohesive palette derived from the chosen color via HSL lightness variations. Never include only one accent slug. COLOR GUIDELINES: "base" (background) MUST be white or near-white (#FFFFFF, #FAFAFA, #F5F5F5) for light themes, or dark grey / near-black (#1A1A1A, #212121, #2C2C2C) for dark themes. "contrast" (text) MUST be the opposite — dark for light themes, light for dark themes. These two should always have high contrast for readability. Background tints are acceptable but keep them very subtle and mostly neutral/grey. FORMAT: {"settings":{"color":{"palette":{"theme":[{"slug":"...","color":"#hex","name":"..."}]}}}}',
+				'description'         => 'Update WordPress global styles (colors, typography, spacing) using theme.json format. Resolves the global styles ID automatically — do NOT call get-global-styles first. Use for site-wide palette, font, or spacing changes — NOT for individual block colors. COLOR SLUGS: base=Background, base-midtone=Background midtone, contrast=Text, contrast-midtone=Text midtone, accent-2=Primary, accent-5=Secondary. Only include slugs you are changing — others are preserved. MIDTONE COLORS: When changing base, also update base-midtone (a subtle step toward contrast). When changing contrast, also update contrast-midtone (a subtle step toward base). Light theme example: base=#ffffff, base-midtone=#f4f4f4, contrast=#000000, contrast-midtone=#323232. Dark theme example: base=#181818, base-midtone=#1C1C1C, contrast=#FFFFFF, contrast-midtone=#DADADA. ACCENT COLORS: Generate ALL 6 shades via HSL lightness from the base color: accent-1(-24%), accent-2(base), accent-3(+18%), accent-4(+28%), accent-5(+56%), accent-6(+63%). Example for deep blue #0B3D5B: accent-1=#062533, accent-2=#0B3D5B, accent-3=#1A5A7A, accent-4=#2A7399, accent-5=#6BAAC9, accent-6=#8DC1D9. DARK/LIGHT MODE: Only change base + base-midtone + contrast + contrast-midtone, NEVER modify accents. "base" must be white/near-white for light or dark grey for dark themes. "contrast" must be the opposite. VAGUE PALETTE REQUESTS: When user says "change colors" without specifying which, ask what colors or mood they want first — do not apply immediately. FORMAT: {"settings":{"color":{"palette":{"theme":[{"slug":"...","color":"#hex","name":"..."}]}}}}',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
@@ -106,7 +106,7 @@ class GlobalStyles {
 														'properties' => array(
 															'slug'  => array(
 																'type'        => 'string',
-																'description' => 'Color slug: accent-1 through accent-6 for accent colors, base for background, contrast for text.',
+																'description' => 'Color slug: base, base-midtone, contrast, contrast-midtone, accent-1 through accent-6.',
 															),
 															'color' => array(
 																'type'        => 'string',
@@ -139,7 +139,7 @@ class GlobalStyles {
 							'description' => 'Styles object containing CSS-like declarations for root, elements, and blocks.',
 						),
 					),
-					'required'   => array( 'settings' ),
+					'required'   => array(),
 				),
 				'execute_callback'    => array( $this, 'execute_update_global_styles' ),
 				'permission_callback' => fn() => current_user_can( 'edit_theme_options' ),
