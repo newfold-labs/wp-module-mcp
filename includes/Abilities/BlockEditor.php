@@ -41,11 +41,6 @@ class BlockEditor {
 		$this->register_highlight_block();
 		$this->register_rewrite_text();
 		$this->register_update_block_attrs();
-		$this->register_replace_image();
-		$this->register_update_text();
-		$this->register_duplicate_block();
-		$this->register_batch_update_attrs();
-		$this->register_insert_block();
 	}
 
 	/**
@@ -72,7 +67,7 @@ class BlockEditor {
 		- GRADIENTS: To add a gradient background to a block, use the style.color.gradient attribute in the block comment — NEVER put background-image in the inline style. Block comment: {"style":{"color":{"gradient":"linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%)"}}}. HTML: style="background:linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%)" (use background: not background-image:). Add has-background class. For theme presets use: {"gradient":"vivid-cyan-blue-to-vivid-purple"}. WRONG: {"style":{"elements":{"background":{"backgroundImage":"..."}}}} or style="background-image:linear-gradient(...)".
 		- FONT SIZE: When changing a block's font size, ALWAYS remove any existing font-size selection first — then apply the new one. Preset slugs and custom values are mutually exclusive; combining them causes the preset to silently win via CSS specificity. CUSTOM size: REMOVE "fontSize" attribute and has-*-font-size class, then set "style":{"typography":{"fontSize":"4.5rem"}} and style="font-size:4.5rem". PRESET size: REMOVE style.typography.fontSize and inline font-size, then set "fontSize":"x-large" and add has-x-large-font-size class. WRONG: {"fontSize":"x-large","style":{"typography":{"fontSize":"4.5rem"}}}.
 		- ALIGNMENT & CENTERING: The core/group block does NOT support the align attribute for centering — do NOT set "align":"center" on a group. For flex containers (core/columns, core/buttons): use "align":"center" directly. For core/row or core/stack: set "layout":{"type":"flex","justifyContent":"center"}. For content inside a group: set alignment on inner blocks — core/image and core/buttons support "align":"center"; core/heading and core/paragraph use "textAlign":"center". WRONG: <!-- wp:group {"align":"center"} -->.
-		- TEMPLATE PARTS: When REPLACING an entire header or footer design, use edit-block on the template-part clientId (the core/template-part block) with pattern_slug or block_content. When ADDING content to a template part (e.g., a top bar above the header), use blu/add-section with before_client_id or after_client_id pointing to a block INSIDE the template part — do NOT rewrite the entire template part just to add content, because rewriting loses layout attributes and breaks the design.
+		- TEMPLATE PARTS: NEVER use edit-block on a template part for COLOR, STYLE, or ATTRIBUTE changes — it will lose blocks like the site-logo. Use blu/update-block-attrs on the SPECIFIC inner block instead. Only use edit-block on a template part to REPLACE ALL content with a completely new design (via pattern_slug). When ADDING content to a template part, use blu/add-section with before/after_client_id pointing INSIDE the template part.
 		DESC;
 		// phpcs:enable Generic.Files.LineLength.TooLong
 
@@ -110,15 +105,18 @@ class BlockEditor {
 					}
 
 					// Return action data for client-side execution
-					return blu_prepare_ability_response(
-						200,
-						array(
-							'action'        => 'edit_block',
-							'client_id'     => sanitize_text_field( $input['client_id'] ),
-							'block_content' => $input['block_content'] ?? '', // Don't sanitize - it's block HTML
-							'message'       => 'Block edit ready for execution',
-						)
+					$response_data = array(
+						'action'        => 'edit_block',
+						'client_id'     => sanitize_text_field( $input['client_id'] ),
+						'block_content' => $input['block_content'] ?? '', // Don't sanitize - it's block HTML
+						'message'       => 'Block edit ready for execution',
 					);
+
+					if ( ! empty( $input['pattern_slug'] ) ) {
+						$response_data['pattern_slug'] = sanitize_text_field( $input['pattern_slug'] );
+					}
+
+					return blu_prepare_ability_response( 200, $response_data );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
@@ -154,7 +152,8 @@ class BlockEditor {
 		- CONTAINER BLOCKS: Container blocks (core/group, core/columns, core/column, core/cover, core/row, core/stack, core/buttons) render content using WordPress InnerBlocks. ALL visible content inside them MUST be wrapped in proper block comments. NEVER put raw HTML like <p>, <h2>, <ul>, or <figure> directly inside a container wrapper — it will be silently stripped and the block will appear empty. WRONG: <!-- wp:group --> <div class="wp-block-group"><p>Hello</p></div> <!-- /wp:group -->. RIGHT: <!-- wp:group --> <div class="wp-block-group"><!-- wp:paragraph --> <p>Hello</p> <!-- /wp:paragraph --></div> <!-- /wp:group -->.
 		- ADDING SECTIONS: You can insert content before or after ANY block at any nesting depth — not just top-level blocks. Use after_client_id to insert after a specific block, or before_client_id to insert before it. When the user does NOT specify a position, insert at the top level of the page (use after_client_id of the last top-level block in the tree, or null for the very top).
 		- TEMPLATE PARTS: When adding content to a template part (e.g., adding a top bar above a header, or a banner inside a footer), use blu/add-section with before_client_id or after_client_id pointing to a block INSIDE the template part. This preserves all existing blocks and their layout. Do NOT rewrite the entire template part with blu/edit-block just to add new content — rewriting risks losing layout attributes (flex, gap, etc.) and breaking the design. Only use blu/edit-block on a template part when replacing ALL of its content with a completely different design.
-		- COLORS: ALWAYS use the site's theme palette colors — NEVER invent arbitrary hex colors (like yellow #ffcc00 or blue #0066cc). The available palette slugs are: base, contrast, accent-1, accent-2, accent-3, accent-4, accent-5, accent-6. Apply them via "backgroundColor" and "textColor" attributes (e.g., "backgroundColor":"accent-1", "textColor":"contrast"). Only use custom hex values when the user explicitly requests a specific color. To reference a palette color in the style object use "var:preset|color|<slug>". In inline CSS use var(--wp--preset--color--<slug>). In HTML, use has-<slug>-background-color / has-<slug>-color classes. This rule applies to EVERY block in your output — scan the ENTIRE block_content before returning it.
+		- COLORS: Use the site's theme palette slugs (base, contrast, accent-1..6) via "backgroundColor"/"textColor". Only use custom hex when the user explicitly requests a specific color. In the style object use "var:preset|color|<slug>". In inline CSS use var(--wp--preset--color--<slug>). In HTML use has-<slug>-background-color / has-<slug>-color classes.
+		- IMAGES: Call blu/generate-image to create AI-generated images, then pass the returned URLs in image_urls alongside pattern_slug — the system replaces images automatically. If using block_content instead of pattern_slug, use __IMG_1__, __IMG_2__ as URL placeholders and pass real URLs in image_urls. NEVER embed full URLs in multi-block block_content — it will be truncated.
 		DESC;
 		// phpcs:enable Generic.Files.LineLength.TooLong
 
@@ -186,7 +185,7 @@ class BlockEditor {
 						'image_urls'       => array(
 							'type'        => 'array',
 							'items'       => array( 'type' => 'string' ),
-							'description' => 'Array of image URLs (e.g. from search_images) to replace placeholder/stock images in the pattern. Used together with pattern_slug — the system replaces images in order. Do NOT use with block_content.',
+							'description' => 'Array of image URLs (e.g. from blu/generate-image) to replace placeholder/stock images in the pattern. Used together with pattern_slug — the system replaces images in order. Do NOT use with block_content.',
 						),
 					),
 					'required'   => array(),
@@ -485,7 +484,7 @@ class BlockEditor {
 			'blu/update-block-attrs',
 			array(
 				'label'               => 'Update Block Attributes',
-				'description'         => 'Update specific block comment attributes without touching the block\'s HTML markup. Deep-merges the provided attributes into the existing block. Use for colors, font sizes, text alignment, spacing, overlays, gradients, layout changes, and any JSON attribute update. Set a value to null to remove it. Much faster and safer than edit-block for attribute-only changes — no need to read markup first.',
+				'description'         => 'Update block attributes without touching HTML markup. Deep-merges into existing block. No need to read markup first. Works for: colors, spacing, layout, className, content (text on headings/paragraphs/buttons), url/alt (images on core/image, core/cover, core/media-text). Set a value to null to remove it. COLORS: Use palette slugs (base, contrast, accent-1..6) via "backgroundColor"/"textColor" when referencing the site palette. For custom colors, use {"style":{"color":{"text":"#hex"}}} or {"style":{"color":{"background":"#hex"}}}. The system auto-clears conflicting preset/custom values — if you set style.color.text, any existing textColor preset is automatically removed. Common HEX: white #ffffff, black #000000, red #ff0000, blue #0000ff, green #008000, orange #ff8c00, purple #800080, teal #008080. FONT SIZE: Preset and custom are mutually exclusive — set "fontSize":"large" OR "style":{"typography":{"fontSize":"2rem"}}, not both. Set the other to null. IMAGE: Set {"url":"...","alt":"..."} — the system auto-clears the media library ID. ASPECT RATIO: Use "aspectRatio":"16/9","scale":"cover" — never fixed width/height in pixels. NFD CLASSES: If the block has an nfd-* class controlling the same property you\'re changing (e.g. nfd-rounded-* for border-radius), you MUST include "className" with that class removed in the SAME call — otherwise the CSS class silently overrides your attribute.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
@@ -572,326 +571,6 @@ class BlockEditor {
 							'message'      => 'Text rewrite ready for execution',
 						)
 					);
-				},
-				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
-				'meta'                => array(
-					'annotations' => array(
-						'readonly'    => false,
-						'destructive' => false,
-						'idempotent'  => false,
-					),
-					'mcp'         => array(
-						'public' => true,
-						'type'   => 'tool',
-					),
-				),
-			)
-		);
-	}
-
-	/**
-	 * Register ability to replace an image on an image, cover, or media-text block.
-	 *
-	 * @return void
-	 */
-	private function register_replace_image(): void {
-		blu_register_ability(
-			'blu/replace-image',
-			array(
-				'label'               => 'Replace Image',
-				'description'         => 'Replace the image on a core/image, core/cover, or core/media-text block. Updates the URL and optional alt text without touching any other block attributes or HTML structure.',
-				'category'            => 'blu-mcp',
-				'input_schema'        => array(
-					'type'       => 'object',
-					'properties' => array(
-						'client_id' => array(
-							'type'        => 'string',
-							'description' => 'The clientId of the image, cover, or media-text block.',
-						),
-						'url'       => array(
-							'type'        => 'string',
-							'description' => 'The new image URL.',
-						),
-						'alt'       => array(
-							'type'        => 'string',
-							'description' => 'Optional alt text for the image.',
-						),
-					),
-					'required'   => array( 'client_id', 'url' ),
-				),
-				'execute_callback'    => function ( $input ) {
-					if ( empty( $input['client_id'] ) || empty( $input['url'] ) ) {
-						return blu_prepare_ability_response( 400, array( 'message' => 'client_id and url are required' ) );
-					}
-
-					$data = array(
-						'action'    => 'replace_image',
-						'client_id' => sanitize_text_field( $input['client_id'] ),
-						'url'       => esc_url_raw( $input['url'] ),
-						'message'   => 'Image replace ready for execution',
-					);
-					if ( ! empty( $input['alt'] ) ) {
-						$data['alt'] = sanitize_text_field( $input['alt'] );
-					}
-					return blu_prepare_ability_response( 200, $data );
-				},
-				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
-				'meta'                => array(
-					'annotations' => array(
-						'readonly'    => false,
-						'destructive' => false,
-						'idempotent'  => true,
-					),
-					'mcp'         => array(
-						'public' => true,
-						'type'   => 'tool',
-					),
-				),
-			)
-		);
-	}
-
-	/**
-	 * Register ability to update a single block's visible text content.
-	 *
-	 * @return void
-	 */
-	private function register_update_text(): void {
-		blu_register_ability(
-			'blu/update-text',
-			array(
-				'label'               => 'Update Block Text',
-				'description'         => 'Update the visible text of a single heading, paragraph, button, or list-item block. Preserves all HTML tags, classes, and formatting — only swaps the text content. No need to read markup first.',
-				'category'            => 'blu-mcp',
-				'input_schema'        => array(
-					'type'       => 'object',
-					'properties' => array(
-						'client_id' => array(
-							'type'        => 'string',
-							'description' => 'The clientId of the text block.',
-						),
-						'text'      => array(
-							'type'        => 'string',
-							'description' => 'The new text content (plain text, no HTML tags).',
-						),
-					),
-					'required'   => array( 'client_id', 'text' ),
-				),
-				'execute_callback'    => function ( $input ) {
-					if ( empty( $input['client_id'] ) || ! isset( $input['text'] ) ) {
-						return blu_prepare_ability_response( 400, array( 'message' => 'client_id and text are required' ) );
-					}
-
-					return blu_prepare_ability_response(
-						200,
-						array(
-							'action'    => 'update_text',
-							'client_id' => sanitize_text_field( $input['client_id'] ),
-							'text'      => sanitize_text_field( $input['text'] ),
-							'message'   => 'Text update ready for execution',
-						)
-					);
-				},
-				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
-				'meta'                => array(
-					'annotations' => array(
-						'readonly'    => false,
-						'destructive' => false,
-						'idempotent'  => true,
-					),
-					'mcp'         => array(
-						'public' => true,
-						'type'   => 'tool',
-					),
-				),
-			)
-		);
-	}
-
-	/**
-	 * Register ability to duplicate a block.
-	 *
-	 * @return void
-	 */
-	private function register_duplicate_block(): void {
-		blu_register_ability(
-			'blu/duplicate-block',
-			array(
-				'label'               => 'Duplicate Block',
-				'description'         => 'Duplicate a block (including all inner blocks). The copy is inserted directly after the original.',
-				'category'            => 'blu-mcp',
-				'input_schema'        => array(
-					'type'       => 'object',
-					'properties' => array(
-						'client_id' => array(
-							'type'        => 'string',
-							'description' => 'The clientId of the block to duplicate.',
-						),
-					),
-					'required'   => array( 'client_id' ),
-				),
-				'execute_callback'    => function ( $input ) {
-					if ( empty( $input['client_id'] ) ) {
-						return blu_prepare_ability_response( 400, array( 'message' => 'client_id is required' ) );
-					}
-
-					return blu_prepare_ability_response(
-						200,
-						array(
-							'action'    => 'duplicate_block',
-							'client_id' => sanitize_text_field( $input['client_id'] ),
-							'message'   => 'Block duplicate ready for execution',
-						)
-					);
-				},
-				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
-				'meta'                => array(
-					'annotations' => array(
-						'readonly'    => false,
-						'destructive' => false,
-						'idempotent'  => false,
-					),
-					'mcp'         => array(
-						'public' => true,
-						'type'   => 'tool',
-					),
-				),
-			)
-		);
-	}
-
-	/**
-	 * Register ability to update attributes on multiple blocks at once.
-	 *
-	 * @return void
-	 */
-	private function register_batch_update_attrs(): void {
-		blu_register_ability(
-			'blu/batch-update-attrs',
-			array(
-				'label'               => 'Batch Update Block Attributes',
-				'description'         => 'Update attributes on multiple blocks in a single call. Each entry has a client_id and the attributes to merge. Use when applying the same or similar changes to several blocks (e.g., centering all headings, changing colors on multiple blocks).',
-				'category'            => 'blu-mcp',
-				'input_schema'        => array(
-					'type'       => 'object',
-					'properties' => array(
-						'updates' => array(
-							'type'        => 'array',
-							'description' => 'Array of updates, each with client_id and attributes.',
-							'items'       => array(
-								'type'       => 'object',
-								'properties' => array(
-									'client_id'  => array(
-										'type'        => 'string',
-										'description' => 'Block clientId.',
-									),
-									'attributes' => array(
-										'type'        => 'object',
-										'description' => 'Attributes to merge.',
-									),
-								),
-								'required'   => array( 'client_id', 'attributes' ),
-							),
-						),
-					),
-					'required'   => array( 'updates' ),
-				),
-				'execute_callback'    => function ( $input ) {
-					if ( empty( $input['updates'] ) || ! is_array( $input['updates'] ) ) {
-						return blu_prepare_ability_response( 400, array( 'message' => 'updates array is required' ) );
-					}
-
-					return blu_prepare_ability_response(
-						200,
-						array(
-							'action'  => 'batch_update_attrs',
-							'updates' => $input['updates'],
-							'message' => 'Batch attribute update ready for execution',
-						)
-					);
-				},
-				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
-				'meta'                => array(
-					'annotations' => array(
-						'readonly'    => false,
-						'destructive' => false,
-						'idempotent'  => true,
-					),
-					'mcp'         => array(
-						'public' => true,
-						'type'   => 'tool',
-					),
-				),
-			)
-		);
-	}
-
-	/**
-	 * Register ability to insert a single block by type and attributes.
-	 *
-	 * @return void
-	 */
-	private function register_insert_block(): void {
-		blu_register_ability(
-			'blu/insert-block',
-			array(
-				'label'               => 'Insert Block',
-				'description'         => 'Insert a single block by type name and attributes — no need to write full block markup. The block is created from the WordPress block registry. Use for simple blocks: heading, paragraph, image, button, spacer, separator, list, quote. Also use to add a core/column with content to an existing core/columns block — set after_client_id to the core/columns client_id and provide block_content with the inner block markup for the column.',
-				'category'            => 'blu-mcp',
-				'input_schema'        => array(
-					'type'       => 'object',
-					'properties' => array(
-						'block_name'       => array(
-							'type'        => 'string',
-							'description' => 'Block type name (e.g., "core/heading", "core/paragraph", "core/image", "core/button", "core/spacer", "core/separator").',
-						),
-						'attributes'       => array(
-							'type'        => 'object',
-							'description' => 'Block attributes (e.g., {"level": 2, "textAlign": "center"} for a heading, {"url": "...", "alt": "..."} for an image, {"height": "50px"} for a spacer).',
-						),
-						'content'          => array(
-							'type'        => 'string',
-							'description' => 'Optional text content for text blocks (heading, paragraph, button, list-item). Plain text — HTML formatting like <strong> is allowed.',
-						),
-						'after_client_id'  => array(
-							'type'        => 'string',
-							'description' => 'Insert after this block. Mutually exclusive with before_client_id.',
-						),
-						'before_client_id' => array(
-							'type'        => 'string',
-							'description' => 'Insert before this block. Mutually exclusive with after_client_id.',
-						),
-						'block_content'    => array(
-							'type'        => 'string',
-							'description' => 'Optional block markup for inner blocks. Use when inserting a container block (e.g. core/column) that needs child content. The markup is parsed and inserted as inner blocks of the created block.',
-						),
-					),
-					'required'   => array( 'block_name' ),
-				),
-				'execute_callback'    => function ( $input ) {
-					if ( empty( $input['block_name'] ) ) {
-						return blu_prepare_ability_response( 400, array( 'message' => 'block_name is required' ) );
-					}
-
-					$data = array(
-						'action'     => 'insert_block',
-						'block_name' => sanitize_text_field( $input['block_name'] ),
-						'attributes' => $input['attributes'] ?? array(),
-						'message'    => 'Block insert ready for execution',
-					);
-					if ( ! empty( $input['content'] ) ) {
-						$data['content'] = wp_kses_post( $input['content'] );
-					}
-					if ( ! empty( $input['block_content'] ) ) {
-						$data['block_content'] = wp_kses_post( $input['block_content'] );
-					}
-					if ( ! empty( $input['after_client_id'] ) ) {
-						$data['after_client_id'] = sanitize_text_field( $input['after_client_id'] );
-					}
-					if ( ! empty( $input['before_client_id'] ) ) {
-						$data['before_client_id'] = sanitize_text_field( $input['before_client_id'] );
-					}
-					return blu_prepare_ability_response( 200, $data );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
