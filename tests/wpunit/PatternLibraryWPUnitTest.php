@@ -28,7 +28,7 @@ class PatternLibraryWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	 * Clean up after each test.
 	 */
 	public function tearDown(): void {
-		delete_option( 'blu_pattern_index' );
+		delete_transient( 'blu_pattern_index' );
 		parent::tearDown();
 	}
 
@@ -175,7 +175,7 @@ class PatternLibraryWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 				'tags'        => array(),
 			),
 		);
-		update_option( 'blu_pattern_index', $cached, false );
+		set_transient( 'blu_pattern_index', $cached, DAY_IN_SECONDS );
 
 		$result = self::call_static( 'get_patterns' );
 
@@ -188,7 +188,7 @@ class PatternLibraryWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	 * Verifies get_patterns returns empty array when no cache exists.
 	 */
 	public function test_get_patterns_returns_empty_when_no_cache() {
-		delete_option( 'blu_pattern_index' );
+		delete_transient( 'blu_pattern_index' );
 
 		$result = self::call_static( 'get_patterns' );
 
@@ -234,7 +234,7 @@ class PatternLibraryWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 				'tags'        => array(),
 			),
 		);
-		update_option( 'blu_pattern_index', $cached, false );
+		set_transient( 'blu_pattern_index', $cached, DAY_IN_SECONDS );
 
 		$result = $this->execute_ability( 'blu/get-pattern-markup', array( 'slug' => 'no-content-pattern' ) );
 
@@ -257,7 +257,7 @@ class PatternLibraryWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 				'tags'        => array(),
 			),
 		);
-		update_option( 'blu_pattern_index', $cached, false );
+		set_transient( 'blu_pattern_index', $cached, DAY_IN_SECONDS );
 
 		$result = $this->execute_ability( 'blu/get-pattern-markup', array( 'slug' => 'does-not-exist' ) );
 
@@ -279,7 +279,7 @@ class PatternLibraryWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 				'content'     => '<!-- wp:heading --><h2>Hello</h2><!-- /wp:heading -->',
 			),
 		);
-		update_option( 'blu_pattern_index', $cached, false );
+		set_transient( 'blu_pattern_index', $cached, DAY_IN_SECONDS );
 
 		$result = $this->execute_ability( 'blu/get-pattern-markup', array( 'slug' => 'has-content' ) );
 
@@ -308,7 +308,7 @@ class PatternLibraryWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 				'tags'        => array(),
 			),
 		);
-		update_option( 'blu_pattern_index', $cached, false );
+		set_transient( 'blu_pattern_index', $cached, DAY_IN_SECONDS );
 
 		$result = $this->execute_ability( 'blu/search-patterns', array( 'query' => 'hero' ) );
 
@@ -331,7 +331,7 @@ class PatternLibraryWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 				'tags'        => array(),
 			),
 		);
-		update_option( 'blu_pattern_index', $cached, false );
+		set_transient( 'blu_pattern_index', $cached, DAY_IN_SECONDS );
 
 		$result = $this->execute_ability( 'blu/search-patterns', array( 'query' => 'zzzznotfound' ) );
 

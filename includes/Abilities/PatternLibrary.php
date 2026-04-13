@@ -31,7 +31,7 @@ class PatternLibrary {
 	 */
 	private static function get_patterns( array $args = array() ): array {
 		if ( ! class_exists( Items::class ) ) {
-			$cached = get_option( self::CACHE_KEY );
+			$cached = get_transient( self::CACHE_KEY );
 			return is_array( $cached ) && ! empty( $cached ) ? $cached : array();
 		}
 
@@ -51,12 +51,12 @@ class PatternLibrary {
 				},
 				$data
 			);
-			update_option( self::CACHE_KEY, $index, false );
+			set_transient( self::CACHE_KEY, $index, DAY_IN_SECONDS );
 			return $data;
 		}
 
 		// API failed — try the local cache.
-		$cached = get_option( self::CACHE_KEY );
+		$cached = get_transient( self::CACHE_KEY );
 		if ( is_array( $cached ) && ! empty( $cached ) ) {
 			return $cached;
 		}
@@ -168,8 +168,8 @@ class PatternLibrary {
 	 * Register pattern library abilities.
 	 */
 	private function register_abilities(): void {
-		$this->register_search_patterns();
-		$this->register_get_pattern_markup();
+		// Pattern search disabled — will be re-enabled after improvements.
+		// $this->register_search_patterns();
 	}
 
 	/**
@@ -182,10 +182,13 @@ class PatternLibrary {
 
 		WHEN TO CALL: You MUST call this tool BEFORE blu/add-section or blu/edit-block whenever the user asks to add, replace, or redesign any section or multi-block layout. This includes: hero, pricing, team, FAQ, CTA, features, gallery, contact, header, footer, testimonials, about, stats, logos, services sections, or any request involving multiple blocks. Only skip this for single-block additions (paragraph, heading, image, button).
 
+		QUERY TIPS: Use DESCRIPTIVE multi-word queries matching the desired layout — more words = better ranking. Include section type, column count, layout style. Do NOT include image subject matter (dogs, mountains) — only layout descriptors.
+		Examples: "features two columns images side by side", "hero cover full width background image call to action", "pricing three columns plans comparison", "team members four columns grid photos".
+
 		WORKFLOW:
 		a) Call this tool with a descriptive query.
 		b) Pick the result whose title and description best fit the request. Pick a DIFFERENT pattern each time the user asks for the same type.
-		c) Pass the chosen pattern_slug to blu/add-section or blu/edit-block — the system fetches markup and customizes text automatically. Do NOT call blu/get-pattern-markup.
+		c) Pass the chosen pattern_slug to blu/add-section or blu/edit-block — the system fetches markup and customizes text automatically.
 		d) If zero results are returned or the search fails, generate markup yourself with block_content — do NOT mention the library or any errors to the user.
 		DESC;
 		// phpcs:enable Generic.Files.LineLength.TooLong
@@ -253,79 +256,4 @@ class PatternLibrary {
 		);
 	}
 
-	/**
-	 * Register the blu/get-pattern-markup ability.
-	 */
-	private function register_get_pattern_markup(): void {
-		blu_register_ability(
-			'blu/get-pattern-markup',
-			array(
-				'label'               => 'Get Pattern Markup',
-				'description'         => 'Get the full WordPress block markup for a specific pattern by slug. Call this after blu/search-patterns to retrieve the markup. Then modify the markup to match the user\'s request and pass it to blu/add-section.',
-				'category'            => 'blu-mcp',
-				'input_schema'        => array(
-					'type'       => 'object',
-					'properties' => array(
-						'slug' => array(
-							'type'        => 'string',
-							'description' => 'The pattern slug returned from blu/search-patterns.',
-						),
-					),
-					'required'   => array( 'slug' ),
-				),
-				'execute_callback'    => function ( $input = null ) {
-					$slug = $input['slug'] ?? '';
-
-					if ( empty( $slug ) ) {
-						return blu_prepare_ability_response( 400, 'Missing required parameter: slug' );
-					}
-
-					$data = self::get_patterns();
-
-					// Find pattern by slug
-					$match = null;
-					foreach ( $data as $pattern ) {
-						if ( isset( $pattern['slug'] ) && $pattern['slug'] === $slug ) {
-							$match = $pattern;
-							break;
-						}
-					}
-
-					if ( ! $match ) {
-						return blu_prepare_ability_response( 404, 'Pattern not found: ' . $slug );
-					}
-
-					$content = $match['content'] ?? '';
-
-					if ( empty( $content ) ) {
-						return blu_prepare_ability_response( 502, 'Pattern markup is temporarily unavailable. Generate the markup yourself using block_content.' );
-					}
-
-					return blu_prepare_ability_response(
-						200,
-						array(
-							'slug'        => $match['slug'] ?? '',
-							'title'       => $match['title'] ?? '',
-							'content'     => $content,
-							'categories'  => $match['categories'] ?? array(),
-							'tags'        => $match['tags'] ?? array(),
-							'description' => $match['description'] ?? '',
-						)
-					);
-				},
-				'permission_callback' => fn() => current_user_can( 'edit_pages' ),
-				'meta'                => array(
-					'annotations' => array(
-						'readonly'    => true,
-						'destructive' => false,
-						'idempotent'  => true,
-					),
-					'mcp'         => array(
-						'public' => true,
-						'type'   => 'tool',
-					),
-				),
-			)
-		);
-	}
 }
