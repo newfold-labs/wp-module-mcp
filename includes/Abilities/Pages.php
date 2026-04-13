@@ -33,6 +33,10 @@ class Pages {
 							'type'        => 'string',
 							'description' => 'Search term',
 						),
+						'status'   => array(
+							'type'        => 'string',
+							'description' => 'Page status(es): publish, draft, pending, future, private. Comma-separated for multiple. Omit to search all statuses.',
+						),
 						'page'     => array(
 							'type'        => 'integer',
 							'description' => 'Page number',
@@ -45,8 +49,15 @@ class Pages {
 				),
 				'execute_callback'    => function ( $input = null ) {
 					$request = new \WP_REST_Request( 'GET', '/wp/v2/pages' );
+					$all_statuses = 'publish,future,draft,pending,private';
 					if ( $input ) {
+						// Default to all statuses when not specified or empty (WP defaults to publish only).
+						if ( ! isset( $input['status'] ) || '' === $input['status'] ) {
+							$input['status'] = $all_statuses;
+						}
 						$request->set_query_params( $input );
+					} else {
+						$request->set_param( 'status', $all_statuses );
 					}
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
@@ -54,9 +65,9 @@ class Pages {
 				'permission_callback' => fn() => current_user_can( 'edit_pages' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => true,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -87,9 +98,9 @@ class Pages {
 				'permission_callback' => fn() => current_user_can( 'edit_pages' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => true,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -141,9 +152,9 @@ class Pages {
 				'permission_callback' => fn() => current_user_can( 'edit_pages' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => false,
-						'idempotent'   => false,
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => false,
 					),
 				),
 			)
@@ -201,9 +212,9 @@ class Pages {
 				'permission_callback' => fn() => current_user_can( 'edit_pages' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -234,9 +245,9 @@ class Pages {
 				'permission_callback' => fn() => current_user_can( 'delete_pages' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => true,
-						'idempotent'   => true,
+						'readonly'    => false,
+						'destructive' => true,
+						'idempotent'  => true,
 					),
 				),
 			)

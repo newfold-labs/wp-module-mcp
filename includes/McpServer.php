@@ -5,6 +5,7 @@ declare( strict_types=1 );
 namespace BLU;
 
 use BLU\Abilities\BlockEditor;
+use BLU\Abilities\AbilityGateway;
 use BLU\Abilities\CustomPostTypes;
 use BLU\Abilities\GlobalStyles;
 use BLU\Abilities\Media;
@@ -54,12 +55,20 @@ class McpServer {
 	 */
 	public function register_server(): void {
 
-		$abilities = array_map(
-			function ( $ability ) {
-				return $ability->get_name();
-			},
-			blu_get_abilities_by_category( 'blu-mcp' )
-		);
+		$use_gateway = apply_filters( 'blu_mcp_use_gateway', true );
+
+		if ( $use_gateway ) {
+			$abilities = AbilityGateway::GATEWAY_ABILITIES;
+		} else {
+			// Legacy: expose all individual tools directly.
+			$abilities = array_map(
+				function ( $ability ) {
+					return $ability->get_name();
+				},
+				blu_get_abilities_by_category( 'blu-mcp' )
+			);
+		}
+
 		// Get the MCP adapter instance
 		$adapter = McpAdapter::instance();
 
@@ -90,6 +99,9 @@ class McpServer {
 	 * @return void
 	 */
 	public function register_abilities(): void {
+		// Gateway tools (list/schema/call) must be registered before other abilities
+		// so they are available when register_server() runs.
+		new AbilityGateway();
 		// Initialize all ability classes
 		new Prompts();
 		new Resources();

@@ -35,6 +35,10 @@ class Posts {
 							'type'        => 'string',
 							'description' => 'Search term',
 						),
+						'status'   => array(
+							'type'        => 'string',
+							'description' => 'Post status(es): publish, draft, pending, future, private. Comma-separated for multiple. Omit to search all statuses.',
+						),
 						'page'     => array(
 							'type'        => 'integer',
 							'description' => 'Page number',
@@ -47,8 +51,15 @@ class Posts {
 				),
 				'execute_callback'    => function ( $input = null ) {
 					$request = new \WP_REST_Request( 'GET', '/wp/v2/posts' );
+					$all_statuses = 'publish,future,draft,pending,private';
 					if ( $input ) {
+						// Default to all statuses when not specified or empty (WP defaults to publish only).
+						if ( ! isset( $input['status'] ) || '' === $input['status'] ) {
+							$input['status'] = $all_statuses;
+						}
 						$request->set_query_params( $input );
+					} else {
+						$request->set_param( 'status', $all_statuses );
 					}
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
@@ -56,9 +67,9 @@ class Posts {
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => true,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -89,9 +100,9 @@ class Posts {
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => true,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -135,9 +146,9 @@ class Posts {
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => false,
-						'idempotent'   => false,
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => false,
 					),
 				),
 			)
@@ -187,9 +198,9 @@ class Posts {
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -220,9 +231,9 @@ class Posts {
 				'permission_callback' => fn() => current_user_can( 'delete_posts' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => true,
-						'idempotent'   => true,
+						'readonly'    => false,
+						'destructive' => true,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -251,9 +262,9 @@ class Posts {
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => true,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -293,9 +304,9 @@ class Posts {
 				'permission_callback' => fn() => current_user_can( 'manage_categories' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => false,
-						'idempotent'   => false,
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => false,
 					),
 				),
 			)
@@ -337,9 +348,9 @@ class Posts {
 				'permission_callback' => fn() => current_user_can( 'manage_categories' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -364,15 +375,16 @@ class Posts {
 				),
 				'execute_callback'    => function ( $input ) {
 					$request = new \WP_REST_Request( 'DELETE', '/wp/v2/categories/' . $input['id'] );
+					$request->set_query_params( array( 'force' => true ) );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'manage_categories' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => true,
-						'idempotent'   => true,
+						'readonly'    => false,
+						'destructive' => true,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -401,9 +413,9 @@ class Posts {
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => true,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -443,9 +455,9 @@ class Posts {
 				'permission_callback' => fn() => current_user_can( 'manage_categories' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => false,
-						'idempotent'   => false,
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => false,
 					),
 				),
 			)
@@ -487,9 +499,9 @@ class Posts {
 				'permission_callback' => fn() => current_user_can( 'manage_categories' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -514,15 +526,16 @@ class Posts {
 				),
 				'execute_callback'    => function ( $input ) {
 					$request = new \WP_REST_Request( 'DELETE', '/wp/v2/tags/' . $input['id'] );
+					$request->set_query_params( array( 'force' => true ) );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'manage_categories' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => true,
-						'idempotent'   => true,
+						'readonly'    => false,
+						'destructive' => true,
+						'idempotent'  => true,
 					),
 				),
 			)

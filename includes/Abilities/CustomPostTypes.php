@@ -24,7 +24,7 @@ class CustomPostTypes {
 			'blu/list-post-types',
 			array(
 				'label'               => 'List Post Types',
-				'description'         => 'List all available WordPress custom post types',
+				'description'         => 'List all registered WordPress post types (built-in and custom). Use this to discover which post type slugs exist before creating or searching items.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type' => 'object',
@@ -37,9 +37,9 @@ class CustomPostTypes {
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => true,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -49,8 +49,8 @@ class CustomPostTypes {
 		blu_register_ability(
 			'blu/cpt-search',
 			array(
-				'label'               => 'Search Custom Post Types',
-				'description'         => 'Search and filter WordPress custom post types with pagination',
+				'label'               => 'Search Custom Post Type Items',
+				'description'         => 'Search and filter content items within a custom post type with pagination. Use blu-list-post-types to find valid post_type slugs first.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
@@ -109,20 +109,23 @@ class CustomPostTypes {
 					}
 
 					$query = new \WP_Query( $args );
-					return blu_prepare_ability_response( 200, array(
-						'results'  => $query->posts,
-						'total'    => $query->found_posts,
-						'pages'    => $query->max_num_pages,
-						'page'     => $page,
-						'per_page' => $per_page,
-					));
+					return blu_prepare_ability_response(
+						200,
+						array(
+							'results'  => $query->posts,
+							'total'    => $query->found_posts,
+							'pages'    => $query->max_num_pages,
+							'page'     => $page,
+							'per_page' => $per_page,
+						)
+					);
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => true,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -132,8 +135,8 @@ class CustomPostTypes {
 		blu_register_ability(
 			'blu/get-cpt',
 			array(
-				'label'               => 'Get Custom Post Type',
-				'description'         => 'Get a WordPress custom post type by ID',
+				'label'               => 'Get Custom Post Type Item',
+				'description'         => 'Get a single content item from a custom post type by its ID.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
@@ -152,18 +155,18 @@ class CustomPostTypes {
 				'execute_callback'    => function ( $input ) {
 					$post = get_post( intval( $input['id'] ) );
 					if ( ! $post || $post->post_type !== $input['post_type'] ) {
-						
+
 						return blu_prepare_ability_response( 404, 'Post not found' );
 					}
-					
-					return blu_prepare_ability_response( 200, $post );	
+
+					return blu_prepare_ability_response( 200, $post );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => true,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -173,15 +176,15 @@ class CustomPostTypes {
 		blu_register_ability(
 			'blu/add-cpt',
 			array(
-				'label'               => 'Add Custom Post Type',
-				'description'         => 'Add a new WordPress custom post type',
+				'label'               => 'Add Custom Post Type Item',
+				'description'         => 'Create a new content item within an existing custom post type (e.g. add a new menu item, event, or recipe). This does NOT register a new post type — use blu-list-post-types to find valid post_type slugs.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
 						'post_type' => array(
 							'type'        => 'string',
-							'description' => 'The custom post type',
+							'description' => 'Registered custom post type slug (must match an existing post type, e.g. from blu-list-post-types).',
 						),
 						'title'     => array(
 							'type'        => 'string',
@@ -203,8 +206,20 @@ class CustomPostTypes {
 					'required'   => array( 'post_type', 'title', 'content' ),
 				),
 				'execute_callback'    => function ( $input ) {
+					$post_type_slug = sanitize_text_field( $input['post_type'] );
+					if ( ! post_type_exists( $post_type_slug ) ) {
+						return blu_prepare_ability_response(
+							400,
+							sprintf(
+								/* translators: %s: requested post type slug */
+								'Unknown or unregistered post type "%s". Register it with register_post_type (or a plugin) first, or pick a slug from blu-list-post-types.',
+								$post_type_slug
+							)
+						);
+					}
+
 					$post_data = array(
-						'post_type'    => sanitize_text_field( $input['post_type'] ),
+						'post_type'    => $post_type_slug,
 						'post_title'   => sanitize_text_field( $input['title'] ),
 						'post_content' => wp_kses_post( $input['content'] ),
 						'post_status'  => 'draft',
@@ -229,9 +244,9 @@ class CustomPostTypes {
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => false,
-						'idempotent'   => false,
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => false,
 					),
 				),
 			)
@@ -241,8 +256,8 @@ class CustomPostTypes {
 		blu_register_ability(
 			'blu/update-cpt',
 			array(
-				'label'               => 'Update Custom Post Type',
-				'description'         => 'Update a WordPress custom post type by ID',
+				'label'               => 'Update Custom Post Type Item',
+				'description'         => 'Update an existing content item in a custom post type by its ID.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
@@ -311,9 +326,9 @@ class CustomPostTypes {
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -323,8 +338,8 @@ class CustomPostTypes {
 		blu_register_ability(
 			'blu/delete-cpt',
 			array(
-				'label'               => 'Delete Custom Post Type',
-				'description'         => 'Delete a WordPress custom post type by ID',
+				'label'               => 'Delete Custom Post Type Item',
+				'description'         => 'Permanently delete a content item from a custom post type by its ID.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
@@ -358,9 +373,9 @@ class CustomPostTypes {
 				'permission_callback' => fn() => current_user_can( 'delete_posts' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => true,
-						'idempotent'   => true,
+						'readonly'    => false,
+						'destructive' => true,
+						'idempotent'  => true,
 					),
 				),
 			)
