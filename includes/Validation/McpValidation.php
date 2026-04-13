@@ -145,7 +145,7 @@ class McpValidation {
 
 		$payload_b64url = $segments[1];
 		$payload_b64    = strtr( $payload_b64url, '-_', '+/' );
-		$payload_raw    = base64_decode( $payload_b64, true );
+		$payload_raw    = base64_decode( $payload_b64, true ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Decoding JWT payload, not obfuscation.
 		if ( false === $payload_raw ) {
 			return null;
 		}

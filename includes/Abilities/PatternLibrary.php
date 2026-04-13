@@ -255,5 +255,4 @@ class PatternLibrary {
 			)
 		);
 	}
-
 }

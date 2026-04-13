@@ -84,7 +84,7 @@ class McpValidationWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		wp_set_current_user( 0 );
 		$_SERVER['REMOTE_ADDR'] = '127.0.0.1';
 
-		$request   = new \WP_REST_Request();
+		$request = new \WP_REST_Request();
 		$request->set_header( 'Authorization', 'Bearer some-token' );
 		$validator = new McpValidation( $request );
 
@@ -107,7 +107,7 @@ class McpValidationWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		wp_set_current_user( 0 );
 		$_SERVER['REMOTE_ADDR'] = '203.0.113.50';
 
-		$request   = new \WP_REST_Request();
+		$request = new \WP_REST_Request();
 		$request->set_header( 'Authorization', 'Bearer some-token' );
 		$validator = new McpValidation( $request );
 
@@ -131,7 +131,7 @@ class McpValidationWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$_SERVER['REMOTE_ADDR']          = '127.0.0.1';
 		$_SERVER['HTTP_X_FORWARDED_FOR'] = '203.0.113.50';
 
-		$request   = new \WP_REST_Request();
+		$request = new \WP_REST_Request();
 		$request->set_header( 'Authorization', 'Bearer some-token' );
 		$validator = new McpValidation( $request );
 

@@ -404,5 +404,4 @@ class BlockEditorWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$this->assertSame( 'update_block_attrs', $result['message']['action'] );
 		$this->assertSame( $attrs, $result['message']['attributes'] );
 	}
-
 }
