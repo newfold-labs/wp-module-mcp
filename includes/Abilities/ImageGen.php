@@ -74,6 +74,16 @@ class ImageGen {
 
 		$api_url = defined( 'NFD_AI_PLATFORM_URL' ) ? NFD_AI_PLATFORM_URL : 'https://ai-platform.hiive.cloud';
 
+		// Get Hiive auth token — required by the ai-platform middleware.
+		$hiive_token = '';
+		if ( class_exists( '\NewfoldLabs\WP\Module\Data\HiiveConnection' ) ) {
+			$hiive_token = \NewfoldLabs\WP\Module\Data\HiiveConnection::get_auth_token();
+		}
+
+		if ( empty( $hiive_token ) ) {
+			return blu_prepare_ability_response( 401, 'Unable to retrieve Hiive authentication token for image generation.' );
+		}
+
 		$body = array(
 			'prompt' => substr( $input['prompt'], 0, 1000 ),
 		);
@@ -91,7 +101,10 @@ class ImageGen {
 		$response = wp_remote_post(
 			trailingslashit( $api_url ) . 'api/v1/imagegen/image',
 			array(
-				'headers' => array( 'Content-Type' => 'application/json' ),
+				'headers' => array(
+					'Content-Type'  => 'application/json',
+					'Authorization' => 'Bearer ' . $hiive_token,
+				),
 				'body'    => wp_json_encode( $body ),
 				'timeout' => 90,
 			)
