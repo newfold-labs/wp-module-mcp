@@ -307,7 +307,7 @@ class McpValidation {
 		}
 
 		$remote_addr = isset( $_SERVER['REMOTE_ADDR'] ) ? $_SERVER['REMOTE_ADDR'] : '';
-		$localhost   = array( '127.0.0.1', '::1', 'localhost' );
+		$localhost   = array( '127.0.0.1', '::1' );
 		return in_array( $remote_addr, $localhost, true );
 	}
 
