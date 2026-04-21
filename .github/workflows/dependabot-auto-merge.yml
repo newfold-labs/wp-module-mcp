@@ -19,7 +19,7 @@ jobs:
   # No PR code is checked out — this workflow only acts on PR metadata via the GitHub API.
   auto-merge:
     if: ${{ github.actor == 'dependabot[bot]' }}
-    uses: newfold-labs/workflows/.github/workflows/reusable-dependabot-auto-merge.yml@main
+    uses: newfold-labs/workflows/.github/workflows/reusable-dependabot-auto-merge.yml@enhance/PRESS0-4266
     permissions:
       contents: write
       pull-requests: write
