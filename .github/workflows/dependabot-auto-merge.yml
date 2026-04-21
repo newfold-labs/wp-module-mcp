@@ -18,7 +18,7 @@ jobs:
   # pull_request_target is required so GITHUB_TOKEN has write scope for Dependabot PRs.
   # No PR code is checked out — this workflow only acts on PR metadata via the GitHub API.
   auto-merge:
-    if: ${{ github.actor == 'dependabot[bot]' }}
+    if: ${{ github.event.pull_request.user.login == 'dependabot[bot]' }}
     uses: newfold-labs/workflows/.github/workflows/reusable-dependabot-auto-merge.yml@enhance/PRESS0-4266
     permissions:
       contents: write
