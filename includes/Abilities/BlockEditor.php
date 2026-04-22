@@ -39,7 +39,6 @@ class BlockEditor {
 		$this->register_move_block();
 		$this->register_get_block_markup();
 		$this->register_highlight_block();
-		$this->register_rewrite_text();
 		$this->register_update_block_attrs();
 	}
 
@@ -67,7 +66,8 @@ class BlockEditor {
 		- GRADIENTS: To add a gradient background to a block, use the style.color.gradient attribute in the block comment — NEVER put background-image in the inline style. Block comment: {"style":{"color":{"gradient":"linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%)"}}}. HTML: style="background:linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%)" (use background: not background-image:). Add has-background class. For theme presets use: {"gradient":"vivid-cyan-blue-to-vivid-purple"}. WRONG: {"style":{"elements":{"background":{"backgroundImage":"..."}}}} or style="background-image:linear-gradient(...)".
 		- FONT SIZE: When changing a block's font size, ALWAYS remove any existing font-size selection first — then apply the new one. Preset slugs and custom values are mutually exclusive; combining them causes the preset to silently win via CSS specificity. CUSTOM size: REMOVE "fontSize" attribute and has-*-font-size class, then set "style":{"typography":{"fontSize":"4.5rem"}} and style="font-size:4.5rem". PRESET size: REMOVE style.typography.fontSize and inline font-size, then set "fontSize":"x-large" and add has-x-large-font-size class. WRONG: {"fontSize":"x-large","style":{"typography":{"fontSize":"4.5rem"}}}.
 		- ALIGNMENT & CENTERING: The core/group block does NOT support the align attribute for centering — do NOT set "align":"center" on a group. For flex containers (core/columns, core/buttons): use "align":"center" directly. For core/row or core/stack: set "layout":{"type":"flex","justifyContent":"center"}. For content inside a group: set alignment on inner blocks — core/image and core/buttons support "align":"center"; core/heading and core/paragraph use "textAlign":"center". WRONG: <!-- wp:group {"align":"center"} -->.
-		- TEMPLATE PARTS: NEVER use edit-block on a template part for COLOR, STYLE, or ATTRIBUTE changes — it will lose blocks like the site-logo. Use blu/update-block-attrs on the SPECIFIC inner block instead. Only use edit-block on a template part to REPLACE ALL content with a completely new design (via pattern_slug). When ADDING content to a template part, use blu/add-section with before/after_client_id pointing INSIDE the template part.
+		- TEMPLATE PARTS: NEVER use edit-block on a template part for COLOR, STYLE, or ATTRIBUTE changes — it will lose blocks like the site-logo. Use blu/update-block-attrs on the SPECIFIC inner block instead. Only use edit-block on a template part to REPLACE ALL content with a completely new design. When ADDING content to a template part, use blu/add-section with before/after_client_id pointing INSIDE the template part.
+		- IMAGES: When replacing an image already on the page, rewrite its <img src="…"> to use a __IMG_1__ (or __IMG_2__, …) placeholder and pass a descriptive prompt per placeholder in image_prompts (preferred — client generates and substitutes). Use image_urls only when you already have resolved URLs. NEVER embed a full image URL directly in multi-block block_content.
 		DESC;
 		// phpcs:enable Generic.Files.LineLength.TooLong
 
@@ -88,32 +88,56 @@ class BlockEditor {
 							'type'        => 'string',
 							'description' => 'Complete WordPress block markup with block comments. Must include <!-- wp:blockname {...} --> opening and <!-- /wp:blockname --> closing comments. Include all inner blocks if the target has children.',
 						),
-						'pattern_slug'  => array(
-							'type'        => 'string',
-							'description' => 'Slug of a pattern from the library to use as the new content. The system fetches the markup directly — do NOT pass block_content when using this.',
+						'image_prompts' => array(
+							'type'        => 'array',
+							'items'       => array(
+								'oneOf' => array(
+									array( 'type' => 'string' ),
+									array(
+										'type'       => 'object',
+										'properties' => array(
+											'prompt'      => array( 'type' => 'string' ),
+											'orientation' => array( 'type' => 'string' ),
+											'width'       => array( 'type' => 'integer' ),
+											'height'      => array( 'type' => 'integer' ),
+										),
+										'required'   => array( 'prompt' ),
+									),
+								),
+							),
+							'description' => 'Preferred image parameter. One entry per __IMG_N__ placeholder in block_content (in order). Each entry is either a string prompt or {prompt, orientation?, width?, height?}. The client calls blu/generate-image per entry and substitutes each placeholder with the returned URL.',
+						),
+						'image_urls'    => array(
+							'type'        => 'array',
+							'items'       => array( 'type' => 'string' ),
+							'description' => 'Fallback path when resolved image URLs are already available. Ignored if image_prompts is provided. Replaces __IMG_1__, __IMG_2__, … in order.',
 						),
 					),
-					'required'   => array( 'client_id' ),
+					'required'   => array( 'client_id', 'block_content' ),
 				),
 				'execute_callback'    => function ( $input ) {
 					// Validate required fields
 					if ( empty( $input['client_id'] ) ) {
 						return blu_prepare_ability_response( 400, array( 'message' => 'client_id is required' ) );
 					}
-					if ( empty( $input['block_content'] ) && empty( $input['pattern_slug'] ) ) {
-						return blu_prepare_ability_response( 400, array( 'message' => 'Either block_content or pattern_slug is required' ) );
+					if ( empty( $input['block_content'] ) ) {
+						return blu_prepare_ability_response( 400, array( 'message' => 'block_content is required' ) );
 					}
 
 					// Return action data for client-side execution
 					$response_data = array(
 						'action'        => 'edit_block',
 						'client_id'     => sanitize_text_field( $input['client_id'] ),
-						'block_content' => $input['block_content'] ?? '', // Don't sanitize - it's block HTML
+						'block_content' => $input['block_content'], // Don't sanitize - it's block HTML
 						'message'       => 'Block edit ready for execution',
 					);
 
-					if ( ! empty( $input['pattern_slug'] ) ) {
-						$response_data['pattern_slug'] = sanitize_text_field( $input['pattern_slug'] );
+					// Forward image inputs to the client for placeholder substitution.
+					if ( ! empty( $input['image_prompts'] ) && is_array( $input['image_prompts'] ) ) {
+						$response_data['image_prompts'] = $input['image_prompts'];
+					}
+					if ( ! empty( $input['image_urls'] ) && is_array( $input['image_urls'] ) ) {
+						$response_data['image_urls'] = array_map( 'esc_url_raw', $input['image_urls'] );
 					}
 
 					return blu_prepare_ability_response( 200, $response_data );
@@ -144,16 +168,15 @@ class BlockEditor {
 	private function register_add_section(): void {
 		// phpcs:disable Generic.Files.LineLength.TooLong -- Tool description includes inline rules for AI context.
 		$description = <<<'DESC'
-		Insert new block content at a specific position in the page. Use after_client_id to insert after a block, before_client_id to insert before a block, or set both to null to insert at the very top of the page. Provide EITHER pattern_slug (preferred) OR block_content.
+		Insert new block content at a specific position in the page. Use after_client_id to insert after a block, before_client_id to insert before a block, or set both to null to insert at the very top of the page.
 
 		ADDITIONAL RULES:
-		- PATTERN LIBRARY (MANDATORY): For ANY section or multi-block layout request, you MUST call blu/search-patterns FIRST before calling this tool. Use pattern_slug with the best match — the system fetches and customizes the text automatically. Only use block_content if blu/search-patterns returned zero results. Passing block_content for a section without searching first is WRONG.
 		- VALID MARKUP: Every block_content you provide MUST be valid WordPress block markup with proper <!-- wp:name {attrs} --> comments. Never output plain HTML without block comments.
 		- CONTAINER BLOCKS: Container blocks (core/group, core/columns, core/column, core/cover, core/row, core/stack, core/buttons) render content using WordPress InnerBlocks. ALL visible content inside them MUST be wrapped in proper block comments. NEVER put raw HTML like <p>, <h2>, <ul>, or <figure> directly inside a container wrapper — it will be silently stripped and the block will appear empty. WRONG: <!-- wp:group --> <div class="wp-block-group"><p>Hello</p></div> <!-- /wp:group -->. RIGHT: <!-- wp:group --> <div class="wp-block-group"><!-- wp:paragraph --> <p>Hello</p> <!-- /wp:paragraph --></div> <!-- /wp:group -->.
 		- ADDING SECTIONS: You can insert content before or after ANY block at any nesting depth — not just top-level blocks. Use after_client_id to insert after a specific block, or before_client_id to insert before it. When the user does NOT specify a position, insert at the top level of the page (use after_client_id of the last top-level block in the tree, or null for the very top).
 		- TEMPLATE PARTS: When adding content to a template part (e.g., adding a top bar above a header, or a banner inside a footer), use blu/add-section with before_client_id or after_client_id pointing to a block INSIDE the template part. This preserves all existing blocks and their layout. Do NOT rewrite the entire template part with blu/edit-block just to add new content — rewriting risks losing layout attributes (flex, gap, etc.) and breaking the design. Only use blu/edit-block on a template part when replacing ALL of its content with a completely different design.
 		- COLORS: Use the site's theme palette slugs (base, contrast, accent-1..6) via "backgroundColor"/"textColor". Only use custom hex when the user explicitly requests a specific color. In the style object use "var:preset|color|<slug>". In inline CSS use var(--wp--preset--color--<slug>). In HTML use has-<slug>-background-color / has-<slug>-color classes.
-		- IMAGES: Call blu/generate-image to create AI-generated images, then pass the returned URLs in image_urls alongside pattern_slug — the system replaces images automatically. If using block_content instead of pattern_slug, use __IMG_1__, __IMG_2__ as URL placeholders and pass real URLs in image_urls. NEVER embed full URLs in multi-block block_content — it will be truncated.
+		- IMAGES: Use __IMG_1__, __IMG_2__, … as URL placeholders in block_content and provide a descriptive prompt for each placeholder in image_prompts (preferred — the client generates and substitutes URLs automatically). Fall back to image_urls only when you already have resolved URLs on hand. NEVER embed full image URLs directly in multi-block block_content — it will be truncated.
 		DESC;
 		// phpcs:enable Generic.Files.LineLength.TooLong
 
@@ -174,26 +197,41 @@ class BlockEditor {
 							'type'        => 'string',
 							'description' => 'The clientId of the block to insert BEFORE. Use this when adding content above the first block inside a template part or at the start of a section. Mutually exclusive with after_client_id.',
 						),
-						'pattern_slug'     => array(
-							'type'        => 'string',
-							'description' => 'Slug of a pattern from the library to insert. The system fetches the full markup and automatically customizes text to fit the site — do NOT pass block_content when using this.',
-						),
 						'block_content'    => array(
 							'type'        => 'string',
-							'description' => 'Complete WordPress block markup. For section requests, only use this if blu/search-patterns returned zero results.',
+							'description' => 'Complete WordPress block markup for the new section.',
+						),
+						'image_prompts'    => array(
+							'type'        => 'array',
+							'items'       => array(
+								'oneOf' => array(
+									array( 'type' => 'string' ),
+									array(
+										'type'       => 'object',
+										'properties' => array(
+											'prompt'      => array( 'type' => 'string' ),
+											'orientation' => array( 'type' => 'string' ),
+											'width'       => array( 'type' => 'integer' ),
+											'height'      => array( 'type' => 'integer' ),
+										),
+										'required'   => array( 'prompt' ),
+									),
+								),
+							),
+							'description' => 'Preferred image parameter. One entry per __IMG_N__ placeholder in block_content (in order). Each entry is either a string prompt ("A bright cafe interior, wide angle") or an object {prompt, orientation?, width?, height?}. The client calls blu/generate-image per entry and substitutes each placeholder with the returned URL. The count must match the number of unique __IMG_N__ placeholders.',
 						),
 						'image_urls'       => array(
 							'type'        => 'array',
 							'items'       => array( 'type' => 'string' ),
-							'description' => 'Array of image URLs (e.g. from blu/generate-image) to replace placeholder/stock images in the pattern. Used together with pattern_slug — the system replaces images in order. Do NOT use with block_content.',
+							'description' => 'Fallback path for when you already have resolved image URLs. Ignored if image_prompts is provided. Replaces __IMG_1__, __IMG_2__, … in order.',
 						),
 					),
-					'required'   => array(),
+					'required'   => array( 'block_content' ),
 				),
 				'execute_callback'    => function ( $input ) {
-					// Validate: need either pattern_slug or block_content
-					if ( empty( $input['pattern_slug'] ) && empty( $input['block_content'] ) ) {
-						return blu_prepare_ability_response( 400, array( 'message' => 'Either pattern_slug or block_content is required' ) );
+					// Validate: block_content is required
+					if ( empty( $input['block_content'] ) ) {
+						return blu_prepare_ability_response( 400, array( 'message' => 'block_content is required' ) );
 					}
 
 					// Validate: after_client_id and before_client_id are mutually exclusive
@@ -221,7 +259,7 @@ class BlockEditor {
 					// Return action data for client-side execution
 					$response_data = array(
 						'action'        => 'add_section',
-						'block_content' => $input['block_content'] ?? '',
+						'block_content' => $input['block_content'],
 						'message'       => 'Section add ready for execution',
 					);
 
@@ -233,9 +271,11 @@ class BlockEditor {
 						$response_data['before_client_id'] = $before_client_id;
 					}
 
-					// Forward pattern_slug and image_urls to the client
-					if ( ! empty( $input['pattern_slug'] ) ) {
-						$response_data['pattern_slug'] = sanitize_text_field( $input['pattern_slug'] );
+					// Forward image inputs to the client for placeholder substitution.
+					// image_prompts is the preferred path (client generates via blu/generate-image);
+					// image_urls is a fallback when the caller already has URLs.
+					if ( ! empty( $input['image_prompts'] ) && is_array( $input['image_prompts'] ) ) {
+						$response_data['image_prompts'] = $input['image_prompts'];
 					}
 					if ( ! empty( $input['image_urls'] ) && is_array( $input['image_urls'] ) ) {
 						$response_data['image_urls'] = array_map( 'esc_url_raw', $input['image_urls'] );
@@ -521,63 +561,6 @@ class BlockEditor {
 						'readonly'    => false,
 						'destructive' => false,
 						'idempotent'  => true,
-					),
-					'mcp'         => array(
-						'public' => true,
-						'type'   => 'tool',
-					),
-				),
-			)
-		);
-	}
-
-	/**
-	 * Register ability to rewrite text content within a block.
-	 *
-	 * @return void
-	 */
-	private function register_rewrite_text(): void {
-		blu_register_ability(
-			'blu/rewrite-text',
-			array(
-				'label'               => 'Rewrite Section Text',
-				'description'         => 'Rewrite all text content within a block or section using AI to match new context or instructions. Preserves all HTML structure, classes, images, and styles — only changes the visible text. Use when the user asks to rewrite, rephrase, or adapt text in an existing section (e.g., "rewrite this section to be about knitting", "make the text more professional", "change the content to fit a restaurant").',
-				'category'            => 'blu-mcp',
-				'input_schema'        => array(
-					'type'       => 'object',
-					'properties' => array(
-						'client_id'    => array(
-							'type'        => 'string',
-							'description' => 'The clientId of the block or section whose text should be rewritten.',
-						),
-						'instructions' => array(
-							'type'        => 'string',
-							'description' => 'What the text should be about or how it should change (e.g., "about a knitting business", "more professional tone", "for a coffee shop").',
-						),
-					),
-					'required'   => array( 'client_id', 'instructions' ),
-				),
-				'execute_callback'    => function ( $input ) {
-					if ( empty( $input['client_id'] ) || empty( $input['instructions'] ) ) {
-						return blu_prepare_ability_response( 400, array( 'message' => 'client_id and instructions are required' ) );
-					}
-
-					return blu_prepare_ability_response(
-						200,
-						array(
-							'action'       => 'rewrite_text',
-							'client_id'    => sanitize_text_field( $input['client_id'] ),
-							'instructions' => sanitize_text_field( $input['instructions'] ),
-							'message'      => 'Text rewrite ready for execution',
-						)
-					);
-				},
-				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
-				'meta'                => array(
-					'annotations' => array(
-						'readonly'    => false,
-						'destructive' => false,
-						'idempotent'  => false,
 					),
 					'mcp'         => array(
 						'public' => true,

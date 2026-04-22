@@ -57,9 +57,9 @@ class BlockEditorWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	}
 
 	/**
-	 * Verifies edit-block returns 400 when neither block_content nor pattern_slug is provided.
+	 * Verifies edit-block returns 400 when block_content is missing.
 	 */
-	public function test_edit_block_requires_content_or_pattern() {
+	public function test_edit_block_requires_block_content() {
 		$result = $this->execute_ability( 'blu/edit-block', array( 'client_id' => 'abc-123' ) );
 
 		$this->assertSame( 400, $result['statusCode'] );
@@ -83,28 +83,12 @@ class BlockEditorWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$this->assertSame( 'abc-123', $result['message']['client_id'] );
 	}
 
-	/**
-	 * Verifies edit-block returns 200 with pattern_slug.
-	 */
-	public function test_edit_block_success_with_pattern_slug() {
-		$result = $this->execute_ability(
-			'blu/edit-block',
-			array(
-				'client_id'    => 'abc-123',
-				'pattern_slug' => 'hero-bold',
-			)
-		);
-
-		$this->assertSame( 200, $result['statusCode'] );
-		$this->assertSame( 'edit_block', $result['message']['action'] );
-	}
-
 	// ── blu/add-section ───────────────────────────────────────────────
 
 	/**
-	 * Verifies add-section returns 400 when neither pattern_slug nor block_content is provided.
+	 * Verifies add-section returns 400 when block_content is missing.
 	 */
-	public function test_add_section_requires_content_or_pattern() {
+	public function test_add_section_requires_block_content() {
 		$result = $this->execute_ability( 'blu/add-section', array( 'after_client_id' => 'abc-123' ) );
 
 		$this->assertSame( 400, $result['statusCode'] );
@@ -161,22 +145,6 @@ class BlockEditorWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	}
 
 	/**
-	 * Verifies add-section returns 200 with pattern_slug.
-	 */
-	public function test_add_section_success_with_pattern_slug() {
-		$result = $this->execute_ability(
-			'blu/add-section',
-			array(
-				'pattern_slug'    => 'hero-split',
-				'after_client_id' => 'abc-123',
-			)
-		);
-
-		$this->assertSame( 200, $result['statusCode'] );
-		$this->assertSame( 'hero-split', $result['message']['pattern_slug'] );
-	}
-
-	/**
 	 * Verifies add-section forwards image_urls when provided.
 	 */
 	public function test_add_section_forwards_image_urls() {
@@ -184,7 +152,7 @@ class BlockEditorWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$result = $this->execute_ability(
 			'blu/add-section',
 			array(
-				'pattern_slug'    => 'hero-split',
+				'block_content'   => '<!-- wp:paragraph --><p>Hi</p><!-- /wp:paragraph -->',
 				'after_client_id' => 'abc-123',
 				'image_urls'      => $urls,
 			)
@@ -342,35 +310,6 @@ class BlockEditorWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 
 		$this->assertSame( 200, $result['statusCode'] );
 		$this->assertSame( 'highlight_block', $result['message']['action'] );
-	}
-
-	// ── blu/rewrite-text ──────────────────────────────────────────────
-
-	/**
-	 * Verifies rewrite-text returns 400 when required fields are missing.
-	 */
-	public function test_rewrite_text_requires_fields() {
-		$result = $this->execute_ability( 'blu/rewrite-text', array( 'client_id' => 'abc-123' ) );
-
-		$this->assertSame( 400, $result['statusCode'] );
-	}
-
-	/**
-	 * Verifies rewrite-text returns 200 with valid input.
-	 */
-	public function test_rewrite_text_success() {
-		$result = $this->execute_ability(
-			'blu/rewrite-text',
-			array(
-				'client_id'    => 'abc-123',
-				'instructions' => 'Make it about coffee',
-			)
-		);
-
-		$this->assertSame( 200, $result['statusCode'] );
-		$this->assertSame( 'rewrite_text', $result['message']['action'] );
-		$this->assertSame( 'abc-123', $result['message']['client_id'] );
-		$this->assertSame( 'Make it about coffee', $result['message']['instructions'] );
 	}
 
 	// ── blu/update-block-attrs ────────────────────────────────────────
