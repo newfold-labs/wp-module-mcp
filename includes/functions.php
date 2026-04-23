@@ -4,7 +4,7 @@
  * Register a new ability in the system.
  *
  * @param string $name The unique name of the ability to register.
- * @param array $args The arguments to configure the ability (e.g., description, metadata).
+ * @param array  $args The arguments to configure the ability (e.g., description, metadata).
  *
  * @return WP_Ability|null The registered ability object if registration is successful, or null if the function `wp_register_ability` is unavailable.
  */
@@ -63,7 +63,7 @@ function blu_get_abilities(): array {
  * Registers a new ability category with the specified slug and arguments.
  *
  * @param string $slug The unique identifier for the ability category to be registered.
- * @param array $args The arguments defining the properties of the ability category.
+ * @param array  $args The arguments defining the properties of the ability category.
  *
  * @return WP_Ability_Category|null The registered ability category if successful, or null if the registration function is not available.
  */
@@ -122,7 +122,7 @@ function blu_get_ability_categories(): array {
  * Filters a list of abilities by the specified category.
  *
  * @param WP_Ability[] $abilities An array of abilities to be filtered.
- * @param string $category The category used to filter the abilities.
+ * @param string       $category The category used to filter the abilities.
  *
  * @return WP_Ability[] An array of abilities that match the specified category.
  */
@@ -151,7 +151,7 @@ function blu_get_abilities_by_category( string $category ): array {
  * Filters a list of abilities by a specified namespace.
  *
  * @param WP_Ability[] $abilities An array of abilities to filter.
- * @param string $namespace The namespace used to filter the abilities.
+ * @param string       $namespace The namespace used to filter the abilities.
  *
  * @return WP_Ability[] An array of abilities that match the specified namespace.
  */
@@ -180,16 +180,16 @@ function blu_get_abilities_by_namespace( string $namespace ): array {
 /**
  * Prepares a standardized ability response.
  *
- * @param int $status The HTTP status code of the response.
+ * @param int   $status The HTTP status code of the response.
  * @param mixed $message The response message or data.
  *
  * @return array An associative array containing 'status' and 'response' keys.
  */
 function blu_prepare_ability_response( $status, $message ) {
 	return array(
-		'statusCode'	=> $status,
-		'status'  		=> blu_get_status_type( $status ),
-		'message' 		=> $message
+		'statusCode' => $status,
+		'status'     => blu_get_status_type( $status ),
+		'message'    => $message
 	);
 }
 
@@ -203,19 +203,20 @@ function blu_prepare_ability_response( $status, $message ) {
 function blu_standardize_rest_response( $response ) {
 
 	if ( is_wp_error( $response ) ) {
-        
-        $status = $response->get_error_code() ? $response->get_error_code() : 500; 
+
+		$status = $response->get_error_code() ? $response->get_error_code() : 500;
 
 		return blu_prepare_ability_response( $status, $response->get_error_message() );
-        
-    } elseif ( $response instanceof \WP_REST_Response ) {
+
+	} elseif ( $response instanceof \WP_REST_Response ) {
 
 		return blu_prepare_ability_response( $response->get_status(), $response->get_data() );
-        
-    } else {
+
+	} else {
 		return blu_prepare_ability_response( 500, 'Unexpected response format.' );
-    }
+	}
 }
+
 /**
  * Maps an HTTP status code to a simplified status type.
  *
@@ -229,12 +230,68 @@ function blu_get_status_type( $status_code ) {
 
 	if ( $status_code >= 200 && $status_code < 400 ) {
 
-		$status =  'success';
+		$status = 'success';
 
 	} elseif ( $status_code >= 400 && $status_code <= 599 ) {
 
 		$status = 'error';
-		
-	} 
+
+	}
+
 	return $status;
+}
+
+if ( ! function_exists( 'blu_is_valid_list' ) ) {
+	/**
+	 * Check if the list is a simple array
+	 *
+	 * @param array $list The list
+	 *
+	 * @return bool
+	 */
+	function blu_is_valid_list( $list ) {
+		$i = 0;
+		foreach ( $list as $k => $_ ) {
+			if ( $k !== $i ++ ) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+}
+
+/**
+ * Check if input array is a valid input
+ *
+ * @param array    $input_value The input.
+ * @param string   $input_name The input name.
+ * @param bool|int $min_items The min amount of items.
+ * @param bool|int $max_items The max amount of items.
+ *
+ * @return WP_Error|bool
+ */
+function blu_is_valid_input_array( $input_value, $input_name, $min_items = false, $max_items = false ) {
+
+	$error = '';
+
+	if ( ! is_array( $input_value ) ) {
+		$error = $input_name . ' must be an array: ' . gettype( $input_value ) . ' given.';
+	}
+
+	if ( $min_items && count( $input_value ) < $min_items ) {
+		$error = $input_name . ' must contain at least ' . $min_items . ' element';
+	}
+
+	if ( $max_items && count( $input_value ) > $max_items ) {
+		$error = $input_name . ' cannot be contain more than ' . $max_items . ' element.';
+
+	}
+
+	if ( ! blu_is_valid_list( $input_value ) ) {
+		$error = $input_name . ' can\'t be an object-shaped array';
+	}
+
+	return '' === $error ? true : new WP_Error( 400, $error );
 }

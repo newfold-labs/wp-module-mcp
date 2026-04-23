@@ -7,6 +7,8 @@
 
 namespace BLU\Abilities;
 
+use WP_Error;
+
 /**
  * The class
  */
@@ -122,8 +124,24 @@ class Prompts {
 					'required'   => array( 'id' ),
 				),
 				'execute_callback'    => function ( $input ) {
+					if ( ! isset( $input['id'] ) ) {
+						return blu_standardize_rest_response(
+							new WP_Error(
+								400,
+								'Miss required Product ID.',
+							)
+						);
+					}
+					$product = wc_get_product( $input['id'] );
+					if ( ! $product ) {
+						return blu_standardize_rest_response(
+							new WP_Error(
+								400,
+								'Invalid Product ID.',
+							)
+						);
+					}
 
-					$product           = wc_get_product( $input['id'] );
 					$tone              = $input['tone'] ?? 'formal';
 					$name              = $product->get_title();
 					$description       = $product->get_description();
@@ -383,8 +401,24 @@ class Prompts {
 					'required'   => array( 'id' ),
 				),
 				'execute_callback'    => function ( $input ) {
+					if ( ! isset( $input['id'] ) ) {
+						return blu_standardize_rest_response(
+							new WP_Error(
+								400,
+								'Miss required Product ID.',
+							)
+						);
+					}
+					$product = wc_get_product( $input['id'] );
+					if ( ! $product ) {
+						return blu_standardize_rest_response(
+							new WP_Error(
+								400,
+								'Invalid Product ID.',
+							)
+						);
+					}
 
-					$product     = wc_get_product( $input['id'] );
 					$name        = $product->get_title();
 					$description = $product->get_description();
 					$categories  = wc_get_product_category_list( $product->get_id() );
