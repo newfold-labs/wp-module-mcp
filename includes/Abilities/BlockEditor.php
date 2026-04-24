@@ -36,6 +36,8 @@ class BlockEditor {
 		$this->register_edit_block();
 		$this->register_add_section();
 		$this->register_delete_block();
+		$this->register_duplicate();
+		$this->register_insert_inner_block();
 		$this->register_move_block();
 		$this->register_get_block_markup();
 		$this->register_highlight_block();
@@ -52,7 +54,16 @@ class BlockEditor {
 	private function register_edit_block(): void {
 		// phpcs:disable Generic.Files.LineLength.TooLong -- Tool description includes inline rules for AI context.
 		$description = <<<'DESC'
-		Replace the entire content of an existing block (and its inner blocks) with new WordPress block markup. Use this when the user asks to change text, styles, layout, or content of a specific block. The block_content MUST be valid WordPress block markup with proper block comments (<!-- wp:blockname {...} -->...<!-- /wp:blockname -->). Always include all inner blocks if the target block has children. Use the client_id from the block tree context. TEMPLATE PARTS: When editing a core/template-part, provide ONLY the inner blocks markup — do NOT wrap it in <!-- wp:template-part --> comments. You can wrap blocks in core/group, core/stack, or similar container blocks when needed for layout or styling.
+		LAST RESORT — prefer a cheaper tool first. This tool forces you to re-emit the block's ENTIRE subtree markup (all inner blocks included) and is by far the slowest operation, so pick one of the alternatives below whenever they fit:
+		- "add another <child> with the same design as these" → blu/duplicate-block (clones an existing sibling, zero markup regeneration).
+		- "insert a <new child> into this container" (columns, group, row, stack) → blu/insert-inner-block.
+		- "change color / spacing / padding / alignment / font / any attribute" on any block (top-level or nested) → blu/update-block-attrs with the block's own client_id.
+		- "add a new top-level section on the page" → blu/add-section.
+		- "delete / move / reorder" → blu/delete-block or blu/move-block.
+
+		Use edit-block ONLY when the user asks for structural content rewrites that cannot be expressed as a duplicate, insert, attribute patch, add, delete, or move — for example replacing a paragraph's text, swapping an image, or rebuilding a block's inner markup from scratch.
+
+		Replace the entire content of an existing block (and its inner blocks) with new WordPress block markup. The block_content MUST be valid WordPress block markup with proper block comments (<!-- wp:blockname {...} -->...<!-- /wp:blockname -->). Always include all inner blocks if the target block has children. Use the client_id from the block tree context. TEMPLATE PARTS: When editing a core/template-part, provide ONLY the inner blocks markup — do NOT wrap it in <!-- wp:template-part --> comments. You can wrap blocks in core/group, core/stack, or similar container blocks when needed for layout or styling.
 
 		ADDITIONAL RULES:
 		- CONTENT PRESERVATION (CRITICAL): Copy ALL existing text, link URLs, image sources, and inner blocks from the original markup into your replacement. NEVER substitute existing content with different or generic text. If the button says "Start Creating for Free Today!" and you are changing its color, your output MUST keep that exact text — changing it to "Contact Us", "Button", or anything else is a critical error. For style-only changes (color, font, spacing), modify ONLY the block comment JSON and the corresponding HTML classes/styles — copy everything else character-for-character.
@@ -356,6 +367,208 @@ class BlockEditor {
 	}
 
 	/**
+	 * Register the unified blu/duplicate ability.
+	 *
+	 * Dual-mode: caller passes EITHER `client_id` (explicit target) OR `kind`
+	 * (intent-based; client resolves to a concrete block via the block lexicon
+	 * and target resolver). Callers should use `kind` whenever the user phrasing
+	 * is "another X" / "one more X", and `client_id` only when the user points
+	 * at a specific block with "this" / "that".
+	 *
+	 * @return void
+	 */
+	private function register_duplicate(): void {
+		$description = <<<'DESC'
+		Duplicate a block with its exact existing design. Much faster than edit-block — no markup is regenerated.
+
+		TWO CALLING MODES. Pick based on how the user phrased the request:
+
+		1. Intent mode (PREFERRED when the user says "another X", "one more X", "add a <kind>" where <kind> matches an existing block on the page):
+		   Pass { kind: "<word>" }. The system finds the right block deterministically.
+		   - "add another column"      → { kind: "column" }
+		   - "add another card"        → { kind: "card" }
+		   - "add another button"      → { kind: "button" }
+		   - "add another menu item"   → { kind: "menu-item" }
+		   - "add one more testimonial"→ { kind: "testimonial" }
+		   You may optionally add `scope` (a clientId bounding the search, e.g. a specific section) and `position` ("last" | "first" | integer; default "last").
+
+		2. Explicit mode (only when the user points at a specific block — "duplicate THIS", "duplicate that card", or the selection IS exactly what they want another of):
+		   Pass { client_id: "<UUID>" } — copy the UUID EXACTLY from the block tree's `id:<UUID>` field. Never invent placeholder strings.
+
+		Rule of thumb: if you can name what the user said ("column", "card", "button", …), use Intent mode. Only use Explicit mode when the user is clearly referring to one specific block.
+
+		Known kinds: column, button, buttons, image, heading, paragraph, list, list-item, menu-item, card, testimonial, team-member, pricing-tier, faq-item, section, row. Common aliases (col, cols, btn, cta, img, text, p, cards, testimonials, reviews, member, plan, tier, faq, sections) are normalized automatically. If you're unsure which kind a user's word maps to, pass it as-is — the resolver returns a list of known kinds if it doesn't match.
+
+		The clone is inserted immediately after the resolved block as a sibling.
+		DESC;
+
+		blu_register_ability(
+			'blu/duplicate',
+			array(
+				'label'               => 'Duplicate Block',
+				'description'         => $description,
+				'category'            => 'blu-mcp',
+				'input_schema'        => array(
+					'type'                 => 'object',
+					'properties'           => array(
+						'client_id' => array(
+							'type'        => 'string',
+							'description' => 'Explicit mode: the exact clientId (UUID) of the block to duplicate, copied from the block tree. Use only when the user points at a specific block.',
+							'pattern'     => '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+						),
+						'kind'      => array(
+							'type'        => 'string',
+							'description' => 'Intent mode: the user-facing word for what they want another of ("column", "card", "button", "menu-item", "testimonial", …). Preferred over client_id for "another X" requests.',
+						),
+						'scope'     => array(
+							'type'        => 'string',
+							'description' => 'Intent mode (optional): clientId bounding the search — usually a section/container. Defaults to the selected block\'s ancestors.',
+							'pattern'     => '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+						),
+						'position'  => array(
+							'description' => 'Intent mode (optional): which matching sibling to clone. "last" (default), "first", or a 0-based integer index.',
+							'oneOf'       => array(
+								array(
+									'type' => 'string',
+									'enum' => array( 'last', 'first' ),
+								),
+								array( 'type' => 'integer' ),
+							),
+						),
+					),
+					'additionalProperties' => false,
+				),
+				'execute_callback'    => function ( $input ) {
+					$has_client_id = ! empty( $input['client_id'] );
+					$has_kind      = ! empty( $input['kind'] );
+
+					if ( ! $has_client_id && ! $has_kind ) {
+						return blu_prepare_ability_response(
+							400,
+							array(
+								'message' => 'Pass EITHER { kind: "<word>" } (intent mode, preferred for "another X") OR { client_id: "<UUID>" } (explicit mode). Neither was supplied.',
+							)
+						);
+					}
+
+					$response = array(
+						'action'  => 'duplicate',
+						'message' => 'Block duplicate ready for execution',
+					);
+
+					if ( $has_client_id ) {
+						if ( ! preg_match( '/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/', $input['client_id'] ) ) {
+							return blu_prepare_ability_response(
+								400,
+								array(
+									'message' => sprintf(
+										'client_id must be a real UUID from the block tree. Got: "%s". Either switch to intent mode with { kind: "..." } or re-read the block tree and copy the UUID from id:<UUID>.',
+										$input['client_id']
+									),
+								)
+							);
+						}
+						$response['client_id'] = sanitize_text_field( $input['client_id'] );
+					}
+
+					if ( $has_kind ) {
+						$response['kind'] = sanitize_text_field( $input['kind'] );
+						if ( ! empty( $input['scope'] ) ) {
+							$response['scope'] = sanitize_text_field( $input['scope'] );
+						}
+						if ( isset( $input['position'] ) ) {
+							$response['position'] = is_int( $input['position'] ) ? $input['position'] : sanitize_text_field( (string) $input['position'] );
+						}
+					}
+
+					return blu_prepare_ability_response( 200, $response );
+				},
+				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
+				'meta'                => array(
+					'annotations' => array(
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => false,
+					),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Register ability to insert a new block as a child of an existing container.
+	 *
+	 * Use when the user wants to add a NEW child to a container (core/columns,
+	 * core/group, core/row, core/stack, core/buttons, etc.) without rewriting the
+	 * whole parent. Only the new child's markup is emitted — the parent and its
+	 * other children are untouched.
+	 *
+	 * @return void
+	 */
+	private function register_insert_inner_block(): void {
+		blu_register_ability(
+			'blu/insert-inner-block',
+			array(
+				'label'               => 'Insert Inner Block',
+				'description'         => 'Insert a new block as a child of an existing container block (core/columns, core/group, core/row, core/stack, core/buttons, etc.). Use this when the user asks to insert a NEW item inside a container whose design does NOT already exist on the page — e.g. "add a heading at the top of this group", "insert a button in this buttons row". If a sibling with the same design already exists, prefer blu/duplicate-block instead. Only emit the new child block_content; the parent and its existing children are not touched. Provide parent_client_id (the container) and the new block_content. Optional: index (0-based position; omit to append at the end).',
+				'category'            => 'blu-mcp',
+				'input_schema'        => array(
+					'type'       => 'object',
+					'properties' => array(
+						'parent_client_id' => array(
+							'type'        => 'string',
+							'description' => 'The clientId of the CONTAINER block that will receive the new child (from the block tree context).',
+						),
+						'block_content'    => array(
+							'type'        => 'string',
+							'description' => 'Valid WordPress block markup for the new child block. Must include proper <!-- wp:blockname {...} --> comments. Only the new child — do NOT re-emit the parent.',
+						),
+						'index'            => array(
+							'type'        => 'integer',
+							'description' => 'Optional 0-based insert position within the parent. Omit to append at the end.',
+						),
+					),
+					'required'   => array( 'parent_client_id', 'block_content' ),
+				),
+				'execute_callback'    => function ( $input ) {
+					if ( empty( $input['parent_client_id'] ) ) {
+						return blu_prepare_ability_response( 400, array( 'message' => 'parent_client_id is required' ) );
+					}
+					if ( empty( $input['block_content'] ) ) {
+						return blu_prepare_ability_response( 400, array( 'message' => 'block_content is required' ) );
+					}
+					$response_data = array(
+						'action'           => 'insert_inner_block',
+						'parent_client_id' => sanitize_text_field( $input['parent_client_id'] ),
+						'block_content'    => $input['block_content'],
+						'message'          => 'Inner block insert ready for execution',
+					);
+					if ( isset( $input['index'] ) && is_int( $input['index'] ) ) {
+						$response_data['index'] = $input['index'];
+					}
+					return blu_prepare_ability_response( 200, $response_data );
+				},
+				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
+				'meta'                => array(
+					'annotations' => array(
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => false,
+					),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'tool',
+					),
+				),
+			)
+		);
+	}
+
+	/**
 	 * Register ability to move a block
 	 *
 	 * Moves a block (with all inner blocks) to a new position.
@@ -520,11 +733,21 @@ class BlockEditor {
 	 * @return void
 	 */
 	private function register_update_block_attrs(): void {
+		$description = <<<'DESC'
+		Patch attributes on an existing block — deep-merged into whatever is already there. No markup rewrite. Works for any block comment JSON: colors, spacing, layout, border, className, typography, content (text on core/paragraph, core/heading, core/button), url/alt on media blocks, and anything else in the block's attributes. Set a value to null to remove it.
+
+		Use this for ALL tweaks to an existing block: style, content, borders, images, etc. Chain multiple calls in the same turn if you need to customize several blocks (e.g. after duplicate or insert, patch the new block's text, icon, and styling to match the user's request). Much faster than edit-block for incremental changes.
+
+		When the user references text inside a container (a paragraph inside a column, a button inside a group), target the LEAF block's clientId — not the container's.
+
+		If the block uses nfd-* utility classes that control the property you're changing, include "className" with that class removed in the same patch — the CSS class otherwise silently overrides your attribute.
+		DESC;
+
 		blu_register_ability(
 			'blu/update-block-attrs',
 			array(
 				'label'               => 'Update Block Attributes',
-				'description'         => 'Update block attributes without touching HTML markup. Deep-merges into existing block. No need to read markup first. Works for: colors, spacing, layout, className, content (text on headings/paragraphs/buttons), url/alt (images on core/image, core/cover, core/media-text). Set a value to null to remove it. COLORS: Use palette slugs (base, contrast, accent-1..6) via "backgroundColor"/"textColor" when referencing the site palette. For custom colors, use {"style":{"color":{"text":"#hex"}}} or {"style":{"color":{"background":"#hex"}}}. The system auto-clears conflicting preset/custom values — if you set style.color.text, any existing textColor preset is automatically removed. Common HEX: white #ffffff, black #000000, red #ff0000, blue #0000ff, green #008000, orange #ff8c00, purple #800080, teal #008080. FONT SIZE: Preset and custom are mutually exclusive — set "fontSize":"large" OR "style":{"typography":{"fontSize":"2rem"}}, not both. Set the other to null. IMAGE: Set {"url":"...","alt":"..."} — the system auto-clears the media library ID. ASPECT RATIO: Use "aspectRatio":"16/9","scale":"cover" — never fixed width/height in pixels. NFD CLASSES: If the block has an nfd-* class controlling the same property you\'re changing (e.g. nfd-rounded-* for border-radius), you MUST include "className" with that class removed in the SAME call — otherwise the CSS class silently overrides your attribute.',
+				'description'         => $description,
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
