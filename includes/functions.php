@@ -56,7 +56,7 @@ function blu_get_abilities(): array {
 		return wp_get_abilities();
 	}
 
-	return [];
+	return array();
 }
 
 /**
@@ -115,7 +115,7 @@ function blu_get_ability_categories(): array {
 		return wp_get_ability_categories();
 	}
 
-	return [];
+	return array();
 }
 
 /**
@@ -189,7 +189,7 @@ function blu_prepare_ability_response( $status, $message ) {
 	return array(
 		'statusCode' => $status,
 		'status'     => blu_get_status_type( $status ),
-		'message'    => $message
+		'message'    => $message,
 	);
 }
 
@@ -252,7 +252,7 @@ if ( ! function_exists( 'blu_is_valid_list' ) ) {
 	function blu_is_valid_list( $list ) {
 		$i = 0;
 		foreach ( $list as $k => $_ ) {
-			if ( $k !== $i ++ ) {
+			if ( $k !== $i++ ) {
 				return false;
 			}
 		}
@@ -294,4 +294,55 @@ function blu_is_valid_input_array( $input_value, $input_name, $min_items = false
 	}
 
 	return '' === $error ? true : new WP_Error( 400, $error );
+}
+
+
+if ( ! function_exists( 'blu_filter_terms_by_patterns' ) ) {
+
+	/**
+	 * Filter terms by patterns
+	 *
+	 * @param array $patterns The patterns
+	 * @param array $terms The terms to filter by reference.
+	 *
+	 * @return void
+	 */
+	function blu_filter_terms_by_patterns( $patterns, &$terms ) {
+		if ( count( $patterns ) > 0 ) {
+			$filtered_ids = array();
+			foreach ( $terms as $term ) {
+				if ( ! isset( $term['name'] ) || ! isset( $term['id'] ) || ! is_string( $term['name'] ) ) {
+					continue;
+				}
+				$term_name = trim( $term['name'] );
+
+				foreach ( $patterns as $pattern ) {
+
+					if ( @preg_match( $pattern, '' ) !== false ) {
+						$regex = $pattern;
+						if ( substr( $regex, - 1 ) !== 'i' ) {
+							// Ensure case-insensitive
+							$regex = rtrim( $regex, '/' ) . '/i';
+						}
+						if ( preg_match( $regex, $term_name ) ) {
+							$filtered_ids[] = $term['id'];
+							break;
+						}
+					} elseif ( false !== stripos( $term_name, $pattern ) ) {
+						$filtered_ids[] = $term['id'];
+						break;
+					}
+				}
+			}
+
+			if ( count( $filtered_ids ) > 0 ) {
+				$terms = array_filter(
+					$terms,
+					function ( $term ) use ( $filtered_ids ) {
+						return in_array( $term['id'], $filtered_ids );
+					}
+				);
+			}
+		}
+	}
 }
