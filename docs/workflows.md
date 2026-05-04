@@ -2,7 +2,7 @@
 name: wp-module-mcp
 title: GitHub workflows
 description: CI, translations, Playwright, release prep, and Satis.
-updated: 2026-03-26
+updated: 2026-05-04
 ---
 
 # GitHub workflows
@@ -17,6 +17,7 @@ Files live under **`.github/workflows/`**.
 | **newfold-prep-release.yml** | **workflow_dispatch** patch/minor/major → reusable **module prep release** (bumps **`package.json`**; see [release.md](release.md)) |
 | **auto-translate.yml** | **reusable-translations** with **`text_domain: wp-module-mcp`** |
 | **satis-webhook.yml** | On **release created**, dispatches to **newfold-labs/satis** to refresh Composer packages |
+| **dependabot-auto-merge.yml** | On completion of `Lint`, `Codecoverage-Main`, or `Build and Test … (Playwright tests)`, calls reusable **dependabot-auto-merge** — verifies every check run on the head SHA is green, then approves and merges Dependabot PRs. Gates on its own check-run aggregation, so it works without branch-protection required status checks |
 
 ## Secrets
 
