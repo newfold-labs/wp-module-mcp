@@ -1,13 +1,11 @@
 name: Dependabot Auto-Merge
 on:
-  pull_request_target:
-    types: [opened, synchronize, reopened]
-
-# One run per PR; let in-flight runs finish so we never leave a PR approved
-# without auto-merge armed (each run is ~15 seconds, so parallel dup runs are cheap).
-concurrency:
-  group: dependabot-auto-merge-${{ github.event.pull_request.number }}
-  cancel-in-progress: false
+  workflow_run:
+    workflows:
+      - Lint
+      - Codecoverage-Main
+      - Build and Test Module Updates in Brand Plugins (Playwright tests)
+    types: [completed]
 
 # Disable permissions for all available scopes by default.
 # Any needed permissions should be configured individually for each job.
@@ -15,11 +13,21 @@ permissions: {}
 
 jobs:
   # Delegates to the central reusable workflow in newfold-labs/workflows.
-  # pull_request_target is required so GITHUB_TOKEN has write scope for Dependabot PRs.
-  # No PR code is checked out — this workflow only acts on PR metadata via the GitHub API.
+  # workflow_run runs from the default-branch workflow file (no PR code checkout
+  # required), so GITHUB_TOKEN has write scope. The reusable workflow re-checks
+  # all check runs for the head SHA before merging — this gate replaces native
+  # auto-merge so the merge is held back when CI fails, even when branch protection
+  # has no required status checks configured.
   auto-merge:
-    if: ${{ github.event.pull_request.user.login == 'dependabot[bot]' }}
+    if: >
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.actor.login == 'dependabot[bot]' &&
+      github.event.workflow_run.pull_requests[0] != null
     uses: newfold-labs/workflows/.github/workflows/reusable-dependabot-auto-merge.yml@enhance/PRESS0-4266
+    with:
+      pr-number: ${{ github.event.workflow_run.pull_requests[0].number }}
+      head-sha: ${{ github.event.workflow_run.head_sha }}
     permissions:
       contents: write
       pull-requests: write
