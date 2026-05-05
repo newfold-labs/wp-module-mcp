@@ -198,8 +198,9 @@ class WooProducts {
 								),
 							),
 						),
-						'required'             => array( 'name' ),
+
 					),
+					'required'             => array( 'name' ),
 				),
 				'execute_callback'    => function ( $input ) {
 
@@ -728,7 +729,7 @@ class WooProducts {
 						'tags' => array(
 							'type'        => 'array',
 							'description' => 'The list of product tag name',
-							'items'       => array( array( 'type' => 'string' ) ),
+							'items'       => array( 'type' => 'string'  ),
 							'minItems'    => 1,
 						),
 					),
@@ -910,7 +911,7 @@ class WooProducts {
 						'brands' => array(
 							'type'        => 'array',
 							'description' => 'The list of Brand name',
-							'items'       => array( array( 'type' => 'string' ) ),
+							'items'       => array(  'type' => 'string'  ),
 							'minItems'    => 1,
 						),
 					),
