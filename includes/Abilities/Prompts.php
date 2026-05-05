@@ -21,17 +21,125 @@ class Prompts {
 			return;
 		}
 
-		$this->register_improve_prompt_description();
+		$this->register_guided_product_creation_prompt();
 		$this->register_prompt_description();
+		$this->register_smart_product_prompt();
+		/*$this->register_prompt_description();
 		$this->register_prompt_categories();
 		$this->register_prompt_tags();
 		$this->register_prompt_brands();
 		$this->register_smart_product_prompt();
 		$this->register_prompt_variation_attributes();
+		*/
 	}
 
 	/**
-	 * Create a prompt to instruct the AI the steps to follow to suggest the long and short description
+	 * Create a prompt to instruct AI all step required to add a new WooCommerce Product
+	 *
+	 * @return void
+	 */
+	private function register_guided_product_creation_prompt() {
+		blu_register_ability(
+			'blu/guided-product-creation-prompt',
+			[
+				'label'               => 'Guided Product Creation',
+				'description'         => 'Step-by-step wizard that guides the merchant through enriching and publishing a WooCommerce product. Calls blu tools directly for categories, tags, descriptions, and variations — no sub-prompts.',
+				'category'            => 'blu-mcp',
+				'input_schema'        => [
+					'type'       => 'object',
+					'properties' => [
+						'product_name'  => [
+							'type'        => 'string',
+							'description' => 'The name of the product to create.',
+						],
+						'price'         => [
+							'type'        => 'string',
+							'description' => 'Regular price (e.g. 29.99). If omitted, the assistant will suggest a market price.',
+						],
+						'extra_details' => [
+							'type'        => 'string',
+							'description' => 'Any additional product context the merchant already has (type, material, specs, etc.).',
+						],
+					],
+					'required'   => [ 'product_name' ],
+				],
+				'execute_callback'    => function ( $input ) {
+
+					$product_name  = sanitize_text_field( $input['product_name'] );
+					$price         = isset( $input['price'] ) && '' !== $input['price'] && is_numeric( $input['price'] ) ? (float) $input['price'] : null;
+					$extra_details = sanitize_textarea_field( $input['extra_details'] ?? '' );
+
+					$price_display = $price !== null
+						? wc_price( $price, [ 'in_span' => false ] )
+						: '(not set — you will suggest one)';
+
+					$product_name_safe = addslashes( $product_name );
+					$price_safe        = addslashes( $price_display );
+					$details_safe      = addslashes( $extra_details );
+					$system_text       = include_once __DIR__ . '/../instructions/product-full-flow.php';
+					$price_line        = $price !== null
+						? sprintf( 'price: **$%.2f**', $price )
+						: 'price: **not set yet** — I\'ll suggest one';
+
+					$intro_text = sprintf(
+						"👋 Let's add **%s** (%s) to your WooCommerce store!\n\n" .
+						"How would you like to proceed?\n\n" .
+						"**A)** Add the product now with only the details you provided.\n" .
+						"**B)** Enrich the product first — I'll suggest categories, tags, " .
+						"description, and/or variations.\n\n" .
+						"Which option would you prefer?",
+						esc_html( $product_name ),
+						$price_line
+					);
+
+					return [
+						'messages' => [
+							[
+								'role'    => 'user',
+								'content' => [
+									'type'        => 'text',
+									'text'        => $system_text,
+									'annotations' => [
+										'audience' => [ 'assistant' ],
+										'priority' => 1.0,
+									],
+								],
+							],
+							[
+								'role'    => 'assistant',
+								'content' => [
+									'type'        => 'text',
+									'text'        => $intro_text,
+									'annotations' => [
+										'audience' => [ 'user' ],
+										'priority' => 0.9,
+									],
+								],
+							],
+						],
+					];
+				},
+				'permission_callback' => function () {
+					return current_user_can( 'edit_posts' );
+				},
+				'meta'                => [
+					'annotations' => [
+						'audience'     => [ 'user', 'assistant' ],
+						'priority'     => 1.0,
+						'lastModified' => gmdate( 'c' ),
+					],
+					'mcp'         => [
+						'public' => true,
+						'type'   => 'prompt',
+					],
+				],
+			]
+		);
+
+	}
+
+	/**
+	 * Create a prompt to instruct the AI the steps to follow to generate/improve a new  long and short description
 	 *
 	 * @return void
 	 */
@@ -39,56 +147,113 @@ class Prompts {
 		blu_register_ability(
 			'blu/suggest-product-description',
 			array(
-				'label'               => 'Suggest Product Description',
+				'label'               => 'Guided Product Description Generation',
 				'category'            => 'blu-mcp',
-				'description'         => 'Generate a description and a short description on product details',
+				'description'         => 'Improves or generates the description and short description for a WooCommerce product. When a product ID is provided the existing content, categories and tags are used as context. Without an ID it generates descriptions from scratch using the product name.',
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
-						'name'       => array(
+						'product_id'   => [
+							'type'        => 'integer',
+							'description' => 'Existing WooCommerce product ID. When provided the prompt loads the product and uses its data as context.',
+							'minimum'     => 1,
+						],
+						'product_name' => [
 							'type'        => 'string',
-							'description' => 'Product name',
-							'default'     => '',
-						),
-						'categories' => array(
+							'description' => 'Product name — required when product_id is not supplied.',
+						],
+						'tone'         => [
 							'type'        => 'string',
-							'description' => 'Category',
-						),
-						'tags'       => array(
-							'type'        => 'string',
-							'description' => 'Tags',
-						),
+							'description' => 'Writing tone for the generated descriptions.',
+							'enum'        => [ 'formal', 'technical', 'empathetic', 'persuasive' ],
+							'default'     => 'formal',
+						],
 					),
-					'required'   => array( 'name' ),
 				),
 				'execute_callback'    => function ( $input ) {
-					$name        = $input['name'] ?? '';
-					$instruction = include_once __DIR__ . '/../instructions/product-description-suggester.php';
+					$product_id   = isset( $input['product_id'] ) ? (int) $input['product_id'] : null;
+					$product_name = sanitize_text_field( $input['product_name'] ?? '' );
+					$tone         = in_array( $input['tone'] ?? '', [
+						'formal',
+						'technical',
+						'empathetic',
+						'persuasive'
+					], true )
+						? $input['tone']
+						: 'formal';
 
-					return array(
-						'messages' => array(
-							array(
+					$has_id = $product_id !== null && $product_id > 0;
+					$mode   = $has_id ? 'improve' : 'create';
+
+					$product_id_safe   = $has_id ? (string) $product_id : '(none)';
+					$product_name_safe = addslashes( $product_name );
+					$tone_safe         = addslashes( $tone );
+					$mode_safe         = $mode;
+					$instruction       = include_once __DIR__ . '/../instructions/product-description-improvement.php';
+
+					if ( $has_id ) {
+						$intro_text = sprintf(
+							"✏️ Let's improve the descriptions for product **#%d**.\n\n" .
+							"I'll load the current content, categories, and tags — then use them as context to generate better copy.\n\n" .
+							"**Tone:** %s%s\n\n" .
+							"Loading product data now…",
+							$product_id,
+							ucfirst( $tone ),
+							$tone === 'formal' ? ' *(default)*' : ''
+						);
+					} else {
+						$intro_text = sprintf(
+							"✏️ Let's write descriptions for **%s**.\n\n" .
+							"Since no product ID was provided, I'll generate fresh copy from scratch.\n\n" .
+							"**Tone:** %s%s\n\n" .
+							"Do you have any categories or tags you'd like me to factor in? " .
+							"*(Reply with them or say \"none\" to skip.)*",
+							esc_html( $product_name ) ?: 'your product',
+							ucfirst( $tone ),
+							$tone === 'formal' ? ' *(default)*' : ''
+						);
+					}
+
+					return [
+						'messages' => [
+							[
 								'role'    => 'user',
-								'content' => array(
+								'content' => [
 									'type'        => 'text',
 									'text'        => $instruction,
-									'annotations' => array(
-										'audience' => array( 'assistant' ),
+									'annotations' => [
+										'audience' => [ 'assistant' ],
+										'priority' => 1.0,
+									],
+								],
+							],
+							[
+								'role'    => 'assistant',
+								'content' => [
+									'type'        => 'text',
+									'text'        => $intro_text,
+									'annotations' => [
+										'audience' => [ 'user' ],
 										'priority' => 0.9,
-									),
-								),
-							),
-						),
-					);
+									],
+								],
+							],
+						],
+					];
 				},
 				'permission_callback' => function () {
 					return current_user_can( 'edit_posts' );
 				},
 				'meta'                => array(
-					'annotations' => array(
-						'readonly'   => true,
-						'idempotent' => true,
-					),
+					'annotations' => [
+						'audience'     => [ 'user', 'assistant' ],
+						'priority'     => 1.0,
+						'lastModified' => gmdate( 'c' ),
+					],
+					'mcp'         => [
+						'public' => true,
+						'type'   => 'prompt',
+					],
 				),
 			)
 		);
@@ -393,7 +558,7 @@ class Prompts {
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
-						'id' => array(
+						'id'       => array(
 							'type'        => 'integer',
 							'description' => 'Product ID.',
 						),
@@ -409,7 +574,8 @@ class Prompts {
 							)
 						);
 					}
-					$product = wc_get_product( $input['id'] );
+					$product_id = $input['id'];
+					$product    = wc_get_product( $input['id'] );
 					if ( ! $product ) {
 						return blu_standardize_rest_response(
 							new WP_Error(
@@ -419,27 +585,81 @@ class Prompts {
 						);
 					}
 
+					$sections    = $input['sections'] ?? array();
 					$name        = $product->get_title();
 					$description = $product->get_description();
 					$categories  = wc_get_product_category_list( $product->get_id() );
 					$tags        = wc_get_product_tag_list( $product->get_id() );
+					$append_mode = empty( $description ) ? 'replace' : 'append';
+
+					$append_label = $append_mode === 'replace'
+						? 'Replace existing description'
+						: 'Append to existing description';
+
+					$sections_list = ! empty( $sections )
+						? implode( ', ', $sections )
+						: '(auto-detect based on product data)';
+
+					$desc_preview = mb_strlen( $description ) > 120
+						? mb_substr( strip_tags( $description ), 0, 120 ) . '…'
+						: ( strip_tags( $description ) ?: '(empty)' );
+
+					// Safe versions for heredoc injection
+					$name_safe        = addslashes( $name );
+					$description_safe = addslashes( $description );
+					$categories_safe  = addslashes( $categories ?: '(none)' );
+					$tags_safe        = addslashes( $tags ?: '(none)' );
+
 					$instruction = include_once __DIR__ . '/../instructions/smart-product-details.php';
 
-					return array(
-						'messages' => array(
-							array(
+					$sections_note =  "I'll auto-detect which content sections apply based on the product data.";
+
+					$intro_text = sprintf(
+						"🔍 Generating supplementary content for **%s** (ID: #%d).\n\n" .
+						"| Field       | Value |\n" .
+						"|-------------|-------|\n" .
+						"| Categories  | %s |\n" .
+						"| Tags        | %s |\n" .
+						"| Description | %s |\n\n" .
+						"%s\n\n" .
+						"**Save mode:** %s\n\n" .
+						"Analysing product data now…",
+						esc_html( $name ),
+						$product_id,
+						esc_html( $categories ?: '(none)' ),
+						esc_html( $tags       ?: '(none)' ),
+						esc_html( $desc_preview ),
+						$sections_note,
+						$append_label
+					);
+
+					return [
+						'messages' => [
+							[
 								'role'    => 'user',
-								'content' => array(
+								'content' => [
 									'type'        => 'text',
 									'text'        => $instruction,
-									'annotations' => array(
-										'audience' => array( 'assistant' ),
+									'annotations' => [
+										'audience' => [ 'assistant' ],
+										'priority' => 1.0,
+									],
+								],
+							],
+							[
+								'role'    => 'assistant',
+								'content' => [
+									'type'        => 'text',
+									'text'        => $intro_text,
+									'annotations' => [
+										'audience' => [ 'user' ],
 										'priority' => 0.9,
-									),
-								),
-							),
-						),
-					);
+									],
+								],
+							],
+						],
+						];
+
 				},
 				'permission_callback' => function () {
 					return current_user_can( 'edit_posts' );
@@ -449,6 +669,10 @@ class Prompts {
 						'readonly'   => true,
 						'idempotent' => true,
 					),
+					'mcp'         => [
+						'public' => true,
+						'type'   => 'prompt',
+					],
 				),
 			)
 		);
@@ -546,6 +770,7 @@ class Prompts {
 						'readonly'   => true,
 						'idempotent' => true,
 					),
+
 				),
 			)
 		);
