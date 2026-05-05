@@ -158,6 +158,5 @@ class McpServer {
 				'description' => 'Bluehost-specific abilities for use with MCP',
 			)
 		);
-
 	}
 }

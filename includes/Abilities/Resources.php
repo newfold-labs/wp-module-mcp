@@ -42,7 +42,7 @@ class Resources {
 							'maxItems'    => 5,
 							'items'       => array( 'type' => 'string' ),
 						),
-						'required' => array( 'patterns' )
+						'required' => array( 'patterns' ),
 					),
 				),
 				'execute_callback'    => function ( $input ) {

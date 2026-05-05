@@ -3,8 +3,6 @@ declare( strict_types=1 );
 
 namespace BLU\Abilities;
 
-use WP_Error;
-
 /**
  * WooProducts abilities for WooCommerce products.
  */
@@ -198,9 +196,21 @@ class WooProducts {
 								),
 							),
 						),
-
+						'status'               => array(
+							'description' => 'Product status (post status).',
+							'type'        => 'string',
+							'default'     => 'draft',
+							'enum'        => array_merge(
+								array_keys( get_post_statuses() ),
+								array(
+									'future',
+									'auto-draft',
+									'trash',
+								)
+							),
+						),
 					),
-					'required'             => array( 'name' ),
+					'required'    => array( 'name' ),
 				),
 				'execute_callback'    => function ( $input ) {
 
@@ -350,6 +360,19 @@ class WooProducts {
 										'type'        => 'integer',
 									),
 								),
+							),
+						),
+						'status'            => array(
+							'description' => 'Product status (post status).',
+							'type'        => 'string',
+							'default'     => 'draft',
+							'enum'        => array_merge(
+								array_keys( get_post_statuses() ),
+								array(
+									'future',
+									'auto-draft',
+									'trash',
+								)
 							),
 						),
 					),
@@ -729,7 +752,7 @@ class WooProducts {
 						'tags' => array(
 							'type'        => 'array',
 							'description' => 'The list of product tag name',
-							'items'       => array( 'type' => 'string'  ),
+							'items'       => array( 'type' => 'string' ),
 							'minItems'    => 1,
 						),
 					),
@@ -911,7 +934,7 @@ class WooProducts {
 						'brands' => array(
 							'type'        => 'array',
 							'description' => 'The list of Brand name',
-							'items'       => array(  'type' => 'string'  ),
+							'items'       => array( 'type' => 'string' ),
 							'minItems'    => 1,
 						),
 					),
