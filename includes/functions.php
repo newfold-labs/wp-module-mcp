@@ -10,6 +10,7 @@
  */
 function blu_register_ability( string $name, array $args ): ?WP_Ability {
 	if ( function_exists( 'wp_register_ability' ) ) {
+
 		return wp_register_ability( $name, $args );
 	}
 
@@ -147,6 +148,30 @@ function blu_get_abilities_by_category( string $category ): array {
 }
 
 
+function blu_get_ability_by_type( $type = 'tool' ) {
+	$all_abilities     = blu_get_abilities_by_category( 'blu-mcp' );
+	$current_abilities = [];
+	$type              = in_array( $type, [ 'tool', 'prompt', 'resource' ], true ) ? $type : 'tool';
+	foreach ( $all_abilities as $ability ) {
+		$meta         = $ability->get_meta();
+		$ability_type = 'tool';
+		$public = true;
+
+		if ( isset( $meta['mcp']['type'] ) ) {
+			$ability_type = $meta['mcp']['type'];
+		}
+		if( isset( $meta['mcp']['public'] )  ) {
+			$public = $meta['mcp']['public'];
+		}
+
+		if ( $public && $ability_type === $type ) {
+			$current_abilities[] = $ability->get_name();
+		}
+	}
+
+	return $current_abilities;
+}
+
 /**
  * Filters a list of abilities by a specified namespace.
  *
@@ -252,7 +277,7 @@ if ( ! function_exists( 'blu_is_valid_list' ) ) {
 	function blu_is_valid_list( $list ) {
 		$i = 0;
 		foreach ( $list as $k => $_ ) {
-			if ( $k !== $i++ ) {
+			if ( $k !== $i ++ ) {
 				return false;
 			}
 		}
