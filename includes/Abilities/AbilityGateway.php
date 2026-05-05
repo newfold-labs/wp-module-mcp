@@ -61,17 +61,24 @@ class AbilityGateway {
 		return array_filter(
 			$all_abilities,
 			function ( $ability ) use ( $allowed_namespaces, $allowed_categories ) {
-				$name     = $ability->get_name();
-				$category = $ability->get_category();
+				$name         = $ability->get_name();
+				$category     = $ability->get_category();
+				$meta         = $ability->get_meta();
+				$ability_type = 'tool';
+				if ( isset( $meta['mcp']['type'] ) ) {
+					$ability_type = $meta['mcp']['type'];
+				}
+				if ( 'tool' === $ability_type ) {
 
-				foreach ( $allowed_namespaces as $ns ) {
-					if ( str_starts_with( $name, $ns ) ) {
+					foreach ( $allowed_namespaces as $ns ) {
+						if ( str_starts_with( $name, $ns ) ) {
+							return true;
+						}
+					}
+
+					if ( in_array( $category, $allowed_categories, true ) ) {
 						return true;
 					}
-				}
-
-				if ( in_array( $category, $allowed_categories, true ) ) {
-					return true;
 				}
 
 				return false;
@@ -129,6 +136,7 @@ class AbilityGateway {
 	 */
 	private function get_namespace( string $name ): string {
 		$slash_pos = strpos( $name, '/' );
+
 		return false !== $slash_pos ? substr( $name, 0, $slash_pos ) : '';
 	}
 
@@ -146,6 +154,7 @@ class AbilityGateway {
 				return true;
 			}
 		}
+
 		return false;
 	}
 
@@ -217,7 +226,7 @@ class AbilityGateway {
 
 					// Apply optional namespace filter. Accept "blu", "blu/", or "blu-".
 					if ( ! empty( $input['namespace'] ) ) {
-						$ns = rtrim( $input['namespace'], '/-' );
+						$ns        = rtrim( $input['namespace'], '/-' );
 						$abilities = array_filter(
 							$abilities,
 							function ( $ability ) use ( $ns ) {
@@ -371,6 +380,7 @@ class AbilityGateway {
 						if ( ! is_int( $status_code ) || $status_code < 400 || $status_code > 599 ) {
 							$status_code = 500;
 						}
+
 						return blu_prepare_ability_response( $status_code, $result->get_error_message() );
 					}
 
