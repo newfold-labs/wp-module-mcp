@@ -46,6 +46,8 @@ class WooCommerceAbilitiesIntegrationWPUnitTest extends \lucatume\WPBrowser\Test
 			$_SERVER['REQUEST_URI'] = $this->original_request_uri;
 		}
 		remove_all_filters( 'blu_mcp_register_woocommerce_abilities' );
+		remove_all_filters( 'woocommerce_check_rest_ability_permissions_for_method' );
+		remove_all_filters( 'blu_mcp_woocommerce_ability_permission' );
 		parent::tear_down();
 	}
 
@@ -251,6 +253,81 @@ class WooCommerceAbilitiesIntegrationWPUnitTest extends \lucatume\WPBrowser\Test
 			$this->assertTrue( $received, "URI {$uri} should be recognized as a Bluehost MCP request" );
 			remove_filter( 'blu_mcp_register_woocommerce_abilities', $cb );
 		}
+	}
+
+	/**
+	 * Verifies the WC ability-permission filter is wired up by the constructor.
+	 *
+	 * @return void
+	 */
+	public function test_constructor_registers_permission_filter(): void {
+		$bridge   = new WooCommerceAbilities();
+		$priority = has_filter( 'woocommerce_check_rest_ability_permissions_for_method', array( $bridge, 'check_ability_permission' ) );
+
+		$this->assertSame( 10, $priority );
+	}
+
+	/**
+	 * Verifies permission delegation: on `/blu/mcp` requests, an unapproved permission
+	 * check flips to true so WC's abilities can run (real authz is enforced by the
+	 * underlying REST controller's permission_callback inside rest_do_request).
+	 *
+	 * @return void
+	 */
+	public function test_permission_filter_approves_on_blu_mcp_request(): void {
+		$_SERVER['REQUEST_URI'] = '/wp-json/blu/mcp';
+
+		$bridge   = new WooCommerceAbilities();
+		$approved = $bridge->check_ability_permission( false, 'GET', new \stdClass() );
+
+		$this->assertTrue( $approved );
+	}
+
+	/**
+	 * Verifies permission delegation is scoped: outside `/blu/mcp` the filter does NOT
+	 * override prior decisions (e.g. WC's own WooCommerceRestTransport on /woocommerce/mcp
+	 * must keep its existing behavior).
+	 *
+	 * @return void
+	 */
+	public function test_permission_filter_does_not_override_outside_blu_mcp(): void {
+		$_SERVER['REQUEST_URI'] = '/wp-json/woocommerce/mcp';
+
+		$bridge   = new WooCommerceAbilities();
+		$approved = $bridge->check_ability_permission( false, 'GET', new \stdClass() );
+
+		$this->assertFalse( $approved );
+	}
+
+	/**
+	 * Verifies the filter is short-circuit-safe: if some upstream hook already approved,
+	 * we propagate `true` instead of evaluating our own logic.
+	 *
+	 * @return void
+	 */
+	public function test_permission_filter_honors_prior_approval(): void {
+		$_SERVER['REQUEST_URI'] = '/wp-admin/index.php';
+
+		$bridge   = new WooCommerceAbilities();
+		$approved = $bridge->check_ability_permission( true, 'POST', new \stdClass() );
+
+		$this->assertTrue( $approved );
+	}
+
+	/**
+	 * Verifies the per-request override filter can flip the approval back to false
+	 * for sites that want a stricter gate at the abilities-API layer.
+	 *
+	 * @return void
+	 */
+	public function test_per_request_filter_can_force_disable(): void {
+		$_SERVER['REQUEST_URI'] = '/wp-json/blu/mcp';
+		add_filter( 'blu_mcp_woocommerce_ability_permission', '__return_false' );
+
+		$bridge   = new WooCommerceAbilities();
+		$approved = $bridge->check_ability_permission( false, 'GET', new \stdClass() );
+
+		$this->assertFalse( $approved );
 	}
 
 	/**

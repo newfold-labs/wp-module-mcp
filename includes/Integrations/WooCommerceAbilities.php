@@ -58,13 +58,24 @@ class WooCommerceAbilities {
 	private const BLU_MCP_PATH = '/blu/mcp';
 
 	/**
-	 * Hooks the force-registration callback on `wp_abilities_api_init`.
+	 * Hooks the force-registration callback on `wp_abilities_api_init` and the
+	 * permission delegate on `woocommerce_check_rest_ability_permissions_for_method`.
 	 */
 	public function __construct() {
 		// Priority 5 so we run before WC's own gated callback at default priority 10.
 		// WC's callback at priority 10 will see the (restored) original URI, its gate
 		// returns false, and it short-circuits — so registration happens exactly once.
 		add_action( 'wp_abilities_api_init', array( $this, 'maybe_register_abilities' ), 5 );
+
+		// WC's RestAbilityFactory::check_permission() runs this filter with a default
+		// of `false`; permission is only granted if some hook flips it to `true`. WC's
+		// own `WooCommerceRestTransport` adds that hook, but only when the transport is
+		// instantiated for `/woocommerce/mcp`. On `/blu/mcp` requests the transport
+		// never loads, the filter is never hooked, and every WC ability fails its
+		// permission check. We supply the missing hook here, scoped to the Bluehost
+		// transport, and delegate the actual authorization to the underlying REST
+		// controller's own permission_callback (which runs inside rest_do_request()).
+		add_filter( 'woocommerce_check_rest_ability_permissions_for_method', array( $this, 'check_ability_permission' ), 10, 3 );
 	}
 
 	/**
@@ -121,6 +132,45 @@ class WooCommerceAbilities {
 		}
 
 		$done = true;
+	}
+
+	/**
+	 * Approve WooCommerce ability execution at the abilities-API layer for requests
+	 * served by the Bluehost MCP transport. The underlying REST controller's own
+	 * `permission_callback` still gates every dispatched request inside
+	 * `RestAbilityFactory::execute_operation()`, so real authorization
+	 * (e.g. `current_user_can( 'manage_woocommerce' )`) is enforced one layer down.
+	 *
+	 * Outside `/blu/mcp` we return `$allowed` unchanged so WC's own logic — including
+	 * `WooCommerceRestTransport::check_ability_permission()` — is not overridden.
+	 *
+	 * @param bool   $allowed    Current decision propagated through the filter chain.
+	 * @param string $method     HTTP method (GET, POST, PUT, PATCH, DELETE, OPTIONS).
+	 * @param object $controller REST controller instance for the ability.
+	 *
+	 * @return bool
+	 */
+	public function check_ability_permission( $allowed, $method, $controller ): bool {
+		unset( $method, $controller );
+
+		if ( $allowed ) {
+			return true;
+		}
+
+		if ( ! $this->is_blu_mcp_request() ) {
+			return (bool) $allowed;
+		}
+
+		/**
+		 * Filter the per-method decision for WC ability execution on the Bluehost MCP transport.
+		 *
+		 * Default `true` defers the real authorization to the underlying REST controller's
+		 * permission_callback, which runs inside rest_do_request(). Sites that want a stricter
+		 * gate at the abilities-API layer can return `false` here.
+		 *
+		 * @param bool $allowed Whether to approve execution at the abilities-API layer.
+		 */
+		return (bool) apply_filters( 'blu_mcp_woocommerce_ability_permission', true );
 	}
 
 	/**
