@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+ <head>
+  <meta charset="UTF-8">
+  <title>Code Coverage for /home/runner/work/wp-module-mcp/wp-module-mcp/includes/instructions/product-tags-suggester.php</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="../../_css/bootstrap.min.css?v=9.2.32" rel="stylesheet" type="text/css">
+  <link href="../../_css/octicons.css?v=9.2.32" rel="stylesheet" type="text/css">
+  <link href="../../_css/style.css?v=9.2.32" rel="stylesheet" type="text/css">
+  <link href="../../_css/custom.css" rel="stylesheet" type="text/css">
+ </head>
+ <body>
+  <header>
+   <div class="container-fluid">
+    <div class="row">
+     <div class="col-md-12">
+      <nav aria-label="breadcrumb">
+       <ol class="breadcrumb">
+         <li class="breadcrumb-item"><a href="../../index.html">/home/runner/work/wp-module-mcp/wp-module-mcp</a></li>
+         <li class="breadcrumb-item"><a href="../index.html">includes</a></li>
+         <li class="breadcrumb-item"><a href="index.html">instructions</a></li>
+         <li class="breadcrumb-item active">product-tags-suggester.php</li>
+
+       </ol>
+      </nav>
+     </div>
+    </div>
+   </div>
+  </header>
+  <div class="container-fluid">
+   <div class="table-responsive">
+    <table class="table table-bordered">
+     <thead>
+      <tr>
+       <td>&nbsp;</td>
+       <td colspan="10"><div align="center"><strong>Code Coverage</strong></div></td>
+      </tr>
+      <tr>
+       <td>&nbsp;</td>
+       <td colspan="3"><div align="center"><strong>Lines</strong></div></td>
+       <td colspan="4"><div align="center"><strong>Functions and Methods</strong></div></td>
+       <td colspan="3"><div align="center"><strong>Classes and Traits</strong></div></td>
+      </tr>
+     </thead>
+     <tbody>
+      <tr>
+       <td class="danger">Total</td>
+       <td class="danger big">       <div class="progress">
+         <div class="progress-bar bg-danger" role="progressbar" aria-valuenow="0.00" aria-valuemin="0" aria-valuemax="100" style="width: 0.00%">
+           <span class="sr-only">0.00% covered (danger)</span>
+         </div>
+       </div>
+</td>
+       <td class="danger small"><div align="right">0.00%</div></td>
+       <td class="danger small"><div align="right">0&nbsp;/&nbsp;3</div></td>
+       <td class=" big"></td>
+       <td class=" small"><div align="right">n/a</div></td>
+       <td class=" small"><div align="right">0&nbsp;/&nbsp;0</div></td>
+       <td class=" small"><abbr title="Change Risk Anti-Patterns (CRAP) Index">CRAP</abbr></td>
+       <td class=" big"></td>
+       <td class=" small"><div align="right">n/a</div></td>
+       <td class=" small"><div align="right">0&nbsp;/&nbsp;0</div></td>
+      </tr>
+
+
+     </tbody>
+    </table>
+   </div>
+<table id="code" class="table table-borderless table-condensed">
+<tbody>
+    <tr class=" d-flex"><td  class="col-1 text-right"><a id="1" href="#1">1</a></td><td class="col-11 codeLine"><span class="default">&lt;?php</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-right"><a id="2" href="#2">2</a></td><td class="col-11 codeLine"><span class="comment">/**</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-right"><a id="3" href="#3">3</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;*&nbsp;This&nbsp;file&nbsp;contains&nbsp;all&nbsp;the&nbsp;instructions&nbsp;the&nbsp;AI&nbsp;will&nbsp;need&nbsp;to&nbsp;execute&nbsp;to&nbsp;suggest&nbsp;a&nbsp;list&nbsp;of&nbsp;tags&nbsp;to&nbsp;users,</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-right"><a id="4" href="#4">4</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;*&nbsp;based&nbsp;on&nbsp;a&nbsp;product's&nbsp;name.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-right"><a id="5" href="#5">5</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;*&nbsp;The&nbsp;suggested&nbsp;tags&nbsp;must&nbsp;be&nbsp;found&nbsp;either&nbsp;from&nbsp;existing&nbsp;ones&nbsp;or&nbsp;from&nbsp;the&nbsp;official&nbsp;Google&nbsp;Product&nbsp;Taxonomy&nbsp;list.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-right"><a id="6" href="#6">6</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;*</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-right"><a id="7" href="#7">7</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;*&nbsp;@package&nbsp;BLU</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-right"><a id="8" href="#8">8</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;*</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-right"><a id="9" href="#9">9</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;*&nbsp;@var&nbsp;string&nbsp;$product_name</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-right"><a id="10" href="#10">10</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;*&nbsp;@var&nbsp;string&nbsp;$product_desc</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-right"><a id="11" href="#11">11</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;*&nbsp;@var&nbsp;string&nbsp;$product_categories</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-right"><a id="12" href="#12">12</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;*/</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-right"><a id="13" href="#13">13</a></td><td class="col-11 codeLine"></td></tr>
+    <tr class="danger d-flex"><td  class="col-1 text-right"><a id="14" href="#14">14</a></td><td class="col-11 codeLine"><span class="keyword">return</span><span class="default">&nbsp;</span><span class="string">&quot;</span><span class="string">You&nbsp;are&nbsp;an&nbsp;AI&nbsp;assistant&nbsp;that&nbsp;helps&nbsp;classify&nbsp;products&nbsp;into&nbsp;tags.&nbsp;You&nbsp;must&nbsp;follow&nbsp;these&nbsp;steps:</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-right"><a id="15" href="#15">15</a></td><td class="col-11 codeLine"><span class="string">STEP&nbsp;1:</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-right"><a id="16" href="#16">16</a></td><td class="col-11 codeLine"><span class="string">-&nbsp;ASK&nbsp;TO&nbsp;CUSTOMER&nbsp;TO&nbsp;CHOOSE&nbsp;ONE&nbsp;FROM&nbsp;THESE&nbsp;OPTIONS:</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-right"><a id="17" href="#17">17</a></td><td class="col-11 codeLine"><span class="string">&nbsp;&nbsp;A)&nbsp;Add&nbsp;a&nbsp;custom&nbsp;product&nbsp;tag.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-right"><a id="18" href="#18">18</a></td><td class="col-11 codeLine"><span class="string">&nbsp;&nbsp;B)&nbsp;Get&nbsp;for&nbsp;you&nbsp;the&nbsp;best&nbsp;tags.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-right"><a id="19" href="#19">19</a></td><td class="col-11 codeLine"><span class="string">STEP&nbsp;2:</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-right"><a id="20" href="#20">20</a></td><td class="col-11 codeLine"><span class="string">-&nbsp;Get&nbsp;the&nbsp;customer&nbsp;selection&nbsp;and&nbsp;:</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-right"><a id="21" href="#21">21</a></td><td class="col-11 codeLine"><span class="string">&nbsp;&nbsp;&nbsp;&nbsp;2.1)&nbsp;If&nbsp;select&nbsp;the&nbsp;option&nbsp;A:</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-right"><a id="22" href="#22">22</a></td><td class="col-11 codeLine"><span class="string">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;ask&nbsp;to&nbsp;customer&nbsp;to&nbsp;enter&nbsp;the&nbsp;tag.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-right"><a id="23" href="#23">23</a></td><td class="col-11 codeLine"><span class="string">&nbsp;&nbsp;&nbsp;&nbsp;2.2)&nbsp;If&nbsp;select&nbsp;the&nbsp;option&nbsp;B:</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-right"><a id="24" href="#24">24</a></td><td class="col-11 codeLine"><span class="string">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;Get&nbsp;the&nbsp;tags&nbsp;using&nbsp;blu/wc-list-product-tags&nbsp;add&nbsp;the&nbsp;field&nbsp;patterns&nbsp;with&nbsp;max&nbsp;five&nbsp;elements.</span></td></tr>
+    <tr class="danger d-flex"><td  class="col-1 text-right"><a id="25" href="#25">25</a></td><td class="col-11 codeLine"><span class="string">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;From&nbsp;this&nbsp;list&nbsp;filter&nbsp;the&nbsp;best&nbsp;tags&nbsp;for&nbsp;the&nbsp;</span><span class="string">$product_name</span><span class="string">&nbsp;</span><span class="string">$product_desc</span><span class="string">&nbsp;</span><span class="string">$product_categories</span><span class="string">.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-right"><a id="26" href="#26">26</a></td><td class="col-11 codeLine"><span class="string">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;If&nbsp;no&nbsp;tag&nbsp;is&nbsp;found&nbsp;then&nbsp;generate&nbsp;between&nbsp;5&nbsp;and&nbsp;7&nbsp;SEO‑optimized&nbsp;tags.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-right"><a id="27" href="#27">27</a></td><td class="col-11 codeLine"><span class="string">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;For&nbsp;each&nbsp;tag&nbsp;found,&nbsp;compute&nbsp;a&nbsp;numeric&nbsp;confidence&nbsp;score&nbsp;(&nbsp;0-&nbsp;100&nbsp;).</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-right"><a id="28" href="#28">28</a></td><td class="col-11 codeLine"><span class="string">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;List&nbsp;to&nbsp;customer&nbsp;all&nbsp;filtered&nbsp;tags&nbsp;found&nbsp;with&nbsp;near&nbsp;the&nbsp;confidence&nbsp;score&nbsp;in&nbsp;percentage.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-right"><a id="29" href="#29">29</a></td><td class="col-11 codeLine"><span class="string">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;Ask&nbsp;to&nbsp;customer&nbsp;to&nbsp;select&nbsp;one&nbsp;or&nbsp;more&nbsp;tags&nbsp;from&nbsp;this&nbsp;list.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-right"><a id="30" href="#30">30</a></td><td class="col-11 codeLine"><span class="string">STEP&nbsp;3:</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-right"><a id="31" href="#31">31</a></td><td class="col-11 codeLine"><span class="string">-&nbsp;&nbsp;Return&nbsp;customer&nbsp;selection:</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-right"><a id="32" href="#32">32</a></td><td class="col-11 codeLine"><span class="string">&nbsp;&nbsp;&nbsp;&nbsp;3.1)&nbsp;If&nbsp;customer&nbsp;added&nbsp;a&nbsp;custom&nbsp;tag&nbsp;,&nbsp;return&nbsp;the&nbsp;selection&nbsp;with&nbsp;an&nbsp;array&nbsp;named&nbsp;'tags'</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-right"><a id="33" href="#33">33</a></td><td class="col-11 codeLine"><span class="string">&nbsp;&nbsp;&nbsp;&nbsp;3.2)&nbsp;If&nbsp;customer&nbsp;select&nbsp;tags&nbsp;from&nbsp;step&nbsp;2.2,&nbsp;return&nbsp;the&nbsp;selection&nbsp;with&nbsp;an&nbsp;array&nbsp;named&nbsp;'tags'.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-right"><a id="34" href="#34">34</a></td><td class="col-11 codeLine"><span class="string">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.2.1)&nbsp;Call&nbsp;the&nbsp;blu/wc-add-product-tag&nbsp;tool.</span></td></tr>
+    <tr class="danger d-flex"><td  class="col-1 text-right"><a id="35" href="#35">35</a></td><td class="col-11 codeLine"><span class="string">&nbsp;&nbsp;</span><span class="string">&quot;</span><span class="keyword">;</span></td></tr>
+
+</tbody>
+</table>
+
+
+   <footer>
+    <hr/>
+    <h4>Legend</h4>
+    <p><span class="legend covered-by-small-tests">Covered by small (and larger) tests</span><span class="legend covered-by-medium-tests">Covered by medium (and large) tests</span><span class="legend covered-by-large-tests">Covered by large tests (and tests of unknown size)</span><span class="legend not-covered">Not covered</span><span class="legend not-coverable">Not coverable</span></p>
+    <p>
+     <small>Generated by <a href="https://github.com/sebastianbergmann/php-code-coverage" target="_top">php-code-coverage 9.2.32</a> using <a href="https://secure.php.net/" target="_top">PHP 7.4.33</a> at Mon May 11 22:39:39 UTC 2026.</small>
+    </p>
+    <a title="Back to the top" id="toplink" href="#">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="16" viewBox="0 0 12 16"><path fill-rule="evenodd" d="M12 11L6 5l-6 6h12z"/></svg>
+    </a>
+   </footer>
+  </div>
+  <script src="../../_js/jquery.min.js?v=9.2.32" type="text/javascript"></script>
+  <script src="../../_js/popper.min.js?v=9.2.32" type="text/javascript"></script>
+  <script src="../../_js/bootstrap.min.js?v=9.2.32" type="text/javascript"></script>
+  <script src="../../_js/file.js?v=9.2.32" type="text/javascript"></script>
+ </body>
+</html>
