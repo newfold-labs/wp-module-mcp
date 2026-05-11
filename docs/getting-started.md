@@ -44,4 +44,4 @@ See [testing.md](testing.md) for CI and coverage details.
 
 ## Remote MCP client
 
-See the root **[README.md](../README.md)** for example `WP_API_URL` (`/wp-json/blu/mcp`) and environment variables for `@automattic/mcp-wordpress-remote`.
+See the root **[README.md](../README.md)** for example `WP_API_URL` (`/wp-json/blu/mcp`) and environment variables for `@newfold/wp-mcp-connector`.
