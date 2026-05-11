@@ -1,0 +1,339 @@
+name: MCP AI Evals
+
+on:
+  pull_request:
+    paths:
+      - 'includes/Abilities/**'
+      - 'evals/**'
+  workflow_dispatch:
+    inputs:
+      model:
+        description: 'Model to use for evals (e.g. openai/gpt-4o-mini, openai/gpt-4o)'
+        required: false
+        default: 'openai/gpt-3.5-turbo'
+        type: string
+      run_all:
+        description: 'Run all test cases (ignore file change filtering)'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  ai-eval:
+    name: AI Tool Selection Eval
+    runs-on: ubuntu-latest
+    env:
+      CF_AI_GATEWAY_URL: 'https://gateway.ai.cloudflare.com/v1/${{ secrets.CLOUDFLARE_ACCOUNT_ID }}/${{ vars.CLOUDFLARE_AI_GATEWAY_ID }}/compat/chat/completions'
+      MODEL: ${{ inputs.model || 'openai/gpt-4o-mini' }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed ability files
+        id: changes
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.run_all }}" == "true" ]]; then
+            echo "run_all=true" >> "$GITHUB_OUTPUT"
+            echo "Running all test cases (manual trigger with run_all=true)"
+            exit 0
+          fi
+
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          else
+            BASE_SHA="HEAD~1"
+            HEAD_SHA="HEAD"
+          fi
+
+          CHANGED_FILES=$(git diff --name-only "$BASE_SHA"..."$HEAD_SHA" -- includes/Abilities/ evals/ 2>/dev/null || echo "")
+
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "No ability or eval files changed. Skipping evals."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          CHANGED_SOURCES=""
+          while IFS= read -r file; do
+            if [[ "$file" == includes/Abilities/*.php ]]; then
+              CHANGED_SOURCES="$CHANGED_SOURCES $(basename "$file")"
+            fi
+          done <<< "$CHANGED_FILES"
+
+          echo "changed_sources=$CHANGED_SOURCES" >> "$GITHUB_OUTPUT"
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+          echo "Changed ability files: $CHANGED_SOURCES"
+
+          EVALS_CHANGED=false
+          while IFS= read -r file; do
+            if [[ "$file" == evals/* ]]; then
+              EVALS_CHANGED=true
+              break
+            fi
+          done <<< "$CHANGED_FILES"
+
+          if [ "$EVALS_CHANGED" = true ]; then
+            echo "run_all=true" >> "$GITHUB_OUTPUT"
+            echo "Eval files changed — running all test cases"
+          else
+            echo "run_all=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check tool coverage
+        id: coverage
+        run: |
+          set -euo pipefail
+
+          ABILITY_TOOLS=$(grep -A1 'blu_register_ability' includes/Abilities/*.php \
+            | grep -v 'AbilityGateway' \
+            | grep -oE "'blu/[a-z0-9-]+'" \
+            | sed "s/'blu\///" \
+            | sed "s/'//" \
+            | sort -u)
+
+          TOOLS_JSON_NAMES=$(jq -r '.[].function.name' evals/tools.json | sed 's/^blu_//' | sort -u)
+          TEST_CASE_TOOLS=$(jq -r '.[].expected_tool' evals/test-cases.json | sed 's/^blu_//' | sort -u)
+
+          MISSING_TOOLS=""
+          MISSING_TESTS=""
+          MISSING_TOOLS_COUNT=0
+          MISSING_TESTS_COUNT=0
+
+          while IFS= read -r tool; do
+            if ! echo "$TOOLS_JSON_NAMES" | grep -qx "$tool"; then
+              MISSING_TOOLS="${MISSING_TOOLS}blu_${tool}"$'\n'
+              MISSING_TOOLS_COUNT=$((MISSING_TOOLS_COUNT + 1))
+            fi
+            if ! echo "$TEST_CASE_TOOLS" | grep -qx "$tool"; then
+              MISSING_TESTS="${MISSING_TESTS}blu_${tool}"$'\n'
+              MISSING_TESTS_COUNT=$((MISSING_TESTS_COUNT + 1))
+            fi
+          done <<< "$ABILITY_TOOLS"
+
+          COVERAGE_FAIL=false
+
+          {
+            if [ "$MISSING_TOOLS_COUNT" -gt 0 ] || [ "$MISSING_TESTS_COUNT" -gt 0 ]; then
+              echo "## :warning: Tool Coverage Gaps"
+              echo ""
+            fi
+
+            if [ "$MISSING_TOOLS_COUNT" -gt 0 ]; then
+              COVERAGE_FAIL=true
+              echo "**$MISSING_TOOLS_COUNT ability(s) missing from \`evals/tools.json\`:**"
+              echo ""
+              echo "$MISSING_TOOLS" | sed '/^$/d' | sed 's/.*$/- \`&\`/'
+              echo ""
+            fi
+
+            if [ "$MISSING_TESTS_COUNT" -gt 0 ]; then
+              COVERAGE_FAIL=true
+              echo "**$MISSING_TESTS_COUNT ability(s) missing test cases in \`evals/test-cases.json\`:**"
+              echo ""
+              echo "$MISSING_TESTS" | sed '/^$/d' | sed 's/.*$/- \`&\`/'
+              echo ""
+            fi
+
+            if [ "$COVERAGE_FAIL" = false ]; then
+              echo "## :white_check_mark: Tool Coverage"
+              echo ""
+              echo "All abilities have entries in \`evals/tools.json\` and at least one test case."
+              echo ""
+            fi
+          } > coverage-report.md
+
+          cat coverage-report.md
+
+          echo "coverage_fail=$COVERAGE_FAIL" >> "$GITHUB_OUTPUT"
+          echo "missing_tools=$MISSING_TOOLS_COUNT" >> "$GITHUB_OUTPUT"
+          echo "missing_tests=$MISSING_TESTS_COUNT" >> "$GITHUB_OUTPUT"
+
+      - name: Run AI evals
+        if: steps.changes.outputs.skip != 'true'
+        id: eval
+        env:
+          CF_AI_TOKEN: ${{ secrets.CLOUDFLARE_AI_GATEWAY_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          TOOLS=$(cat evals/tools.json)
+          TOTAL_CASES=$(jq length evals/test-cases.json)
+          CHANGED_SOURCES="${{ steps.changes.outputs.changed_sources }}"
+          RUN_ALL="${{ steps.changes.outputs.run_all }}"
+
+          PASS=0
+          FAIL=0
+          SKIP=0
+          ERROR=0
+          ROWS=""
+
+          for i in $(seq 0 $((TOTAL_CASES - 1))); do
+            TEST_ID=$(jq -r ".[$i].id" evals/test-cases.json)
+            DESCRIPTION=$(jq -r ".[$i].description" evals/test-cases.json)
+            PROMPT=$(jq -r ".[$i].prompt" evals/test-cases.json)
+            EXPECTED=$(jq -r ".[$i].expected_tool" evals/test-cases.json)
+            SOURCE=$(jq -r ".[$i].source" evals/test-cases.json)
+
+            if [[ "$RUN_ALL" != "true" && -n "$CHANGED_SOURCES" ]]; then
+              if ! echo "$CHANGED_SOURCES" | grep -qw "$SOURCE"; then
+                SKIP=$((SKIP + 1))
+                continue
+              fi
+            fi
+
+            REQUEST_BODY=$(jq -n \
+              --arg model "$MODEL" \
+              --arg prompt "$PROMPT" \
+              --argjson tools "$TOOLS" \
+              '{
+                model: $model,
+                messages: [{role: "user", content: $prompt}],
+                tools: $tools,
+                tool_choice: "auto"
+              }')
+
+            HTTP_CODE=$(curl -s -o /tmp/eval_response.json -w "%{http_code}" --max-time 30 \
+              "$CF_AI_GATEWAY_URL" \
+              -H "cf-aig-authorization: Bearer $CF_AI_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d "$REQUEST_BODY" 2>&1) || true
+            RESPONSE=$(cat /tmp/eval_response.json 2>/dev/null || echo "")
+
+            if [ "$i" -eq 0 ]; then
+              echo "::group::Debug: First API call"
+              echo "HTTP status: $HTTP_CODE"
+              echo "Response (first 500 chars): ${RESPONSE:0:500}"
+              echo "Is valid JSON: $(echo "$RESPONSE" | jq empty 2>&1 && echo 'yes' || echo 'no')"
+              echo "Has tool_calls: $(echo "$RESPONSE" | jq -r '.choices[0].message.tool_calls | length // 0' 2>/dev/null || echo 'parse failed')"
+              echo "Model returned: $(echo "$RESPONSE" | jq -r '.model // empty' 2>/dev/null || echo 'unknown')"
+              echo "Finish reason: $(echo "$RESPONSE" | jq -r '.choices[0].finish_reason // empty' 2>/dev/null || echo 'unknown')"
+              echo "::endgroup::"
+            fi
+
+            if [[ "$HTTP_CODE" -lt 200 || "$HTTP_CODE" -ge 300 ]]; then
+              ROWS+="| :warning: | $DESCRIPTION | \`$EXPECTED\` | HTTP $HTTP_CODE: ${RESPONSE:0:100} |\n"
+              ERROR=$((ERROR + 1))
+              sleep 1
+              continue
+            fi
+
+            API_ERROR=$(echo "$RESPONSE" | jq -r '.error.message // empty' 2>/dev/null || echo "")
+            if [ -n "$API_ERROR" ]; then
+              ROWS+="| :warning: | $DESCRIPTION | \`$EXPECTED\` | API error: $API_ERROR |\n"
+              ERROR=$((ERROR + 1))
+              sleep 1
+              continue
+            fi
+
+            CALLED_TOOL=$(echo "$RESPONSE" | jq -r '.choices[0].message.tool_calls[0].function.name // empty' 2>/dev/null || echo "")
+            CALLED_ARGS=$(echo "$RESPONSE" | jq -r '.choices[0].message.tool_calls[0].function.arguments // empty' 2>/dev/null || echo "")
+
+            if [ -z "$CALLED_TOOL" ]; then
+              ROWS+="| :x: | $DESCRIPTION | \`$EXPECTED\` | No tool called |\n"
+              FAIL=$((FAIL + 1))
+            elif [ "$CALLED_TOOL" = "$EXPECTED" ]; then
+              ROWS+="| :white_check_mark: | $DESCRIPTION | \`$EXPECTED\` | \`$CALLED_TOOL\` |\n"
+              PASS=$((PASS + 1))
+            else
+              ROWS+="| :x: | $DESCRIPTION | \`$EXPECTED\` | \`$CALLED_TOOL\` |\n"
+              FAIL=$((FAIL + 1))
+            fi
+
+            sleep 0.5
+          done
+
+          TOTAL_RUN=$((PASS + FAIL + ERROR))
+          if [ "$TOTAL_RUN" -gt 0 ]; then
+            PASS_RATE=$(( (PASS * 100) / TOTAL_RUN ))
+          else
+            PASS_RATE=0
+          fi
+
+          if [ "$FAIL" -gt 0 ] || [ "$ERROR" -gt 0 ]; then
+            STATUS_EMOJI=":red_circle:"
+          else
+            STATUS_EMOJI=":green_circle:"
+          fi
+
+          {
+            echo "## ${STATUS_EMOJI} MCP AI Eval Results"
+            echo ""
+            echo "**Model:** \`$MODEL\` | **Passed:** $PASS | **Failed:** $FAIL | **Errors:** $ERROR | **Skipped:** $SKIP | **Pass Rate:** ${PASS_RATE}%"
+            echo ""
+            echo "| Status | Test | Expected Tool | Actual Tool |"
+            echo "|--------|------|---------------|-------------|"
+            echo -e "$ROWS"
+            if [ "$SKIP" -gt 0 ]; then
+              echo ""
+              echo "<details><summary>$SKIP test(s) skipped (unchanged source files)</summary>"
+              echo ""
+              echo "Only tests for changed ability files were run. Use \`workflow_dispatch\` with \`run_all: true\` to run the full suite."
+              echo "</details>"
+            fi
+          } > eval-report.md
+
+          cat eval-report.md
+
+          echo "pass=$PASS" >> "$GITHUB_OUTPUT"
+          echo "fail=$FAIL" >> "$GITHUB_OUTPUT"
+          echo "error=$ERROR" >> "$GITHUB_OUTPUT"
+          echo "pass_rate=$PASS_RATE" >> "$GITHUB_OUTPUT"
+
+      - name: Combine reports
+        if: always() && steps.changes.outputs.skip != 'true'
+        run: |
+          : > combined-report.md
+          [ -f coverage-report.md ] && cat coverage-report.md >> combined-report.md
+          [ -f eval-report.md ] && cat eval-report.md >> combined-report.md
+          cat combined-report.md
+
+      - name: Comment on PR
+        if: always() && github.event_name == 'pull_request' && steps.changes.outputs.skip != 'true'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: ai-eval-results
+          path: combined-report.md
+
+      - name: Upload eval report
+        if: always() && steps.changes.outputs.skip != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-eval-report
+          path: combined-report.md
+
+      - name: Check eval results
+        if: steps.changes.outputs.skip != 'true'
+        run: |
+          FAIL=${{ steps.eval.outputs.fail || 0 }}
+          ERROR=${{ steps.eval.outputs.error || 0 }}
+          PASS_RATE=${{ steps.eval.outputs.pass_rate || 0 }}
+          COVERAGE_FAIL=${{ steps.coverage.outputs.coverage_fail }}
+          MISSING_TOOLS=${{ steps.coverage.outputs.missing_tools }}
+          MISSING_TESTS=${{ steps.coverage.outputs.missing_tests }}
+
+          EXIT_CODE=0
+
+          if [ "$COVERAGE_FAIL" = "true" ]; then
+            echo "::error::Tool coverage gaps — $MISSING_TOOLS ability(s) missing from tools.json, $MISSING_TESTS ability(s) missing test cases."
+            EXIT_CODE=1
+          fi
+
+          echo "Pass rate: ${PASS_RATE}%"
+
+          if [ "$FAIL" -gt 0 ] || [ "$ERROR" -gt 0 ]; then
+            echo "::error::AI eval failed — $FAIL test(s) failed, $ERROR error(s). Pass rate: ${PASS_RATE}%"
+            EXIT_CODE=1
+          fi
+
+          if [ "$EXIT_CODE" -eq 0 ]; then
+            echo "All AI evals passed with full tool coverage!"
+          fi
+
+          exit $EXIT_CODE

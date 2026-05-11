@@ -1,0 +1,1147 @@
+[
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_get-site-info",
+      "description": "Provides detailed information about the WordPress site like site name, url, description, admin email, plugins, themes, users, and more",
+      "parameters": { "type": "object", "properties": {} }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_get-active-theme",
+      "description": "Get the active theme information",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "string", "enum": ["active"], "description": "Theme status filter" }
+        }
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_get-general-settings",
+      "description": "Get WordPress general site settings",
+      "parameters": { "type": "object", "properties": {} }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_update-general-settings",
+      "description": "Update WordPress general site settings",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string", "description": "Site title" },
+          "description": { "type": "string", "description": "Site tagline/description" },
+          "timezone_string": { "type": "string", "description": "Site timezone" },
+          "date_format": { "type": "string", "description": "Date format" },
+          "time_format": { "type": "string", "description": "Time format" },
+          "start_of_week": { "type": "integer", "description": "Start of week (0 = Sunday, 1 = Monday, etc.)" },
+          "language": { "type": "string", "description": "Site language" },
+          "posts_per_page": { "type": "integer", "description": "Number of posts to show per page" }
+        }
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_list-api-functions",
+      "description": "List all available WordPress REST API endpoints that support CRUD operations",
+      "parameters": { "type": "object", "properties": {} }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_get-function-details",
+      "description": "Get detailed metadata for a specific WordPress REST API endpoint and HTTP method",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "route": { "type": "string", "description": "REST API route (e.g., \"/wp/v2/posts\")" },
+          "method": { "type": "string", "enum": ["GET", "POST", "PATCH", "DELETE"], "description": "HTTP method" }
+        },
+        "required": ["route", "method"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_run-api-function",
+      "description": "Execute a specific WordPress REST API function by providing the endpoint route, HTTP method, and parameters",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "route": { "type": "string", "description": "REST API route (e.g., \"/wp/v2/posts\")" },
+          "method": { "type": "string", "enum": ["GET", "POST", "PATCH", "DELETE"], "description": "HTTP method" },
+          "data": { "type": "object", "description": "Request parameters (query params for GET/DELETE, body for POST/PATCH)" }
+        },
+        "required": ["route", "method"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_posts-search",
+      "description": "Search and filter WordPress posts with pagination",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "search": { "type": "string", "description": "Search term" },
+          "status": { "type": "string", "description": "Post status(es): publish, draft, pending, future, private. Comma-separated for multiple. Omit to search all statuses." },
+          "page": { "type": "integer", "description": "Page number" },
+          "per_page": { "type": "integer", "description": "Posts per page" }
+        }
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_get-post",
+      "description": "Get a WordPress post by ID",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "description": "Post ID" }
+        },
+        "required": ["id"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_add-post",
+      "description": "Add a new WordPress post",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string", "description": "Post title" },
+          "content": { "type": "string", "description": "Post content in Gutenberg block format" },
+          "excerpt": { "type": "string", "description": "Post excerpt" },
+          "status": { "type": "string", "description": "Post status (publish, draft, etc.)" }
+        },
+        "required": ["title", "content"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_update-post",
+      "description": "Update a WordPress post by ID",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "description": "Post ID" },
+          "title": { "type": "string", "description": "Post title" },
+          "content": { "type": "string", "description": "Post content" },
+          "excerpt": { "type": "string", "description": "Post excerpt" },
+          "status": { "type": "string", "description": "Post status" }
+        },
+        "required": ["id"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_delete-post",
+      "description": "Delete a WordPress post by ID",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "description": "Post ID" }
+        },
+        "required": ["id"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_list-categories",
+      "description": "List all WordPress post categories",
+      "parameters": { "type": "object", "properties": {} }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_add-category",
+      "description": "Add a new WordPress post category",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string", "description": "Category name" },
+          "description": { "type": "string", "description": "Category description" },
+          "slug": { "type": "string", "description": "Category slug" }
+        },
+        "required": ["name"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_update-category",
+      "description": "Update a WordPress post category",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "description": "Category ID" },
+          "name": { "type": "string", "description": "Category name" },
+          "description": { "type": "string", "description": "Category description" }
+        },
+        "required": ["id"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_delete-category",
+      "description": "Delete a WordPress post category",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "description": "Category ID" }
+        },
+        "required": ["id"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_list-tags",
+      "description": "List all WordPress post tags",
+      "parameters": { "type": "object", "properties": {} }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_add-tag",
+      "description": "Add a new WordPress post tag",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string", "description": "Tag name" },
+          "description": { "type": "string", "description": "Tag description" },
+          "slug": { "type": "string", "description": "Tag slug" }
+        },
+        "required": ["name"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_update-tag",
+      "description": "Update a WordPress post tag",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "description": "Tag ID" },
+          "name": { "type": "string", "description": "Tag name" },
+          "description": { "type": "string", "description": "Tag description" }
+        },
+        "required": ["id"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_delete-tag",
+      "description": "Delete a WordPress post tag",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "description": "Tag ID" }
+        },
+        "required": ["id"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_pages-search",
+      "description": "Search and filter WordPress pages with pagination",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "search": { "type": "string", "description": "Search term" },
+          "status": { "type": "string", "description": "Page status(es): publish, draft, pending, future, private. Comma-separated for multiple. Omit to search all statuses." },
+          "page": { "type": "integer", "description": "Page number" },
+          "per_page": { "type": "integer", "description": "Pages per page" }
+        }
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_get-page",
+      "description": "Get a WordPress page by ID",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "description": "Page ID" }
+        },
+        "required": ["id"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_add-page",
+      "description": "Add a new WordPress page",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string", "description": "Page title" },
+          "content": { "type": "string", "description": "Page content in Gutenberg block format" },
+          "excerpt": { "type": "string", "description": "Page excerpt" },
+          "parent": { "type": "integer", "description": "Parent page ID" },
+          "order": { "type": "integer", "description": "Page order" },
+          "status": { "type": "string", "description": "Page status (publish, draft, etc.)" }
+        },
+        "required": ["title", "content"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_update-page",
+      "description": "Update a WordPress page by ID",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "description": "Page ID" },
+          "title": { "type": "string", "description": "Page title" },
+          "content": { "type": "string", "description": "Page content" },
+          "excerpt": { "type": "string", "description": "Page excerpt" },
+          "parent": { "type": "integer", "description": "Parent page ID" },
+          "order": { "type": "integer", "description": "Page order" },
+          "status": { "type": "string", "description": "Page status" }
+        },
+        "required": ["id"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_delete-page",
+      "description": "Delete a WordPress page by ID",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "description": "Page ID" }
+        },
+        "required": ["id"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_list-media",
+      "description": "List WordPress media items with pagination and filtering",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "page": { "type": "integer", "description": "Page number" },
+          "per_page": { "type": "integer", "description": "Items per page" }
+        }
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_get-media",
+      "description": "Get a WordPress media item details by ID",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "description": "Media ID" }
+        },
+        "required": ["id"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_get-media-file",
+      "description": "Get the actual file content (blob) of a WordPress media item",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "description": "Media ID" },
+          "size": { "type": "string", "description": "Image size (thumbnail, medium, large, full)" }
+        },
+        "required": ["id"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_upload-media",
+      "description": "Upload a new media file to WordPress",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "file": { "type": "string", "description": "Base64 encoded file data" },
+          "title": { "type": "string", "description": "Media title" },
+          "caption": { "type": "string", "description": "Media caption" },
+          "description": { "type": "string", "description": "Media description" },
+          "alt_text": { "type": "string", "description": "Alt text" }
+        },
+        "required": ["file"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_update-media",
+      "description": "Update a WordPress media item",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "description": "Media ID" },
+          "title": { "type": "string", "description": "Media title" },
+          "caption": { "type": "string", "description": "Media caption" },
+          "description": { "type": "string", "description": "Media description" },
+          "alt_text": { "type": "string", "description": "Alt text" }
+        },
+        "required": ["id"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_delete-media",
+      "description": "Delete a WordPress media item permanently",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "description": "Media ID" }
+        },
+        "required": ["id"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_search-media",
+      "description": "Search WordPress media items by title, caption, or description",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "search": { "type": "string", "description": "Search term" },
+          "media_type": { "type": "string", "description": "Media type filter (image, video, audio, application)" },
+          "mime_type": { "type": "string", "description": "MIME type filter" }
+        }
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_users-search",
+      "description": "Search and filter WordPress users with pagination",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "search": { "type": "string", "description": "Search term" },
+          "page": { "type": "integer", "description": "Page number" },
+          "per_page": { "type": "integer", "description": "Users per page" },
+          "roles": { "type": "array", "description": "Limit to users with at least one of these role slugs (WordPress REST collection param `roles`).", "items": { "type": "string" } }
+        }
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_get-user",
+      "description": "Get a WordPress user by ID",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "description": "User ID" }
+        },
+        "required": ["id"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_add-user",
+      "description": "Add a new WordPress user",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "username": { "type": "string", "description": "Username" },
+          "email": { "type": "string", "description": "Email address" },
+          "password": { "type": "string", "description": "Password" },
+          "first_name": { "type": "string", "description": "First name" },
+          "last_name": { "type": "string", "description": "Last name" },
+          "roles": { "type": "array", "description": "WordPress REST `roles`: one or more role slugs (e.g. [\"editor\"], [\"subscriber\"]).", "items": { "type": "string" }, "minItems": 1 }
+        },
+        "required": ["username", "email", "password", "roles"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_update-user",
+      "description": "Update a WordPress user by ID",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "description": "User ID" },
+          "email": { "type": "string", "description": "Email address" },
+          "first_name": { "type": "string", "description": "First name" },
+          "last_name": { "type": "string", "description": "Last name" },
+          "roles": { "type": "array", "description": "WordPress REST `roles` when updating roles; omit if not changing roles.", "items": { "type": "string" } }
+        },
+        "required": ["id"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_delete-user",
+      "description": "Delete a WordPress user by ID",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "description": "User ID" },
+          "reassign": { "type": "integer", "description": "User ID to reassign posts to; omit or use 0 / false for no reassignment (the REST API always receives a `reassign` value)." }
+        },
+        "required": ["id"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_get-current-user",
+      "description": "Get the current logged-in user",
+      "parameters": { "type": "object", "properties": {} }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_update-current-user",
+      "description": "Update the current logged-in user",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "email": { "type": "string", "description": "Email address" },
+          "first_name": { "type": "string", "description": "First name" },
+          "last_name": { "type": "string", "description": "Last name" }
+        }
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_list-post-types",
+      "description": "List all registered WordPress post types (built-in and custom). Use this to discover which post type slugs exist before creating or searching items.",
+      "parameters": { "type": "object", "properties": {} }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_cpt-search",
+      "description": "Search and filter content items within a custom post type with pagination. Use blu-list-post-types to find valid post_type slugs first.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "post_type": { "type": "string", "description": "The custom post type to search" },
+          "search": { "type": "string", "description": "Search term" },
+          "author": { "type": "integer", "description": "Filter by author ID" },
+          "status": { "type": "string", "description": "Filter by post status" },
+          "page": { "type": "integer", "description": "Page number" },
+          "per_page": { "type": "integer", "description": "Items per page" }
+        },
+        "required": ["post_type"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_get-cpt",
+      "description": "Get a single content item from a custom post type by its ID.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "post_type": { "type": "string", "description": "The custom post type" },
+          "id": { "type": "integer", "description": "Post ID" }
+        },
+        "required": ["post_type", "id"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_add-cpt",
+      "description": "Create a new content item within an existing custom post type (e.g. add a new menu item, event, or recipe). This does NOT register a new post type — use blu-list-post-types to find valid post_type slugs.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "post_type": { "type": "string", "description": "Registered custom post type slug (must match an existing post type, e.g. from blu-list-post-types)." },
+          "title": { "type": "string", "description": "Post title" },
+          "content": { "type": "string", "description": "Post content in Gutenberg block format" },
+          "excerpt": { "type": "string", "description": "Post excerpt" },
+          "status": { "type": "string", "description": "Post status" }
+        },
+        "required": ["post_type", "title", "content"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_update-cpt",
+      "description": "Update an existing content item in a custom post type by its ID.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "post_type": { "type": "string", "description": "The custom post type" },
+          "id": { "type": "integer", "description": "Post ID" },
+          "title": { "type": "string", "description": "Post title" },
+          "content": { "type": "string", "description": "Post content" },
+          "excerpt": { "type": "string", "description": "Post excerpt" },
+          "status": { "type": "string", "description": "Post status" }
+        },
+        "required": ["post_type", "id"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_delete-cpt",
+      "description": "Permanently delete a content item from a custom post type by its ID.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "post_type": { "type": "string", "description": "The custom post type" },
+          "id": { "type": "integer", "description": "Post ID" }
+        },
+        "required": ["post_type", "id"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_get-global-styles",
+      "description": "Get a specific global styles configuration by ID. Returns theme.json settings and user customizations.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "description": "Global styles ID" }
+        },
+        "required": ["id"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_update-global-styles",
+      "description": "Update a global styles configuration. Allows customization of theme.json settings including colors, typography, spacing, and more.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "description": "Global styles ID to update" },
+          "settings": { "type": "object", "description": "Settings object containing theme.json configuration (colors, typography, layout, etc.)" },
+          "styles": { "type": "object", "description": "Styles object containing CSS-like declarations for blocks and elements" },
+          "title": { "type": "string", "description": "Title for the global styles configuration" }
+        },
+        "required": ["id"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_get-active-global-styles",
+      "description": "Get the currently active global styles configuration for the current theme. This is a convenience method to get the theme's active style variations.",
+      "parameters": { "type": "object", "properties": {} }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_get-active-global-styles-id",
+      "description": "Get the currently active global styles ID for the current theme. This is used for get or update the global styles.",
+      "parameters": { "type": "object", "properties": {} }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_wc-products-search",
+      "description": "Search and filter WooCommerce products with pagination",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "search": { "type": "string", "description": "Search term" },
+          "page": { "type": "integer", "description": "Page number" },
+          "per_page": { "type": "integer", "description": "Products per page" }
+        }
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_wc-get-product",
+      "description": "Get a WooCommerce product by ID",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "description": "Product ID" }
+        },
+        "required": ["id"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_wc-add-product",
+      "description": "Create a WooCommerce product, or start the guided add-product flow. If ready is false or omitted, no product is created—the response returns assistant-only steps (A/B options, suggestions). Set ready to true to persist the product via the REST API (after user confirmation when using the guided flow, or immediately when the user asked to add the product with sufficient detail).",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string", "description": "Product name" },
+          "type": { "type": "string", "description": "Product type" },
+          "description": { "type": "string", "description": "Product description" },
+          "short_description": { "type": "string", "description": "Product short description" },
+          "regular_price": { "type": "string", "description": "Product price" },
+          "sale_price": { "type": "string", "description": "Product sale price" },
+          "ready": { "type": "boolean", "description": "Must be true to create the product in WooCommerce. If false or omitted (default), the ability does not call the API—it only returns guided assistant instructions; no product is saved.", "default": false }
+        },
+        "required": ["name"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_wc-update-product",
+      "description": "Update a WooCommerce product by ID",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "description": "Product ID" },
+          "name": { "type": "string", "description": "Product name" },
+          "description": { "type": "string", "description": "Product description" },
+          "short_description": { "type": "string", "description": "Product short description" },
+          "regular_price": { "type": "string", "description": "Product price" },
+          "sale_price": { "type": "string", "description": "Product sale price" }
+        },
+        "required": ["id"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_wc-delete-product",
+      "description": "Delete a WooCommerce product by ID",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "description": "Product ID" }
+        },
+        "required": ["id"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_wc-list-product-categories",
+      "description": "List all WooCommerce product categories",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "patterns": { "type": "array", "items": { "type": "string" }, "description": "List of relevant categories and regex based on product name" }
+        }
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_wc-add-product-category",
+      "description": "Add one or more new WooCommerce product categories",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "categories": { "type": "array", "items": { "type": "string" }, "description": "Product Categories List" },
+          "hierarchical": { "type": "boolean", "description": "Add the category hierarchically or not" },
+          "is_google_tax": { "type": "boolean", "description": "Define is a google taxonomy or not", "default": false }
+        },
+        "required": ["categories"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_wc-update-product-category",
+      "description": "Update a WooCommerce product category",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "description": "Category ID" },
+          "name": { "type": "string", "description": "Category name" }
+        },
+        "required": ["id"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_wc-delete-product-category",
+      "description": "Delete a WooCommerce product category",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "description": "Category ID" }
+        },
+        "required": ["id"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_wc-list-product-tags",
+      "description": "List all WooCommerce product tags",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "patterns": { "type": "array", "items": { "type": "string" }, "description": "List of relevant tags based on product name, product description and product category" }
+        }
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_wc-add-product-tag",
+      "description": "Add one or more new WooCommerce product tag",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "tags": { "type": "array", "items": { "type": "string" }, "description": "The Tag name list" }
+        },
+        "required": ["tags"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_wc-update-product-tag",
+      "description": "Update a WooCommerce product tag",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "description": "Tag ID" },
+          "name": { "type": "string", "description": "Tag name" }
+        },
+        "required": ["id"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_wc-delete-product-tag",
+      "description": "Delete a WooCommerce product tag",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "description": "Tag ID" }
+        },
+        "required": ["id"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_wc-list-product-brands",
+      "description": "List all WooCommerce product brands",
+      "parameters": { "type": "object", "properties": {} }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_wc-add-product-brand",
+      "description": "Add one or more new WooCommerce product brand",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "brands": { "type": "array", "items": { "type": "string" }, "description": "The list of Brand name" }
+        },
+        "required": ["brands"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_wc-update-product-brand",
+      "description": "Update a WooCommerce product brand",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "description": "Brand ID" },
+          "name": { "type": "string", "description": "Brand name" }
+        },
+        "required": ["id"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_wc-delete-product-brand",
+      "description": "Delete a WooCommerce product brand",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "description": "Brand ID" }
+        },
+        "required": ["id"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_wc-orders-search",
+      "description": "Get a list of WooCommerce orders",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "string", "description": "Filter by order status" },
+          "page": { "type": "integer", "description": "Page number" },
+          "per_page": { "type": "integer", "description": "Orders per page" }
+        }
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_wc-reports-coupons-totals",
+      "description": "Get WooCommerce coupons totals report",
+      "parameters": { "type": "object", "properties": {} }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_wc-reports-customers-totals",
+      "description": "Get WooCommerce customers totals report",
+      "parameters": { "type": "object", "properties": {} }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_wc-reports-orders-totals",
+      "description": "Get WooCommerce orders totals report",
+      "parameters": { "type": "object", "properties": {} }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_wc-reports-products-totals",
+      "description": "Get WooCommerce products totals report",
+      "parameters": { "type": "object", "properties": {} }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_wc-reports-reviews-totals",
+      "description": "Get WooCommerce reviews totals report",
+      "parameters": { "type": "object", "properties": {} }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_wc-reports-sales",
+      "description": "Get WooCommerce sales report",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "period": { "type": "string", "description": "Report period (week, month, year)" }
+        }
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_google-product-taxonomy",
+      "description": "The official Google Product Taxonomy resource",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "patterns": { "type": "array", "items": { "type": "string" }, "description": "List of relevant categories or relevant regex keywords based on product name" }
+        }
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_suggest-product-description",
+      "description": "Generate a description and a short description on product details",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string", "description": "Product name" },
+          "categories": { "type": "string", "description": "Category" },
+          "tags": { "type": "string", "description": "Tags" }
+        },
+        "required": ["name"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_improve-product-description",
+      "description": "Improve the existing description and short description for a product",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "description": "Product ID" },
+          "tone": { "type": "string", "enum": ["formal", "technical", "empathetic", "persuasive"], "description": "User tone" }
+        },
+        "required": ["id"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_suggest-product-categories",
+      "description": "Generate a list of product categories based on product details",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string", "description": "Product name" }
+        },
+        "required": ["name"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_suggest-product-tag",
+      "description": "Generate a list of product tag based on product details",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string", "description": "Product name" },
+          "description": { "type": "string", "description": "Product description" },
+          "categories": { "type": "string", "description": "A comma separated product categories list" }
+        },
+        "required": ["name"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_suggest-product-brand",
+      "description": "Generate a list of product brands based on product details",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string", "description": "Product name" },
+          "description": { "type": "string", "description": "Product description" }
+        },
+        "required": ["name"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_smart-product-details",
+      "description": "A compact all-in-one prompt for merchants that uses the product ID and basic product details to automatically generate all key listing content — required materials, size charts, care instructions, warranty info, and ingredient lists — ensuring every product page is complete and compliant.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "description": "Product ID" }
+        },
+        "required": ["id"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "blu_suggest-product-variation-attributes",
+      "description": "Generate a list of product terms and attributes based on product details to be used for variations",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string", "description": "Product name" },
+          "description": { "type": "string", "description": "Product description" }
+        },
+        "required": ["name"]
+      }
+    }
+  }
+]
