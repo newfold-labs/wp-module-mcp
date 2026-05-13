@@ -203,7 +203,7 @@ jobs:
               "$CF_AI_GATEWAY_URL" \
               -H "cf-aig-authorization: Bearer $CF_AI_TOKEN" \
               -H "Content-Type: application/json" \
-              -d "$REQUEST_BODY" 2>&1) || true
+              -d "$REQUEST_BODY") || true
             RESPONSE=$(cat /tmp/eval_response.json 2>/dev/null || echo "")
 
             if [ "$i" -eq 0 ]; then
