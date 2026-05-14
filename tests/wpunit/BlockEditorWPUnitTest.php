@@ -12,36 +12,117 @@ use BLU\Abilities\BlockEditor;
 class BlockEditorWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 
 	/**
-	 * Helper: execute a registered ability by name with an admin user.
+	 * Ability names registered during the test for cleanup.
+	 *
+	 * @var string[]
+	 */
+	private $registered_abilities = array(
+		'blu/edit-block',
+		'blu/add-section',
+		'blu/delete-block',
+		'blu/duplicate-block',
+		'blu/insert-inner-block',
+		'blu/move-block',
+		'blu/get-block-markup',
+		'blu/highlight-block',
+		'blu/update-block-attrs',
+	);
+
+	/**
+	 * Whether abilities have been registered in this test instance.
+	 *
+	 * @var bool
+	 */
+	private $abilities_initialized = false;
+
+	/**
+	 * Skip the suite when the Abilities API isn't available, otherwise set up
+	 * an admin user and ensure the blu-mcp category exists on the registry.
+	 *
+	 * @return void
+	 */
+	public function set_up(): void {
+		parent::set_up();
+
+		if ( ! function_exists( 'wp_register_ability' ) ) {
+			$this->markTestSkipped( 'WP Abilities API is not available.' );
+		}
+
+		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$cat_registry = \WP_Ability_Categories_Registry::get_instance();
+		if ( $cat_registry && ! $cat_registry->is_registered( 'blu-mcp' ) ) {
+			$cat_registry->register(
+				'blu-mcp',
+				array(
+					'label'       => 'Bluehost MCP',
+					'description' => 'Bluehost-specific abilities for use with MCP',
+				)
+			);
+		}
+	}
+
+	/**
+	 * Remove abilities registered by these tests so they don't leak between cases.
+	 *
+	 * @return void
+	 */
+	public function tear_down(): void {
+		$registry = \WP_Abilities_Registry::get_instance();
+		if ( $registry ) {
+			foreach ( $this->registered_abilities as $name ) {
+				if ( $registry->is_registered( $name ) ) {
+					blu_unregister_ability( $name );
+				}
+			}
+		}
+		$this->abilities_initialized = false;
+		parent::tear_down();
+	}
+
+	/**
+	 * Register BlockEditor abilities through the proper wp_abilities_api_init hook.
+	 *
+	 * WordPress 6.9+ rejects wp_register_ability calls made outside that action with
+	 * a doing_it_wrong notice that the test framework treats as a failure.
+	 *
+	 * @return void
+	 */
+	private function ensure_abilities_registered(): void {
+		if ( $this->abilities_initialized ) {
+			return;
+		}
+
+		$cb = function () {
+			new BlockEditor();
+		};
+		add_action( 'wp_abilities_api_init', $cb, 10 );
+
+		$init_count_before = did_action( 'wp_abilities_api_init' );
+		$registry          = \WP_Abilities_Registry::get_instance();
+		if ( $registry && did_action( 'wp_abilities_api_init' ) === $init_count_before ) {
+			do_action( 'wp_abilities_api_init', $registry );
+		}
+
+		remove_action( 'wp_abilities_api_init', $cb, 10 );
+		$this->abilities_initialized = true;
+	}
+
+	/**
+	 * Helper: execute a registered ability by name.
 	 *
 	 * @param string $ability_name The registered ability name.
 	 * @param array  $input        Input to pass to the ability.
 	 * @return mixed The result of the ability execution.
 	 */
 	private function execute_ability( string $ability_name, array $input ) {
-		if ( ! function_exists( 'wp_register_ability' ) ) {
-			$this->markTestSkipped( 'WP Abilities API is not available.' );
-		}
-
-		new BlockEditor();
-
-		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
-		wp_set_current_user( $user_id );
+		$this->ensure_abilities_registered();
 
 		$ability = blu_get_ability( $ability_name );
 		$this->assertNotNull( $ability, "Ability {$ability_name} should be registered." );
 
 		return $ability->execute( $input );
-	}
-
-	// ── Constructor ───────────────────────────────────────────────────
-
-	/**
-	 * Verifies constructor registers all abilities without fatal.
-	 */
-	public function test_constructor_does_not_fatal() {
-		$instance = new BlockEditor();
-		$this->assertInstanceOf( BlockEditor::class, $instance );
 	}
 
 	// ── blu/edit-block ────────────────────────────────────────────────

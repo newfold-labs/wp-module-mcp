@@ -15,6 +15,20 @@ require_once __DIR__ . '/_stubs/HiiveConnectionStub.php';
 class ImageGenWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 
 	/**
+	 * Ability names registered during the test for cleanup.
+	 *
+	 * @var string[]
+	 */
+	private $registered_abilities = array( 'blu/generate-image' );
+
+	/**
+	 * Whether the ability has been registered in this test instance.
+	 *
+	 * @var bool
+	 */
+	private $abilities_initialized = false;
+
+	/**
 	 * Captures the last HTTP request args observed by the pre_http_request mock.
 	 *
 	 * @var array|null
@@ -22,21 +36,79 @@ class ImageGenWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	private $last_request_args = null;
 
 	/**
-	 * Reset shared state between tests so the HiiveConnection stub and HTTP mock
-	 * never leak across cases.
+	 * Skip if Abilities API is unavailable, set up admin user, ensure blu-mcp category,
+	 * and reset the HiiveConnection stub token between tests.
+	 *
+	 * @return void
 	 */
-	protected function setUp(): void {
-		parent::setUp();
+	public function set_up(): void {
+		parent::set_up();
+
+		if ( ! function_exists( 'wp_register_ability' ) ) {
+			$this->markTestSkipped( 'WP Abilities API is not available.' );
+		}
+
+		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$cat_registry = \WP_Ability_Categories_Registry::get_instance();
+		if ( $cat_registry && ! $cat_registry->is_registered( 'blu-mcp' ) ) {
+			$cat_registry->register(
+				'blu-mcp',
+				array(
+					'label'       => 'Bluehost MCP',
+					'description' => 'Bluehost-specific abilities for use with MCP',
+				)
+			);
+		}
+
 		HiiveConnection::$token  = 'test-hiive-token';
 		$this->last_request_args = null;
 	}
 
 	/**
-	 * Remove any pre_http_request filter installed during the test.
+	 * Remove abilities registered by these tests and clear HTTP mocks.
+	 *
+	 * @return void
 	 */
-	protected function tearDown(): void {
+	public function tear_down(): void {
 		remove_all_filters( 'pre_http_request' );
-		parent::tearDown();
+
+		$registry = \WP_Abilities_Registry::get_instance();
+		if ( $registry ) {
+			foreach ( $this->registered_abilities as $name ) {
+				if ( $registry->is_registered( $name ) ) {
+					blu_unregister_ability( $name );
+				}
+			}
+		}
+		$this->abilities_initialized = false;
+		parent::tear_down();
+	}
+
+	/**
+	 * Register ImageGen ability via the wp_abilities_api_init action.
+	 *
+	 * @return void
+	 */
+	private function ensure_abilities_registered(): void {
+		if ( $this->abilities_initialized ) {
+			return;
+		}
+
+		$cb = function () {
+			new ImageGen();
+		};
+		add_action( 'wp_abilities_api_init', $cb, 10 );
+
+		$init_count_before = did_action( 'wp_abilities_api_init' );
+		$registry          = \WP_Abilities_Registry::get_instance();
+		if ( $registry && did_action( 'wp_abilities_api_init' ) === $init_count_before ) {
+			do_action( 'wp_abilities_api_init', $registry );
+		}
+
+		remove_action( 'wp_abilities_api_init', $cb, 10 );
+		$this->abilities_initialized = true;
 	}
 
 	/**
@@ -61,33 +133,18 @@ class ImageGenWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	}
 
 	/**
-	 * Helper: register the ability, set admin user, execute by name.
+	 * Helper: execute blu/generate-image with input.
 	 *
 	 * @param array $input Input to pass to blu/generate-image.
 	 * @return mixed
 	 */
 	private function execute_generate( array $input ) {
-		if ( ! function_exists( 'wp_register_ability' ) ) {
-			$this->markTestSkipped( 'WP Abilities API is not available.' );
-		}
-
-		new ImageGen();
-
-		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
-		wp_set_current_user( $user_id );
+		$this->ensure_abilities_registered();
 
 		$ability = blu_get_ability( 'blu/generate-image' );
 		$this->assertNotNull( $ability, 'Ability blu/generate-image should be registered.' );
 
 		return $ability->execute( $input );
-	}
-
-	/**
-	 * Verifies constructor registers the ability without fatal.
-	 */
-	public function test_constructor_does_not_fatal() {
-		$instance = new ImageGen();
-		$this->assertInstanceOf( ImageGen::class, $instance );
 	}
 
 	/**
