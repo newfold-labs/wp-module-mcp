@@ -139,7 +139,10 @@ class GlobalStyles {
 							'description' => 'Styles object containing CSS-like declarations for root, elements, and blocks.',
 						),
 					),
-					'required'   => array(),
+					'anyOf'      => array(
+						array( 'required' => array( 'settings' ) ),
+						array( 'required' => array( 'styles' ) ),
+					),
 				),
 				'execute_callback'    => array( $this, 'execute_update_global_styles' ),
 				'permission_callback' => fn() => current_user_can( 'edit_theme_options' ),
@@ -236,25 +239,13 @@ class GlobalStyles {
 	 */
 	public function execute_update_global_styles( array $input = array() ): array {
 		if ( ! isset( $input['settings'] ) && ! isset( $input['styles'] ) ) {
-			return blu_prepare_ability_response(
-				400,
-				array(
-					'success' => false,
-					'message' => 'Settings or styles object is required',
-				)
-			);
+			return blu_prepare_ability_response( 400, 'Settings or styles object is required' );
 		}
 
 		$global_styles_id = \WP_Theme_JSON_Resolver::get_user_global_styles_post_id();
 
 		if ( ! $global_styles_id ) {
-			return blu_prepare_ability_response(
-				500,
-				array(
-					'success' => false,
-					'message' => 'Could not find global styles post',
-				)
-			);
+			return blu_prepare_ability_response( 500, 'Could not find global styles post' );
 		}
 
 		$request = new \WP_REST_Request( 'POST', '/wp/v2/global-styles/' . $global_styles_id );

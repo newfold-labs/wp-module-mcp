@@ -32,6 +32,7 @@ class ImageGen {
 						'prompt'      => array(
 							'type'        => 'string',
 							'description' => 'A detailed description of the image to generate. Max 1000 characters.',
+							'maxLength'   => 1000,
 						),
 						'orientation' => array(
 							'type'        => 'string',
@@ -41,10 +42,14 @@ class ImageGen {
 						'width'       => array(
 							'type'        => 'integer',
 							'description' => 'Desired width in pixels. Max 1920.',
+							'maximum'     => 1920,
+							'minimum'     => 1,
 						),
 						'height'      => array(
 							'type'        => 'integer',
 							'description' => 'Desired height in pixels. Max 1080.',
+							'maximum'     => 1080,
+							'minimum'     => 1,
 						),
 					),
 					'required'   => array( 'prompt' ),
@@ -92,10 +97,10 @@ class ImageGen {
 			$body['orientation'] = $input['orientation'];
 		}
 		if ( ! empty( $input['width'] ) ) {
-			$body['width'] = (int) $input['width'];
+			$body['width'] = min( (int) $input['width'], 1920 );
 		}
 		if ( ! empty( $input['height'] ) ) {
-			$body['height'] = (int) $input['height'];
+			$body['height'] = min( (int) $input['height'], 1080 );
 		}
 
 		$response = wp_remote_post(
