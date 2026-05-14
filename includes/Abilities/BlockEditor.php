@@ -367,7 +367,7 @@ class BlockEditor {
 	}
 
 	/**
-	 * Register the unified blu/duplicate ability.
+	 * Register the unified blu/duplicate-block ability.
 	 *
 	 * Dual-mode: caller passes EITHER `client_id` (explicit target) OR `kind`
 	 * (intent-based; client resolves to a concrete block via the block lexicon
@@ -403,7 +403,7 @@ class BlockEditor {
 		DESC;
 
 		blu_register_ability(
-			'blu/duplicate',
+			'blu/duplicate-block',
 			array(
 				'label'               => 'Duplicate Block',
 				'description'         => $description,
