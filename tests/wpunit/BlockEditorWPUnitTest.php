@@ -343,4 +343,163 @@ class BlockEditorWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$this->assertSame( 'update_block_attrs', $result['message']['action'] );
 		$this->assertSame( $attrs, $result['message']['attributes'] );
 	}
+
+	// ── blu/duplicate-block ───────────────────────────────────────────
+
+	/**
+	 * Verifies duplicate-block returns 400 when neither client_id nor kind is provided.
+	 */
+	public function test_duplicate_block_requires_client_id_or_kind() {
+		$result = $this->execute_ability( 'blu/duplicate-block', array() );
+
+		$this->assertSame( 400, $result['statusCode'] );
+	}
+
+	/**
+	 * Verifies duplicate-block returns 400 when client_id is not a valid UUID.
+	 */
+	public function test_duplicate_block_rejects_invalid_uuid() {
+		$result = $this->execute_ability( 'blu/duplicate-block', array( 'client_id' => 'not-a-uuid' ) );
+
+		$this->assertSame( 400, $result['statusCode'] );
+	}
+
+	/**
+	 * Verifies duplicate-block returns 200 in explicit mode with a valid UUID.
+	 */
+	public function test_duplicate_block_explicit_mode_success() {
+		$uuid   = '12345678-1234-1234-1234-1234567890ab';
+		$result = $this->execute_ability( 'blu/duplicate-block', array( 'client_id' => $uuid ) );
+
+		$this->assertSame( 200, $result['statusCode'] );
+		$this->assertSame( 'duplicate', $result['message']['action'] );
+		$this->assertSame( $uuid, $result['message']['client_id'] );
+		$this->assertArrayNotHasKey( 'kind', $result['message'] );
+	}
+
+	/**
+	 * Verifies duplicate-block returns 200 in intent mode with a kind only.
+	 */
+	public function test_duplicate_block_intent_mode_success() {
+		$result = $this->execute_ability( 'blu/duplicate-block', array( 'kind' => 'column' ) );
+
+		$this->assertSame( 200, $result['statusCode'] );
+		$this->assertSame( 'duplicate', $result['message']['action'] );
+		$this->assertSame( 'column', $result['message']['kind'] );
+		$this->assertArrayNotHasKey( 'client_id', $result['message'] );
+	}
+
+	/**
+	 * Verifies duplicate-block forwards scope and position in intent mode.
+	 */
+	public function test_duplicate_block_forwards_scope_and_position() {
+		$scope  = '87654321-4321-4321-4321-ba0987654321';
+		$result = $this->execute_ability(
+			'blu/duplicate-block',
+			array(
+				'kind'     => 'card',
+				'scope'    => $scope,
+				'position' => 'first',
+			)
+		);
+
+		$this->assertSame( 200, $result['statusCode'] );
+		$this->assertSame( 'card', $result['message']['kind'] );
+		$this->assertSame( $scope, $result['message']['scope'] );
+		$this->assertSame( 'first', $result['message']['position'] );
+	}
+
+	/**
+	 * Verifies duplicate-block preserves integer position values.
+	 */
+	public function test_duplicate_block_preserves_integer_position() {
+		$result = $this->execute_ability(
+			'blu/duplicate-block',
+			array(
+				'kind'     => 'button',
+				'position' => 2,
+			)
+		);
+
+		$this->assertSame( 200, $result['statusCode'] );
+		$this->assertSame( 2, $result['message']['position'] );
+	}
+
+	// ── blu/insert-inner-block ────────────────────────────────────────
+
+	/**
+	 * Verifies insert-inner-block returns 400 when parent_client_id is missing.
+	 */
+	public function test_insert_inner_block_requires_parent_client_id() {
+		$result = $this->execute_ability(
+			'blu/insert-inner-block',
+			array( 'block_content' => '<!-- wp:paragraph --><p>Hi</p><!-- /wp:paragraph -->' )
+		);
+
+		$this->assertSame( 400, $result['statusCode'] );
+	}
+
+	/**
+	 * Verifies insert-inner-block returns 400 when block_content is missing.
+	 */
+	public function test_insert_inner_block_requires_block_content() {
+		$result = $this->execute_ability(
+			'blu/insert-inner-block',
+			array( 'parent_client_id' => 'abc-123' )
+		);
+
+		$this->assertSame( 400, $result['statusCode'] );
+	}
+
+	/**
+	 * Verifies insert-inner-block returns 200 with valid input.
+	 */
+	public function test_insert_inner_block_success() {
+		$result = $this->execute_ability(
+			'blu/insert-inner-block',
+			array(
+				'parent_client_id' => 'abc-123',
+				'block_content'    => '<!-- wp:paragraph --><p>Hi</p><!-- /wp:paragraph -->',
+			)
+		);
+
+		$this->assertSame( 200, $result['statusCode'] );
+		$this->assertSame( 'insert_inner_block', $result['message']['action'] );
+		$this->assertSame( 'abc-123', $result['message']['parent_client_id'] );
+		$this->assertArrayNotHasKey( 'index', $result['message'] );
+	}
+
+	/**
+	 * Verifies insert-inner-block forwards the index when provided as an integer.
+	 */
+	public function test_insert_inner_block_forwards_integer_index() {
+		$result = $this->execute_ability(
+			'blu/insert-inner-block',
+			array(
+				'parent_client_id' => 'abc-123',
+				'block_content'    => '<!-- wp:paragraph --><p>Hi</p><!-- /wp:paragraph -->',
+				'index'            => 2,
+			)
+		);
+
+		$this->assertSame( 200, $result['statusCode'] );
+		$this->assertSame( 2, $result['message']['index'] );
+	}
+
+	/**
+	 * Verifies insert-inner-block ignores non-integer index values.
+	 */
+	public function test_insert_inner_block_ignores_non_integer_index() {
+		$result = $this->execute_ability(
+			'blu/insert-inner-block',
+			array(
+				'parent_client_id' => 'abc-123',
+				'block_content'    => '<!-- wp:paragraph --><p>Hi</p><!-- /wp:paragraph -->',
+				'index'            => 'not-an-int',
+			)
+		);
+
+		$this->assertSame( 200, $result['statusCode'] );
+		$this->assertArrayNotHasKey( 'index', $result['message'] );
+	}
 }
