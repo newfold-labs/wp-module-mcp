@@ -109,11 +109,10 @@ class WooProducts {
 			'blu/wc-add-product',
 			array(
 				'label'               => 'Add WooCommerce Product',
-				'description'         => 'Create a WooCommerce product, or start the guided add-product flow. If ready is false or omitted, no product is created—the response returns assistant-only steps (A/B options, suggestions). Set ready to true to persist the product via the REST API (after user confirmation when using the guided flow, or immediately when the user asked to add the product with sufficient detail).',
+				'description'         => 'Create a WooCommerce product, or start the guided add-product flow. If ready is false or omitted, no product is created—the response returns assistant-only steps (A/B options, suggestions).',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'        => 'object',
-					'description' => 'Pass product fields as for POST /wc/v3/products. The ready flag controls whether the product is actually created.',
 					'properties'  => array(
 						'name'                 => array(
 							'type'        => 'string',

@@ -205,7 +205,7 @@ Do NOT call blu/wc-add-product until then.
 STEP 5 — Create the product
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Call blu/wc-add-product with all confirmed fields:
+Call blu/wc-add-product with status draft and with all confirmed fields:
 
   {
     "name":                 "[product name]",
@@ -223,7 +223,7 @@ On success, confirm to the merchant:
   - 🆔 Product ID: [id]
   - 🔗 [product link if returned]
 
-  Would you like to do anything else with this product?
+  Do you want publish it ?
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 GLOBAL RULES

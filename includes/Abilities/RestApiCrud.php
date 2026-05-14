@@ -34,6 +34,7 @@ class RestApiCrud {
 					$ignore_strings = array( 'oembed', 'autosaves', 'revisions', 'jwt-auth' );
 
 					$routes = rest_get_server()->get_routes();
+					
 					$result = array();
 
 					foreach ( $routes as $route => $methods ) {
