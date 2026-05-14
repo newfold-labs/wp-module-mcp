@@ -58,9 +58,9 @@ class ImageGen {
 				'permission_callback' => fn() => current_user_can( 'upload_files' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => false,
-						'idempotent'   => false,
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => false,
 					),
 				),
 			)

@@ -13,6 +13,9 @@
 namespace NewfoldLabs\WP\Module\Data;
 
 if ( ! class_exists( __NAMESPACE__ . '\HiiveConnection' ) ) {
+	/**
+	 * Test stub for HiiveConnection. Token is mutable per-test via the public static.
+	 */
 	class HiiveConnection {
 		/**
 		 * Token returned by get_auth_token(). Set to empty string to simulate missing auth.
