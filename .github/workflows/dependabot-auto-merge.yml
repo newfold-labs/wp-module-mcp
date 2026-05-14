@@ -17,7 +17,7 @@ concurrency:
   cancel-in-progress: false
 
 # Disable permissions for all available scopes by default.
-# Any needed permissions should be configured individually for each job.
+# Any needed permissions should be configured at the job level.
 permissions: {}
 
 jobs:
@@ -34,10 +34,10 @@ jobs:
       github.event.workflow_run.actor.login == 'dependabot[bot]' &&
       github.event.workflow_run.pull_requests[0] != null
     uses: newfold-labs/workflows/.github/workflows/reusable-dependabot-auto-merge.yml@enhance/PRESS0-4266
+    permissions:
+      contents: write      # Required by the reusable workflow to merge the Dependabot pull request into the base branch.
+      pull-requests: write # Required by the reusable workflow to read or update the Dependabot PR before merging.
     with:
       pr-number: ${{ github.event.workflow_run.pull_requests[0].number }}
       head-sha: ${{ github.event.workflow_run.head_sha }}
-    permissions:
-      contents: write
-      pull-requests: write
     secrets: inherit
