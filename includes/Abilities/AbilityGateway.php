@@ -46,6 +46,7 @@ class AbilityGateway {
 			'blu_mcp_allowed_namespaces',
 			array(
 				'blu/',
+				'woocommerce/',
 			)
 		);
 
@@ -53,6 +54,7 @@ class AbilityGateway {
 			'blu_mcp_allowed_categories',
 			array(
 				'blu-mcp',
+				'woocommerce-rest',
 			)
 		);
 
@@ -65,6 +67,11 @@ class AbilityGateway {
 				$category = $ability->get_category();
 
 				foreach ( $allowed_namespaces as $ns ) {
+					// Skip empty/non-string entries — an empty string would match every
+					// ability via str_starts_with() and silently bypass the whitelist.
+					if ( ! is_string( $ns ) || '' === $ns ) {
+						continue;
+					}
 					if ( str_starts_with( $name, $ns ) ) {
 						return true;
 					}
@@ -118,18 +125,6 @@ class AbilityGateway {
 	 */
 	private function to_mcp_name( string $name ): string {
 		return str_replace( '/', '-', trim( $name ) );
-	}
-
-	/**
-	 * Extract the namespace from an ability name (part before the first slash).
-	 *
-	 * @param string $name Ability name (slash form).
-	 *
-	 * @return string Namespace, or empty string if no slash.
-	 */
-	private function get_namespace( string $name ): string {
-		$slash_pos = strpos( $name, '/' );
-		return false !== $slash_pos ? substr( $name, 0, $slash_pos ) : '';
 	}
 
 	/**
@@ -191,16 +186,26 @@ class AbilityGateway {
 			'blu/list-abilities',
 			array(
 				'label'               => 'List Abilities',
-				'description'         => 'List all available abilities. Each entry includes name (hyphen form, same as WordPress MCP tool names, e.g. blu-posts-search), label, description, and annotations. Does not return input schemas — use blu-get-ability-schema with those name values.',
+				'description'         => 'List the abilities available on this site. Each entry includes `name` (hyphen form), `label`, `description`, and `annotations`. Use the optional `search` and `name_prefix` filters to narrow the catalog.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
-					'type'       => 'object',
-					'properties' => array(
-						'namespace' => array(
+					'type'                 => 'object',
+					'properties'           => array(
+						'search'      => array(
 							'type'        => 'string',
-							'description' => 'Optional namespace to filter abilities by their provider, e.g. "blu" for Bluehost abilities. Matches the namespace prefix before the slash in ability names.',
+							'description' => 'Case-insensitive substring filter across each ability\'s name, label, and description.',
+							'minLength'   => 1,
+							'maxLength'   => 100,
+						),
+						'name_prefix' => array(
+							'type'        => 'string',
+							'description' => 'Prefix match on the MCP tool name (hyphen form). Examples: `blu-wc-` for Bluehost WooCommerce wrappers, `woocommerce-` for WooCommerce-native abilities, `blu-posts` for post abilities. Slash form (e.g. `blu/wc`) is normalized to hyphen form.',
+							'minLength'   => 1,
+							'maxLength'   => 100,
+							'pattern'     => '^[A-Za-z0-9/_-]+$',
 						),
 					),
+					'additionalProperties' => false,
 				),
 				'execute_callback'    => function ( $input = null ) {
 					$abilities = $this->get_whitelisted_abilities();
@@ -215,26 +220,51 @@ class AbilityGateway {
 						}
 					);
 
-					// Apply optional namespace filter. Accept "blu", "blu/", or "blu-".
-					if ( ! empty( $input['namespace'] ) ) {
-						$ns = rtrim( $input['namespace'], '/-' );
-						$abilities = array_filter(
-							$abilities,
-							function ( $ability ) use ( $ns ) {
-								return $this->get_namespace( $ability->get_name() ) === $ns;
-							}
-						);
+					$search      = isset( $input['search'] ) && is_string( $input['search'] ) ? trim( $input['search'] ) : '';
+					$name_prefix = isset( $input['name_prefix'] ) && is_string( $input['name_prefix'] ) ? trim( $input['name_prefix'] ) : '';
+
+					if ( '' !== $name_prefix ) {
+						$name_prefix = rtrim( str_replace( '/', '-', $name_prefix ), '-' );
 					}
+
+					$abilities = array_filter(
+						$abilities,
+						function ( $ability ) use ( $search, $name_prefix ) {
+							$mcp_name = $this->to_mcp_name( $ability->get_name() );
+
+							if ( '' !== $name_prefix && 0 !== strpos( $mcp_name, $name_prefix ) ) {
+								return false;
+							}
+
+							if ( '' !== $search ) {
+								$haystacks = array(
+									$mcp_name,
+									(string) $ability->get_label(),
+									(string) $ability->get_description(),
+								);
+								$matched   = false;
+								foreach ( $haystacks as $haystack ) {
+									if ( false !== mb_stripos( $haystack, $search ) ) {
+										$matched = true;
+										break;
+									}
+								}
+								if ( ! $matched ) {
+									return false;
+								}
+							}
+
+							return true;
+						}
+					);
 
 					$result = array();
 					foreach ( $abilities as $ability ) {
 						$meta        = $ability->get_meta();
 						$annotations = isset( $meta['annotations'] ) ? $meta['annotations'] : array();
-						$name        = $ability->get_name();
 
 						$result[] = array(
-							'name'        => $this->to_mcp_name( $name ),
-							'namespace'   => $this->get_namespace( $name ),
+							'name'        => $this->to_mcp_name( $ability->get_name() ),
 							'label'       => $ability->get_label(),
 							'description' => $ability->get_description(),
 							'annotations' => $annotations,
@@ -266,14 +296,14 @@ class AbilityGateway {
 			'blu/get-ability-schema',
 			array(
 				'label'               => 'Get Ability Schema',
-				'description'         => 'Get the full input schema for a specific ability. Use this after blu-list-abilities to learn what parameters an ability accepts before calling it with blu-call-ability.',
+				'description'         => 'Get the full input schema for a specific ability, so the caller knows what parameters to pass when invoking it via blu-call-ability.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
 						'ability_name' => array(
 							'type'        => 'string',
-							'description' => 'Exact ability name from list-abilities (hyphen form, same as tools/list), e.g. "blu-posts-search".',
+							'description' => 'Ability name in hyphen form (e.g. "blu-posts-search", "woocommerce-products-list"), matching the `name` field from blu-list-abilities.',
 						),
 					),
 					'required'   => array( 'ability_name' ),
@@ -326,18 +356,18 @@ class AbilityGateway {
 			'blu/call-ability',
 			array(
 				'label'               => 'Call Ability',
-				'description'         => 'Execute any available ability by name. First use blu-list-abilities to discover abilities, then blu-get-ability-schema to learn the parameters, then use this tool to execute it.',
+				'description'         => 'Execute an ability by name with its parameters. The gateway tools (blu-list-abilities, blu-get-ability-schema, blu-call-ability) cannot be invoked through this tool.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
 						'ability_name' => array(
 							'type'        => 'string',
-							'description' => 'Exact ability name from list-abilities (hyphen form), e.g. "blu-posts-search". Gateway tools (list-abilities, get-ability-schema, call-ability) cannot be called here.',
+							'description' => 'Ability name in hyphen form (e.g. "blu-posts-search"), matching the `name` field from blu-list-abilities.',
 						),
 						'parameters'   => array(
 							'type'        => 'object',
-							'description' => 'The parameters to pass to the ability (see blu-get-ability-schema for the expected format)',
+							'description' => 'Parameters object matching the ability\'s input_schema (see blu-get-ability-schema). Pass `{}` if the ability takes none.',
 						),
 					),
 					'required'   => array( 'ability_name' ),
@@ -367,11 +397,29 @@ class AbilityGateway {
 					$result = $ability->execute( $parameters );
 
 					if ( is_wp_error( $result ) ) {
-						$status_code = $result->get_error_code();
+						// WordPress convention: WP_Error::get_error_code() is a string slug
+						// (e.g. "rest_invalid_param") and the HTTP status lives in error_data.
+						// Falling back to get_error_code() handles the rare case where an
+						// ability returns WP_Error( 400, ... ) with an integer code.
+						$error_data  = $result->get_error_data();
+						$status_code = is_array( $error_data ) && isset( $error_data['status'] ) && is_int( $error_data['status'] )
+							? $error_data['status']
+							: $result->get_error_code();
+
 						if ( ! is_int( $status_code ) || $status_code < 400 || $status_code > 599 ) {
 							$status_code = 500;
 						}
-						return blu_prepare_ability_response( $status_code, $result->get_error_message() );
+
+						// Redact server-error messages — ability authors may put exception
+						// traces, SQL fragments, file paths, or other internal details into
+						// WP_Error messages. 4xx messages are caller-facing (validation /
+						// permission feedback) and required for the LLM to self-correct, so
+						// pass those through unchanged.
+						$message = $status_code >= 500
+							? 'Ability execution failed.'
+							: $result->get_error_message();
+
+						return blu_prepare_ability_response( $status_code, $message );
 					}
 
 					return $result;

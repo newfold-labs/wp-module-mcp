@@ -18,7 +18,7 @@ The server registers exactly 3 gateway tools. The default names are shown below,
 
 | Role | Default name | How to identify (from `tools/list` inputSchema) |
 |------|-------------|------------------------------------------------|
-| **List** | `blu-list-abilities` | Has optional `namespace` property (string), no `ability_name` |
+| **List** | `blu-list-abilities` | Has optional `search` and `name_prefix` properties (both string), no `ability_name` |
 | **Schema** | `blu-get-ability-schema` | Requires `ability_name` (string), no `parameters` property |
 | **Call** | `blu-call-ability` | Requires `ability_name` (string) and has optional `parameters` (object) |
 
@@ -66,7 +66,6 @@ Response:
       "message": [
         {
           "name": "blu-posts-search",
-          "namespace": "blu",
           "label": "Search Posts",
           "description": "Search and filter WordPress posts with pagination",
           "annotations": { "readonly": true }
@@ -76,7 +75,7 @@ Response:
   }
 }
 ```
-The ability list is in `result.structuredContent.message` (parsed) or `result.content[0].text` (JSON string). Each entry includes `name` (hyphen-form, use this with `blu-get-ability-schema` and `blu-call-ability`), `namespace`, `label`, `description`, and `annotations`.
+The ability list is in `result.structuredContent.message` (parsed) or `result.content[0].text` (JSON string). Each entry includes `name` (hyphen-form, use this with `blu-get-ability-schema` and `blu-call-ability`), `label`, `description`, and `annotations`.
 
 **2. Inspect** — call the **Schema** tool to learn what parameters an ability accepts:
 ```json
@@ -126,28 +125,69 @@ Response `result.structuredContent` contains the ability's result (format varies
 
 > **Important:** Never call ability names directly as MCP tool names (e.g. `"name": "blu-posts-search"` at the `tools/call` level). Abilities are only accessible through the **Call** gateway tool. The only valid MCP tool names are the 3 gateway tools returned by `tools/list`.
 
-### Namespace filter
+### Filtering the list
 
-Filter abilities by provider namespace:
+Both gateway list tools (`blu-list-abilities`) and the REST catalog tool (`blu-list-api-functions`) accept optional filters. All filters are AND-composed; omit them to return the full catalog.
+
+`blu-list-abilities`:
+
+| Filter | Type | Behavior |
+|--------|------|----------|
+| `search` | string | Case-insensitive substring match across each ability's `name` (hyphen form), `label`, and `description`. |
+| `name_prefix` | string | Prefix match on the MCP tool name (hyphen form). Two WooCommerce surfaces are exposed: `"blu-wc-"` for Bluehost's WooCommerce wrappers and `"woocommerce-"` for WooCommerce-native abilities. Slash form is normalized to hyphen form (e.g. `"blu/wc"` ≡ `"blu-wc"`). |
+
 ```json
+// Bluehost's WooCommerce wrappers under "blu-wc-products"
 {
   "method": "tools/call",
   "params": {
     "name": "blu-list-abilities",
-    "arguments": { "namespace": "blu" }
+    "arguments": { "name_prefix": "blu-wc-products", "search": "category" }
+  }
+}
+
+// WooCommerce-native abilities under "woocommerce-products"
+{
+  "method": "tools/call",
+  "params": {
+    "name": "blu-list-abilities",
+    "arguments": { "name_prefix": "woocommerce-products" }
   }
 }
 ```
-Accepts `"blu"`, `"blu/"`, or `"blu-"` — all normalised to match the ability namespace.
+
+`blu-list-api-functions`:
+
+| Filter | Type | Behavior |
+|--------|------|----------|
+| `namespace` | string | Exact match on the REST namespace as WordPress registered it. Multi-segment (`"wp/v2"`, `"wc/v3"`, `"wc-admin/marketing"`) and single-segment (`"wc-analytics"`) namespaces are both supported. Leading and trailing slashes are tolerated. |
+| `methods` | array of `"GET" \| "POST" \| "PATCH" \| "DELETE"` | Restrict to listed HTTP methods (uppercase, validated by the schema enum). Omit or pass an empty array to allow all methods. |
+| `search` | string | Case-insensitive substring match on the route string. |
+
+```json
+{
+  "method": "tools/call",
+  "params": {
+    "name": "blu-list-api-functions",
+    "arguments": { "namespace": "wp/v2", "methods": ["GET"] }
+  }
+}
+```
+
+Each item in the response is one `(route, method)` pair plus the derived `namespace` (e.g. `"wp/v2"` or `"wc-analytics"`), so clients can group or filter further without parsing route strings. Endpoints registered with combined methods (e.g. `WP_REST_Server::EDITABLE = "POST, PUT, PATCH"`) emit one row per method.
+
+The MCP transport route `/blu/mcp` is excluded from the catalog so the LLM can't discover-and-invoke its way back into the transport. The same route is also rejected by `blu-run-api-function` if passed directly.
 
 ### Whitelist
 
 The gateway only exposes abilities matching allowed namespaces or categories:
 
-- **Namespaces:** `blu/` (configurable via `blu_mcp_allowed_namespaces` filter)
-- **Categories:** `blu-mcp` (configurable via `blu_mcp_allowed_categories` filter)
+- **Namespaces:** `blu/`, `woocommerce/` (configurable via `blu_mcp_allowed_namespaces` filter)
+- **Categories:** `blu-mcp`, `woocommerce-rest` (configurable via `blu_mcp_allowed_categories` filter)
 
-To add a new namespace:
+`blu/` and `blu-mcp` cover Bluehost's own abilities (including the `blu/wc-*` WooCommerce wrappers). `woocommerce/` and `woocommerce-rest` cover the abilities WooCommerce registers natively (since WC 10.3 ships its own Abilities API integration — products, orders, etc. under `woocommerce/<resource>-<op>`).
+
+To add another namespace:
 
 ```php
 add_filter( 'blu_mcp_allowed_namespaces', function ( $namespaces ) {
@@ -283,9 +323,10 @@ All abilities below are accessible through the gateway. The **Ability name** col
 
 ### WooCommerce (when WooCommerce is active)
 
-These are Bluehost wrapper abilities for WooCommerce operations. They are registered under the `blu/` namespace with a `wc-` segment prefix.
+Two surfaces are exposed:
 
-> **Note:** WooCommerce 10.3+ also registers its own native abilities under the `woocommerce/` namespace (e.g. `woocommerce/products-list`). Those are **not** exposed through the gateway by default — only the `blu/wc-*` wrappers below are whitelisted. To expose WooCommerce native abilities, add `woocommerce/` to the `blu_mcp_allowed_namespaces` filter.
+- **Bluehost WooCommerce tools** (`blu/wc-*`, MCP form `blu-wc-*`): wrappers under the `blu/` namespace listed below. Use `name_prefix: "blu-wc-"` on `blu-list-abilities` to isolate.
+- **WooCommerce-native abilities** (`woocommerce/<resource>-<op>`, MCP form `woocommerce-<resource>-<op>`): registered by WooCommerce 10.3+ in `woocommerce/src/Internal/Abilities/AbilitiesRestBridge.php`. Covers products, orders, and other WC resources with list/get/create/update/delete operations. Use `name_prefix: "woocommerce-"` to isolate. Both `woocommerce/` namespace and `woocommerce-rest` category are whitelisted by default.
 
 #### Products
 
