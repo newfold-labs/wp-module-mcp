@@ -119,13 +119,12 @@ class GlobalStylesWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	// ── blu/update-global-styles ──────────────────────────────────────
 
 	/**
-	 * Verifies update-global-styles returns 400 when neither settings nor styles is provided.
+	 * Verifies the anyOf schema rejects update-global-styles calls that provide neither settings nor styles.
 	 */
 	public function test_update_requires_settings_or_styles() {
 		$result = $this->execute_ability( 'blu/update-global-styles', array() );
 
-		$this->assertSame( 400, $result['statusCode'] );
-		$this->assertSame( 'error', $result['status'] );
+		$this->assertInstanceOf( \WP_Error::class, $result );
 	}
 
 	/**

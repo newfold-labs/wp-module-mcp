@@ -128,22 +128,21 @@ class BlockEditorWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	// ── blu/edit-block ────────────────────────────────────────────────
 
 	/**
-	 * Verifies edit-block returns 400 when client_id is missing.
+	 * Verifies the schema rejects edit-block calls without a client_id.
 	 */
 	public function test_edit_block_requires_client_id() {
 		$result = $this->execute_ability( 'blu/edit-block', array( 'block_content' => '<!-- wp:paragraph --><p>Test</p><!-- /wp:paragraph -->' ) );
 
-		$this->assertSame( 400, $result['statusCode'] );
-		$this->assertSame( 'error', $result['status'] );
+		$this->assertInstanceOf( \WP_Error::class, $result );
 	}
 
 	/**
-	 * Verifies edit-block returns 400 when block_content is missing.
+	 * Verifies the schema rejects edit-block calls without block_content.
 	 */
 	public function test_edit_block_requires_block_content() {
 		$result = $this->execute_ability( 'blu/edit-block', array( 'client_id' => 'abc-123' ) );
 
-		$this->assertSame( 400, $result['statusCode'] );
+		$this->assertInstanceOf( \WP_Error::class, $result );
 	}
 
 	/**
@@ -167,12 +166,12 @@ class BlockEditorWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	// ── blu/add-section ───────────────────────────────────────────────
 
 	/**
-	 * Verifies add-section returns 400 when block_content is missing.
+	 * Verifies the schema rejects add-section calls without block_content.
 	 */
 	public function test_add_section_requires_block_content() {
 		$result = $this->execute_ability( 'blu/add-section', array( 'after_client_id' => 'abc-123' ) );
 
-		$this->assertSame( 400, $result['statusCode'] );
+		$this->assertInstanceOf( \WP_Error::class, $result );
 	}
 
 	/**
@@ -263,12 +262,12 @@ class BlockEditorWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	// ── blu/delete-block ──────────────────────────────────────────────
 
 	/**
-	 * Verifies delete-block returns 400 when client_id is missing.
+	 * Verifies the schema rejects delete-block calls without a client_id.
 	 */
 	public function test_delete_block_requires_client_id() {
 		$result = $this->execute_ability( 'blu/delete-block', array() );
 
-		$this->assertSame( 400, $result['statusCode'] );
+		$this->assertInstanceOf( \WP_Error::class, $result );
 	}
 
 	/**
@@ -285,7 +284,7 @@ class BlockEditorWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	// ── blu/move-block ────────────────────────────────────────────────
 
 	/**
-	 * Verifies move-block returns 400 when client_id is missing.
+	 * Verifies the schema rejects move-block calls without a client_id.
 	 */
 	public function test_move_block_requires_client_id() {
 		$result = $this->execute_ability(
@@ -296,7 +295,7 @@ class BlockEditorWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 			)
 		);
 
-		$this->assertSame( 400, $result['statusCode'] );
+		$this->assertInstanceOf( \WP_Error::class, $result );
 	}
 
 	/**
@@ -315,7 +314,7 @@ class BlockEditorWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	}
 
 	/**
-	 * Verifies move-block returns 400 when position is invalid.
+	 * Verifies the schema rejects move-block calls with a position outside the enum.
 	 */
 	public function test_move_block_requires_valid_position() {
 		$result = $this->execute_ability(
@@ -327,7 +326,7 @@ class BlockEditorWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 			)
 		);
 
-		$this->assertSame( 400, $result['statusCode'] );
+		$this->assertInstanceOf( \WP_Error::class, $result );
 	}
 
 	/**
@@ -353,12 +352,12 @@ class BlockEditorWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	// ── blu/get-block-markup ──────────────────────────────────────────
 
 	/**
-	 * Verifies get-block-markup returns 400 when client_id is missing.
+	 * Verifies the schema rejects get-block-markup calls without a client_id.
 	 */
 	public function test_get_block_markup_requires_client_id() {
 		$result = $this->execute_ability( 'blu/get-block-markup', array() );
 
-		$this->assertSame( 400, $result['statusCode'] );
+		$this->assertInstanceOf( \WP_Error::class, $result );
 	}
 
 	/**
@@ -375,12 +374,12 @@ class BlockEditorWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	// ── blu/highlight-block ───────────────────────────────────────────
 
 	/**
-	 * Verifies highlight-block returns 400 when client_id is missing.
+	 * Verifies the schema rejects highlight-block calls without a client_id.
 	 */
 	public function test_highlight_block_requires_client_id() {
 		$result = $this->execute_ability( 'blu/highlight-block', array() );
 
-		$this->assertSame( 400, $result['statusCode'] );
+		$this->assertInstanceOf( \WP_Error::class, $result );
 	}
 
 	/**
@@ -396,12 +395,12 @@ class BlockEditorWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	// ── blu/update-block-attrs ────────────────────────────────────────
 
 	/**
-	 * Verifies update-block-attrs returns 400 when required fields are missing.
+	 * Verifies the schema rejects update-block-attrs calls missing required fields.
 	 */
 	public function test_update_block_attrs_requires_fields() {
 		$result = $this->execute_ability( 'blu/update-block-attrs', array( 'client_id' => 'abc-123' ) );
 
-		$this->assertSame( 400, $result['statusCode'] );
+		$this->assertInstanceOf( \WP_Error::class, $result );
 	}
 
 	/**
@@ -437,12 +436,12 @@ class BlockEditorWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	}
 
 	/**
-	 * Verifies duplicate-block returns 400 when client_id is not a valid UUID.
+	 * Verifies the schema rejects duplicate-block calls with a client_id that fails the UUID pattern.
 	 */
 	public function test_duplicate_block_rejects_invalid_uuid() {
 		$result = $this->execute_ability( 'blu/duplicate-block', array( 'client_id' => 'not-a-uuid' ) );
 
-		$this->assertSame( 400, $result['statusCode'] );
+		$this->assertInstanceOf( \WP_Error::class, $result );
 	}
 
 	/**
@@ -509,7 +508,7 @@ class BlockEditorWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	// ── blu/insert-inner-block ────────────────────────────────────────
 
 	/**
-	 * Verifies insert-inner-block returns 400 when parent_client_id is missing.
+	 * Verifies the schema rejects insert-inner-block calls without parent_client_id.
 	 */
 	public function test_insert_inner_block_requires_parent_client_id() {
 		$result = $this->execute_ability(
@@ -517,11 +516,11 @@ class BlockEditorWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 			array( 'block_content' => '<!-- wp:paragraph --><p>Hi</p><!-- /wp:paragraph -->' )
 		);
 
-		$this->assertSame( 400, $result['statusCode'] );
+		$this->assertInstanceOf( \WP_Error::class, $result );
 	}
 
 	/**
-	 * Verifies insert-inner-block returns 400 when block_content is missing.
+	 * Verifies the schema rejects insert-inner-block calls without block_content.
 	 */
 	public function test_insert_inner_block_requires_block_content() {
 		$result = $this->execute_ability(
@@ -529,7 +528,7 @@ class BlockEditorWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 			array( 'parent_client_id' => 'abc-123' )
 		);
 
-		$this->assertSame( 400, $result['statusCode'] );
+		$this->assertInstanceOf( \WP_Error::class, $result );
 	}
 
 	/**
@@ -568,9 +567,9 @@ class BlockEditorWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	}
 
 	/**
-	 * Verifies insert-inner-block ignores non-integer index values.
+	 * Verifies the schema rejects insert-inner-block calls with a non-integer index.
 	 */
-	public function test_insert_inner_block_ignores_non_integer_index() {
+	public function test_insert_inner_block_rejects_non_integer_index() {
 		$result = $this->execute_ability(
 			'blu/insert-inner-block',
 			array(
@@ -580,7 +579,6 @@ class BlockEditorWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 			)
 		);
 
-		$this->assertSame( 200, $result['statusCode'] );
-		$this->assertArrayNotHasKey( 'index', $result['message'] );
+		$this->assertInstanceOf( \WP_Error::class, $result );
 	}
 }

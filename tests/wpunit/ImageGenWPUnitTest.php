@@ -189,18 +189,10 @@ class ImageGenWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	}
 
 	/**
-	 * Verifies width/height are clamped to the documented maxima.
+	 * Verifies the schema rejects width/height values above the documented maxima.
 	 */
-	public function test_generate_clamps_oversized_dimensions() {
-		$this->mock_http_response(
-			array(
-				'response' => array( 'code' => 200 ),
-				'body'     => wp_json_encode( array( 'url' => 'https://cdn.example.com/img.jpg' ) ),
-				'headers'  => array(),
-			)
-		);
-
-		$this->execute_generate(
+	public function test_generate_rejects_oversized_dimensions() {
+		$result = $this->execute_generate(
 			array(
 				'prompt' => 'A test image',
 				'width'  => 9999,
@@ -208,27 +200,16 @@ class ImageGenWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 			)
 		);
 
-		$body = json_decode( $this->last_request_args['args']['body'], true );
-		$this->assertSame( 1920, $body['width'] );
-		$this->assertSame( 1080, $body['height'] );
+		$this->assertInstanceOf( \WP_Error::class, $result );
 	}
 
 	/**
-	 * Verifies the prompt is truncated to 1000 characters before transport.
+	 * Verifies the schema rejects prompts longer than 1000 characters.
 	 */
-	public function test_generate_truncates_long_prompt() {
-		$this->mock_http_response(
-			array(
-				'response' => array( 'code' => 200 ),
-				'body'     => wp_json_encode( array( 'url' => 'https://cdn.example.com/img.jpg' ) ),
-				'headers'  => array(),
-			)
-		);
+	public function test_generate_rejects_overlong_prompt() {
+		$result = $this->execute_generate( array( 'prompt' => str_repeat( 'x', 1500 ) ) );
 
-		$this->execute_generate( array( 'prompt' => str_repeat( 'x', 1500 ) ) );
-
-		$body = json_decode( $this->last_request_args['args']['body'], true );
-		$this->assertSame( 1000, strlen( $body['prompt'] ) );
+		$this->assertInstanceOf( \WP_Error::class, $result );
 	}
 
 	/**
