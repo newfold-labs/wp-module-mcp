@@ -81,21 +81,6 @@ class McpValidation {
 				throw new \Exception( 'Bearer token is missing.' );
 			}
 
-			// Development-only: allow localhost requests with a valid Bearer token to bypass
-			// full JWT signature validation when explicitly enabled. The naf-gateway signs
-			// tokens with its own key which differs from the jarvis-jwt key used in production.
-			// Requires local environment type and rejects requests with forwarded headers.
-			if (
-				defined( 'BLU_ALLOW_LOCALHOST_BYPASS' )
-				&& BLU_ALLOW_LOCALHOST_BYPASS
-				&& 'local' === wp_get_environment_type()
-				&& $this->is_localhost_request()
-				&& ! empty( $token )
-			) {
-				$this->set_admin_authentication();
-				return true;
-			}
-
 			// Validate JWT (signature, claims, expiry) and verify product access via Hiive.
 			return $this->is_valid_token( $token );
 
@@ -145,7 +130,7 @@ class McpValidation {
 
 		$payload_b64url = $segments[1];
 		$payload_b64    = strtr( $payload_b64url, '-_', '+/' );
-		$payload_raw    = base64_decode( $payload_b64, true ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- Decoding JWT payload, not obfuscation.
+		$payload_raw    = base64_decode( $payload_b64, true );
 		if ( false === $payload_raw ) {
 			return null;
 		}
@@ -199,8 +184,7 @@ class McpValidation {
 			throw new \Exception( 'Token validation failed. The audience is invalid.' );
 		}
 
-		$valid_issuers = array( 'jarvis-jwt', 'naf-gateway' );
-		if ( ! isset( $decoded->iss ) || ! in_array( $decoded->iss, $valid_issuers, true ) ) {
+		if ( ! isset( $decoded->iss ) || 'jarvis-jwt' !== $decoded->iss ) {
 			throw new \Exception( 'Token validation failed. The iss is invalid.' );
 		}
 
@@ -292,23 +276,6 @@ class McpValidation {
 		}
 
 		return apply_filters( $filter_name, $this->normalize_pem_key( $public_key ) );
-	}
-
-	/**
-	 * Check if the request originates from localhost.
-	 * Rejects requests that include forwarded headers to prevent proxy bypass.
-	 *
-	 * @return bool
-	 */
-	private function is_localhost_request(): bool {
-		// Reject if forwarded headers are present (likely proxied from external client).
-		if ( ! empty( $_SERVER['HTTP_X_FORWARDED_FOR'] ) || ! empty( $_SERVER['HTTP_FORWARDED'] ) ) {
-			return false;
-		}
-
-		$remote_addr = isset( $_SERVER['REMOTE_ADDR'] ) ? $_SERVER['REMOTE_ADDR'] : '';
-		$localhost   = array( '127.0.0.1', '::1' );
-		return in_array( $remote_addr, $localhost, true );
 	}
 
 	/**
