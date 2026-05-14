@@ -18,6 +18,7 @@ jobs:
     name: Setup
     runs-on: ubuntu-latest
     permissions: {} # Uses only github.ref outputs in bash; no checkout or github.token usage.
+    timeout-minutes: 10
     outputs:
       branch: ${{ steps.extract_branch.outputs.branch }}
     steps:
@@ -33,6 +34,7 @@ jobs:
     uses: newfold-labs/workflows/.github/workflows/module-plugin-test-playwright.yml@main
     permissions:
       contents: read # Required so the reusable workflow can clone private plugin/module repositories via actions/checkout using the inherited GITHUB_TOKEN.
+    timeout-minutes: 60
     with:
       module-repo: ${{ github.repository }}
       module-branch: ${{ needs.setup.outputs.branch }}

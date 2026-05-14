@@ -41,3 +41,4 @@ jobs:
       pr-number: ${{ github.event.workflow_run.pull_requests[0].number }}
       head-sha: ${{ github.event.workflow_run.head_sha }}
     secrets: inherit
+    timeout-minutes: 30

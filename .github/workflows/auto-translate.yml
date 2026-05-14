@@ -23,6 +23,7 @@ jobs:
     permissions:
       contents: write      # Required by the reusable workflow to commit translation catalog updates on a branch (write implies read for checkout).
       pull-requests: write # Required by the reusable workflow to open or update translation pull requests.
+    timeout-minutes: 45
     with:
       text_domain: 'wp-module-mcp'
     secrets:
