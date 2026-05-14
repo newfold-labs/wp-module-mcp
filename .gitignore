@@ -11,3 +11,6 @@ tests/_support/_generated
 
 wordpress
 node_modules
+
+# Local MCP client config — contains app passwords / secrets
+servers.json
