@@ -179,7 +179,7 @@ class BlockEditor {
 	private function register_add_section(): void {
 		// phpcs:disable Generic.Files.LineLength.TooLong -- Tool description includes inline rules for AI context.
 		$description = <<<'DESC'
-		Insert new block content at a specific position in the page. Use after_client_id to insert after a block, before_client_id to insert before a block, or set both to null to insert at the very top of the page.
+		Insert new block content at a specific position in the page. Use after_client_id to insert after a block, before_client_id to insert before a block, or set after_client_id to null (and omit before_client_id) to insert at the very top of the page.
 
 		ADDITIONAL RULES:
 		- VALID MARKUP: Every block_content you provide MUST be valid WordPress block markup with proper <!-- wp:name {attrs} --> comments. Never output plain HTML without block comments.
