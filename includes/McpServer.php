@@ -4,6 +4,7 @@ declare( strict_types=1 );
 
 namespace BLU;
 
+use BLU\Abilities\BlockEditor;
 use BLU\Abilities\AbilityGateway;
 use BLU\Abilities\CustomPostTypes;
 use BLU\Abilities\GlobalStyles;
@@ -19,6 +20,7 @@ use BLU\Abilities\Users;
 use BLU\Abilities\WooOrders;
 use BLU\Abilities\WooProducts;
 use BLU\Abilities\Themes;
+use BLU\Abilities\ImageGen;
 
 use BLU\Integrations\WooCommerceAbilities;
 use BLU\Validation\McpValidation;
@@ -149,6 +151,8 @@ class McpServer {
 		new WooProducts();
 		new WooOrders();
 		new Themes();
+		new BlockEditor();
+		new ImageGen();
 	}
 
 	/**
