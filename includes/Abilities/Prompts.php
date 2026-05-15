@@ -24,15 +24,9 @@ class Prompts {
 		$this->register_guided_product_creation_prompt();
 		$this->register_prompt_description();
 		$this->register_smart_product_prompt();
-
-		/*
-		$this->register_prompt_description();
 		$this->register_prompt_categories();
 		$this->register_prompt_tags();
 		$this->register_prompt_brands();
-		$this->register_smart_product_prompt();
-		$this->register_prompt_variation_attributes();
-		*/
 	}
 
 	/**
@@ -267,88 +261,6 @@ class Prompts {
 
 
 	/**
-	 * Create a prompt to instruct the AI the steps to follow to improve the long and short description
-	 *
-	 * @return void
-	 */
-	private function register_improve_prompt_description() {
-		blu_register_ability(
-			'blu/improve-product-description',
-			array(
-				'label'               => 'Improve Product Description',
-				'category'            => 'blu-mcp',
-				'description'         => 'Improve the existing description and short description for a product',
-				'input_schema'        => array(
-					'type'       => 'object',
-					'properties' => array(
-						'id'   => array(
-							'type'        => 'integer',
-							'description' => 'Product ID.',
-						),
-						'tone' => array(
-							'type'        => 'string',
-							'description' => 'User tone.',
-							'enum'        => array( 'formal', 'technical', 'empathetic', 'persuasive' ),
-							'default'     => 'formal',
-						),
-					),
-					'required'   => array( 'id' ),
-				),
-				'execute_callback'    => function ( $input ) {
-					if ( ! isset( $input['id'] ) ) {
-						return blu_standardize_rest_response(
-							new WP_Error(
-								400,
-								'Miss required Product ID.',
-							)
-						);
-					}
-					$product = wc_get_product( $input['id'] );
-					if ( ! $product ) {
-						return blu_standardize_rest_response(
-							new WP_Error(
-								400,
-								'Invalid Product ID.',
-							)
-						);
-					}
-
-					$tone              = isset( $input['tone'] ) ? $input['tone'] : 'formal';
-					$name              = $product->get_title();
-					$description       = $product->get_description();
-					$short_description = $product->get_short_description();
-					$instruction       = include_once __DIR__ . '/../instructions/product-description-improvement.php';
-
-					return array(
-						'messages' => array(
-							array(
-								'role'    => 'user',
-								'content' => array(
-									'type'        => 'text',
-									'text'        => $instruction,
-									'annotations' => array(
-										'audience' => array( 'assistant' ),
-										'priority' => 0.9,
-									),
-								),
-							),
-						),
-					);
-				},
-				'permission_callback' => function () {
-					return current_user_can( 'edit_posts' );
-				},
-				'meta'                => array(
-					'annotations' => array(
-						'readonly'   => true,
-						'idempotent' => true,
-					),
-				),
-			)
-		);
-	}
-
-	/**
 	 * Create a prompt to instruct the AI the step to follow to suggest the categories
 	 *
 	 * @return void
@@ -359,22 +271,52 @@ class Prompts {
 			array(
 				'label'               => 'Suggest Product Categories',
 				'category'            => 'blu-mcp',
-				'description'         => 'Generate a list of product categories based on product details',
+				'description'         => 'Suggest WooCommerce and Google taxonomy categories using an existing product ID, or a product name when the product is not in the store yet.',
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
-						'name' => array(
+						'product_id'   => array(
+							'type'        => 'integer',
+							'description' => 'Existing WooCommerce product ID. When set, the assistant loads the product and uses its data to build category search patterns.',
+							'minimum'     => 1,
+						),
+						'name'         => array(
 							'type'        => 'string',
-							'description' => 'Product name',
+							'description' => 'Product name — use when there is no product ID yet, or as a hint alongside troubleshooting.',
 							'default'     => '',
 						),
 					),
-					'required'   => array( 'name' ),
 				),
 				'execute_callback'    => function ( $input ) {
-					$product_name = isset( $input['name'] ) ? $input['name'] : '';
+					$product_id   = isset( $input['product_id'] ) ? (int) $input['product_id'] : 0;
+					$product_name = isset( $input['name'] ) ? sanitize_text_field( $input['name'] ) : '';
+
+					$has_id = $product_id > 0;
+					$mode   = $has_id ? 'existing' : 'planned';
+
+					$product_id_safe   = $has_id ? (string) $product_id : '(none)';
+					$product_name_safe = addslashes( $product_name );
+					$mode_safe         = $mode;
 
 					$instruction = include_once __DIR__ . '/../instructions/product-categories-suggester.php';
+
+					if ( $has_id ) {
+						$intro_text = sprintf(
+							"Let's suggest categories for **product #%d**.\n\n" .
+							"I'll load the product, then match your store categories with the Google Product Taxonomy.\n\n" .
+							'%s',
+							$product_id,
+							! empty( $product_name )
+								? sprintf( "*(You also provided the name \"%s\" — I'll treat it as extra context if it differs.)*\n\n", esc_html( $product_name ) )
+								: ''
+						) . 'Loading product data now…';
+					} else {
+						$intro_text = sprintf(
+							"Let's suggest categories for **%s**.\n\n" .
+							'No product ID was given, so I will work from the name only (the product may not exist in WooCommerce yet).',
+							! empty( $product_name ) ? esc_html( $product_name ) : 'your product'
+						);
+					}
 
 					return array(
 						'messages' => array(
@@ -389,6 +331,17 @@ class Prompts {
 									),
 								),
 							),
+							array(
+								'role'    => 'assistant',
+								'content' => array(
+									'type'        => 'text',
+									'text'        => $intro_text,
+									'annotations' => array(
+										'audience' => array( 'user' ),
+										'priority' => 0.9,
+									),
+								),
+							),
 						),
 					);
 				},
@@ -399,6 +352,10 @@ class Prompts {
 					'annotations' => array(
 						'readonly'   => true,
 						'idempotent' => true,
+					),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'prompt',
 					),
 				),
 			)
@@ -414,35 +371,54 @@ class Prompts {
 		blu_register_ability(
 			'blu/suggest-product-tag',
 			array(
-				'label'               => 'Suggest Product Tag',
+				'label'               => 'Suggest Product Tags',
 				'category'            => 'blu-mcp',
-				'description'         => 'Generate a list of product tag based on product details',
+				'description'         => 'Suggest WooCommerce product tags using an existing product ID, or a product name when the product is not in the store yet (same workflow as guided product flow Step 3-B).',
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
-						'name'        => array(
+						'product_id' => array(
+							'type'        => 'integer',
+							'description' => 'Existing WooCommerce product ID. When set, the assistant loads the product and uses its data to build tag search patterns.',
+							'minimum'     => 1,
+						),
+						'name'       => array(
 							'type'        => 'string',
-							'description' => 'Product name',
+							'description' => 'Product name — use when there is no product ID yet, or as extra context alongside an ID.',
 							'default'     => '',
 						),
-						'description' => array(
-							'type'        => 'string',
-							'description' => 'Product description',
-						),
-						'categories'  => array(
-							'type'        => 'string',
-							'description' => 'A comma separated product categories list',
-						),
 					),
-					'required'   => array( 'name' ),
 				),
 				'execute_callback'    => function ( $input ) {
-					$product_name       = isset( $input['name'] ) ? $input['name'] : '';
-					$product_desc       = isset( $input['description'] ) ? $input['description'] : '';
-					$product_desc       = ! empty( $product_desc ) ? '.\n Here a short description for this product :' . $product_desc . '.\n' : '';
-					$product_categories = ! empty( $input['categories'] ) ? '\n The product has these categories :' . $input['categories'] : '';
+					$product_id   = isset( $input['product_id'] ) ? (int) $input['product_id'] : 0;
+					$product_name = isset( $input['name'] ) ? sanitize_text_field( $input['name'] ) : '';
+
+					$has_id = $product_id > 0;
+					$mode   = $has_id ? 'existing' : 'planned';
+
+					$product_id_safe   = $has_id ? (string) $product_id : '(none)';
+					$product_name_safe = addslashes( $product_name );
+					$mode_safe         = $mode;
 
 					$instruction = include_once __DIR__ . '/../instructions/product-tags-suggester.php';
+
+					if ( $has_id ) {
+						$intro_text = sprintf(
+							"Let's suggest tags for **product #%d**.\n\n" .
+							"I'll load the product, list matching store tags, and fill in SEO ideas if needed.\n\n" .
+							'%s',
+							$product_id,
+							! empty( $product_name )
+								? sprintf( "*(You also provided the name \"%s\" — I'll treat it as extra context if it differs.)*\n\n", esc_html( $product_name ) )
+								: ''
+						) . 'Loading product data now…';
+					} else {
+						$intro_text = sprintf(
+							"Let's suggest tags for **%s**.\n\n" .
+							'No product ID was given, so I will work from the name only (the product may not exist in WooCommerce yet).',
+							! empty( $product_name ) ? esc_html( $product_name ) : 'your product'
+						);
+					}
 
 					return array(
 						'messages' => array(
@@ -457,6 +433,17 @@ class Prompts {
 									),
 								),
 							),
+							array(
+								'role'    => 'assistant',
+								'content' => array(
+									'type'        => 'text',
+									'text'        => $intro_text,
+									'annotations' => array(
+										'audience' => array( 'user' ),
+										'priority' => 0.9,
+									),
+								),
+							),
 						),
 					);
 				},
@@ -467,6 +454,10 @@ class Prompts {
 					'annotations' => array(
 						'readonly'   => true,
 						'idempotent' => true,
+					),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'prompt',
 					),
 				),
 			)
@@ -488,22 +479,48 @@ class Prompts {
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
-						'name'        => array(
+						'product_id' => array(
+							'type'        => 'integer',
+							'description' => 'Existing WooCommerce product ID. When set, the assistant loads the product and uses its data to build tag search patterns.',
+							'minimum'     => 1,
+						),
+						'name'       => array(
 							'type'        => 'string',
-							'description' => 'Product name',
+							'description' => 'Product name — use when there is no product ID yet, or as extra context alongside an ID.',
 							'default'     => '',
 						),
-						'description' => array(
-							'type'        => 'string',
-							'description' => 'Product description',
-						),
 					),
-					'required'   => array( 'name' ),
 				),
 				'execute_callback'    => function ( $input ) {
-					$name = isset( $input['name'] ) ? $input['name'] : '';
-					$desc = isset( $input['description'] ) ? $input['description'] : '';
-					$desc = ! empty( $desc ) ? 'and these details :' . $desc : '';
+					$product_id   = isset( $input['product_id'] ) ? (int) $input['product_id'] : 0;
+					$product_name = isset( $input['name'] ) ? sanitize_text_field( $input['name'] ) : '';
+
+					$has_id = $product_id > 0;
+					$mode   = $has_id ? 'existing' : 'planned';
+
+					$product_id_safe   = $has_id ? (string) $product_id : '(none)';
+					$product_name_safe = addslashes( $product_name );
+					$mode_safe         = $mode;
+
+					$instruction = include_once __DIR__ . '/../instructions/product-brands-suggester.php';
+
+					if ( $has_id ) {
+						$intro_text = sprintf(
+							              "Let's suggest brands for **product #%d**.\n\n" .
+							              "I'll load the product, list matching store brands, and fill in SEO ideas if needed.\n\n" .
+							              '%s',
+							              $product_id,
+							              ! empty( $product_name )
+								              ? sprintf( "*(You also provided the name \"%s\" — I'll treat it as extra context if it differs.)*\n\n", esc_html( $product_name ) )
+								              : ''
+						              ) . 'Loading product data now…';
+					} else {
+						$intro_text = sprintf(
+							"Let's suggest brands for **%s**.\n\n" .
+							'No product ID was given, so I will work from the name only (the product may not exist in WooCommerce yet).',
+							! empty( $product_name ) ? esc_html( $product_name ) : 'your product'
+						);
+					}
 
 					return array(
 						'messages' => array(
@@ -511,24 +528,20 @@ class Prompts {
 								'role'    => 'user',
 								'content' => array(
 									'type'        => 'text',
-									'text'        => "Generate SEO‑optimized brand references for the product $name $desc.\n 
-												- Use only well‑known, relevant brands associated with this product category. 
-												- Focus on brands that customers commonly search for in relation to this product. 
-												- Limit the number of brands to between 3 and 5 items only. 
-												- Do not invent or include non‑existent brands.
-												- Require to customer to select one or more brand from it
-												- Return the customer’s selection strictly as an array named `brands`. 
-											Output format example:
-												{
-												  'brands': [
-												    'brand1',
-												    'brand2',
-												    'brand3',
-												  ]
-												}
-												",
+									'text'        => $instruction,
 									'annotations' => array(
 										'audience' => array( 'assistant' ),
+										'priority' => 0.9,
+									),
+								),
+							),
+							array(
+								'role'    => 'assistant',
+								'content' => array(
+									'type'        => 'text',
+									'text'        => $intro_text,
+									'annotations' => array(
+										'audience' => array( 'user' ),
 										'priority' => 0.9,
 									),
 								),
@@ -543,6 +556,10 @@ class Prompts {
 					'annotations' => array(
 						'readonly'   => true,
 						'idempotent' => true,
+					),
+					'mcp'         => array(
+						'public' => true,
+						'type'   => 'prompt',
 					),
 				),
 			)
@@ -683,101 +700,4 @@ class Prompts {
 		);
 	}
 
-	/**
-	 * Create a prompt to instruct the AI the step to follow to suggest the attributes for variations.
-	 *
-	 * @return void
-	 */
-	private function register_prompt_variation_attributes() {
-		blu_register_ability(
-			'blu/suggest-product-variation-attributes',
-			array(
-				'label'               => 'Suggest product variation attributes',
-				'category'            => 'blu-mcp',
-				'description'         => 'Generate a list of product terms and attributes based on product details to be used for variations',
-				'input_schema'        => array(
-					'type'       => 'object',
-					'properties' => array(
-						'name'        => array(
-							'type'        => 'string',
-							'description' => 'Product name',
-							'default'     => '',
-						),
-						'description' => array(
-							'type'        => 'string',
-							'description' => 'Product description',
-						),
-					),
-					'required'   => array( 'name' ),
-				),
-				'execute_callback'    => function ( $input ) {
-					$name = isset( $input['name'] ) ? $input['name'] : '';
-					$desc = isset( $input['description'] ) ? $input['description'] : '';
-
-					return array(
-						'messages' => array(
-							array(
-								'role'    => 'user',
-								'content' => array(
-									'type' => 'text',
-									'text' => sprintf(
-										'You are an expert WooCommerce product manager.
-									You are given:
-									- Product name: "%1$s"
-									- Product description (may be empty): "%2$s"
-									
-									Your task is to determine whether this product should realistically be sold as a VARIABLE product in WooCommerce.
-									
-									Decision rules:
-									- Use BOTH the product name and the description to make the decision.
-									- ONLY suggest variations if they would normally generate different SKUs in a real e-commerce store.
-									- If the product is typically sold as a single, fixed item (e.g. books, services, gift cards, digital products, simple accessories), return an empty JSON array: [].
-									- Be conservative: if variations are unclear, optional, or not explicitly suggested by the description, return [].
-									- Do NOT invent attributes that are not supported or implied by the product name or description.
-									
-									If variations make sense:
-									- Suggest up to 3 variation attributes.
-									- Each attribute can have up to 8 terms.
-									- Attributes must be suitable as WooCommerce variation attributes.
-									- Prefer concrete, measurable or selectable attributes (e.g. size, color, capacity, format).
-									- Avoid non-variant attributes (e.g. brand, compatibility lists, marketing labels).
-									
-									Output rules:
-									- Return ONLY valid JSON.
-									- No explanations, no comments, no extra text.
-									
-									Output format:
-									{
-										"variation_attributes": [
-										  {
-											"name": "Attribute name 1",
-											"terms": ["Term 1", "Term 2", "Term 3"]
-										  },
-										  {
-											"name": "Attribute name 2",
-											"terms": ["Term 4", "Term 5"]
-										  }
-										]
-									}',
-										$name,
-										$desc
-									),
-								),
-							),
-						),
-					);
-				},
-				'permission_callback' => function () {
-					return current_user_can( 'edit_posts' );
-				},
-				'meta'                => array(
-					'annotations' => array(
-						'readonly'   => true,
-						'idempotent' => true,
-					),
-
-				),
-			)
-		);
-	}
 }
