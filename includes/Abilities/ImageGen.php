@@ -117,7 +117,7 @@ class ImageGen {
 
 		if ( is_wp_error( $response ) ) {
 			$message = $response->get_error_message();
-			if ( str_contains( $message, 'timed out' ) || str_contains( $message, 'cURL error 28' ) ) {
+			if ( false !== strpos( $message, 'timed out' ) || false !== strpos( $message, 'cURL error 28' ) ) {
 				return blu_prepare_ability_response( 504, 'Image generation timed out' );
 			}
 			return blu_prepare_ability_response( 502, 'Image generation service unavailable: ' . $message );

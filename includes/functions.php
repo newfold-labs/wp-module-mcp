@@ -161,7 +161,7 @@ function blu_filter_abilities_by_namespace( array $abilities, string $namespace 
 	return array_filter(
 		$abilities,
 		function ( $ability ) use ( $namespace_prefix ) {
-			return str_starts_with( $ability->get_name(), $namespace_prefix );
+			return 0 === strpos( $ability->get_name(), $namespace_prefix );
 		}
 	);
 }

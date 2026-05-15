@@ -65,7 +65,7 @@ class AbilityGateway {
 				$category = $ability->get_category();
 
 				foreach ( $allowed_namespaces as $ns ) {
-					if ( str_starts_with( $name, $ns ) ) {
+					if ( 0 === strpos( $name, $ns ) ) {
 						return true;
 					}
 				}
