@@ -22,6 +22,7 @@ use BLU\Abilities\WooProducts;
 use BLU\Abilities\Themes;
 use BLU\Abilities\ImageGen;
 
+use BLU\Integrations\WooCommerceAbilities;
 use BLU\Validation\McpValidation;
 use Bluehost\Plugin\WP\MCP\Core\McpAdapter;
 use Bluehost\Plugin\WP\MCP\Infrastructure\ErrorHandling\ErrorLogMcpErrorHandler;
@@ -47,6 +48,10 @@ class McpServer {
 		add_action( 'mcp_adapter_init', array( $this, 'suppress_sibling_default_server_refire' ), 999 );
 		add_action( 'wp_abilities_api_init', array( $this, 'register_abilities' ) );
 		add_action( 'wp_abilities_api_categories_init', array( $this, 'register_ability_categories' ) );
+
+		// Compat shims for sibling plugins that lazy-load their MCP machinery against
+		// their own transport route. Each one self-registers its hooks.
+		new WooCommerceAbilities();
 	}
 
 	/**

@@ -140,19 +140,21 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	/**
 	 * Register a test ability and track it for cleanup.
 	 *
-	 * @param string   $name     Ability name.
-	 * @param string   $category Ability category.
-	 * @param callable $execute  Execute callback.
+	 * @param string   $name        Ability name.
+	 * @param string   $category    Ability category.
+	 * @param callable $execute     Execute callback.
+	 * @param string   $label       Optional label, defaults to 'Test Ability'.
+	 * @param string   $description Optional description, defaults to 'A test ability'.
 	 *
 	 * @return void
 	 */
-	private function register_test_ability( string $name, string $category, callable $execute ): void {
-		$cb = function () use ( $name, $category, $execute ) {
+	private function register_test_ability( string $name, string $category, callable $execute, string $label = 'Test Ability', string $description = 'A test ability' ): void {
+		$cb = function () use ( $name, $category, $execute, $label, $description ) {
 			blu_register_ability(
 				$name,
 				array(
-					'label'               => 'Test Ability',
-					'description'         => 'A test ability',
+					'label'               => $label,
+					'description'         => $description,
 					'category'            => $category,
 					'input_schema'        => array( 'type' => 'object' ),
 					'execute_callback'    => $execute,
@@ -280,16 +282,25 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	}
 
 	/**
-	 * Verifies blu/list-abilities input_schema has optional namespace property.
+	 * Verifies blu/list-abilities input_schema has search + name_prefix filters and rejects unknown fields.
 	 *
 	 * @return void
 	 */
-	public function test_list_abilities_has_namespace_property() {
+	public function test_list_abilities_has_filter_properties() {
 		$this->register_gateway();
 		$ability = blu_get_ability( 'blu/list-abilities' );
 		$schema  = $ability->get_input_schema();
-		$this->assertArrayHasKey( 'namespace', $schema['properties'] );
-		$this->assertSame( 'string', $schema['properties']['namespace']['type'] );
+
+		$this->assertArrayHasKey( 'search', $schema['properties'] );
+		$this->assertSame( 'string', $schema['properties']['search']['type'] );
+
+		$this->assertArrayHasKey( 'name_prefix', $schema['properties'] );
+		$this->assertSame( 'string', $schema['properties']['name_prefix']['type'] );
+
+		$this->assertArrayNotHasKey( 'namespace', $schema['properties'] );
+
+		$this->assertArrayHasKey( 'additionalProperties', $schema );
+		$this->assertFalse( $schema['additionalProperties'] );
 	}
 
 	/**
@@ -405,7 +416,7 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	}
 
 	/**
-	 * Verifies list-abilities entries have expected keys and no input_schema.
+	 * Verifies list-abilities entries have expected keys, no input_schema, and no namespace field.
 	 *
 	 * @return void
 	 */
@@ -423,21 +434,35 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$this->assertNotEmpty( $result['message'] );
 		$entry = $result['message'][0];
 		$this->assertArrayHasKey( 'name', $entry );
-		$this->assertArrayHasKey( 'namespace', $entry );
 		$this->assertArrayHasKey( 'label', $entry );
 		$this->assertArrayHasKey( 'description', $entry );
 		$this->assertArrayHasKey( 'annotations', $entry );
+		$this->assertArrayNotHasKey( 'namespace', $entry );
 		$this->assertArrayNotHasKey( 'input_schema', $entry );
 	}
 
 	/**
-	 * Verifies list-abilities namespace filter narrows results.
+	 * Verifies list-abilities name_prefix filter narrows to matching hyphen-form names.
 	 *
 	 * @return void
 	 */
-	public function test_list_abilities_namespace_filter() {
+	public function test_list_abilities_name_prefix_filter() {
 		$this->register_test_ability(
-			'testns/test-tool',
+			'blu/widget-foo',
+			'blu-mcp',
+			function () {
+				return blu_prepare_ability_response( 200, 'ok' );
+			}
+		);
+		$this->register_test_ability(
+			'blu/widget-bar',
+			'blu-mcp',
+			function () {
+				return blu_prepare_ability_response( 200, 'ok' );
+			}
+		);
+		$this->register_test_ability(
+			'blu/something-else',
 			'blu-mcp',
 			function () {
 				return blu_prepare_ability_response( 200, 'ok' );
@@ -446,16 +471,160 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$this->register_gateway();
 
 		$ability = blu_get_ability( 'blu/list-abilities' );
+		$result  = $ability->execute( array( 'name_prefix' => 'blu-widget' ) );
+		$names   = array_column( $result['message'], 'name' );
 
-		// Filter by blu/ namespace should not include testns/test-tool.
-		$result = $ability->execute( array( 'namespace' => 'blu/' ) );
-		$names  = array_column( $result['message'], 'name' );
-		$this->assertNotContains( 'testns-test-tool', $names );
-
-		// All abilities in the result should use blu- prefix (hyphen form).
+		$this->assertContains( 'blu-widget-foo', $names );
+		$this->assertContains( 'blu-widget-bar', $names );
+		$this->assertNotContains( 'blu-something-else', $names );
 		foreach ( $names as $name ) {
-			$this->assertStringStartsWith( 'blu-', $name );
+			$this->assertStringStartsWith( 'blu-widget', $name );
 		}
+	}
+
+	/**
+	 * Verifies name_prefix normalizes slash form ("blu/widget") to hyphen form ("blu-widget").
+	 *
+	 * @return void
+	 */
+	public function test_list_abilities_name_prefix_normalizes_slash_form() {
+		$this->register_test_ability(
+			'blu/widget-foo',
+			'blu-mcp',
+			function () {
+				return blu_prepare_ability_response( 200, 'ok' );
+			}
+		);
+		$this->register_gateway();
+
+		$ability       = blu_get_ability( 'blu/list-abilities' );
+		$names_slash   = array_column( $ability->execute( array( 'name_prefix' => 'blu/widget' ) )['message'], 'name' );
+		$names_hyphen  = array_column( $ability->execute( array( 'name_prefix' => 'blu-widget' ) )['message'], 'name' );
+		$names_trailed = array_column( $ability->execute( array( 'name_prefix' => 'blu/widget-' ) )['message'], 'name' );
+
+		sort( $names_slash );
+		sort( $names_hyphen );
+		sort( $names_trailed );
+
+		$this->assertSame( $names_hyphen, $names_slash );
+		$this->assertSame( $names_hyphen, $names_trailed );
+		$this->assertContains( 'blu-widget-foo', $names_hyphen );
+	}
+
+	/**
+	 * Verifies list-abilities search filter matches across name, label, and description.
+	 *
+	 * @return void
+	 */
+	public function test_list_abilities_search_filter() {
+		$this->register_test_ability(
+			'blu/alpha-tool',
+			'blu-mcp',
+			function () {
+				return blu_prepare_ability_response( 200, 'ok' );
+			},
+			'Alpha Tool',
+			'Manages widgets and gadgets.'
+		);
+		$this->register_test_ability(
+			'blu/bravo-tool',
+			'blu-mcp',
+			function () {
+				return blu_prepare_ability_response( 200, 'ok' );
+			},
+			'Bravo Tool',
+			'Manages sprockets only.'
+		);
+		$this->register_gateway();
+
+		$ability = blu_get_ability( 'blu/list-abilities' );
+
+		// Match by description substring.
+		$names_widgets = array_column( $ability->execute( array( 'search' => 'widget' ) )['message'], 'name' );
+		$this->assertContains( 'blu-alpha-tool', $names_widgets );
+		$this->assertNotContains( 'blu-bravo-tool', $names_widgets );
+
+		// Match by label substring, case-insensitive.
+		$names_bravo = array_column( $ability->execute( array( 'search' => 'BRAVO' ) )['message'], 'name' );
+		$this->assertContains( 'blu-bravo-tool', $names_bravo );
+		$this->assertNotContains( 'blu-alpha-tool', $names_bravo );
+
+		// Match by name substring.
+		$names_alpha = array_column( $ability->execute( array( 'search' => 'alpha' ) )['message'], 'name' );
+		$this->assertContains( 'blu-alpha-tool', $names_alpha );
+	}
+
+	/**
+	 * Verifies search + name_prefix compose with AND semantics (intersection, not union).
+	 *
+	 * @return void
+	 */
+	public function test_list_abilities_search_and_name_prefix_compose() {
+		$this->register_test_ability(
+			'blu/widget-alpha',
+			'blu-mcp',
+			function () {
+				return blu_prepare_ability_response( 200, 'ok' );
+			},
+			'Widget Alpha',
+			'Alpha description.'
+		);
+		$this->register_test_ability(
+			'blu/widget-bravo',
+			'blu-mcp',
+			function () {
+				return blu_prepare_ability_response( 200, 'ok' );
+			},
+			'Widget Bravo',
+			'Bravo description.'
+		);
+		$this->register_test_ability(
+			'blu/sprocket-alpha',
+			'blu-mcp',
+			function () {
+				return blu_prepare_ability_response( 200, 'ok' );
+			},
+			'Sprocket Alpha',
+			'Alpha description.'
+		);
+		$this->register_gateway();
+
+		$ability = blu_get_ability( 'blu/list-abilities' );
+		$names   = array_column(
+			$ability->execute(
+				array(
+					'name_prefix' => 'blu-widget',
+					'search'      => 'alpha',
+				)
+			)['message'],
+			'name'
+		);
+
+		$this->assertContains( 'blu-widget-alpha', $names );
+		$this->assertNotContains( 'blu-widget-bravo', $names );
+		$this->assertNotContains( 'blu-sprocket-alpha', $names );
+	}
+
+	/**
+	 * Verifies empty filter input returns the full whitelisted catalog (back-compat for no-arg callers
+	 * who pass `arguments: {}` over the wire — i.e. an empty object, not a literal PHP null).
+	 *
+	 * @return void
+	 */
+	public function test_list_abilities_no_filters_returns_full_catalog() {
+		$this->register_test_ability(
+			'blu/anything',
+			'blu-mcp',
+			function () {
+				return blu_prepare_ability_response( 200, 'ok' );
+			}
+		);
+		$this->register_gateway();
+
+		$ability    = blu_get_ability( 'blu/list-abilities' );
+		$names_none = array_column( $ability->execute( array() )['message'], 'name' );
+
+		$this->assertContains( 'blu-anything', $names_none );
 	}
 
 	/**
@@ -684,6 +853,168 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$ability = blu_get_ability( 'blu/call-ability' );
 		$result  = $ability->execute( array( 'ability_name' => 'secret/hidden-tool' ) );
 		$this->assertSame( 404, $result['statusCode'] );
+	}
+
+	/**
+	 * Verifies call-ability propagates the HTTP status from WP_Error::error_data['status']
+	 * rather than the (always-string) error code, so authorization/validation errors aren't
+	 * masked as 500s.
+	 *
+	 * @return void
+	 */
+	public function test_call_ability_propagates_wp_error_status_from_error_data() {
+		$this->register_test_ability(
+			'blu/test-rest-error',
+			'blu-mcp',
+			function () {
+				return new \WP_Error(
+					'rest_invalid_param',
+					'Bad input value',
+					array( 'status' => 400 )
+				);
+			}
+		);
+		$this->register_gateway();
+
+		$ability = blu_get_ability( 'blu/call-ability' );
+		$result  = $ability->execute(
+			array(
+				'ability_name' => 'blu-test-rest-error',
+				'parameters'   => array(),
+			)
+		);
+
+		$this->assertSame( 400, $result['statusCode'] );
+		$this->assertSame( 'error', $result['status'] );
+		$this->assertSame( 'Bad input value', $result['message'] );
+	}
+
+	/**
+	 * Verifies call-ability falls back to HTTP 500 when neither error_data['status']
+	 * nor get_error_code() yield a valid HTTP status, AND that the original message is
+	 * redacted (replaced with a generic string) so internal details — exception traces,
+	 * SQL fragments, file paths the ability author may have put in the WP_Error — never
+	 * reach the LLM.
+	 *
+	 * @return void
+	 */
+	public function test_call_ability_falls_back_to_500_for_string_error_code() {
+		$this->register_test_ability(
+			'blu/test-string-error',
+			'blu-mcp',
+			function () {
+				return new \WP_Error( 'something_failed', '/var/www/secret.php line 42: connection refused to db' );
+			}
+		);
+		$this->register_gateway();
+
+		$ability = blu_get_ability( 'blu/call-ability' );
+		$result  = $ability->execute(
+			array(
+				'ability_name' => 'blu-test-string-error',
+				'parameters'   => array(),
+			)
+		);
+
+		$this->assertSame( 500, $result['statusCode'] );
+		$this->assertSame( 'Ability execution failed.', $result['message'] );
+		$this->assertStringNotContainsString( '/var/www', $result['message'] );
+		$this->assertStringNotContainsString( 'connection refused', $result['message'] );
+	}
+
+	/**
+	 * Verifies call-ability redacts explicit 5xx WP_Error messages too — not only the
+	 * fallback path, since ability authors may set status=500 with sensitive content.
+	 *
+	 * @return void
+	 */
+	public function test_call_ability_redacts_explicit_5xx_messages() {
+		$this->register_test_ability(
+			'blu/test-503-error',
+			'blu-mcp',
+			function () {
+				return new \WP_Error(
+					'upstream_failed',
+					'Upstream MySQL query "SELECT secrets FROM wp_credentials" failed: gone away',
+					array( 'status' => 503 )
+				);
+			}
+		);
+		$this->register_gateway();
+
+		$ability = blu_get_ability( 'blu/call-ability' );
+		$result  = $ability->execute(
+			array(
+				'ability_name' => 'blu-test-503-error',
+				'parameters'   => array(),
+			)
+		);
+
+		$this->assertSame( 503, $result['statusCode'] );
+		$this->assertSame( 'Ability execution failed.', $result['message'] );
+		$this->assertStringNotContainsString( 'wp_credentials', $result['message'] );
+	}
+
+	/**
+	 * Verifies call-ability does NOT redact 4xx messages — those are caller-facing
+	 * validation/permission feedback the LLM needs in order to self-correct.
+	 *
+	 * @return void
+	 */
+	public function test_call_ability_preserves_4xx_messages() {
+		$this->register_test_ability(
+			'blu/test-403-error',
+			'blu-mcp',
+			function () {
+				return new \WP_Error(
+					'forbidden',
+					'You lack the required capability for this action.',
+					array( 'status' => 403 )
+				);
+			}
+		);
+		$this->register_gateway();
+
+		$ability = blu_get_ability( 'blu/call-ability' );
+		$result  = $ability->execute(
+			array(
+				'ability_name' => 'blu-test-403-error',
+				'parameters'   => array(),
+			)
+		);
+
+		$this->assertSame( 403, $result['statusCode'] );
+		$this->assertSame( 'You lack the required capability for this action.', $result['message'] );
+	}
+
+	/**
+	 * Verifies the whitelist guard ignores empty / non-string namespace entries — preventing
+	 * a malicious filter from passing "" and matching every ability via strpos().
+	 *
+	 * @return void
+	 */
+	public function test_allowed_namespaces_filter_ignores_empty_string() {
+		$this->register_test_ability(
+			'evil/secret-tool',
+			'other-category',
+			function () {
+				return blu_prepare_ability_response( 200, 'secret' );
+			}
+		);
+		$this->register_gateway();
+
+		$filter = function () {
+			return array( '', 'blu/', 'woocommerce/' );
+		};
+		add_filter( 'blu_mcp_allowed_namespaces', $filter );
+
+		$ability = blu_get_ability( 'blu/list-abilities' );
+		$result  = $ability->execute( array() );
+		$names   = array_column( $result['message'], 'name' );
+
+		$this->assertNotContains( 'evil-secret-tool', $names );
+
+		remove_filter( 'blu_mcp_allowed_namespaces', $filter );
 	}
 
 	/**
