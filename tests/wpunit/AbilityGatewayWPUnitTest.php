@@ -317,11 +317,7 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	}
 
 	/**
-	 * Verifies blu_mcp_allowed_namespaces filter is still fired with defaults.
-	 *
-	 * The filter is retained as a backward-compat extension point only — its return
-	 * value no longer affects whitelisting (the gateway is category-driven). See
-	 * {@see self::test_allowed_namespaces_filter_does_not_whitelist_by_namespace()}.
+	 * Verifies blu_mcp_allowed_namespaces filter is called with defaults.
 	 *
 	 * @return void
 	 */
@@ -992,13 +988,12 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	}
 
 	/**
-	 * Verifies blu_mcp_allowed_namespaces has no effect on whitelisting — the gateway is
-	 * category-driven, so adding a namespace must not expose abilities outside an allowed
-	 * category. The filter is retained only as a backward-compat extension point.
+	 * Verifies the whitelist guard ignores empty / non-string namespace entries — preventing
+	 * a malicious filter from passing "" and matching every ability via str_starts_with.
 	 *
 	 * @return void
 	 */
-	public function test_allowed_namespaces_filter_does_not_whitelist_by_namespace() {
+	public function test_allowed_namespaces_filter_ignores_empty_string() {
 		$this->register_test_ability(
 			'evil/secret-tool',
 			'other-category',
@@ -1009,7 +1004,7 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$this->register_gateway();
 
 		$filter = function () {
-			return array( 'blu/', 'woocommerce/', 'evil/' );
+			return array( '', 'blu/', 'woocommerce/' );
 		};
 		add_filter( 'blu_mcp_allowed_namespaces', $filter );
 
