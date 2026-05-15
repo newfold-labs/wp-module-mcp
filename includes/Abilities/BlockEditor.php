@@ -245,9 +245,11 @@ class BlockEditor {
 						return blu_prepare_ability_response( 400, array( 'message' => 'block_content is required' ) );
 					}
 
-					// Validate: after_client_id and before_client_id are mutually exclusive
-					$has_after_param  = array_key_exists( 'after_client_id', $input );
-					$has_before_param = array_key_exists( 'before_client_id', $input ) && '' !== $input['before_client_id'];
+					// Validate: after_client_id and before_client_id are mutually exclusive.
+					// Only a non-empty string counts as "set" — explicit null on after_client_id
+					// is the documented way to request "top of page" and must not conflict.
+					$has_after_param  = ! empty( $input['after_client_id'] ) && is_string( $input['after_client_id'] );
+					$has_before_param = ! empty( $input['before_client_id'] ) && is_string( $input['before_client_id'] );
 					if ( $has_after_param && $has_before_param ) {
 						return blu_prepare_ability_response(
 							400,
