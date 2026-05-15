@@ -36,6 +36,14 @@ class ImageGenWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	private $last_request_args = null;
 
 	/**
+	 * The pre_http_request filter callback installed by mock_http_response,
+	 * retained so tear_down can remove only this specific filter.
+	 *
+	 * @var callable|null
+	 */
+	private $pre_http_request_filter = null;
+
+	/**
 	 * Skip if Abilities API is unavailable, set up admin user, ensure blu-mcp category,
 	 * and reset the HiiveConnection stub token between tests.
 	 *
@@ -72,7 +80,10 @@ class ImageGenWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	 * @return void
 	 */
 	public function tear_down(): void {
-		remove_all_filters( 'pre_http_request' );
+		if ( null !== $this->pre_http_request_filter ) {
+			remove_filter( 'pre_http_request', $this->pre_http_request_filter, 10 );
+			$this->pre_http_request_filter = null;
+		}
 
 		$registry = \WP_Abilities_Registry::get_instance();
 		if ( $registry ) {
@@ -118,18 +129,19 @@ class ImageGenWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	 * @return void
 	 */
 	private function mock_http_response( $response ): void {
-		add_filter(
-			'pre_http_request',
-			function ( $preempt, $args, $url ) use ( $response ) {
-				$this->last_request_args = array(
-					'url'  => $url,
-					'args' => $args,
-				);
-				return $response;
-			},
-			10,
-			3
-		);
+		if ( null !== $this->pre_http_request_filter ) {
+			remove_filter( 'pre_http_request', $this->pre_http_request_filter, 10 );
+		}
+
+		$this->pre_http_request_filter = function ( $preempt, $args, $url ) use ( $response ) {
+			$this->last_request_args = array(
+				'url'  => $url,
+				'args' => $args,
+			);
+			return $response;
+		};
+
+		add_filter( 'pre_http_request', $this->pre_http_request_filter, 10, 3 );
 	}
 
 	/**
