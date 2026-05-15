@@ -42,10 +42,13 @@ class AbilityGateway {
 	 * @return \WP_Ability[] Filtered abilities.
 	 */
 	private function get_whitelisted_abilities(): array {
-		// Filter retained for backward compatibility — the gateway whitelist is now
-		// category-driven, so namespace entries have no effect. To expose abilities
-		// from a new source, register them under one of the allowed categories.
-		apply_filters( 'blu_mcp_allowed_namespaces', array( 'blu/', 'woocommerce/' ) );
+		$allowed_namespaces = apply_filters(
+			'blu_mcp_allowed_namespaces',
+			array(
+				'blu/',
+				'woocommerce/',
+			)
+		);
 
 		$allowed_categories = apply_filters(
 			'blu_mcp_allowed_categories',
@@ -59,8 +62,27 @@ class AbilityGateway {
 
 		return array_filter(
 			$all_abilities,
-			function ( $ability ) use ( $allowed_categories ) {
-				return in_array( $ability->get_category(), $allowed_categories, true );
+			function ( $ability ) use ( $allowed_namespaces, $allowed_categories ) {
+				$name     = $ability->get_name();
+				$category = $ability->get_category();
+
+				foreach ( $allowed_namespaces as $ns ) {
+					// Skip empty/non-string entries — strpos() with an empty needle
+					// returns 0, which would match every ability and silently bypass
+					// the whitelist.
+					if ( ! is_string( $ns ) || '' === $ns ) {
+						continue;
+					}
+					if ( 0 === strpos( $name, $ns ) ) {
+						return true;
+					}
+				}
+
+				if ( in_array( $category, $allowed_categories, true ) ) {
+					return true;
+				}
+
+				return false;
 			}
 		);
 	}
