@@ -67,13 +67,12 @@ class AbilityGateway {
 				$category = $ability->get_category();
 
 				foreach ( $allowed_namespaces as $ns ) {
-					// Skip empty/non-string entries — strpos() with an empty needle
-					// returns 0, which would match every ability and silently bypass
-					// the whitelist.
+					// Skip empty/non-string entries — an empty string would match every
+					// ability via str_starts_with() and silently bypass the whitelist.
 					if ( ! is_string( $ns ) || '' === $ns ) {
 						continue;
 					}
-					if ( 0 === strpos( $name, $ns ) ) {
+					if ( str_starts_with( $name, $ns ) ) {
 						return true;
 					}
 				}
