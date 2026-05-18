@@ -20,7 +20,7 @@ class Resources {
 	}
 
 	/**
-	 * Read the official Google Product Taxonomy and return the results
+	 * Read the official Google Product Taxonomy and return the results.
 	 *
 	 * @return void
 	 */
