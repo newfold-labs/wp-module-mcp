@@ -275,12 +275,12 @@ class Prompts {
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
-						'product_id'   => array(
+						'product_id' => array(
 							'type'        => 'integer',
 							'description' => 'Existing WooCommerce product ID. When set, the assistant loads the product and uses its data to build category search patterns.',
 							'minimum'     => 1,
 						),
-						'name'         => array(
+						'name'       => array(
 							'type'        => 'string',
 							'description' => 'Product name — use when there is no product ID yet, or as a hint alongside troubleshooting.',
 							'default'     => '',
@@ -506,14 +506,14 @@ class Prompts {
 
 					if ( $has_id ) {
 						$intro_text = sprintf(
-							              "Let's suggest brands for **product #%d**.\n\n" .
-							              "I'll load the product, list matching store brands, and fill in SEO ideas if needed.\n\n" .
-							              '%s',
-							              $product_id,
-							              ! empty( $product_name )
-								              ? sprintf( "*(You also provided the name \"%s\" — I'll treat it as extra context if it differs.)*\n\n", esc_html( $product_name ) )
-								              : ''
-						              ) . 'Loading product data now…';
+							"Let's suggest brands for **product #%d**.\n\n" .
+											"I'll load the product, list matching store brands, and fill in SEO ideas if needed.\n\n" .
+											'%s',
+							$product_id,
+							! empty( $product_name )
+												? sprintf( "*(You also provided the name \"%s\" — I'll treat it as extra context if it differs.)*\n\n", esc_html( $product_name ) )
+												: ''
+						) . 'Loading product data now…';
 					} else {
 						$intro_text = sprintf(
 							"Let's suggest brands for **%s**.\n\n" .
@@ -699,5 +699,4 @@ class Prompts {
 			)
 		);
 	}
-
 }
