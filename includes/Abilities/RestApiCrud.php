@@ -34,7 +34,7 @@ class RestApiCrud {
 					$ignore_strings = array( 'oembed', 'autosaves', 'revisions', 'jwt-auth' );
 
 					$routes = rest_get_server()->get_routes();
-					
+
 					$result = array();
 
 					foreach ( $routes as $route => $methods ) {
@@ -68,9 +68,9 @@ class RestApiCrud {
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => true,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -119,9 +119,9 @@ class RestApiCrud {
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => true,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -177,10 +177,8 @@ class RestApiCrud {
 						if ( ! empty( $query_params ) ) {
 							$request->set_query_params( $query_params );
 						}
-					} else {
-						if ( ! empty( $data ) ) {
+					} elseif ( ! empty( $data ) ) {
 							$request->set_body_params( $data );
-						}
 					}
 
 					$response = rest_do_request( $request );
@@ -189,9 +187,9 @@ class RestApiCrud {
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => true,
-						'idempotent'   => false,
+						'readonly'    => false,
+						'destructive' => true,
+						'idempotent'  => false,
 					),
 				),
 			)
