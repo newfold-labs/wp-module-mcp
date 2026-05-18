@@ -123,7 +123,7 @@ function blu_get_ability_categories(): array {
  * Filters a list of abilities by the specified category.
  *
  * @param WP_Ability[] $abilities An array of abilities to be filtered.
- * @param string       $category The category used to filter the abilities.
+ * @param string       $category  The category used to filter the abilities.
  *
  * @return WP_Ability[] An array of abilities that match the specified category.
  */
@@ -193,7 +193,7 @@ function blu_filter_abilities_by_namespace( array $abilities, string $namespace 
 	return array_filter(
 		$abilities,
 		function ( $ability ) use ( $namespace_prefix ) {
-			return str_starts_with( $ability->get_name(), $namespace_prefix );
+			return 0 === strpos( $ability->get_name(), $namespace_prefix );
 		}
 	);
 }
@@ -212,7 +212,7 @@ function blu_get_abilities_by_namespace( string $namespace ): array {
 /**
  * Prepares a standardized ability response.
  *
- * @param int   $status The HTTP status code of the response.
+ * @param int   $status  The HTTP status code of the response.
  * @param mixed $message The response message or data.
  *
  * @return array An associative array containing 'status' and 'response' keys.
@@ -269,7 +269,6 @@ function blu_get_status_type( $status_code ) {
 		$status = 'error';
 
 	}
-
 	return $status;
 }
 
