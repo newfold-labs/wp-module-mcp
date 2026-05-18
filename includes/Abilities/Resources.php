@@ -41,7 +41,6 @@ class Resources {
 							'items'       => array( 'type' => 'string' ),
 							'minItems'    => 1,
 							'maxItems'    => 5,
-							'items'       => array( 'type' => 'string' ),
 						),
 						'required' => array( 'patterns' ),
 					),
