@@ -1,0 +1,201 @@
+name: MCP AI Evals
+
+on:
+  pull_request:
+    paths:
+      - 'includes/Abilities/**'
+      - 'evals/**'
+      - '.github/workflows/ai-evals.yml'
+  workflow_dispatch:
+    inputs:
+      model:
+        description: 'Model to use for evals (e.g. openai/gpt-4o-mini, openai/gpt-4o)'
+        required: false
+        default: 'openai/gpt-3.5-turbo'
+        type: string
+      run_all:
+        description: 'Run all test cases (ignore file change filtering)'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  ai-eval:
+    name: AI Tool Selection Eval
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: evals
+    env:
+      CF_AI_GATEWAY_URL: 'https://gateway.ai.cloudflare.com/v1/${{ secrets.CLOUDFLARE_ACCOUNT_ID }}/${{ vars.CLOUDFLARE_AI_GATEWAY_ID }}/compat/chat/completions'
+      MODEL: ${{ inputs.model || 'openai/gpt-4o-mini' }}
+      MCP_EVAL_SERVER_URL: ${{ vars.MCP_EVAL_SERVER_URL }}
+      MCP_EVAL_AUTH_TOKEN: ${{ secrets.MCP_EVAL_AUTH_TOKEN }}
+      MCP_EVAL_AUTH_BASIC: ${{ secrets.MCP_EVAL_AUTH_BASIC }}
+      MCP_EVAL_NAMESPACE: ${{ vars.MCP_EVAL_NAMESPACE || 'blu' }}
+      MCP_TOOLS_OUT: /tmp/mcp-tools.json
+      MCP_ABILITY_NAMES_OUT: /tmp/mcp-ability-names.txt
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed ability files
+        id: changes
+        working-directory: ${{ github.workspace }}
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.run_all }}" == "true" ]]; then
+            echo "run_all=true" >> "$GITHUB_OUTPUT"
+            echo "Running all test cases (manual trigger with run_all=true)"
+            exit 0
+          fi
+
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          else
+            BASE_SHA="HEAD~1"
+            HEAD_SHA="HEAD"
+          fi
+
+          CHANGED_FILES=$(git diff --name-only "$BASE_SHA"..."$HEAD_SHA" -- includes/Abilities/ evals/ .github/workflows/ai-evals.yml 2>/dev/null || echo "")
+
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "No ability or eval files changed. Skipping evals."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          CHANGED_SOURCES=""
+          while IFS= read -r file; do
+            if [[ "$file" == includes/Abilities/*.php ]]; then
+              CHANGED_SOURCES="$CHANGED_SOURCES $(basename "$file")"
+            fi
+          done <<< "$CHANGED_FILES"
+
+          echo "changed_sources=$CHANGED_SOURCES" >> "$GITHUB_OUTPUT"
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+          echo "Changed ability files: $CHANGED_SOURCES"
+
+          EVALS_CHANGED=false
+          while IFS= read -r file; do
+            if [[ "$file" == evals/* ]] || [[ "$file" == .github/workflows/ai-evals.yml ]]; then
+              EVALS_CHANGED=true
+              break
+            fi
+          done <<< "$CHANGED_FILES"
+
+          if [ "$EVALS_CHANGED" = true ]; then
+            echo "run_all=true" >> "$GITHUB_OUTPUT"
+            echo "Eval files changed — running all test cases"
+          else
+            echo "run_all=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-node@v4
+        if: steps.changes.outputs.skip != 'true'
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: evals/package-lock.json
+
+      - name: Install eval dependencies
+        if: steps.changes.outputs.skip != 'true'
+        run: npm ci
+
+      - name: Validate MCP eval configuration
+        if: steps.changes.outputs.skip != 'true'
+        run: |
+          if [ -z "${MCP_EVAL_SERVER_URL:-}" ]; then
+            echo "::error::Set repository variable MCP_EVAL_SERVER_URL (e.g. https://your-site.com/wp-json/blu/mcp)"
+            exit 1
+          fi
+          if [ -z "${MCP_EVAL_AUTH_TOKEN:-}" ] && [ -z "${MCP_EVAL_AUTH_BASIC:-}" ]; then
+            echo "::error::Set MCP_EVAL_AUTH_TOKEN (Hiive JWT, staging/CI) or MCP_EVAL_AUTH_BASIC (user:app-password, local) as repository secrets"
+            exit 1
+          fi
+
+      - name: Fetch tools from MCP server
+        if: steps.changes.outputs.skip != 'true'
+        id: mcp_tools
+        run: npm run fetch-tools
+
+      - name: Check tool coverage
+        id: coverage
+        if: steps.changes.outputs.skip != 'true'
+        env:
+          COVERAGE_REPORT: ${{ github.workspace }}/coverage-report.md
+          MCP_TOOL_COUNT: ${{ steps.mcp_tools.outputs.tool_count }}
+        run: npm run coverage
+
+      - name: Run AI evals
+        if: steps.changes.outputs.skip != 'true'
+        id: eval
+        env:
+          CF_AI_TOKEN: ${{ secrets.CLOUDFLARE_AI_GATEWAY_TOKEN }}
+          EVAL_REPORT: ${{ github.workspace }}/eval-report.md
+          EVAL_RUN_ALL: ${{ steps.changes.outputs.run_all }}
+          EVAL_CHANGED_SOURCES: ${{ steps.changes.outputs.changed_sources }}
+          MCP_TOOL_COUNT: ${{ steps.mcp_tools.outputs.tool_count }}
+        run: npm run run-evals
+
+      - name: Combine reports
+        if: always() && steps.changes.outputs.skip != 'true'
+        working-directory: ${{ github.workspace }}
+        run: |
+          : > combined-report.md
+          [ -f coverage-report.md ] && cat coverage-report.md >> combined-report.md
+          [ -f eval-report.md ] && cat eval-report.md >> combined-report.md
+          cat combined-report.md
+
+      - name: Comment on PR
+        if: always() && github.event_name == 'pull_request' && steps.changes.outputs.skip != 'true'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: ai-eval-results
+          path: combined-report.md
+
+      - name: Upload eval report
+        if: always() && steps.changes.outputs.skip != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-eval-report
+          path: |
+            combined-report.md
+            /tmp/mcp-tools.json
+
+      - name: Check eval results
+        if: steps.changes.outputs.skip != 'true'
+        working-directory: ${{ github.workspace }}
+        run: |
+          FAIL=${{ steps.eval.outputs.fail || 0 }}
+          ERROR=${{ steps.eval.outputs.error || 0 }}
+          PASS_RATE=${{ steps.eval.outputs.pass_rate || 0 }}
+          COVERAGE_FAIL=${{ steps.coverage.outputs.coverage_fail }}
+          MISSING_TESTS=${{ steps.coverage.outputs.missing_tests }}
+          MISSING_ON_MCP=${{ steps.coverage.outputs.missing_on_mcp }}
+
+          EXIT_CODE=0
+
+          if [ "$COVERAGE_FAIL" = "true" ]; then
+            echo "::error::Tool coverage gaps — $MISSING_TESTS ability(s) missing test cases, $MISSING_ON_MCP ability(s) missing on MCP server."
+            EXIT_CODE=1
+          fi
+
+          echo "Pass rate: ${PASS_RATE}%"
+
+          if [ "$FAIL" -gt 0 ] || [ "$ERROR" -gt 0 ]; then
+            echo "::error::AI eval failed — $FAIL test(s) failed, $ERROR error(s). Pass rate: ${PASS_RATE}%"
+            EXIT_CODE=1
+          fi
+
+          if [ "$EXIT_CODE" -eq 0 ]; then
+            echo "All AI evals passed with full tool coverage!"
+          fi
+
+          exit $EXIT_CODE
