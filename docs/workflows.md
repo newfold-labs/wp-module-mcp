@@ -18,7 +18,7 @@ Files live under **`.github/workflows/`**.
 | **auto-translate.yml** | **reusable-translations** with **`text_domain: wp-module-mcp`** |
 | **satis-webhook.yml** | On **release created**, dispatches to **newfold-labs/satis** to refresh Composer packages |
 | **dependabot-auto-merge.yml** | On completion of `Lint`, `Codecoverage-Main`, or `Build and Test … (Playwright tests)`, calls reusable **dependabot-auto-merge** — verifies every check run on the head SHA is green, then approves and merges Dependabot PRs. Gates on its own check-run aggregation, so it works without branch-protection required status checks |
-| **ai-evals.yml** | PR / manual **MCP AI evals** (`evals/` TypeScript + **@modelcontextprotocol/sdk**): loads tools from a **live MCP server** (gateway `list-abilities` + `get-ability-schema`), runs tool-selection prompts via **Cloudflare AI Gateway**, and checks coverage against **`evals/test-cases.json`**. |
+| **ai-evals.yml** | PR / manual **MCP AI evals** (`evals/` TypeScript + **@modelcontextprotocol/sdk**): loads tools from a **live MCP server** (gateway `list-abilities` + `get-ability-schema`), runs tool-selection via **Cloudflare AI Gateway**, reports coverage vs **`evals/test-cases.json`** (non-blocking — does not fail the job; only eval pass/fail is enforced). |
 
 ## Secrets
 

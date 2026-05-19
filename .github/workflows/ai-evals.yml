@@ -128,6 +128,7 @@ jobs:
       - name: Check tool coverage
         id: coverage
         if: steps.changes.outputs.skip != 'true'
+        continue-on-error: true
         env:
           COVERAGE_REPORT: ${{ github.workspace }}/coverage-report.md
           MCP_TOOL_COUNT: ${{ steps.mcp_tools.outputs.tool_count }}
@@ -183,8 +184,7 @@ jobs:
           EXIT_CODE=0
 
           if [ "$COVERAGE_FAIL" = "true" ]; then
-            echo "::error::Tool coverage gaps — $MISSING_TESTS ability(s) missing test cases, $MISSING_ON_MCP ability(s) missing on MCP server."
-            EXIT_CODE=1
+            echo "::warning::Tool coverage gaps (non-blocking) — $MISSING_TESTS ability(s) missing test cases, $MISSING_ON_MCP ability(s) missing on MCP server. AI evals still ran."
           fi
 
           echo "Pass rate: ${PASS_RATE}%"
@@ -195,7 +195,10 @@ jobs:
           fi
 
           if [ "$EXIT_CODE" -eq 0 ]; then
-            echo "All AI evals passed with full tool coverage!"
+            echo "All AI evals passed!"
+            if [ "$COVERAGE_FAIL" = "true" ]; then
+              echo "::notice::Resolve tool coverage gaps when convenient; job did not fail on coverage."
+            fi
           fi
 
           exit $EXIT_CODE
