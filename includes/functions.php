@@ -319,7 +319,7 @@ function blu_post_type_not_found_response( string $input ): array {
  *
  * @return array
  */
-function blu_project_post_summary( \WP_Post $post ): array {
+function blu_project_post_summary( WP_Post $post ): array {
 	return array(
 		'id'       => (int) $post->ID,
 		'title'    => get_the_title( $post ),
@@ -343,7 +343,7 @@ function blu_project_post_summary( \WP_Post $post ): array {
  *
  * @return array
  */
-function blu_project_post_full( \WP_Post $post ): array {
+function blu_project_post_full( WP_Post $post ): array {
 	return array_merge(
 		blu_project_post_summary( $post ),
 		array(
