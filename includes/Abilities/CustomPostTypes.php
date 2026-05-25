@@ -5,6 +5,12 @@ namespace BLU\Abilities;
 
 /**
  * CustomPostTypes abilities for WordPress custom post types.
+ *
+ * Every ability that takes a `post_type` argument routes through
+ * blu_resolve_post_type() so callers can pass the slug, REST base,
+ * or any label form. Single-item and list responses use the
+ * blu_project_post_* helpers so the returned shape always leads
+ * with the numeric `id` (which LLMs would otherwise routinely drop).
  */
 class CustomPostTypes {
 
@@ -30,7 +36,7 @@ class CustomPostTypes {
 					'type' => 'object',
 				),
 				'execute_callback'    => function () {
-					$request = new \WP_REST_Request( 'GET', '/wp/v2/types' );
+					$request  = new \WP_REST_Request( 'GET', '/wp/v2/types' );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
 				},
@@ -50,14 +56,14 @@ class CustomPostTypes {
 			'blu/cpt-search',
 			array(
 				'label'               => 'Search Custom Post Type Items',
-				'description'         => 'Search and filter content items within a custom post type with pagination. Use blu-list-post-types to find valid post_type slugs first.',
+				'description'         => 'Search and filter content items within a custom post type with pagination. Accepts friendly post_type identifiers (slug, REST base, or label). Results are slim projections — note the `id` of each result to use with blu/get-cpt, blu/update-cpt, or blu/delete-cpt.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
 						'post_type' => array(
 							'type'        => 'string',
-							'description' => 'The custom post type to search',
+							'description' => 'Post type identifier — slug ("bmcp_book"), REST base ("books"), or label ("Books"/"Book"). Case-insensitive.',
 						),
 						'search'    => array(
 							'type'        => 'string',
@@ -69,7 +75,7 @@ class CustomPostTypes {
 						),
 						'status'    => array(
 							'type'        => 'string',
-							'description' => 'Filter by post status',
+							'description' => 'Filter by post status. Defaults to "publish". Pass "any" to include drafts and other statuses.',
 						),
 						'page'      => array(
 							'type'        => 'integer',
@@ -85,12 +91,16 @@ class CustomPostTypes {
 					'required'   => array( 'post_type' ),
 				),
 				'execute_callback'    => function ( $input ) {
-					$post_type = sanitize_text_field( $input['post_type'] );
-					$page      = $input['page'] ?? 1;
-					$per_page  = $input['per_page'] ?? 10;
+					$resolved = blu_resolve_post_type( (string) $input['post_type'] );
+					if ( null === $resolved ) {
+						return blu_post_type_not_found_response( (string) $input['post_type'] );
+					}
+
+					$page     = $input['page'] ?? 1;
+					$per_page = $input['per_page'] ?? 10;
 
 					$args = array(
-						'post_type'      => $post_type,
+						'post_type'      => $resolved,
 						'posts_per_page' => $per_page,
 						'paged'          => $page,
 						'post_status'    => 'publish',
@@ -108,15 +118,18 @@ class CustomPostTypes {
 						$args['post_status'] = sanitize_text_field( $input['status'] );
 					}
 
-					$query = new \WP_Query( $args );
+					$query   = new \WP_Query( $args );
+					$results = array_map( 'blu_project_post_summary', $query->posts );
+
 					return blu_prepare_ability_response(
 						200,
 						array(
-							'results'  => $query->posts,
-							'total'    => $query->found_posts,
-							'pages'    => $query->max_num_pages,
-							'page'     => $page,
-							'per_page' => $per_page,
+							'post_type' => $resolved,
+							'results'   => $results,
+							'total'     => (int) $query->found_posts,
+							'pages'     => (int) $query->max_num_pages,
+							'page'      => (int) $page,
+							'per_page'  => (int) $per_page,
 						)
 					);
 				},
@@ -136,14 +149,14 @@ class CustomPostTypes {
 			'blu/get-cpt',
 			array(
 				'label'               => 'Get Custom Post Type Item',
-				'description'         => 'Get a single content item from a custom post type by its ID.',
+				'description'         => 'Get a single content item from a custom post type by its ID. Accepts friendly post_type identifiers (slug, REST base, or label).',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
 						'post_type' => array(
 							'type'        => 'string',
-							'description' => 'The custom post type',
+							'description' => 'Post type identifier — slug, REST base, or label. Case-insensitive.',
 						),
 						'id'        => array(
 							'type'        => 'integer',
@@ -153,13 +166,20 @@ class CustomPostTypes {
 					'required'   => array( 'post_type', 'id' ),
 				),
 				'execute_callback'    => function ( $input ) {
-					$post = get_post( intval( $input['id'] ) );
-					if ( ! $post || $post->post_type !== $input['post_type'] ) {
-
-						return blu_prepare_ability_response( 404, 'Post not found' );
+					$resolved = blu_resolve_post_type( (string) $input['post_type'] );
+					if ( null === $resolved ) {
+						return blu_post_type_not_found_response( (string) $input['post_type'] );
 					}
 
-					return blu_prepare_ability_response( 200, $post );
+					$post = get_post( intval( $input['id'] ) );
+					if ( ! $post || $post->post_type !== $resolved ) {
+						return blu_prepare_ability_response(
+							404,
+							sprintf( 'No %s item found with ID %d.', $resolved, (int) $input['id'] )
+						);
+					}
+
+					return blu_prepare_ability_response( 200, blu_project_post_full( $post ) );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
@@ -177,14 +197,14 @@ class CustomPostTypes {
 			'blu/add-cpt',
 			array(
 				'label'               => 'Add Custom Post Type Item',
-				'description'         => 'Create a new content item within an existing custom post type (e.g. add a new menu item, event, or recipe). This does NOT register a new post type — use blu-list-post-types to find valid post_type slugs.',
+				'description'         => 'Create a new content item within an existing custom post type (e.g. add a new menu item, event, or recipe). Accepts friendly post_type identifiers (slug, REST base, or label). This does NOT register a new post type — use blu-list-post-types to discover what exists.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
 						'post_type' => array(
 							'type'        => 'string',
-							'description' => 'Registered custom post type slug (must match an existing post type, e.g. from blu-list-post-types).',
+							'description' => 'Post type identifier — slug, REST base, or label. Case-insensitive. Must match a registered post type.',
 						),
 						'title'     => array(
 							'type'        => 'string',
@@ -200,26 +220,19 @@ class CustomPostTypes {
 						),
 						'status'    => array(
 							'type'        => 'string',
-							'description' => 'Post status',
+							'description' => 'Post status (e.g. "publish", "draft"). Defaults to "draft".',
 						),
 					),
 					'required'   => array( 'post_type', 'title', 'content' ),
 				),
 				'execute_callback'    => function ( $input ) {
-					$post_type_slug = sanitize_text_field( $input['post_type'] );
-					if ( ! post_type_exists( $post_type_slug ) ) {
-						return blu_prepare_ability_response(
-							400,
-							sprintf(
-								/* translators: %s: requested post type slug */
-								'Unknown or unregistered post type "%s". Register it with register_post_type (or a plugin) first, or pick a slug from blu-list-post-types.',
-								$post_type_slug
-							)
-						);
+					$resolved = blu_resolve_post_type( (string) $input['post_type'] );
+					if ( null === $resolved ) {
+						return blu_post_type_not_found_response( (string) $input['post_type'] );
 					}
 
 					$post_data = array(
-						'post_type'    => $post_type_slug,
+						'post_type'    => $resolved,
 						'post_title'   => sanitize_text_field( $input['title'] ),
 						'post_content' => wp_kses_post( $input['content'] ),
 						'post_status'  => 'draft',
@@ -233,13 +246,12 @@ class CustomPostTypes {
 						$post_data['post_status'] = sanitize_text_field( $input['status'] );
 					}
 
-					$post_id = wp_insert_post( $post_data );
+					$post_id = wp_insert_post( $post_data, true );
 					if ( is_wp_error( $post_id ) ) {
-
-						return blu_prepare_ability_response( 500, 'Failed to create post' );
+						return blu_prepare_ability_response( 500, $post_id->get_error_message() );
 					}
 
-					return blu_prepare_ability_response( 201, get_post( $post_id ) );
+					return blu_prepare_ability_response( 201, blu_project_post_full( get_post( $post_id ) ) );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
@@ -257,14 +269,14 @@ class CustomPostTypes {
 			'blu/update-cpt',
 			array(
 				'label'               => 'Update Custom Post Type Item',
-				'description'         => 'Update an existing content item in a custom post type by its ID.',
+				'description'         => 'Update an existing content item in a custom post type by its ID. Accepts friendly post_type identifiers (slug, REST base, or label).',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
 						'post_type' => array(
 							'type'        => 'string',
-							'description' => 'The custom post type',
+							'description' => 'Post type identifier — slug, REST base, or label. Case-insensitive.',
 						),
 						'id'        => array(
 							'type'        => 'integer',
@@ -290,14 +302,20 @@ class CustomPostTypes {
 					'required'   => array( 'post_type', 'id' ),
 				),
 				'execute_callback'    => function ( $input ) {
-					$post = get_post( intval( $input['id'] ) );
-					if ( ! $post || $post->post_type !== $input['post_type'] ) {
-						return blu_prepare_ability_response( 404, 'Post not found' );
+					$resolved = blu_resolve_post_type( (string) $input['post_type'] );
+					if ( null === $resolved ) {
+						return blu_post_type_not_found_response( (string) $input['post_type'] );
 					}
 
-					$post_data = array(
-						'ID' => $post->ID,
-					);
+					$post = get_post( intval( $input['id'] ) );
+					if ( ! $post || $post->post_type !== $resolved ) {
+						return blu_prepare_ability_response(
+							404,
+							sprintf( 'No %s item found with ID %d.', $resolved, (int) $input['id'] )
+						);
+					}
+
+					$post_data = array( 'ID' => $post->ID );
 
 					if ( ! empty( $input['title'] ) ) {
 						$post_data['post_title'] = sanitize_text_field( $input['title'] );
@@ -315,13 +333,12 @@ class CustomPostTypes {
 						$post_data['post_status'] = sanitize_text_field( $input['status'] );
 					}
 
-					$post_id = wp_update_post( $post_data );
+					$post_id = wp_update_post( $post_data, true );
 					if ( is_wp_error( $post_id ) ) {
-
-						return blu_prepare_ability_response( 500, 'Failed to update post' );
+						return blu_prepare_ability_response( 500, $post_id->get_error_message() );
 					}
 
-					return blu_prepare_ability_response( 200, get_post( $post_id ) );
+					return blu_prepare_ability_response( 200, blu_project_post_full( get_post( $post_id ) ) );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
@@ -339,14 +356,14 @@ class CustomPostTypes {
 			'blu/delete-cpt',
 			array(
 				'label'               => 'Delete Custom Post Type Item',
-				'description'         => 'Permanently delete a content item from a custom post type by its ID.',
+				'description'         => 'Permanently delete a content item from a custom post type by its ID. Accepts friendly post_type identifiers (slug, REST base, or label).',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
 						'post_type' => array(
 							'type'        => 'string',
-							'description' => 'The custom post type',
+							'description' => 'Post type identifier — slug, REST base, or label. Case-insensitive.',
 						),
 						'id'        => array(
 							'type'        => 'integer',
@@ -356,19 +373,32 @@ class CustomPostTypes {
 					'required'   => array( 'post_type', 'id' ),
 				),
 				'execute_callback'    => function ( $input ) {
-					$post = get_post( intval( $input['id'] ) );
-					if ( ! $post || $post->post_type !== $input['post_type'] ) {
+					$resolved = blu_resolve_post_type( (string) $input['post_type'] );
+					if ( null === $resolved ) {
+						return blu_post_type_not_found_response( (string) $input['post_type'] );
+					}
 
-						return blu_prepare_ability_response( 404, 'Post not found' );
+					$post = get_post( intval( $input['id'] ) );
+					if ( ! $post || $post->post_type !== $resolved ) {
+						return blu_prepare_ability_response(
+							404,
+							sprintf( 'No %s item found with ID %d.', $resolved, (int) $input['id'] )
+						);
 					}
 
 					$result = wp_delete_post( $post->ID, true );
 					if ( ! $result ) {
-
 						return blu_prepare_ability_response( 500, 'Failed to delete post with ID ' . $post->ID );
 					}
 
-					return blu_prepare_ability_response( 200, 'Successfully deleted post with ID ' . $post->ID );
+					return blu_prepare_ability_response(
+						200,
+						array(
+							'deleted'   => true,
+							'id'        => (int) $post->ID,
+							'post_type' => $resolved,
+						)
+					);
 				},
 				'permission_callback' => fn() => current_user_can( 'delete_posts' ),
 				'meta'                => array(

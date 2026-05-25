@@ -238,3 +238,116 @@ function blu_get_status_type( $status_code ) {
 	}
 	return $status;
 }
+
+/**
+ * Resolve a user-supplied post-type identifier to its canonical registered slug.
+ *
+ * Accepts any of: the slug itself ("bmcp_book"), the REST base ("books"),
+ * the plural label ("Books"), the singular label ("Book"), or the menu name —
+ * case-insensitively. This lets LLM tool callers pass whichever string they
+ * have on hand instead of being forced to learn the internal slug.
+ *
+ * @param string $input The identifier provided by the caller.
+ *
+ * @return string|null The canonical post-type slug, or null if no match.
+ */
+function blu_resolve_post_type( string $input ): ?string {
+	$input = trim( $input );
+	if ( '' === $input ) {
+		return null;
+	}
+
+	if ( post_type_exists( $input ) ) {
+		return $input;
+	}
+
+	$needle = strtolower( $input );
+
+	foreach ( get_post_types( array(), 'objects' ) as $slug => $object ) {
+		$candidates = array(
+			$slug,
+			$object->name ?? '',
+			$object->rest_base ?? '',
+			isset( $object->labels->name ) ? $object->labels->name : '',
+			isset( $object->labels->singular_name ) ? $object->labels->singular_name : '',
+			isset( $object->labels->menu_name ) ? $object->labels->menu_name : '',
+		);
+		foreach ( $candidates as $candidate ) {
+			if ( '' !== $candidate && strtolower( (string) $candidate ) === $needle ) {
+				return $slug;
+			}
+		}
+	}
+
+	return null;
+}
+
+/**
+ * Format a "post type not found" error that gives the LLM enough information
+ * to self-correct on the next turn.
+ *
+ * @param string $input The identifier the caller tried to use.
+ *
+ * @return array Standardized 400 ability response listing valid options.
+ */
+function blu_post_type_not_found_response( string $input ): array {
+	$available = array();
+	foreach ( get_post_types( array(), 'objects' ) as $slug => $object ) {
+		$label       = isset( $object->labels->name ) ? $object->labels->name : $slug;
+		$available[] = sprintf( '%s ("%s")', $slug, $label );
+	}
+	sort( $available );
+
+	return blu_prepare_ability_response(
+		400,
+		sprintf(
+			'Unknown post type "%s". Pass the slug, REST base, or label. Available: %s.',
+			$input,
+			implode( ', ', $available )
+		)
+	);
+}
+
+/**
+ * Slim projection of a WP_Post suitable for list / search responses.
+ *
+ * Returning full WP_Post objects buries the ID in dozens of internal fields
+ * and routinely causes LLMs to drop the ID when summarizing for the user.
+ * This projection puts the id first and limits noise.
+ *
+ * @param WP_Post $post The post to project.
+ *
+ * @return array
+ */
+function blu_project_post_summary( \WP_Post $post ): array {
+	return array(
+		'id'       => (int) $post->ID,
+		'title'    => get_the_title( $post ),
+		'status'   => $post->post_status,
+		'type'     => $post->post_type,
+		'slug'     => $post->post_name,
+		'author'   => (int) $post->post_author,
+		'date'     => $post->post_date,
+		'modified' => $post->post_modified,
+		'excerpt'  => has_excerpt( $post ) ? get_the_excerpt( $post ) : wp_trim_words( wp_strip_all_tags( $post->post_content ), 30 ),
+		'link'     => get_permalink( $post ),
+	);
+}
+
+/**
+ * Full projection of a WP_Post — summary plus raw content. Used by single-item
+ * fetches (get) and after writes (add/update) where the caller wants to see
+ * what was stored.
+ *
+ * @param WP_Post $post The post to project.
+ *
+ * @return array
+ */
+function blu_project_post_full( \WP_Post $post ): array {
+	return array_merge(
+		blu_project_post_summary( $post ),
+		array(
+			'content' => $post->post_content,
+		)
+	);
+}
