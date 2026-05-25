@@ -176,6 +176,282 @@ class GlobalStylesWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$this->assertArrayHasKey( 'statusCode', $result );
 	}
 
+	/**
+	 * A pure styles write (e.g. set the active background colour) should land in
+	 * `applied` and leave `not_applied` empty — proving the diff fires on the
+	 * common happy path that the agent uses for "change the colour of X".
+	 */
+	public function test_update_with_styles_reports_applied_path() {
+		$result = $this->execute_ability(
+			'blu/update-global-styles',
+			array(
+				'styles' => array(
+					'color' => array(
+						'background' => '#fafafa',
+					),
+				),
+			)
+		);
+
+		$this->assertIsArray( $result );
+		$this->assertGreaterThanOrEqual( 200, $result['statusCode'] );
+		$this->assertLessThan( 300, $result['statusCode'] );
+		$this->assertArrayHasKey( 'applied', $result );
+		$this->assertArrayHasKey( 'not_applied', $result );
+		$this->assertContains( 'styles.color.background', $result['applied'] );
+		$this->assertSame( array(), $result['not_applied'] );
+	}
+
+	/**
+	 * Applying a scalar typography value under `settings.blocks.<block>.*` (the
+	 * misplaced-application case from the production log) must surface as a
+	 * `not_applied` entry pointing the agent at the correct
+	 * `styles.blocks.<block>` path. Legitimate per-block REGISTRATIONS under
+	 * settings.blocks.<block>.typography.fontFamilies (plural) are exercised
+	 * by `test_per_block_registration_is_not_flagged` and must NOT be flagged.
+	 */
+	public function test_misplaced_settings_blocks_application_produces_hint() {
+		$result = $this->execute_ability(
+			'blu/update-global-styles',
+			array(
+				'settings' => array(
+					'blocks' => array(
+						'core/paragraph' => array(
+							'typography' => array(
+								'fontFamily' => 'var:preset|font-family|fira-code',
+							),
+						),
+					),
+				),
+			)
+		);
+
+		$this->assertIsArray( $result );
+		if ( $result['statusCode'] < 200 || $result['statusCode'] >= 300 ) {
+			$this->markTestSkipped( 'REST update did not succeed in this harness; cannot assert on diff.' );
+		}
+		$this->assertNotEmpty( $result['not_applied'] );
+
+		$paths  = array_column( $result['not_applied'], 'path' );
+		$target = 'settings.blocks.core/paragraph.typography.fontFamily';
+		$index  = array_search( $target, $paths, true );
+		$this->assertNotFalse( $index, "expected {$target} in not_applied paths" );
+
+		$reason = $result['not_applied'][ $index ]['reason'];
+		$this->assertStringContainsString( 'styles.blocks.core/paragraph.typography.fontFamily', $reason );
+	}
+
+	/**
+	 * Per-block REGISTRATION under `settings.blocks.<block>.typography.fontFamilies`
+	 * (plural, an array) is a real WordPress feature — the diff must NOT flag
+	 * it as misplaced. Without this guard the hint heuristic regresses to the
+	 * over-aggressive blanket pre-strip that misadvised the LLM on legitimate
+	 * registrations.
+	 */
+	public function test_per_block_registration_is_not_flagged() {
+		$result = $this->execute_ability(
+			'blu/update-global-styles',
+			array(
+				'settings' => array(
+					'blocks' => array(
+						'core/heading' => array(
+							'typography' => array(
+								'fontFamilies' => array(
+									array(
+										'slug'       => 'fira-code',
+										'name'       => 'Fira Code',
+										'fontFamily' => '"Fira Code", monospace',
+									),
+								),
+							),
+						),
+					),
+				),
+			)
+		);
+
+		$this->assertIsArray( $result );
+		if ( $result['statusCode'] < 200 || $result['statusCode'] >= 300 ) {
+			$this->markTestSkipped( 'REST update did not succeed in this harness; cannot assert on diff.' );
+		}
+
+		$paths  = array_column( $result['not_applied'], 'path' );
+		$prefix = 'settings.blocks.core/heading.typography.fontFamilies';
+		foreach ( $paths as $p ) {
+			$this->assertNotSame( 0, strpos( $p, $prefix ), "path '{$p}' must not be flagged as misplaced" );
+		}
+	}
+
+	/**
+	 * Posting a flat `fontFamilies` array registers under the `custom` origin
+	 * bucket — the stored shape is `{custom: [...]}`. The diff must traverse
+	 * through that wrapper or it will false-negative the registration (this
+	 * was the bug that misled the agent into a destructive retry loop on
+	 * 2026-05-25, see the production log analysis).
+	 */
+	public function test_flat_font_family_registration_is_reported_applied() {
+		$result = $this->execute_ability(
+			'blu/update-global-styles',
+			array(
+				'settings' => array(
+					'typography' => array(
+						'fontFamilies' => array(
+							array(
+								'slug'       => 'fira-code',
+								'name'       => 'Fira Code',
+								'fontFamily' => "'Fira Code', monospace",
+							),
+						),
+					),
+				),
+			)
+		);
+
+		$this->assertIsArray( $result );
+		if ( $result['statusCode'] < 200 || $result['statusCode'] >= 300 ) {
+			$this->markTestSkipped( 'REST update did not succeed in this harness; cannot assert on diff.' );
+		}
+
+		// The three leaves of the registration item must all appear in
+		// `applied`, even though WP wrapped them under `custom` in storage.
+		$this->assertContains( 'settings.typography.fontFamilies[slug=fira-code].slug', $result['applied'] );
+		$this->assertContains( 'settings.typography.fontFamilies[slug=fira-code].name', $result['applied'] );
+		$this->assertContains( 'settings.typography.fontFamilies[slug=fira-code].fontFamily', $result['applied'] );
+
+		// And none of those three leaves should appear as not_applied with the
+		// generic "Path was not written..." reason.
+		$bad_paths = array(
+			'settings.typography.fontFamilies[slug=fira-code].slug',
+			'settings.typography.fontFamilies[slug=fira-code].name',
+			'settings.typography.fontFamilies[slug=fira-code].fontFamily',
+		);
+		foreach ( $result['not_applied'] as $entry ) {
+			$this->assertNotContains( $entry['path'], $bad_paths, "leaf '{$entry['path']}' was wrongly reported as not_applied" );
+		}
+	}
+
+	/**
+	 * Top-level `settings.typography.fontFamily` (singular, scalar) is the
+	 * misplaced-application analog of the per-block case. It must surface as
+	 * a `not_applied` entry whose reason points the agent at
+	 * `styles.typography.fontFamily`. This is the exact failure mode the
+	 * production agent hit on 2026-05-25 — without this hint the agent got an
+	 * unactionable "Path was not written..." message and gave up.
+	 */
+	public function test_misplaced_top_level_settings_application_produces_hint() {
+		$result = $this->execute_ability(
+			'blu/update-global-styles',
+			array(
+				'settings' => array(
+					'typography' => array(
+						'fontFamily' => 'var:preset|font|fira-code',
+					),
+				),
+			)
+		);
+
+		$this->assertIsArray( $result );
+		if ( $result['statusCode'] < 200 || $result['statusCode'] >= 300 ) {
+			$this->markTestSkipped( 'REST update did not succeed in this harness; cannot assert on diff.' );
+		}
+
+		$paths = array_column( $result['not_applied'], 'path' );
+		$this->assertContains( 'settings.typography.fontFamily', $paths );
+
+		$entry  = $result['not_applied'][ array_search( 'settings.typography.fontFamily', $paths, true ) ];
+		$reason = $entry['reason'];
+		$this->assertStringContainsString( 'styles.typography.fontFamily', $reason );
+		// The value also has the wrong preset token; the combined hint should
+		// surface both fixes in one round-trip.
+		$this->assertStringContainsString( 'font-family', $reason );
+	}
+
+	/**
+	 * Applying a `var:preset|font|<slug>` reference (the wrong token — should be
+	 * `font-family`) must trigger the targeted hint, not a generic "value
+	 * differs" message. This protects against the exact mistake the agent made
+	 * on attempt 6 in the production log.
+	 */
+	public function test_wrong_preset_var_token_produces_targeted_hint() {
+		$result = $this->execute_ability(
+			'blu/update-global-styles',
+			array(
+				'styles' => array(
+					'typography' => array(
+						'fontFamily' => 'var:preset|font|fira-code',
+					),
+				),
+			)
+		);
+
+		$this->assertIsArray( $result );
+		if ( $result['statusCode'] < 200 || $result['statusCode'] >= 300 ) {
+			$this->markTestSkipped( 'REST update did not succeed in this harness; cannot assert on diff.' );
+		}
+
+		$paths = array_column( $result['not_applied'], 'path' );
+		$this->assertContains( 'styles.typography.fontFamily', $paths );
+
+		$entry = $result['not_applied'][ array_search( 'styles.typography.fontFamily', $paths, true ) ];
+		$this->assertStringContainsString( 'font-family', $entry['reason'] );
+	}
+
+	/**
+	 * Applying a preset reference to a slug that is not registered anywhere
+	 * must surface a hint containing a copy-paste-ready JSON snippet for the
+	 * registration entry the caller needs to add. Without this, the agent
+	 * reads "register the slug" as a vague instruction and (per the 2026-05-25
+	 * production log) stops to ask the user instead of just doing it.
+	 */
+	public function test_unknown_slug_hint_includes_registration_snippet() {
+		$result = $this->execute_ability(
+			'blu/update-global-styles',
+			array(
+				'styles' => array(
+					'typography' => array(
+						'fontFamily' => 'var:preset|font-family|fira-code',
+					),
+				),
+			)
+		);
+
+		$this->assertIsArray( $result );
+		if ( $result['statusCode'] < 200 || $result['statusCode'] >= 300 ) {
+			$this->markTestSkipped( 'REST update did not succeed in this harness; cannot assert on diff.' );
+		}
+
+		$paths = array_column( $result['not_applied'], 'path' );
+		$this->assertContains( 'styles.typography.fontFamily', $paths );
+
+		$entry  = $result['not_applied'][ array_search( 'styles.typography.fontFamily', $paths, true ) ];
+		$reason = $entry['reason'];
+
+		// The hint must contain a valid JSON snippet the caller can paste into
+		// the next call's `settings.*` payload — extract everything from the
+		// first `{` onward and assert it parses + has the expected shape.
+		$brace_pos = strpos( $reason, '{' );
+		$this->assertNotFalse( $brace_pos, "hint must embed a JSON snippet; got: {$reason}" );
+		$snippet = substr( $reason, $brace_pos );
+		$decoded = json_decode( $snippet, true );
+		$this->assertIsArray( $decoded, "embedded snippet must be valid JSON; got: {$snippet}" );
+
+		$this->assertSame(
+			'fira-code',
+			$decoded['settings']['typography']['fontFamilies'][0]['slug'] ?? null,
+			'snippet must register the exact slug from the failed reference'
+		);
+		$this->assertSame(
+			'Fira Code',
+			$decoded['settings']['typography']['fontFamilies'][0]['name'] ?? null,
+			'snippet should title-case the slug as the display name default'
+		);
+		$this->assertArrayHasKey(
+			'fontFamily',
+			$decoded['settings']['typography']['fontFamilies'][0],
+			'snippet must include a fontFamily placeholder for the caller to fill in'
+		);
+	}
+
 	// ── blu/get-active-global-styles ──────────────────────────────────
 
 	/**
