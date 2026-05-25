@@ -20,7 +20,7 @@ class Resources {
 	}
 
 	/**
-	 * Read the official Google Product Taxonomy and return the results
+	 * Read the official Google Product Taxonomy and return the results.
 	 *
 	 * @return void
 	 */
@@ -42,9 +42,16 @@ class Resources {
 							'minItems'    => 1,
 							'maxItems'    => 5,
 						),
+						'required' => array( 'patterns' ),
 					),
 				),
 				'execute_callback'    => function ( $input ) {
+					$patterns = $input['patterns'] ?? array();
+
+					$is_valid = blu_is_valid_input_array( $patterns, 'patterns', 1, 5 );
+					if ( is_wp_error( $is_valid ) ) {
+						return blu_standardize_rest_response( $is_valid );
+					}
 					$locale = str_replace( '_', '-', get_locale() );
 
 					$taxonomy = get_transient( 'blu/google-product-taxonomy-' . $locale );
@@ -53,11 +60,11 @@ class Resources {
 						$content = $this->retrieve_file( $locale );
 
 						if ( is_wp_error( $content ) ) {
-							return $content;
+							return blu_standardize_rest_response( $content );
 						} elseif ( 'not_found' === $content ) {
 							$content = $this->retrieve_file();
 							if ( is_wp_error( $content ) ) {
-								return $content;
+								return blu_standardize_rest_response( $content );
 							}
 						}
 
@@ -79,9 +86,9 @@ class Resources {
 						set_transient( 'blu/google-product-taxonomy-' . $locale, $taxonomy, MONTH_IN_SECONDS );
 					}
 
-					$filtered = $this->filter_google_taxonomies( $taxonomy, $input['patterns'] );
+					$filtered = $this->filter_google_taxonomies( $taxonomy, $patterns );
 
-					return array( 'categories' => $filtered );
+					return blu_prepare_ability_response( 200, $filtered );
 				},
 				'permission_callback' => function () {
 					return current_user_can( 'manage_options' );
@@ -148,8 +155,8 @@ class Resources {
 						break;
 					}
 				} elseif ( false !== stripos( $line, $pattern ) ) {
-						$filtered[] = $line;
-						break;
+					$filtered[] = $line;
+					break;
 				}
 			}
 		}

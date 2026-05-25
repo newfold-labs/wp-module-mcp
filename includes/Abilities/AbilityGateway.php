@@ -50,11 +50,13 @@ class AbilityGateway {
 			)
 		);
 
+		// Category gate — restricts the whitelist to abilities registered under
+		// these categories. Defaults to the BLU MCP category so the gateway
+		// only exposes the curated set; integrators can broaden via the filter.
 		$allowed_categories = apply_filters(
 			'blu_mcp_allowed_categories',
 			array(
 				'blu-mcp',
-				'woocommerce-rest',
 			)
 		);
 
@@ -63,8 +65,33 @@ class AbilityGateway {
 		return array_filter(
 			$all_abilities,
 			function ( $ability ) use ( $allowed_namespaces, $allowed_categories ) {
-				$name     = $ability->get_name();
-				$category = $ability->get_category();
+				$name         = $ability->get_name();
+				$meta         = $ability->get_meta();
+				$ability_type = 'tool';
+				if ( isset( $meta['mcp']['type'] ) ) {
+					$ability_type = $meta['mcp']['type'];
+				}
+				if ( 'tool' !== $ability_type ) {
+					return false;
+				}
+
+				// Category gate: when the filter returns a non-empty list of
+				// strings, the ability's category must match one of them.
+				// Empty/non-array filter result disables the gate so callers
+				// can opt out via `return array();`.
+				if ( is_array( $allowed_categories ) && ! empty( $allowed_categories ) ) {
+					$category    = $ability->get_category();
+					$category_ok = false;
+					foreach ( $allowed_categories as $cat ) {
+						if ( is_string( $cat ) && '' !== $cat && $cat === $category ) {
+							$category_ok = true;
+							break;
+						}
+					}
+					if ( ! $category_ok ) {
+						return false;
+					}
+				}
 
 				foreach ( $allowed_namespaces as $ns ) {
 					// Skip empty/non-string entries — an empty string would match every
@@ -75,10 +102,6 @@ class AbilityGateway {
 					if ( str_starts_with( $name, $ns ) ) {
 						return true;
 					}
-				}
-
-				if ( in_array( $category, $allowed_categories, true ) ) {
-					return true;
 				}
 
 				return false;
@@ -141,6 +164,7 @@ class AbilityGateway {
 				return true;
 			}
 		}
+
 		return false;
 	}
 
@@ -410,11 +434,11 @@ class AbilityGateway {
 							$status_code = 500;
 						}
 
-						// Redact server-error messages — ability authors may put exception
-						// traces, SQL fragments, file paths, or other internal details into
-						// WP_Error messages. 4xx messages are caller-facing (validation /
-						// permission feedback) and required for the LLM to self-correct, so
-						// pass those through unchanged.
+						// Redact 5xx messages — abilities may surface stack frames,
+						// SQL fragments, file paths, or upstream credentials in their
+						// WP_Error message. 4xx messages are kept verbatim because
+						// they carry validation/permission feedback the LLM needs to
+						// self-correct.
 						$message = $status_code >= 500
 							? 'Ability execution failed.'
 							: $result->get_error_message();
