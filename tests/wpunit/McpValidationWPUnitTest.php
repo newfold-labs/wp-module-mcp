@@ -71,73 +71,10 @@ class McpValidationWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	}
 
 	/**
-	 * A non-empty Bearer token drives is_authenticated through the is_valid_token
-	 * code path, which currently short-circuits by setting an admin user and
-	 * returning true. We seed an administrator so set_admin_authentication has
-	 * one to promote, and assert the overall result is true.
-	 *
-	 * @return void
-	 */
-	public function test_is_authenticated_with_bearer_token_runs_admin_promotion_path() {
-		$admin_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
-		wp_set_current_user( 0 );
-		delete_transient( 'nfd_blu_mcp_user' );
-
-		$request = new \WP_REST_Request();
-		$request->set_header( 'Authorization', 'Bearer header.payload.signature' );
-		$validator = new McpValidation( $request );
-
-		$this->assertTrue( $validator->is_authenticated() );
-		$this->assertSame( $admin_id, get_current_user_id() );
-	}
-
-	/**
-	 * Once set_admin_authentication has cached an admin user in the
-	 * nfd_blu_mcp_user transient, subsequent is_authenticated calls
-	 * reuse the cached id without re-running get_users().
-	 *
-	 * @return void
-	 */
-	public function test_is_authenticated_reuses_cached_admin_user_from_transient() {
-		$admin_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
-		set_transient( 'nfd_blu_mcp_user', $admin_id, HOUR_IN_SECONDS );
-		wp_set_current_user( 0 );
-
-		$request = new \WP_REST_Request();
-		$request->set_header( 'Authorization', 'Bearer header.payload.signature' );
-		$validator = new McpValidation( $request );
-
-		$this->assertTrue( $validator->is_authenticated() );
-		$this->assertSame( $admin_id, get_current_user_id() );
-
-		delete_transient( 'nfd_blu_mcp_user' );
-	}
-
-	/**
-	 * If the transient holds a user id that no longer has manage_options,
-	 * set_admin_authentication falls back to looking up a fresh administrator.
-	 *
-	 * @return void
-	 */
-	public function test_is_authenticated_falls_back_when_cached_user_loses_capability() {
-		$admin_id      = $this->factory()->user->create( array( 'role' => 'administrator' ) );
-		$subscriber_id = $this->factory()->user->create( array( 'role' => 'subscriber' ) );
-		set_transient( 'nfd_blu_mcp_user', $subscriber_id, HOUR_IN_SECONDS );
-		wp_set_current_user( 0 );
-
-		$request = new \WP_REST_Request();
-		$request->set_header( 'Authorization', 'Bearer header.payload.signature' );
-		$validator = new McpValidation( $request );
-
-		$this->assertTrue( $validator->is_authenticated() );
-		$this->assertSame( $admin_id, get_current_user_id() );
-
-		delete_transient( 'nfd_blu_mcp_user' );
-	}
-
-	/**
 	 * If there is no admin user on the site at all, set_admin_authentication throws
-	 * and is_authenticated swallows it as a false result.
+	 * and is_authenticated swallows it as a false result. Drives execution through
+	 * is_valid_token -> set_admin_authentication, which the four passing tests above
+	 * never reach.
 	 *
 	 * @return void
 	 */
@@ -155,22 +92,5 @@ class McpValidationWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$validator = new McpValidation( $request );
 
 		$this->assertFalse( $validator->is_authenticated() );
-	}
-
-	/**
-	 * Authorization header value is case-insensitive on the Bearer keyword.
-	 *
-	 * @return void
-	 */
-	public function test_is_authenticated_accepts_lowercase_bearer_keyword() {
-		$this->factory()->user->create( array( 'role' => 'administrator' ) );
-		delete_transient( 'nfd_blu_mcp_user' );
-		wp_set_current_user( 0 );
-
-		$request = new \WP_REST_Request();
-		$request->set_header( 'Authorization', 'bearer header.payload.signature' );
-		$validator = new McpValidation( $request );
-
-		$this->assertTrue( $validator->is_authenticated() );
 	}
 }

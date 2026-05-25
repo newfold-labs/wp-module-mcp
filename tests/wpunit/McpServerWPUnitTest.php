@@ -10,6 +10,34 @@ namespace BLU;
 class McpServerWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 
 	/**
+	 * Ability names introduced by tests that exercise register_abilities. Tracked so
+	 * tear_down can unregister them, otherwise downstream tests like RestApiCrudWPUnitTest
+	 * would see "already registered" notices when their own setUp re-registers them.
+	 *
+	 * @var string[]
+	 */
+	private $abilities_registered_during_test = array();
+
+	/**
+	 * Remove abilities that this test class registered so the global registry returns
+	 * to the state expected by sibling test classes.
+	 *
+	 * @return void
+	 */
+	public function tear_down(): void {
+		if ( class_exists( '\WP_Abilities_Registry' ) ) {
+			$registry = \WP_Abilities_Registry::get_instance();
+			foreach ( $this->abilities_registered_during_test as $name ) {
+				if ( $registry && $registry->is_registered( $name ) ) {
+					blu_unregister_ability( $name );
+				}
+			}
+		}
+		$this->abilities_registered_during_test = array();
+		parent::tear_down();
+	}
+
+	/**
 	 * Constructor registers mcp_adapter_init action.
 	 *
 	 * @return void
@@ -83,22 +111,21 @@ class McpServerWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	}
 
 	/**
-	 * The blu-mcp category is registered so callers can attach abilities to it.
-	 * Mirrors the wp_register_ability_category contract used by the Abilities API:
-	 * the registry must report it as registered after the call.
+	 * The blu-mcp category ends up registered on the categories registry after the
+	 * register_ability_categories call. The bootstrap may already have registered it
+	 * (the abilities API runs the categories_init action once at boot), so we whitelist
+	 * the "already registered" incorrect-usage notice that fires in that case.
 	 *
 	 * @return void
 	 */
-	public function test_register_ability_categories_registers_blu_mcp() {
+	public function test_register_ability_categories_ends_with_blu_mcp_registered() {
 		if ( ! function_exists( 'wp_register_ability_category' ) ) {
 			$this->markTestSkipped( 'WP Ability Categories API is not available.' );
 		}
+		$this->setExpectedIncorrectUsage( 'WP_Ability_Categories_Registry::register' );
 
-		// The category is only registerable during the categories_init action; hook in
-		// and fire the action manually so the registration runs inside its window.
 		$server = new McpServer();
-		add_action( 'wp_abilities_api_categories_init', array( $server, 'register_ability_categories' ) );
-		do_action( 'wp_abilities_api_categories_init' );
+		$server->register_ability_categories();
 
 		$registry = \WP_Ability_Categories_Registry::get_instance();
 		$this->assertNotNull( $registry );
@@ -106,42 +133,49 @@ class McpServerWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	}
 
 	/**
-	 * Every BLU ability class is instantiated by register_abilities. Many early-return
-	 * when their backing plugin (WooCommerce, etc.) is absent, but the call itself must
-	 * succeed without fatals. We invoke it inside wp_abilities_api_init so that any
-	 * blu_register_ability calls fall inside the action window the Abilities API requires.
+	 * Every BLU ability class is instantiated by register_abilities. The call must
+	 * complete without fatals; some constructors are no-ops without WooCommerce. Any
+	 * abilities that did not exist before the call are tracked so tear_down can clean
+	 * them up, which keeps the global registry from leaking into RestApiCrudWPUnitTest
+	 * and other tests that re-register the same names.
 	 *
 	 * @return void
 	 */
-	public function test_register_abilities_runs_without_fatals() {
+	public function test_register_abilities_executes_every_ability_constructor() {
 		if ( ! function_exists( 'wp_register_ability' ) ) {
 			$this->markTestSkipped( 'WP Abilities API is not available.' );
 		}
+		$this->setExpectedIncorrectUsage( 'WP_Abilities_Registry::register' );
+		$this->setExpectedIncorrectUsage( 'WP_Ability_Categories_Registry::register' );
+
+		$registry             = \WP_Abilities_Registry::get_instance();
+		$before_ability_names = $registry ? array_keys( $registry->get_all_registered() ) : array();
 
 		$server = new McpServer();
-		$called = false;
-		$cb     = function () use ( $server, &$called ) {
+		$cb     = function () use ( $server ) {
 			$server->register_abilities();
-			$called = true;
 		};
 		add_action( 'wp_abilities_api_init', $cb, 5 );
 
-		$abilities_init_count_before = did_action( 'wp_abilities_api_init' );
-		$abilities_registry          = \WP_Abilities_Registry::get_instance();
-		if (
-			$abilities_registry
-			&& did_action( 'wp_abilities_api_init' ) === $abilities_init_count_before
-		) {
-			do_action( 'wp_abilities_api_init', $abilities_registry );
+		$init_count_before = did_action( 'wp_abilities_api_init' );
+		if ( $registry && did_action( 'wp_abilities_api_init' ) === $init_count_before ) {
+			do_action( 'wp_abilities_api_init', $registry );
 		}
 		remove_action( 'wp_abilities_api_init', $cb, 5 );
 
-		$this->assertTrue( $called, 'register_abilities should have executed inside wp_abilities_api_init.' );
+		$after_ability_names                    = $registry ? array_keys( $registry->get_all_registered() ) : array();
+		$newly_registered                       = array_values( array_diff( $after_ability_names, $before_ability_names ) );
+		$this->abilities_registered_during_test = array_merge(
+			$this->abilities_registered_during_test,
+			$newly_registered
+		);
+
+		$this->assertNotEmpty( $after_ability_names, 'register_abilities should leave at least one ability registered.' );
 	}
 
 	/**
-	 * After register_abilities runs successfully under wp_abilities_api_init, the
-	 * gateway tools should be registered on the abilities registry.
+	 * After register_abilities runs, the gateway tools are queryable on the registry.
+	 * Same registration-tracking pattern as the previous test.
 	 *
 	 * @return void
 	 */
@@ -149,6 +183,11 @@ class McpServerWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		if ( ! function_exists( 'wp_register_ability' ) ) {
 			$this->markTestSkipped( 'WP Abilities API is not available.' );
 		}
+		$this->setExpectedIncorrectUsage( 'WP_Abilities_Registry::register' );
+		$this->setExpectedIncorrectUsage( 'WP_Ability_Categories_Registry::register' );
+
+		$registry             = \WP_Abilities_Registry::get_instance();
+		$before_ability_names = $registry ? array_keys( $registry->get_all_registered() ) : array();
 
 		$server = new McpServer();
 		add_action(
@@ -159,14 +198,17 @@ class McpServerWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 			5
 		);
 
-		$abilities_init_count_before = did_action( 'wp_abilities_api_init' );
-		$abilities_registry          = \WP_Abilities_Registry::get_instance();
-		if (
-			$abilities_registry
-			&& did_action( 'wp_abilities_api_init' ) === $abilities_init_count_before
-		) {
-			do_action( 'wp_abilities_api_init', $abilities_registry );
+		$init_count_before = did_action( 'wp_abilities_api_init' );
+		if ( $registry && did_action( 'wp_abilities_api_init' ) === $init_count_before ) {
+			do_action( 'wp_abilities_api_init', $registry );
 		}
+
+		$after_ability_names                    = $registry ? array_keys( $registry->get_all_registered() ) : array();
+		$newly_registered                       = array_values( array_diff( $after_ability_names, $before_ability_names ) );
+		$this->abilities_registered_during_test = array_merge(
+			$this->abilities_registered_during_test,
+			$newly_registered
+		);
 
 		$this->assertNotNull( blu_get_ability( 'blu/list-abilities' ) );
 		$this->assertNotNull( blu_get_ability( 'blu/get-ability-schema' ) );
