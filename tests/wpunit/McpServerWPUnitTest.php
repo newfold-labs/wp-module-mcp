@@ -81,4 +81,95 @@ class McpServerWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$server = new McpServer();
 		$this->assertNotFalse( has_action( 'wp_abilities_api_categories_init', array( $server, 'register_ability_categories' ) ) );
 	}
+
+	/**
+	 * The blu-mcp category is registered so callers can attach abilities to it.
+	 * Mirrors the wp_register_ability_category contract used by the Abilities API:
+	 * the registry must report it as registered after the call.
+	 *
+	 * @return void
+	 */
+	public function test_register_ability_categories_registers_blu_mcp() {
+		if ( ! function_exists( 'wp_register_ability_category' ) ) {
+			$this->markTestSkipped( 'WP Ability Categories API is not available.' );
+		}
+
+		// The category is only registerable during the categories_init action; hook in
+		// and fire the action manually so the registration runs inside its window.
+		$server = new McpServer();
+		add_action( 'wp_abilities_api_categories_init', array( $server, 'register_ability_categories' ) );
+		do_action( 'wp_abilities_api_categories_init' );
+
+		$registry = \WP_Ability_Categories_Registry::get_instance();
+		$this->assertNotNull( $registry );
+		$this->assertTrue( $registry->is_registered( 'blu-mcp' ) );
+	}
+
+	/**
+	 * Every BLU ability class is instantiated by register_abilities. Many early-return
+	 * when their backing plugin (WooCommerce, etc.) is absent, but the call itself must
+	 * succeed without fatals. We invoke it inside wp_abilities_api_init so that any
+	 * blu_register_ability calls fall inside the action window the Abilities API requires.
+	 *
+	 * @return void
+	 */
+	public function test_register_abilities_runs_without_fatals() {
+		if ( ! function_exists( 'wp_register_ability' ) ) {
+			$this->markTestSkipped( 'WP Abilities API is not available.' );
+		}
+
+		$server = new McpServer();
+		$called = false;
+		$cb     = function () use ( $server, &$called ) {
+			$server->register_abilities();
+			$called = true;
+		};
+		add_action( 'wp_abilities_api_init', $cb, 5 );
+
+		$abilities_init_count_before = did_action( 'wp_abilities_api_init' );
+		$abilities_registry          = \WP_Abilities_Registry::get_instance();
+		if (
+			$abilities_registry
+			&& did_action( 'wp_abilities_api_init' ) === $abilities_init_count_before
+		) {
+			do_action( 'wp_abilities_api_init', $abilities_registry );
+		}
+		remove_action( 'wp_abilities_api_init', $cb, 5 );
+
+		$this->assertTrue( $called, 'register_abilities should have executed inside wp_abilities_api_init.' );
+	}
+
+	/**
+	 * After register_abilities runs successfully under wp_abilities_api_init, the
+	 * gateway tools should be registered on the abilities registry.
+	 *
+	 * @return void
+	 */
+	public function test_register_abilities_registers_gateway_tools() {
+		if ( ! function_exists( 'wp_register_ability' ) ) {
+			$this->markTestSkipped( 'WP Abilities API is not available.' );
+		}
+
+		$server = new McpServer();
+		add_action(
+			'wp_abilities_api_init',
+			function () use ( $server ) {
+				$server->register_abilities();
+			},
+			5
+		);
+
+		$abilities_init_count_before = did_action( 'wp_abilities_api_init' );
+		$abilities_registry          = \WP_Abilities_Registry::get_instance();
+		if (
+			$abilities_registry
+			&& did_action( 'wp_abilities_api_init' ) === $abilities_init_count_before
+		) {
+			do_action( 'wp_abilities_api_init', $abilities_registry );
+		}
+
+		$this->assertNotNull( blu_get_ability( 'blu/list-abilities' ) );
+		$this->assertNotNull( blu_get_ability( 'blu/get-ability-schema' ) );
+		$this->assertNotNull( blu_get_ability( 'blu/call-ability' ) );
+	}
 }
