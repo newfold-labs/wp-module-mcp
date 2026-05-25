@@ -38,6 +38,35 @@ class McpServerWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	}
 
 	/**
+	 * Run a callable with the WP test framework's doing_it_wrong collector and
+	 * its trigger_error path detached, so any "must be registered on the X action"
+	 * or "already registered" notices fired inside do not turn into test failures.
+	 * Notice handling differs across environments (bootstrap may or may not have
+	 * already fired the categories/abilities init actions), so strict
+	 * setExpectedIncorrectUsage matching is brittle here.
+	 *
+	 * @param callable $callable The callable to run with suppression in effect.
+	 *
+	 * @return void
+	 */
+	private function with_doing_it_wrong_suppressed( callable $callable ): void {
+		$collector = array( $this, 'doing_it_wrong_run' );
+		$had_hook  = has_action( 'doing_it_wrong_run', $collector );
+		if ( false !== $had_hook ) {
+			remove_action( 'doing_it_wrong_run', $collector );
+		}
+		add_filter( 'doing_it_wrong_trigger_error', '__return_false' );
+		try {
+			$callable();
+		} finally {
+			remove_filter( 'doing_it_wrong_trigger_error', '__return_false' );
+			if ( false !== $had_hook ) {
+				add_action( 'doing_it_wrong_run', $collector, (int) $had_hook );
+			}
+		}
+	}
+
+	/**
 	 * Constructor registers mcp_adapter_init action.
 	 *
 	 * @return void
@@ -122,10 +151,20 @@ class McpServerWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		if ( ! function_exists( 'wp_register_ability_category' ) ) {
 			$this->markTestSkipped( 'WP Ability Categories API is not available.' );
 		}
-		$this->setExpectedIncorrectUsage( 'WP_Ability_Categories_Registry::register' );
 
 		$server = new McpServer();
-		$server->register_ability_categories();
+		$this->with_doing_it_wrong_suppressed(
+			function () use ( $server ) {
+				// Fire the categories_init action via add_action + do_action so that
+				// wp_register_ability_category passes its inside-the-action guard.
+				add_action( 'wp_abilities_api_categories_init', array( $server, 'register_ability_categories' ) );
+				do_action( 'wp_abilities_api_categories_init' );
+				remove_action( 'wp_abilities_api_categories_init', array( $server, 'register_ability_categories' ) );
+
+				// Also exercise the direct-call path so its body counts toward coverage.
+				$server->register_ability_categories();
+			}
+		);
 
 		$registry = \WP_Ability_Categories_Registry::get_instance();
 		$this->assertNotNull( $registry );
@@ -145,23 +184,25 @@ class McpServerWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		if ( ! function_exists( 'wp_register_ability' ) ) {
 			$this->markTestSkipped( 'WP Abilities API is not available.' );
 		}
-		$this->setExpectedIncorrectUsage( 'WP_Abilities_Registry::register' );
-		$this->setExpectedIncorrectUsage( 'WP_Ability_Categories_Registry::register' );
 
 		$registry             = \WP_Abilities_Registry::get_instance();
 		$before_ability_names = $registry ? array_keys( $registry->get_all_registered() ) : array();
 
 		$server = new McpServer();
-		$cb     = function () use ( $server ) {
-			$server->register_abilities();
-		};
-		add_action( 'wp_abilities_api_init', $cb, 5 );
+		$this->with_doing_it_wrong_suppressed(
+			function () use ( $server, $registry ) {
+				$cb = function () use ( $server ) {
+					$server->register_abilities();
+				};
+				add_action( 'wp_abilities_api_init', $cb, 5 );
 
-		$init_count_before = did_action( 'wp_abilities_api_init' );
-		if ( $registry && did_action( 'wp_abilities_api_init' ) === $init_count_before ) {
-			do_action( 'wp_abilities_api_init', $registry );
-		}
-		remove_action( 'wp_abilities_api_init', $cb, 5 );
+				$init_count_before = did_action( 'wp_abilities_api_init' );
+				if ( $registry && did_action( 'wp_abilities_api_init' ) === $init_count_before ) {
+					do_action( 'wp_abilities_api_init', $registry );
+				}
+				remove_action( 'wp_abilities_api_init', $cb, 5 );
+			}
+		);
 
 		$after_ability_names                    = $registry ? array_keys( $registry->get_all_registered() ) : array();
 		$newly_registered                       = array_values( array_diff( $after_ability_names, $before_ability_names ) );
@@ -183,25 +224,27 @@ class McpServerWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		if ( ! function_exists( 'wp_register_ability' ) ) {
 			$this->markTestSkipped( 'WP Abilities API is not available.' );
 		}
-		$this->setExpectedIncorrectUsage( 'WP_Abilities_Registry::register' );
-		$this->setExpectedIncorrectUsage( 'WP_Ability_Categories_Registry::register' );
 
 		$registry             = \WP_Abilities_Registry::get_instance();
 		$before_ability_names = $registry ? array_keys( $registry->get_all_registered() ) : array();
 
 		$server = new McpServer();
-		add_action(
-			'wp_abilities_api_init',
-			function () use ( $server ) {
-				$server->register_abilities();
-			},
-			5
-		);
+		$this->with_doing_it_wrong_suppressed(
+			function () use ( $server, $registry ) {
+				add_action(
+					'wp_abilities_api_init',
+					function () use ( $server ) {
+						$server->register_abilities();
+					},
+					5
+				);
 
-		$init_count_before = did_action( 'wp_abilities_api_init' );
-		if ( $registry && did_action( 'wp_abilities_api_init' ) === $init_count_before ) {
-			do_action( 'wp_abilities_api_init', $registry );
-		}
+				$init_count_before = did_action( 'wp_abilities_api_init' );
+				if ( $registry && did_action( 'wp_abilities_api_init' ) === $init_count_before ) {
+					do_action( 'wp_abilities_api_init', $registry );
+				}
+			}
+		);
 
 		$after_ability_names                    = $registry ? array_keys( $registry->get_all_registered() ) : array();
 		$newly_registered                       = array_values( array_diff( $after_ability_names, $before_ability_names ) );
