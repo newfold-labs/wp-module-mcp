@@ -40,30 +40,34 @@ class McpServerWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	/**
 	 * Run a callable with WP's incorrect-usage handling silenced so the wrapped
 	 * registration calls do not turn into test failures. The WP test framework
-	 * collects every doing_it_wrong notice into the protected
-	 * caught_doing_it_wrong property and asserts in assert_post_conditions that
-	 * it matches the expected set. The do_action that feeds that collector
-	 * fires unconditionally (independent of the doing_it_wrong_trigger_error
-	 * filter), so the only reliable suppression is to snapshot the property
-	 * before the call and restore it afterwards. Notice handling differs across
-	 * environments (bootstrap may or may not have already fired the categories
-	 * / abilities init actions), so strict setExpectedIncorrectUsage matching
-	 * is brittle here.
+	 * collects every doing_it_wrong notice into a caught_doing_it_wrong array
+	 * and asserts in assert_post_conditions that it matches the expected set.
+	 * The do_action that feeds that collector fires unconditionally
+	 * (independent of the doing_it_wrong_trigger_error filter), so the only
+	 * reliable suppression is to reset the array after the wrapped call.
+	 *
+	 * wp-browser's WPTestCase does not subclass WP_UnitTestCase_Base; it
+	 * composes a separate inner instance and forwards property reads/writes
+	 * via __get / __set. That means property_exists( $this, ... ) returns
+	 * false even though the property is reachable, so we write through __set
+	 * unconditionally (wrapped in a try/catch so an unexpected environment
+	 * still lets the test surface its real assertion outcome).
 	 *
 	 * @param callable $callable The callable to run with suppression in effect.
 	 *
 	 * @return void
 	 */
 	private function with_doing_it_wrong_suppressed( callable $callable ): void {
-		$has_property = property_exists( $this, 'caught_doing_it_wrong' );
-		$before       = $has_property ? $this->caught_doing_it_wrong : null;
 		add_filter( 'doing_it_wrong_trigger_error', '__return_false' );
 		try {
 			$callable();
 		} finally {
 			remove_filter( 'doing_it_wrong_trigger_error', '__return_false' );
-			if ( $has_property ) {
-				$this->caught_doing_it_wrong = is_array( $before ) ? $before : array();
+			try {
+				$this->caught_doing_it_wrong = array();
+			} catch ( \Throwable $e ) {
+				// Property forwarding unavailable; nothing we can do here.
+				unset( $e );
 			}
 		}
 	}
