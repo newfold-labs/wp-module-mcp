@@ -66,6 +66,7 @@ class McpServer {
 	 * Strauss-prefixed McpAdapter class.
 	 *
 	 * @param McpAdapter|null $adapter Adapter instance that fired the action.
+	 *
 	 * @return void If the server creation is successful
 	 * @throws \Exception If the server creation fails.
 	 */
@@ -81,14 +82,11 @@ class McpServer {
 			$abilities = AbilityGateway::GATEWAY_ABILITIES;
 		} else {
 			// Legacy: expose all individual tools directly.
-			$abilities = array_map(
-				function ( $ability ) {
-					return $ability->get_name();
-				},
-				blu_get_abilities_by_category( 'blu-mcp' )
-			);
+			$abilities = blu_get_ability_by_type( 'tool' );
 		}
 
+		$prompts   = blu_get_ability_by_type( 'prompt' );
+		$resources = blu_get_ability_by_type( 'resource' );
 		$adapter->create_server(
 			'blu-mcp', // server_id
 			'blu', // server_route_namespace
@@ -100,8 +98,8 @@ class McpServer {
 			ErrorLogMcpErrorHandler::class, // error_handler
 			NullMcpObservabilityHandler::class, // observability_handler
 			$abilities, // tools,
-			array(), // resources
-			array(), // prompts
+			$resources, // resources
+			$prompts, // prompts
 			function ( \WP_REST_Request $request ) {
 				// transport_permission_callback
 				return ( new McpValidation( $request ) )->is_authenticated();
@@ -116,6 +114,7 @@ class McpServer {
 	 * duplicate_server_id _doing_it_wrong attributed to our prefixed namespace.
 	 *
 	 * @param McpAdapter|null $adapter Adapter instance that fired the action.
+	 *
 	 * @return void
 	 */
 	public function suppress_sibling_default_server_refire( $adapter = null ): void {

@@ -10,6 +10,7 @@
  */
 function blu_register_ability( string $name, array $args ): ?WP_Ability {
 	if ( function_exists( 'wp_register_ability' ) ) {
+
 		return wp_register_ability( $name, $args );
 	}
 
@@ -148,6 +149,37 @@ function blu_get_abilities_by_category( string $category ): array {
 
 
 /**
+ * Get the abilities name by type
+ *
+ * @param string $type The type
+ *
+ * @return array
+ */
+function blu_get_ability_by_type( $type = 'tool' ) {
+	$all_abilities     = blu_get_abilities_by_category( 'blu-mcp' );
+	$current_abilities = array();
+	$type              = in_array( $type, array( 'tool', 'prompt', 'resource' ), true ) ? $type : 'tool';
+	foreach ( $all_abilities as $ability ) {
+		$meta         = $ability->get_meta();
+		$ability_type = 'tool';
+		$public = true;
+
+		if ( isset( $meta['mcp']['type'] ) ) {
+			$ability_type = $meta['mcp']['type'];
+		}
+		if ( isset( $meta['mcp']['public'] ) ) {
+			$public = $meta['mcp']['public'];
+		}
+
+		if ( $public && $ability_type === $type ) {
+			$current_abilities[] = $ability->get_name();
+		}
+	}
+
+	return $current_abilities;
+}
+
+/**
  * Filters a list of abilities by a specified namespace.
  *
  * @param WP_Ability[] $abilities An array of abilities to filter.
@@ -216,6 +248,7 @@ function blu_standardize_rest_response( $response ) {
 		return blu_prepare_ability_response( 500, 'Unexpected response format.' );
 	}
 }
+
 /**
  * Maps an HTTP status code to a simplified status type.
  *
@@ -350,4 +383,110 @@ function blu_project_post_full( WP_Post $post ): array {
 			'content' => $post->post_content,
 		)
 	);
+}
+
+if ( ! function_exists( 'blu_is_valid_list' ) ) {
+	/**
+	 * Check if the list is a simple array
+	 *
+	 * @param array $list The list
+	 *
+	 * @return bool
+	 */
+	function blu_is_valid_list( $list ) {
+		$i = 0;
+		foreach ( $list as $k => $_ ) {
+			if ( $k !== $i++ ) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+}
+
+/**
+ * Check if input array is a valid input
+ *
+ * @param array    $input_value The input.
+ * @param string   $input_name The input name.
+ * @param bool|int $min_items The min amount of items.
+ * @param bool|int $max_items The max amount of items.
+ *
+ * @return WP_Error|bool
+ */
+function blu_is_valid_input_array( $input_value, $input_name, $min_items = false, $max_items = false ) {
+
+	$error = '';
+
+	if ( ! is_array( $input_value ) ) {
+		$error = $input_name . ' must be an array: ' . gettype( $input_value ) . ' given.';
+	}
+
+	if ( $min_items && count( $input_value ) < $min_items ) {
+		$error = $input_name . ' must contain at least ' . $min_items . ' element';
+	}
+
+	if ( $max_items && count( $input_value ) > $max_items ) {
+		$error = $input_name . ' cannot be contain more than ' . $max_items . ' element.';
+
+	}
+
+	if ( ! blu_is_valid_list( $input_value ) ) {
+		$error = $input_name . ' can\'t be an object-shaped array';
+	}
+
+	return '' === $error ? true : new WP_Error( 400, $error );
+}
+
+
+if ( ! function_exists( 'blu_filter_terms_by_patterns' ) ) {
+
+	/**
+	 * Filter terms by patterns
+	 *
+	 * @param array $patterns The patterns
+	 * @param array $terms The terms to filter by reference.
+	 *
+	 * @return void
+	 */
+	function blu_filter_terms_by_patterns( $patterns, &$terms ) {
+		if ( count( $patterns ) > 0 ) {
+			$filtered_ids = array();
+			foreach ( $terms as $term ) {
+				if ( ! isset( $term['name'] ) || ! isset( $term['id'] ) || ! is_string( $term['name'] ) ) {
+					continue;
+				}
+				$term_name = trim( $term['name'] );
+
+				foreach ( $patterns as $pattern ) {
+
+					if ( @preg_match( $pattern, '' ) !== false ) {
+						$regex = $pattern;
+						if ( substr( $regex, - 1 ) !== 'i' ) {
+							// Ensure case-insensitive
+							$regex = rtrim( $regex, '/' ) . '/i';
+						}
+						if ( preg_match( $regex, $term_name ) ) {
+							$filtered_ids[] = $term['id'];
+							break;
+						}
+					} elseif ( false !== stripos( $term_name, $pattern ) ) {
+						$filtered_ids[] = $term['id'];
+						break;
+					}
+				}
+			}
+
+			if ( count( $filtered_ids ) > 0 ) {
+				$terms = array_filter(
+					$terms,
+					function ( $term ) use ( $filtered_ids ) {
+						return in_array( $term['id'], $filtered_ids );
+					}
+				);
+			}
+		}
+	}
 }

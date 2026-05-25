@@ -1,5 +1,6 @@
 # Editors
 .idea
+.DS_Store
 
 /vendor
 /vendor-prefixed
