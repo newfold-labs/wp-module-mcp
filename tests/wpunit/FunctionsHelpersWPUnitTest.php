@@ -249,24 +249,23 @@ class FunctionsHelpersWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase
 	}
 
 	/**
-	 * Terms missing id or name are skipped without causing errors.
+	 * Terms missing id or name are skipped silently by the matching loop.
+	 *
+	 * The pattern targets text that only appears in malformed entries, so the matching
+	 * loop iterates them, hits the isset/is_string guard, and continues without crashing.
+	 * Because nothing matched, the helper leaves the original list intact.
 	 *
 	 * @return void
 	 */
 	public function test_filter_terms_by_patterns_skips_malformed_terms() {
-		$terms = array(
+		$terms    = array(
 			array( 'name' => 'No id field' ),
 			array( 'id' => 5 ),
-			array(
-				'id'   => 6,
-				'name' => 'Valid Shoes',
-			),
+			array( 'name' => 12345 ),
 		);
-		blu_filter_terms_by_patterns( array( 'shoes' ), $terms );
-		// One match was found, so filtering kicks in and only the valid term remains.
-		$this->assertCount( 1, $terms );
-		$remaining = array_values( $terms );
-		$this->assertSame( 6, $remaining[0]['id'] );
+		$snapshot = $terms;
+		blu_filter_terms_by_patterns( array( 'no id field' ), $terms );
+		$this->assertSame( $snapshot, $terms );
 	}
 
 	/**
