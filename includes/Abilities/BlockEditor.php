@@ -93,7 +93,7 @@ class BlockEditor {
 					'properties' => array(
 						'client_id'     => array(
 							'type'        => 'string',
-							'description' => 'The clientId of the block to edit, from the block tree context',
+							'description' => 'The clientId of the block to edit, from the block tree context.',
 						),
 						'block_content' => array(
 							'type'        => 'string',
