@@ -195,6 +195,14 @@ jobs:
           echo "Activating plugin slug: $SLUG"
           npx wp-env run cli wp plugin activate "$SLUG"
 
+      - name: Install and activate WooCommerce
+        if: steps.changes.outputs.skip != 'true'
+        run: |
+          if ! npx wp-env run cli wp plugin is-installed woocommerce; then
+            npx wp-env run cli wp plugin install woocommerce
+          fi
+          npx wp-env run cli wp plugin activate woocommerce
+
       - name: Create application password
         if: steps.changes.outputs.skip != 'true'
         id: wp_auth
