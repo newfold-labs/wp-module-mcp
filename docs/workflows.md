@@ -18,7 +18,7 @@ Files live under **`.github/workflows/`**.
 | **auto-translate.yml** | **reusable-translations** with **`text_domain: wp-module-mcp`** |
 | **satis-webhook.yml** | On **release created**, dispatches to **newfold-labs/satis** to refresh Composer packages |
 | **dependabot-auto-merge.yml** | On completion of `Lint`, `Codecoverage-Main`, or `Build and Test … (Playwright tests)`, calls reusable **dependabot-auto-merge** — verifies every check run on the head SHA is green, then approves and merges Dependabot PRs. Gates on its own check-run aggregation, so it works without branch-protection required status checks |
-| **ai-evals.yml** | PR / manual **MCP AI evals**: spins up **wp-env** with **wp-plugin-bluehost** (PR branch mapped into vendor), installs/activates **WooCommerce**, creates a WP **application password** via WP-CLI, runs multi-turn tool-selection evals via **Cloudflare AI Gateway** + **MCP SDK** (`tools/list` only; gateway meta-tools ignored for assertions). Coverage vs **`evals/test-cases.json`** is non-blocking. |
+| **ai-evals.yml** | PR / manual **MCP AI evals**: spins up **wp-env** with **wp-plugin-bluehost** (PR branch mapped into vendor), installs/activates **WooCommerce**, creates a WP **application password** via WP-CLI, runs multi-turn tool-selection evals via **Cloudflare AI Gateway** + **MCP SDK** (`tools/list` only; gateway meta-tools ignored for assertions). Cases with the same **`series_id`** run in order with **shared chat history** (so “update the post” still knows which post was created). Each step is still scored on its own **`expected_tool`**. Coverage vs **`evals/test-cases.json`** is non-blocking. |
 
 ## Secrets
 

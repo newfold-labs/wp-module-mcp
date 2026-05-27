@@ -37,6 +37,8 @@ export interface AgentEvalOptions {
   gatewayUrl: string;
   gatewayToken: string;
   maxTurns?: number;
+  /** Prior turns from a series; the current prompt is appended as a new user message. */
+  conversationMessages?: ChatMessage[];
 }
 
 export interface AgentEvalResult {
@@ -44,6 +46,8 @@ export interface AgentEvalResult {
   actualTool: string;
   error?: string;
   turns: number;
+  /** Full chat history after this step (pass to the next step in a series). */
+  conversationMessages: ChatMessage[];
 }
 
 function formatToolResultForModel(result: CallToolResult): string {
@@ -90,7 +94,11 @@ export async function runAgentEval(options: AgentEvalOptions): Promise<AgentEval
   const maxTurns = options.maxTurns ?? DEFAULT_MAX_TURNS;
   let tools: OpenAiFunctionTool[] = await fetchOpenAiToolsFromList(options.client);
 
-  const messages: ChatMessage[] = [{ role: 'user', content: options.prompt }];
+  const prior = options.conversationMessages ?? [];
+  const messages: ChatMessage[] =
+    prior.length > 0
+      ? [...prior, { role: 'user', content: options.prompt }]
+      : [{ role: 'user', content: options.prompt }];
   let lastRelevant = '';
   let matched = false;
 
@@ -113,7 +121,13 @@ export async function runAgentEval(options: AgentEvalOptions): Promise<AgentEval
       });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      return { matched: false, actualTool: '', error: `Request failed: ${msg}`, turns: turn + 1 };
+      return {
+        matched: false,
+        actualTool: '',
+        error: `Request failed: ${msg}`,
+        turns: turn + 1,
+        conversationMessages: messages,
+      };
     }
 
     const responseText = await response.text();
@@ -123,6 +137,7 @@ export async function runAgentEval(options: AgentEvalOptions): Promise<AgentEval
         actualTool: '',
         error: `HTTP ${response.status}: ${responseText.slice(0, 200)}`,
         turns: turn + 1,
+        conversationMessages: messages,
       };
     }
 
@@ -130,11 +145,23 @@ export async function runAgentEval(options: AgentEvalOptions): Promise<AgentEval
     try {
       parsed = JSON.parse(responseText) as ChatCompletionResponse;
     } catch {
-      return { matched: false, actualTool: '', error: 'Invalid JSON from AI gateway', turns: turn + 1 };
+      return {
+        matched: false,
+        actualTool: '',
+        error: 'Invalid JSON from AI gateway',
+        turns: turn + 1,
+        conversationMessages: messages,
+      };
     }
 
     if (parsed.error?.message) {
-      return { matched: false, actualTool: '', error: parsed.error.message, turns: turn + 1 };
+      return {
+        matched: false,
+        actualTool: '',
+        error: parsed.error.message,
+        turns: turn + 1,
+        conversationMessages: messages,
+      };
     }
 
     const assistantMessage = parsed.choices?.[0]?.message;
@@ -145,6 +172,7 @@ export async function runAgentEval(options: AgentEvalOptions): Promise<AgentEval
         matched,
         actualTool: lastRelevant || '(none)',
         turns: turn + 1,
+        conversationMessages: messages,
       };
     }
 
@@ -196,7 +224,12 @@ export async function runAgentEval(options: AgentEvalOptions): Promise<AgentEval
     }
 
     if (matched) {
-      return { matched: true, actualTool: lastRelevant, turns: turn + 1 };
+      return {
+        matched: true,
+        actualTool: lastRelevant,
+        turns: turn + 1,
+        conversationMessages: messages,
+      };
     }
 
     // Refresh tools/list in case the model discovered new schemas via gateway (same set, cheap).
@@ -208,5 +241,6 @@ export async function runAgentEval(options: AgentEvalOptions): Promise<AgentEval
     actualTool: lastRelevant || '(none)',
     error: `Exceeded max turns (${maxTurns}) without expected tool`,
     turns: maxTurns,
+    conversationMessages: messages,
   };
 }

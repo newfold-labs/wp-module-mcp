@@ -1,12 +1,16 @@
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import * as core from '@actions/core';
-import { runAgentEval } from './agent-loop.js';
+import { runAgentEval, type AgentEvalResult } from './agent-loop.js';
 import { connectMcpClient } from './mcp-client.js';
 import { fetchOpenAiToolsFromList } from './mcp-tools.js';
 import type { TestCase } from './coverage.js';
 
 const EVAL_DELAY_MS = 500;
+
+type EvalUnit =
+  | { kind: 'single'; test: TestCase }
+  | { kind: 'series'; seriesId: string; tests: TestCase[] };
 
 export interface EvalRunOptions {
   repoRoot: string;
@@ -43,52 +47,90 @@ export async function runEvals(options: EvalRunOptions): Promise<EvalRunResult> 
     let skip = 0;
     const rows: string[] = [];
 
-    for (let i = 0; i < testCases.length; i++) {
-      const test = testCases[i];
+    const units = groupTestCases(testCases);
+    let firstEvalLogged = false;
 
-      if (!options.runAll && options.changedSources.length > 0) {
-        if (!options.changedSources.some((s) => s === test.source)) {
-          skip++;
-          continue;
-        }
+    for (const unit of units) {
+      const tests =
+        unit.kind === 'single' ? [unit.test] : unit.tests;
+
+      const runnable = tests.filter((test) => shouldRunTest(test, options));
+      skip += tests.length - runnable.length;
+      if (runnable.length === 0) {
+        continue;
       }
 
-      const result = await runAgentEval({
-        client,
-        prompt: test.prompt,
-        expectedTool: test.expected_tool,
-        model: options.model,
-        gatewayUrl: options.gatewayUrl,
-        gatewayToken: options.gatewayToken,
-      });
+      if (unit.kind === 'series') {
+        console.log(
+          `::group::Series ${unit.seriesId} (${runnable.length} step(s), shared context)`
+        );
+      }
 
-      if (i === 0) {
-        console.log('::group::Debug: First eval');
-        console.log(`Turns: ${result.turns}, matched: ${result.matched}, actual: ${result.actualTool}`);
-        if (result.error) {
-          console.log(`Error: ${result.error}`);
+      let conversationMessages: AgentEvalResult['conversationMessages'] = [];
+
+      for (let stepIndex = 0; stepIndex < runnable.length; stepIndex++) {
+        const test = runnable[stepIndex];
+        const inSeries = unit.kind === 'series';
+        const stepLabel = inSeries
+          ? `[${unit.seriesId} ${stepIndex + 1}/${runnable.length}] `
+          : '';
+
+        const result = await runAgentEval({
+          client,
+          prompt: test.prompt,
+          expectedTool: test.expected_tool,
+          model: options.model,
+          gatewayUrl: options.gatewayUrl,
+          gatewayToken: options.gatewayToken,
+          conversationMessages: inSeries ? conversationMessages : undefined,
+        });
+
+        conversationMessages = result.conversationMessages;
+
+        if (!firstEvalLogged) {
+          firstEvalLogged = true;
+          console.log('::group::Debug: First eval');
+          console.log(
+            `Turns: ${result.turns}, matched: ${result.matched}, actual: ${result.actualTool}`
+          );
+          if (result.error) {
+            console.log(`Error: ${result.error}`);
+          }
+          console.log('::endgroup::');
         }
+
+        const description = stepLabel + test.description;
+        if (result.error && !result.matched) {
+          rows.push(
+            `| :warning: | ${escapeCell(description)} | \`${test.expected_tool}\` | ${escapeCell(result.error)} |`
+          );
+          error++;
+        } else if (result.matched) {
+          rows.push(
+            `| :white_check_mark: | ${escapeCell(description)} | \`${test.expected_tool}\` | \`${result.actualTool}\` (${result.turns} turns) |`
+          );
+          pass++;
+        } else {
+          rows.push(
+            `| :x: | ${escapeCell(description)} | \`${test.expected_tool}\` | \`${result.actualTool}\` (${result.turns} turns) |`
+          );
+          fail++;
+        }
+
+        if (inSeries) {
+          console.log(
+            `  step ${stepIndex + 1}/${runnable.length}: ${test.description} → ${
+              result.matched ? 'pass' : result.error ? 'error' : 'fail'
+            } (${result.actualTool})`
+          );
+        }
+
+        await sleep(EVAL_DELAY_MS);
+      }
+
+      if (unit.kind === 'series') {
         console.log('::endgroup::');
       }
-
-      if (result.error && !result.matched) {
-        rows.push(
-          `| :warning: | ${escapeCell(test.description)} | \`${test.expected_tool}\` | ${escapeCell(result.error)} |`
-        );
-        error++;
-      } else if (result.matched) {
-        rows.push(
-          `| :white_check_mark: | ${escapeCell(test.description)} | \`${test.expected_tool}\` | \`${result.actualTool}\` (${result.turns} turns) |`
-        );
-        pass++;
-      } else {
-        rows.push(
-          `| :x: | ${escapeCell(test.description)} | \`${test.expected_tool}\` | \`${result.actualTool}\` (${result.turns} turns) |`
-        );
-        fail++;
-      }
-
-      await sleep(EVAL_DELAY_MS);
     }
 
     const totalRun = pass + fail + error;
@@ -129,6 +171,37 @@ export async function runEvals(options: EvalRunOptions): Promise<EvalRunResult> 
   } finally {
     await client.close();
   }
+}
+
+function groupTestCases(cases: TestCase[]): EvalUnit[] {
+  const units: EvalUnit[] = [];
+  let index = 0;
+
+  while (index < cases.length) {
+    const current = cases[index];
+    if (!current.series_id) {
+      units.push({ kind: 'single', test: current });
+      index++;
+      continue;
+    }
+
+    const seriesId = current.series_id;
+    const seriesTests: TestCase[] = [];
+    while (index < cases.length && cases[index].series_id === seriesId) {
+      seriesTests.push(cases[index]);
+      index++;
+    }
+    units.push({ kind: 'series', seriesId, tests: seriesTests });
+  }
+
+  return units;
+}
+
+function shouldRunTest(test: TestCase, options: EvalRunOptions): boolean {
+  if (options.runAll || options.changedSources.length === 0) {
+    return true;
+  }
+  return options.changedSources.some((source) => source === test.source);
 }
 
 async function loadTestCases(repoRoot: string): Promise<TestCase[]> {

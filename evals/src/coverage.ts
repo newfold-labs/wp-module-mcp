@@ -10,6 +10,8 @@ export interface TestCase {
   prompt: string;
   expected_tool: string;
   source: string;
+  /** When set, consecutive cases with the same id share chat history (post id, etc.). */
+  series_id?: string;
 }
 
 export interface CoverageResult {
