@@ -172,6 +172,26 @@ jobs:
           max_attempts: 3
           command: npx wp-env start
 
+      - name: Resolve eval username and log users
+        if: steps.changes.outputs.skip != 'true'
+        run: |
+          echo "WP users in wp-env:"
+          npx wp-env run cli wp user list --fields=ID,user_login,user_email,roles
+
+          if npx wp-env run cli wp user get "${WP_EVAL_USER}" --field=user_login >/dev/null 2>&1; then
+            RESOLVED_USER="${WP_EVAL_USER}"
+          else
+            RESOLVED_USER="$(npx wp-env run cli wp user list --role=administrator --field=user_login | awk 'NF {print; exit}')"
+          fi
+
+          if [ -z "${RESOLVED_USER}" ]; then
+            echo "::error::Unable to resolve an administrator user in wp-env for application password auth."
+            exit 1
+          fi
+
+          echo "Using eval user: ${RESOLVED_USER}"
+          echo "WP_EVAL_USER=${RESOLVED_USER}" >> "$GITHUB_ENV"
+
       - name: Activate Bluehost plugin
         if: steps.changes.outputs.skip != 'true'
         run: |
@@ -211,27 +231,6 @@ jobs:
           echo "::add-mask::${APP_PASS}"
           echo "WP_APP_PASSWORD=${APP_PASS}" >> "$GITHUB_ENV"
           echo "Application password created for user ${WP_EVAL_USER}"
-
-      - name: Verify MCP endpoint
-        if: steps.changes.outputs.skip != 'true'
-        run: |
-          INIT_BODY='{"jsonrpc":"2.0","id":"probe-init","method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"wp-module-mcp-evals-probe","version":"1.0.0"}}}'
-          HTTP_CODE=$(curl -sS -o /tmp/mcp-probe.txt -w "%{http_code}" \
-            -u "${WP_EVAL_USER}:${WP_APP_PASSWORD}" \
-            -H "Accept: application/json, text/event-stream" \
-            -H "Content-Type: application/json" \
-            -d "${INIT_BODY}" \
-            "${MCP_EVAL_SERVER_URL}" || true)
-
-          echo "MCP probe HTTP status: ${HTTP_CODE}"
-          if [ "${HTTP_CODE}" = "404" ] || [ "${HTTP_CODE}" = "401" ] || [ "${HTTP_CODE}" = "403" ] || [[ "${HTTP_CODE}" =~ ^5 ]]; then
-            echo "::error::MCP endpoint probe failed with HTTP ${HTTP_CODE} at ${MCP_EVAL_SERVER_URL}"
-            echo "Response body:"
-            cat /tmp/mcp-probe.txt || true
-            echo "Registered routes containing mcp (from WP runtime):"
-            npx wp-env run cli wp eval 'echo implode("\n", array_filter(array_keys(rest_get_server()->get_routes()), function($r){ return false !== stripos($r, "mcp"); }));' || true
-            exit 1
-          fi
 
       - name: Install eval dependencies
         if: steps.changes.outputs.skip != 'true'
@@ -278,13 +277,6 @@ jobs:
           header: ai-eval-results
           path: combined-report.md
 
-      - name: Upload eval report
-        if: always() && steps.changes.outputs.skip != 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: ai-eval-report
-          path: combined-report.md
-
       - name: Check eval results
         if: steps.changes.outputs.skip != 'true'
         run: |
@@ -314,7 +306,3 @@ jobs:
 
           exit $EXIT_CODE
 
-      - name: wp-env debug log
-        if: failure() && steps.changes.outputs.skip != 'true'
-        continue-on-error: true
-        run: npx wp-env run wordpress cat /var/www/html/wp-content/debug.log || true

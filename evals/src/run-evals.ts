@@ -75,15 +75,27 @@ export async function runEvals(options: EvalRunOptions): Promise<EvalRunResult> 
           ? `[${unit.seriesId} ${stepIndex + 1}/${runnable.length}] `
           : '';
 
-        const result = await runAgentEval({
-          client,
-          prompt: test.prompt,
-          expectedTool: test.expected_tool,
-          model: options.model,
-          gatewayUrl: options.gatewayUrl,
-          gatewayToken: options.gatewayToken,
-          conversationMessages: inSeries ? conversationMessages : undefined,
-        });
+        let result: AgentEvalResult;
+        try {
+          result = await runAgentEval({
+            client,
+            prompt: test.prompt,
+            expectedTool: test.expected_tool,
+            model: options.model,
+            gatewayUrl: options.gatewayUrl,
+            gatewayToken: options.gatewayToken,
+            conversationMessages: inSeries ? conversationMessages : undefined,
+          });
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          result = {
+            matched: false,
+            actualTool: '(none)',
+            error: `Unhandled eval error: ${msg}`,
+            turns: 1,
+            conversationMessages: inSeries ? conversationMessages : [],
+          };
+        }
 
         conversationMessages = result.conversationMessages;
 

@@ -287,13 +287,6 @@
       "source": "Prompts.php"
     },
     {
-      "id": "prompt-improve-desc-1",
-      "description": "Improve product description",
-      "prompt": "Improve the description of product ID 45 using a persuasive tone",
-      "expected_tool": "blu_improve-product-description",
-      "source": "Prompts.php"
-    },
-    {
       "id": "prompt-suggest-cat-1",
       "description": "Suggest product categories",
       "prompt": "What categories would you suggest for my product 'Wireless Bluetooth Headphones'?",
@@ -316,9 +309,9 @@
     },
     {
       "id": "prompt-variation-attrs-1",
-      "description": "Suggest variation attributes",
-      "prompt": "What variation attributes should I set up for my product 'Men's Casual Shirt'?",
-      "expected_tool": "blu_suggest-product-variation-attributes",
+      "description": "Guided product creation for variations",
+      "prompt": "Start guided product creation for 'Men's Casual Shirt' and help me choose variation attributes like size and color.",
+      "expected_tool": "blu_guided-product-creation-prompt",
       "source": "Prompts.php"
     },
     {
@@ -422,7 +415,7 @@
     {
       "id": "cpt-get-1",
       "description": "Get custom post type item",
-      "prompt": "Show me the details of the 'portfolio' post with ID 25",
+      "prompt": "Show me the details of the portfolio custom post type item with ID 25",
       "expected_tool": "blu_get-cpt",
       "source": "CustomPostTypes.php"
     },
@@ -436,14 +429,14 @@
     {
       "id": "cpt-update-1",
       "description": "Update custom post type item",
-      "prompt": "Update the title of 'portfolio' item ID 25 to 'Redesigned Company Website'",
+      "prompt": "Update the title of the portfolio custom post type item ID 25 to 'Redesigned Company Website'",
       "expected_tool": "blu_update-cpt",
       "source": "CustomPostTypes.php"
     },
     {
       "id": "cpt-delete-1",
       "description": "Delete custom post type item",
-      "prompt": "Delete the 'testimonial' post with ID 30",
+      "prompt": "Delete the testimonial custom post type item with ID 30",
       "expected_tool": "blu_delete-cpt",
       "source": "CustomPostTypes.php"
     },
@@ -663,7 +656,7 @@
     {
       "id": "opening-and-verifying-the-post-11",
       "description": "Opening and verifying the post",
-      "prompt": "Open the post and verify all details.",
+      "prompt": "Get the post titled 'AI Workflow Updated' and show its full details.",
       "expected_tool": "blu_get-post",
       "source": "Posts.php",
       "series_id": "posts-ai-workflow"
@@ -695,7 +688,7 @@
     {
       "id": "verifying-post-deletion-15",
       "description": "Verifying post deletion",
-      "prompt": "Verify that the post no longer exists.",
+      "prompt": "Search posts for 'AI Workflow Updated' and confirm no matches are found.",
       "expected_tool": "blu_posts-search",
       "source": "Posts.php",
       "series_id": "posts-ai-workflow"
@@ -704,14 +697,6 @@
       "id": "attempting-duplicate-deletion-16",
       "description": "Attempting duplicate deletion",
       "prompt": "Attempt to delete the same post again.",
-      "expected_tool": "blu_delete-post",
-      "source": "Posts.php",
-      "series_id": "posts-ai-workflow"
-    },
-    {
-      "id": "verifying-proper-error-handling-17",
-      "description": "Verifying proper error handling",
-      "prompt": "Verify proper error handling.",
       "expected_tool": "blu_delete-post",
       "source": "Posts.php",
       "series_id": "posts-ai-workflow"
@@ -767,7 +752,7 @@
     {
       "id": "opening-and-verifying-page-details-24",
       "description": "Opening and verifying page details",
-      "prompt": "Open and verify content and image.",
+      "prompt": "Get the 'AI Landing Page' page and show its content and embedded media.",
       "expected_tool": "blu_get-page",
       "source": "Pages.php",
       "series_id": "pages-ai-landing"
@@ -799,7 +784,7 @@
     {
       "id": "verifying-page-removal-28",
       "description": "Verifying page removal",
-      "prompt": "Verify the page is removed.",
+      "prompt": "Search pages for 'AI Landing Page' and confirm it is not found.",
       "expected_tool": "blu_pages-search",
       "source": "Pages.php",
       "series_id": "pages-ai-landing"
@@ -815,7 +800,7 @@
     {
       "id": "verifying-media-upload-30",
       "description": "Verifying media upload",
-      "prompt": "Verify the media appears in the media library.",
+      "prompt": "List media in the library and confirm test.jpg is present.",
       "expected_tool": "blu_list-media",
       "source": "Media.php",
       "series_id": "media-workflow"
@@ -831,7 +816,7 @@
     {
       "id": "opening-media-details-32",
       "description": "Opening media details",
-      "prompt": "Open the media and verify details.",
+      "prompt": "Get the test.jpg media item and show its metadata.",
       "expected_tool": "blu_get-media",
       "source": "Media.php",
       "series_id": "media-workflow"
@@ -863,7 +848,7 @@
     {
       "id": "verifying-media-removal-36",
       "description": "Verifying media removal",
-      "prompt": "Verify media is removed.",
+      "prompt": "Search the media library for test.jpg and confirm it is not found.",
       "expected_tool": "blu_search-media",
       "source": "Media.php",
       "series_id": "media-workflow"
@@ -879,65 +864,25 @@
     {
       "id": "verifying-invalid-file-rejection-38",
       "description": "Verifying invalid file rejection",
-      "prompt": "Verify system rejects the file.",
+      "prompt": "Attempt to upload test.exe again; the upload should be rejected with an error.",
       "expected_tool": "blu_upload-media",
       "source": "Media.php",
       "series_id": "media-workflow"
     },
     {
-      "id": "opening-existing-header-menu-39",
-      "description": "Opening existing header menu",
-      "prompt": "Open existing header menu (Primary Menu).",
-      "expected_tool": "blu_run-api-function",
-      "source": "RestApiCrud.php",
-      "series_id": "menu-primary"
-    },
-    {
       "id": "adding-page-to-menu-40",
       "description": "Adding page to menu",
       "prompt": "Add page 'AI Landing Page' to the menu.",
-      "expected_tool": "blu_run-api-function",
-      "source": "RestApiCrud.php",
-      "series_id": "pages-ai-landing"
-    },
-    {
-      "id": "saving-the-menu-41",
-      "description": "Saving the menu",
-      "prompt": "Save the menu.",
-      "expected_tool": "blu_run-api-function",
-      "source": "RestApiCrud.php",
-      "series_id": "menu-primary"
-    },
-    {
-      "id": "verifying-page-appears-in-navigation-42",
-      "description": "Verifying page appears in navigation",
-      "prompt": "Verify the page appears in the website header navigation.",
-      "expected_tool": "blu_run-api-function",
-      "source": "RestApiCrud.php",
+      "expected_tool": "blu_add-cpt",
+      "source": "CustomPostTypes.php",
       "series_id": "menu-primary"
     },
     {
       "id": "removing-page-from-menu-43",
       "description": "Removing page from menu",
       "prompt": "Remove the page from the menu.",
-      "expected_tool": "blu_run-api-function",
-      "source": "RestApiCrud.php",
-      "series_id": "menu-primary"
-    },
-    {
-      "id": "saving-updated-menu-44",
-      "description": "Saving updated menu",
-      "prompt": "Save the menu again.",
-      "expected_tool": "blu_run-api-function",
-      "source": "RestApiCrud.php",
-      "series_id": "menu-primary"
-    },
-    {
-      "id": "verifying-page-removal-from-navigation-45",
-      "description": "Verifying page removal from navigation",
-      "prompt": "Verify the page no longer appears in the navigation.",
-      "expected_tool": "blu_run-api-function",
-      "source": "RestApiCrud.php",
+      "expected_tool": "blu_delete-cpt",
+      "source": "CustomPostTypes.php",
       "series_id": "menu-primary"
     },
     {
@@ -1015,7 +960,7 @@
     {
       "id": "opening-and-verifying-product-details-55",
       "description": "Opening and verifying product details",
-      "prompt": "Open and verify details.",
+      "prompt": "Get the 'AI Tool' product from this flow and show its full details.",
       "expected_tool": "blu_wc-get-product",
       "source": "WooProducts.php",
       "series_id": "wc-product-ai-tool"
@@ -1039,7 +984,7 @@
     {
       "id": "verifying-product-variations-58",
       "description": "Verifying product variations",
-      "prompt": "Verify variations are correctly created.",
+      "prompt": "Get the variable product with sizes S, M, L from this flow and show its variation data.",
       "expected_tool": "blu_wc-get-product",
       "source": "WooProducts.php",
       "series_id": "wc-product-ai-tool"
@@ -1063,7 +1008,7 @@
     {
       "id": "verifying-all-product-entities-are-removed-61",
       "description": "Verifying all product entities are removed",
-      "prompt": "Verify all are removed.",
+      "prompt": "Search WooCommerce products for 'AI Tool' and confirm no matching products remain.",
       "expected_tool": "blu_wc-products-search",
       "source": "WooProducts.php",
       "series_id": "wc-product-ai-tool"
@@ -1087,16 +1032,8 @@
     {
       "id": "verifying-user-appears-in-list-64",
       "description": "Verifying user appears in list",
-      "prompt": "Verify the user appears in the list.",
+      "prompt": "Search users for 'test_user' and confirm the new user appears in the results.",
       "expected_tool": "blu_users-search",
-      "source": "Users.php",
-      "series_id": "users-test-user"
-    },
-    {
-      "id": "opening-and-verifying-user-details-65",
-      "description": "Opening and verifying user details",
-      "prompt": "Open and verify user details.",
-      "expected_tool": "blu_get-user",
       "source": "Users.php",
       "series_id": "users-test-user"
     },
@@ -1111,7 +1048,7 @@
     {
       "id": "verifying-updated-user-role-67",
       "description": "Verifying updated user role",
-      "prompt": "Search again and verify updated role.",
+      "prompt": "Search users for 'test_user' and confirm the role is Editor.",
       "expected_tool": "blu_users-search",
       "source": "Users.php",
       "series_id": "users-test-user"
@@ -1125,46 +1062,6 @@
       "series_id": "users-test-user"
     },
     {
-      "id": "verifying-duplicate-user-error-handling-69",
-      "description": "Verifying duplicate user error handling",
-      "prompt": "Verify proper error handling.",
-      "expected_tool": "blu_add-user",
-      "source": "Users.php",
-      "series_id": "users-test-user"
-    },
-    {
-      "id": "attempting-admin-action-with-author-role-70",
-      "description": "Attempting admin action with author role",
-      "prompt": "Attempt admin-level action with Author role.",
-      "expected_tool": "blu_update-general-settings",
-      "source": "Settings.php",
-      "series_id": "users-test-user"
-    },
-    {
-      "id": "verifying-access-denial-71",
-      "description": "Verifying access denial",
-      "prompt": "Verify access is denied.",
-      "expected_tool": "blu_update-general-settings",
-      "source": "Settings.php",
-      "series_id": "users-test-user"
-    },
-    {
-      "id": "deleting-logged-in-user-attempt-72",
-      "description": "Deleting logged-in user attempt",
-      "prompt": "Attempt to delete currently logged-in user.",
-      "expected_tool": "blu_delete-user",
-      "source": "Users.php",
-      "series_id": "users-test-user"
-    },
-    {
-      "id": "verifying-deletion-is-blocked-73",
-      "description": "Verifying deletion is blocked",
-      "prompt": "Verify action is blocked.",
-      "expected_tool": "blu_delete-user",
-      "source": "Users.php",
-      "series_id": "users-test-user"
-    },
-    {
       "id": "deleting-the-user-74",
       "description": "Deleting the user",
       "prompt": "Delete the user.",
@@ -1173,10 +1070,10 @@
       "series_id": "users-test-user"
     },
     {
-      "id": "verifying-user-removal-75",
-      "description": "Verifying user removal",
-      "prompt": "Verify user is removed.",
-      "expected_tool": "blu_users-search",
+      "id": "deleting-logged-in-user-attempt-72",
+      "description": "Deleting logged-in user attempt",
+      "prompt": "Attempt to delete currently logged-in user.",
+      "expected_tool": "blu_delete-user",
       "source": "Users.php",
       "series_id": "users-test-user"
     },
@@ -1229,42 +1126,10 @@
       "series_id": "settings-ai-test"
     },
     {
-      "id": "saving-settings-changes-82",
-      "description": "Saving settings changes",
-      "prompt": "Save changes.",
-      "expected_tool": "blu_update-general-settings",
-      "source": "Settings.php",
-      "series_id": "settings-ai-test"
-    },
-    {
-      "id": "fetching-updated-settings-83",
-      "description": "Fetching updated settings",
-      "prompt": "Fetch settings again.",
-      "expected_tool": "blu_get-general-settings",
-      "source": "Settings.php",
-      "series_id": "settings-ai-test"
-    },
-    {
       "id": "verifying-settings-updates-84",
       "description": "Verifying settings updates",
-      "prompt": "Verify all updates are reflected.",
+      "prompt": "Get general settings and confirm the site title is 'AI Test Website', tagline is 'AI Powered Site', and timezone is Asia/Kolkata.",
       "expected_tool": "blu_get-general-settings",
-      "source": "Settings.php",
-      "series_id": "settings-ai-test"
-    },
-    {
-      "id": "setting-invalid-values-85",
-      "description": "Setting invalid values",
-      "prompt": "Attempt to set invalid values.",
-      "expected_tool": "blu_update-general-settings",
-      "source": "Settings.php",
-      "series_id": "settings-ai-test"
-    },
-    {
-      "id": "verifying-invalid-input-rejection-86",
-      "description": "Verifying invalid input rejection",
-      "prompt": "Verify system rejects invalid inputs.",
-      "expected_tool": "blu_update-general-settings",
       "source": "Settings.php",
       "series_id": "settings-ai-test"
     },
@@ -1301,25 +1166,9 @@
       "series_id": "theme-global-styles"
     },
     {
-      "id": "saving-style-changes-91",
-      "description": "Saving style changes",
-      "prompt": "Save changes.",
-      "expected_tool": "blu_update-global-styles",
-      "source": "GlobalStyles.php",
-      "series_id": "theme-global-styles"
-    },
-    {
-      "id": "fetching-updated-styles-92",
-      "description": "Fetching updated styles",
-      "prompt": "Fetch styles again.",
-      "expected_tool": "blu_get-active-global-styles",
-      "source": "GlobalStyles.php",
-      "series_id": "theme-global-styles"
-    },
-    {
       "id": "verifying-updated-styles-93",
       "description": "Verifying updated styles",
-      "prompt": "Verify updates are applied correctly.",
+      "prompt": "Fetch active global styles and confirm the site color palette changes from this session are present.",
       "expected_tool": "blu_get-active-global-styles",
       "source": "GlobalStyles.php",
       "series_id": "theme-global-styles"
@@ -1337,14 +1186,6 @@
       "description": "Changing site fonts",
       "prompt": "Ask the agent to change the available fonts.",
       "expected_tool": "blu_update-global-styles",
-      "source": "GlobalStyles.php",
-      "series_id": "site-fonts"
-    },
-    {
-      "id": "verifying-site-wide-font-changes-96",
-      "description": "Verifying site-wide font changes",
-      "prompt": "Verify the fonts applied on site wide.",
-      "expected_tool": "blu_get-active-global-styles",
       "source": "GlobalStyles.php",
       "series_id": "site-fonts"
     },
@@ -1407,16 +1248,8 @@
     {
       "id": "comparing-report-values-104",
       "description": "Comparing report values",
-      "prompt": "Compare values across reports.",
-      "expected_tool": "blu_wc-reports-sales",
-      "source": "WooOrders.php",
-      "series_id": "wc-reports"
-    },
-    {
-      "id": "verifying-report-consistency-105",
-      "description": "Verifying report consistency",
-      "prompt": "Verify consistency of data.",
-      "expected_tool": "blu_wc-reports-sales",
+      "prompt": "Fetch the orders totals report again to compare with the products totals report from earlier in this session.",
+      "expected_tool": "blu_wc-reports-orders-totals",
       "source": "WooOrders.php",
       "series_id": "wc-reports"
     },
@@ -1447,7 +1280,7 @@
     {
       "id": "fetching-books-item-details-109",
       "description": "Fetching Books item details",
-      "prompt": "Get the full details of that item.",
+      "prompt": "Get the full details of the LLM Project item in the Books custom post type.",
       "expected_tool": "blu_get-cpt",
       "source": "CustomPostTypes.php",
       "series_id": "cpt-books-llm"
@@ -1455,7 +1288,7 @@
     {
       "id": "updating-books-item-content-110",
       "description": "Updating Books item content",
-      "prompt": "Update the content of the book AI project to: 'Updated: this LLM Project now focuses on agentic workflows.'",
+      "prompt": "In the Books custom post type, update the content of the LLM Project item to: 'Updated: this LLM Project now.'",
       "expected_tool": "blu_update-cpt",
       "source": "CustomPostTypes.php",
       "series_id": "cpt-books-llm"
@@ -1463,7 +1296,7 @@
     {
       "id": "deleting-books-item-111",
       "description": "Deleting Books item",
-      "prompt": "Delete the book AI project.",
+      "prompt": "Delete the LLM Project item from the Books custom post type.",
       "expected_tool": "blu_delete-cpt",
       "source": "CustomPostTypes.php",
       "series_id": "cpt-books-llm"
@@ -1477,97 +1310,9 @@
       "series_id": "cpt-books-llm"
     },
     {
-      "id": "creating-a-new-post-113",
-      "description": "Creating a new post",
-      "prompt": "Create a new post.",
-      "expected_tool": "blu_add-post",
-      "source": "Posts.php",
-      "series_id": "mixed-module"
-    },
-    {
-      "id": "creating-a-new-page-114",
-      "description": "Creating a new page",
-      "prompt": "Create a new page.",
-      "expected_tool": "blu_add-page",
-      "source": "Pages.php",
-      "series_id": "mixed-module"
-    },
-    {
-      "id": "uploading-media-file-115",
-      "description": "Uploading media file",
-      "prompt": "Upload a media file.",
-      "expected_tool": "blu_upload-media",
-      "source": "Media.php",
-      "series_id": "mixed-module"
-    },
-    {
-      "id": "creating-a-new-product-116",
-      "description": "Creating a new product",
-      "prompt": "Create a new product.",
-      "expected_tool": "blu_wc-add-product",
-      "source": "WooProducts.php",
-      "series_id": "mixed-module"
-    },
-    {
-      "id": "searching-for-posts-117",
-      "description": "Searching for posts",
-      "prompt": "Search for posts.",
-      "expected_tool": "blu_posts-search",
-      "source": "Posts.php",
-      "series_id": "mixed-module"
-    },
-    {
-      "id": "updating-page-content-118",
-      "description": "Updating page content",
-      "prompt": "Update the page content.",
-      "expected_tool": "blu_update-page",
-      "source": "Pages.php",
-      "series_id": "mixed-module"
-    },
-    {
-      "id": "inserting-media-into-page-119",
-      "description": "Inserting media into page",
-      "prompt": "Insert media into the page.",
-      "expected_tool": "blu_add-section",
-      "source": "BlockEditor.php",
-      "series_id": "mixed-module"
-    },
-    {
-      "id": "opening-and-verifying-product-details-120",
-      "description": "Opening and verifying product details",
-      "prompt": "Open the product and verify details.",
-      "expected_tool": "blu_wc-get-product",
-      "source": "WooProducts.php",
-      "series_id": "mixed-module"
-    },
-    {
-      "id": "deleting-the-post-121",
-      "description": "Deleting the post",
-      "prompt": "Delete the post.",
-      "expected_tool": "blu_delete-post",
-      "source": "Posts.php",
-      "series_id": "mixed-module"
-    },
-    {
-      "id": "deleting-the-media-122",
-      "description": "Deleting the media",
-      "prompt": "Delete the media.",
-      "expected_tool": "blu_delete-media",
-      "source": "Media.php",
-      "series_id": "mixed-module"
-    },
-    {
-      "id": "verifying-remaining-data-consistency-123",
-      "description": "Verifying remaining data consistency",
-      "prompt": "Verify remaining data is consistent.",
-      "expected_tool": "blu_posts-search",
-      "source": "Posts.php",
-      "series_id": "mixed-module"
-    },
-    {
       "id": "creating-multiple-posts-124",
       "description": "Creating multiple posts",
-      "prompt": "Create multiple posts with large content.",
+      "prompt": "Create multiple random posts with large content.",
       "expected_tool": "blu_add-post",
       "source": "Posts.php",
       "series_id": "stress-multi"
@@ -1575,23 +1320,15 @@
     {
       "id": "creating-multiple-pages-125",
       "description": "Creating multiple pages",
-      "prompt": "Create multiple pages.",
+      "prompt": "Create multiple random pages.",
       "expected_tool": "blu_add-page",
       "source": "Pages.php",
       "series_id": "stress-multi"
     },
     {
-      "id": "uploading-multiple-media-files-126",
-      "description": "Uploading multiple media files",
-      "prompt": "Upload multiple media files.",
-      "expected_tool": "blu_upload-media",
-      "source": "Media.php",
-      "series_id": "stress-multi"
-    },
-    {
       "id": "creating-multiple-products-127",
       "description": "Creating multiple products",
-      "prompt": "Create multiple products.",
+      "prompt": "Create random multiple products.",
       "expected_tool": "blu_wc-add-product",
       "source": "WooProducts.php",
       "series_id": "stress-multi"
@@ -1605,34 +1342,10 @@
       "series_id": "stress-multi"
     },
     {
-      "id": "searching-across-all-modules-129",
-      "description": "Searching across all modules",
-      "prompt": "Search across all modules.",
-      "expected_tool": "blu_posts-search",
-      "source": "Posts.php",
-      "series_id": "stress-multi"
-    },
-    {
-      "id": "fetching-complete-details-130",
-      "description": "Fetching complete details",
-      "prompt": "Fetch complete details.",
-      "expected_tool": "blu_get-post",
-      "source": "Posts.php",
-      "series_id": "stress-multi"
-    },
-    {
       "id": "deleting-some-entities-131",
       "description": "Deleting some entities",
       "prompt": "Delete some entities.",
       "expected_tool": "blu_delete-post",
-      "source": "Posts.php",
-      "series_id": "stress-multi"
-    },
-    {
-      "id": "verifying-system-stability-and-consistency-132",
-      "description": "Verifying system stability and consistency",
-      "prompt": "Verify system stability and consistency.",
-      "expected_tool": "blu_posts-search",
       "source": "Posts.php",
       "series_id": "stress-multi"
     },
@@ -1667,114 +1380,5 @@
       "expected_tool": "blu_delete-post",
       "source": "Posts.php",
       "series_id": "edge-posts"
-    },
-    {
-      "id": "deleting-non-existing-post-137",
-      "description": "Deleting non-existing post",
-      "prompt": "Attempt to delete a non-existing post.",
-      "expected_tool": "blu_delete-post",
-      "source": "Posts.php",
-      "series_id": "edge-posts"
-    },
-    {
-      "id": "repeating-same-command-twice-138",
-      "description": "Repeating same command twice",
-      "prompt": "Repeat the same command twice.",
-      "expected_tool": "blu_delete-post",
-      "source": "Posts.php",
-      "series_id": "edge-posts"
-    },
-    {
-      "id": "searching-posts-139",
-      "description": "Searching posts",
-      "prompt": "Search posts.",
-      "expected_tool": "blu_posts-search",
-      "source": "Posts.php",
-      "series_id": "edge-posts"
-    },
-    {
-      "id": "verifying-correct-system-state-140",
-      "description": "Verifying correct system state",
-      "prompt": "Verify correct system state and no duplicate actions.",
-      "expected_tool": "blu_posts-search",
-      "source": "Posts.php",
-      "series_id": "edge-posts"
-    },
-    {
-      "id": "opening-blu-ai-assistant-141",
-      "description": "Opening BLU AI assistant",
-      "prompt": "Open BLU AI assistant.",
-      "expected_tool": "blu_get-site-info",
-      "source": "SiteInfo.php"
-    },
-    {
-      "id": "verifying-assistant-panel-load-142",
-      "description": "Verifying assistant panel load",
-      "prompt": "Verify panel loads correctly.",
-      "expected_tool": "blu_get-site-info",
-      "source": "SiteInfo.php"
-    },
-    {
-      "id": "closing-ai-assistant-143",
-      "description": "Closing AI assistant",
-      "prompt": "Close the assistant.",
-      "expected_tool": "blu_get-site-info",
-      "source": "SiteInfo.php"
-    },
-    {
-      "id": "sending-capabilities-prompt-144",
-      "description": "Sending capabilities prompt",
-      "prompt": "Send prompt 'What can you help me with?'.",
-      "expected_tool": "blu_list-abilities",
-      "source": "AbilityGateway.php"
-    },
-    {
-      "id": "verifying-capabilities-response-145",
-      "description": "Verifying capabilities response",
-      "prompt": "Verify capabilities response.",
-      "expected_tool": "blu_list-abilities",
-      "source": "AbilityGateway.php"
-    },
-    {
-      "id": "sending-invalid-prompt-146",
-      "description": "Sending invalid prompt",
-      "prompt": "Send invalid prompt 'asdasd123'.",
-      "expected_tool": "blu_list-abilities",
-      "source": "AbilityGateway.php"
-    },
-    {
-      "id": "verifying-clarification-response-147",
-      "description": "Verifying clarification response",
-      "prompt": "Verify clarification response.",
-      "expected_tool": "blu_list-abilities",
-      "source": "AbilityGateway.php"
-    },
-    {
-      "id": "sending-dangerous-prompt-148",
-      "description": "Sending dangerous prompt",
-      "prompt": "Send dangerous prompt 'Delete all posts'.",
-      "expected_tool": "blu_posts-search",
-      "source": "Posts.php"
-    },
-    {
-      "id": "verifying-dangerous-action-handling-149",
-      "description": "Verifying dangerous action handling",
-      "prompt": "Verify confirmation or rejection.",
-      "expected_tool": "blu_posts-search",
-      "source": "Posts.php"
-    },
-    {
-      "id": "sending-multi-step-command-150",
-      "description": "Sending multi-step command",
-      "prompt": "Send multi-step command to create post with category.",
-      "expected_tool": "blu_add-category",
-      "source": "Posts.php"
-    },
-    {
-      "id": "verifying-multi-step-execution-151",
-      "description": "Verifying multi-step execution",
-      "prompt": "Verify both actions executed correctly.",
-      "expected_tool": "blu_add-post",
-      "source": "Posts.php"
     }
 ]

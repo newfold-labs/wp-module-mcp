@@ -76,12 +76,17 @@ function collectMatchingCalls(
     if (isGatewayMetaTool(name)) {
       continue;
     }
+    const toolDisplay = name
+      ? args
+        ? `${name}(${args.slice(0, 220)})`
+        : name
+      : '';
     if (name) {
-      lastRelevant = args ? `${name}(${args.slice(0, 80)})` : name;
+      lastRelevant = toolDisplay;
     }
     if (matchesExpectedToolCall(name, args, expectedNorm)) {
       matched = true;
-      lastRelevant = name;
+      lastRelevant = toolDisplay || name;
       break;
     }
   }
@@ -92,8 +97,6 @@ function collectMatchingCalls(
 export async function runAgentEval(options: AgentEvalOptions): Promise<AgentEvalResult> {
   const expectedNorm = normalizeToolName(options.expectedTool);
   const maxTurns = options.maxTurns ?? DEFAULT_MAX_TURNS;
-  let tools: OpenAiFunctionTool[] = await fetchOpenAiToolsFromList(options.client);
-
   const prior = options.conversationMessages ?? [];
   const messages: ChatMessage[] =
     prior.length > 0
@@ -101,6 +104,19 @@ export async function runAgentEval(options: AgentEvalOptions): Promise<AgentEval
       : [{ role: 'user', content: options.prompt }];
   let lastRelevant = '';
   let matched = false;
+  let tools: OpenAiFunctionTool[];
+  try {
+    tools = await fetchOpenAiToolsFromList(options.client);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return {
+      matched: false,
+      actualTool: '',
+      error: `Unable to load tools/list: ${msg}`,
+      turns: 1,
+      conversationMessages: messages,
+    };
+  }
 
   for (let turn = 0; turn < maxTurns; turn++) {
     let response: Response;
@@ -233,7 +249,18 @@ export async function runAgentEval(options: AgentEvalOptions): Promise<AgentEval
     }
 
     // Refresh tools/list in case the model discovered new schemas via gateway (same set, cheap).
-    tools = await fetchOpenAiToolsFromList(options.client);
+    try {
+      tools = await fetchOpenAiToolsFromList(options.client);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return {
+        matched: false,
+        actualTool: lastRelevant || '(none)',
+        error: `Unable to refresh tools/list: ${msg}`,
+        turns: turn + 1,
+        conversationMessages: messages,
+      };
+    }
   }
 
   return {
