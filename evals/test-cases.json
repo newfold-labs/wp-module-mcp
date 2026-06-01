@@ -656,7 +656,7 @@
   {
     "id": "opening-and-verifying-the-post-11",
     "description": "Opening and verifying the post",
-    "prompt": "Get the post titled 'AI Workflow Updated' and show its full details.",
+    "prompt": "Get the post titled 'AI Workflow Post' and show its full details.",
     "expected_tool": "blu_get-post",
     "source": "Posts.php",
     "series_id": "posts-ai-workflow"

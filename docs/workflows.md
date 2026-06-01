@@ -30,5 +30,3 @@ Files live under **`.github/workflows/`**.
 
 - **AI evals:** `CLOUDFLARE_AI_GATEWAY_ID`. Optional `MCP_EVAL_NAMESPACE` (default `blu`) if set on the job env.
 
-
-```

@@ -51,11 +51,21 @@ export async function runEvals(options: EvalRunOptions): Promise<EvalRunResult> 
     let firstEvalLogged = false;
 
     for (const unit of units) {
-      const tests =
-        unit.kind === 'single' ? [unit.test] : unit.tests;
-
-      const runnable = tests.filter((test) => shouldRunTest(test, options));
-      skip += tests.length - runnable.length;
+      let runnable: TestCase[] = [];
+      if (unit.kind === 'single') {
+        const shouldRun = shouldRunTest(unit.test, options);
+        runnable = shouldRun ? [unit.test] : [];
+        if (!shouldRun) {
+          skip += 1;
+        }
+      } else {
+        // Shared-context series must run as a whole if any step is selected.
+        const shouldRunSeries = unit.tests.some((test) => shouldRunTest(test, options));
+        runnable = shouldRunSeries ? unit.tests : [];
+        if (!shouldRunSeries) {
+          skip += unit.tests.length;
+        }
+      }
       if (runnable.length === 0) {
         continue;
       }
