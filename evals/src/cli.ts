@@ -54,7 +54,7 @@ async function cmdRunEvals(): Promise<void> {
 
   const result = await runEvals({
     repoRoot: REPO_ROOT,
-    model: process.env.MODEL ?? 'openai/gpt-4o-mini',
+    model: process.env.MODEL ?? 'openai/gpt-5-mini',
     gatewayUrl: process.env.CF_AI_GATEWAY_URL ?? '',
     gatewayToken: process.env.CF_AI_TOKEN ?? '',
     runAll,
