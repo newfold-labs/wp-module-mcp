@@ -9,6 +9,13 @@ namespace BLU\Abilities;
 class WooOrders {
 
 	/**
+	 * Base REST API namespace used to discover the latest versioned namespace.
+	 *
+	 * @var string
+	 */
+	private string $base_namespace = 'wc';
+
+	/**
 	 * Constructor - registers WooCommerce order abilities if WooCommerce is active.
 	 */
 	public function __construct() {
@@ -25,7 +32,7 @@ class WooOrders {
 	 */
 	private function register_order_abilities(): void {
 		// Discover latest WooCommerce REST API version
-		$wc_namespace = RestApiUtils::get_latest_namespace( 'wc' );
+		$wc_namespace = RestApiUtils::get_latest_namespace( $this->base_namespace );
 
 		if ( ! $wc_namespace ) {
 			return;
@@ -95,7 +102,7 @@ class WooOrders {
 	 */
 	private function register_report_abilities(): void {
 		// Discover latest WooCommerce REST API version
-		$wc_namespace = RestApiUtils::get_latest_namespace( 'wc' );
+		$wc_namespace = RestApiUtils::get_latest_namespace( $this->base_namespace );
 
 		if ( ! $wc_namespace ) {
 			return;
