@@ -178,6 +178,24 @@ Each item in the response is one `(route, method)` pair plus the derived `namesp
 
 The MCP transport route `/blu/mcp` is excluded from the catalog so the LLM can't discover-and-invoke its way back into the transport. The same route is also rejected by `blu-run-api-function` if passed directly.
 
+### Calling the catalog efficiently
+
+The schemas above are the *what*; this section is the *how*. Every list call has a cost — both the request schema the model carries around and the response it has to read and reason about. The filters exist precisely so the model doesn't slurp the whole registry into context every time. Used together, they're the difference between "load all 80-odd abilities and pick one" and "load the four that could possibly match."
+
+**`blu-list-abilities` — `name_prefix` and `search` are your scalpel.**
+
+- `name_prefix` is the cheapest filter. Anchor on a known surface and you cut the response immediately: `blu-posts` for the post abilities, `blu-media` for the media abilities, `blu-users` for user abilities, `blu-global-styles` for theme/styles work. The server normalizes slash form to hyphens and trims trailing `-` for you, so `blu/posts`, `blu-posts`, and `blu-posts-` all mean the same thing — you don't have to remember which one.
+- `search` does a case-insensitive substring match across each ability's `name` (hyphen form), `label`, **and** `description`. That last one is the secret weapon — a keyword like `"upload"` or `"category"` will hit descriptions even when the tool's name says nothing about it. Use `search` when you know *what* you want, `name_prefix` when you know *where* it lives.
+- They compose with AND. `name_prefix: "blu-media"` + `search: "upload"` returns just the media upload ability — a much cheaper request than fetching the whole catalog and filtering client-side. Always reach for both together when you can.
+
+**`blu-list-api-functions` — `namespace`, `methods`, and `search` keep REST discovery cheap.**
+
+- `namespace` is an exact match on the namespace WordPress registered the route under — `"wp/v2"`, `"wc/v3"`, `"wc-analytics"`, `"wc-admin/marketing"`. Single- and multi-segment both work; leading/trailing slashes are forgiven. If you already know which namespace you want, scoping to that one alone cuts the response dramatically.
+- `methods` accepts an array of `"GET"`, `"POST"`, `"PATCH"`, `"DELETE"` (uppercase, validated by the schema enum, max 4 unique). Passing `["GET"]` when you're exploring read-only routes is one of the highest-leverage filters available — on a typical WordPress install you're often dropping more than half the rows in one go.
+- `search` here is a case-insensitive substring match on the **route path only**, not the description. So `search: "posts"` matches `/wp/v2/posts` and `/wp/v2/posts/(?P<id>[\d]+)`, but won't find a route whose description happens to mention posts.
+
+**The rule of thumb:** the model's first call into either list tool should almost always carry at least one filter. An unfiltered call is a fine debug move; in production flow, it's a tax you don't need to pay.
+
 ### Whitelist
 
 The gateway only exposes abilities matching allowed namespaces or categories:
@@ -386,6 +404,41 @@ Two surfaces are exposed:
 | `blu/list-api-functions` | `blu-list-api-functions` | List all available WordPress REST API endpoints that support CRUD |
 | `blu/get-function-details` | `blu-get-function-details` | Get detailed metadata for a specific REST API route and HTTP method |
 | `blu/run-api-function` | `blu-run-api-function` | Execute a REST API request by route, method, and parameters |
+
+---
+
+## When does it make sense to add a new tool?
+
+Tokens are the gold of the AI era. Every byte of context you spend on tool definitions, schemas, descriptions, and noisy responses is a byte the model no longer has for thinking about the user's actual problem. The gateway pattern above already saves ~96% of the upfront tool-schema cost — but every new ability we add still chips away at the reserve: one more row in `tools/list`, one more schema fetch the model might trigger, one more "which of these similar tools should I pick?" decision.
+
+So before reaching for a new ability, treat the catalog like a vault, not a catch-all. Ask first: **can `blu-run-api-function` already do this?** If the REST route shows up in `blu-list-api-functions`, the model can call it through the generic CRUD ability today — no new tool needed, no new tokens spent.
+
+A new ability earns its place in the vault only when one of these is true:
+
+### 1. It does something REST alone can't
+
+The tool introduces platform-specific behavior that no underlying REST endpoint exposes. `blu/update-global-styles` is the canonical example — on a successful write it attaches an `applied` / `not_applied` diff to the response, where each `not_applied` entry carries the dot-path and a human-readable reason ("wrong key path", "value dropped by sanitization"). The raw `PUT /wp/v2/global-styles/<id>` returns the updated record but quietly drops anything it didn't like — the model never finds out. If your "new" tool is just a rename of fields the REST route already accepts, you've added a synonym, not a tool.
+
+### 2. It bundles multiple calls into one
+
+A single logical operation that would otherwise require the model to chain several REST calls (each with its own request/response token tax) collapses cleanly into one ability. `blu/get-site-info` is a clean example — one call returns site name, URL, description, admin email, WordPress version, plugins (with active state), themes (active + all), and users in a single payload. Without it, the model would have to call site-info, list plugins, list active plugins, get themes, and list users separately — five round-trips, five JSON blobs to parse. The token math almost always wins here.
+
+### 3. It reshapes the response for the model
+
+The native REST response is noisy, deeply nested, or buries the one field the model actually needs under 4KB of metadata. A wrapper that flattens, prunes, or derives computed fields can turn a 5KB response into 500 bytes. That saving compounds every single time the tool is called — pure gold left in the reserve.
+
+### 4. It will be called constantly
+
+For high-frequency operations, a focused first-class tool beats a generic one. `blu/posts-search` and `blu/pages-search` exist as dedicated abilities precisely because content discovery dominates WordPress workflows — they ship with a tight, purpose-built schema instead of forcing the model to negotiate the full `/wp/v2/posts` collection-param surface every time. Shaving even a handful of tokens per call adds up fast across thousands of conversations.
+
+### When *not* to add a new tool
+
+- The REST endpoint already works fine through `blu-run-api-function` and the model can figure it out.
+- You only need a slightly different parameter name or shape — write better descriptions instead.
+- It's a "nice to have" for a workflow that fires once a quarter.
+- You're not sure yet. Add it later when the need is concrete; deleting a shipped tool is harder than adding one.
+
+Every tool you *don't* add is gold left in the vault for the next conversation. Spend it deliberately.
 
 ---
 
