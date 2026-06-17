@@ -96,72 +96,72 @@ class WooOrders {
 			)
 		);
 
-					// Find the single order route pattern
-					$order_pattern 	= '(?P<id>[\d]+)';
-					$order_route 	= RestApiUtils::find_route_by_resource( $wc_namespace, 'orders/' . $order_pattern );
-			
-					if ( ! $order_route ) {
-						return;
-					}
-			
-					// Extract dynamic schema from the REST API for PATCH method
-					$input_schema = RestApiUtils::extract_input_schema( $order_route, 'PUT' );
+		// Find the single order route pattern
+		$order_pattern 	= '(?P<id>[\d]+)';
+		$order_route 	= RestApiUtils::find_route_by_resource( $wc_namespace, 'orders/' . $order_pattern );
+	
+		if ( ! $order_route ) {
+			return;
+		}
+	
+		// Extract dynamic schema from the REST API for PATCH method
+		$input_schema = RestApiUtils::extract_input_schema( $order_route, 'PUT' );
 
-					if ( ! $input_schema ) {
-						// Fallback to basic schema if extraction fails
-						$input_schema = array(
-							'type'       => 'object',
-							'properties' => array(
-								'id'     => array(
-									'type'        => 'integer',
-									'description' => 'Order ID',
-								),
-								'status' => array(
-									'type'        => 'string',
-									'description' => 'Order status (pending, processing, on-hold, completed, cancelled, refunded, failed)',
-								),
-							),
-							'required'   => array( 'id' ),
+		if ( ! $input_schema ) {
+			// Fallback to basic schema if extraction fails
+			$input_schema = array(
+				'type'       => 'object',
+				'properties' => array(
+					'id'     => array(
+						'type'        => 'integer',
+						'description' => 'Order ID',
+					),
+					'status' => array(
+						'type'        => 'string',
+						'description' => 'Order status (pending, processing, on-hold, completed, cancelled, refunded, failed)',
+					),
+				),
+				'required'   => array( 'id' ),
+			);
+		}
+	
+		// Update order
+		blu_register_ability(
+			'blu/wc-update-order',
+			array(
+				'label'               => 'Update WooCommerce Order',
+				'description'         => sprintf( 'Update a WooCommerce order using %s API', $wc_namespace ),
+				'category'            => 'blu-mcp',
+				'input_schema'        => $input_schema,
+				'execute_callback'    => function ( $input = null ) use ( $order_route, $order_pattern ) {
+					if ( ! $input || ! isset( $input['id'] ) ) {
+						return array(
+							'status'  => 'error',
+							'message' => 'Order ID is required',
 						);
 					}
-			
-					// Update order
-					blu_register_ability(
-						'blu/wc-update-order',
-						array(
-							'label'               => 'Update WooCommerce Order',
-							'description'         => sprintf( 'Update a WooCommerce order using %s API', $wc_namespace ),
-							'category'            => 'blu-mcp',
-							'input_schema'        => $input_schema,
-							'execute_callback'    => function ( $input = null ) use ( $order_route, $order_pattern ) {
-								if ( ! $input || ! isset( $input['id'] ) ) {
-									return array(
-										'status'  => 'error',
-										'message' => 'Order ID is required',
-									);
-								}
 
-								$order_id = (int) $input['id'];
-								$route    = str_replace( $order_pattern, (string) $order_id, $order_route );
-								$body     = $input;
-								unset( $body['id'] );
+					$order_id = (int) $input['id'];
+					$route    = str_replace( $order_pattern, (string) $order_id, $order_route );
+					$body     = $input;
+					unset( $body['id'] );
 
-								$request = new \WP_REST_Request( 'PUT', $route );
-								$request->set_body_params( $body );
+					$request = new \WP_REST_Request( 'PUT', $route );
+					$request->set_body_params( $body );
 
-								$response = rest_do_request( $request );
-								return blu_standardize_rest_response( $response );
-							},
-							'permission_callback' => fn() => current_user_can( 'edit_shop_orders' ),
-							'meta'                => array(
-								'annotations' => array(
-									'readonly'    => false,
-									'destructive' => false,
-									'idempotent'  => true,
-								),
-							),
-						)
-					);
+					$response = rest_do_request( $request );
+					return blu_standardize_rest_response( $response );
+				},
+				'permission_callback' => fn() => current_user_can( 'edit_shop_orders' ),
+				'meta'                => array(
+					'annotations' => array(
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => true,
+					),
+				),
+			)
+		);
 	}
 
 	/**
