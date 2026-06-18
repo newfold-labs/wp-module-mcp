@@ -292,7 +292,7 @@ class ImageEditWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$body = $this->last_edit_request_args['args']['body'];
 		$this->assertStringContainsString( 'name="prompt"', $body );
 		$this->assertStringContainsString( 'Make the sky purple', $body );
-		$this->assertStringContainsString( 'name="image[]"', $body );
+		$this->assertStringContainsString( 'name="images[]"', $body );
 		$this->assertStringContainsString( 'name="orientation"', $body );
 		$this->assertStringContainsString( 'square', $body );
 		$this->assertStringContainsString( 'name="background"', $body );
