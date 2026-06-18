@@ -320,4 +320,38 @@ class RestApiUtils {
 
 		return null;
 	}
+
+	/**
+	 * Resolve the latest REST route for a resource under a base namespace.
+	 *
+	 * Convenience method that discovers the highest available API version for
+	 * the given base namespace, then finds the registered route for the resource.
+	 * Equivalent to calling get_latest_namespace() followed by find_route_by_resource().
+	 *
+	 * Examples:
+	 *   Base: "wp", Resource: "types"   → Returns: "/wp/v2/types"
+	 *   Base: "wc", Resource: "orders"  → Returns: "/wc/v3/orders"
+	 *   Base: "wp", Resource: "posts"   → Returns: "/wp/v2/posts"
+	 *
+	 * @param string $base_namespace Base namespace prefix (e.g., "wc", "wp", "wc-analytics").
+	 * @param string $resource_path  Resource path without version (e.g., "types", "orders", "posts").
+	 *
+	 * @return string|null The matching REST route, or null if the namespace or resource is not found.
+	 */
+	public static function get_latest_available_rest_route( string $base_namespace, string $resource_path ): ?string {
+		$namespace = self::get_latest_namespace( $base_namespace );
+
+		if ( ! $namespace ) {
+			return null;
+		}
+
+		// Find the orders route
+		$types_route = self::find_route_by_resource( $namespace, $resource_path );
+
+		if ( ! $types_route ) {
+			return null;
+		}
+
+		return $types_route;
+	}
 }
