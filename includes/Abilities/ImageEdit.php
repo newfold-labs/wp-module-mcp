@@ -25,19 +25,19 @@ class ImageEdit {
 			'blu/edit-image',
 			array(
 				'label'               => 'Edit Image',
-				'description'         => 'Edit an image using a text prompt. Returns a CDN URL to the edited image. Use when the user requests to edit an image.',
+				'description'         => 'Generatively edit an existing image: add or remove objects, change colours, adjust lighting, apply styles, or transform any aspect of the photo. Requires a source_url pointing to the current image. Use this instead of blu/generate-image whenever an existing image is available and the user wants to modify, change, or enhance it.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
 						'prompt'      => array(
 							'type'        => 'string',
-							'description' => 'A detailed description of the image to edit. Max 1000 characters.',
+							'description' => 'What to change in the image — describe the desired result or the modification (e.g. "add a dog under the table", "make the background white", "change the shirt to red"). Max 1000 characters.',
 							'maxLength'   => 1000,
 						),
 						'source_url'  => array(
 							'type'        => 'string',
-							'description' => 'The URL of the image to edit.',
+							'description' => 'URL of the existing image to edit. Must be an accessible HTTP/HTTPS URL.',
 						),
 						'orientation' => array(
 							'type'        => 'string',
@@ -157,7 +157,7 @@ class ImageEdit {
 			$fields,
 			array(
 				array(
-					'field'    => 'image[]',
+					'field'    => 'images[]',
 					'filename' => $image_payload['filename'],
 					'content'  => $image_payload['content'],
 					'mime'     => $image_payload['mime'],
@@ -169,6 +169,7 @@ class ImageEdit {
 			array(
 				'headers' => array(
 					'Authorization' => 'Bearer ' . $hiive_token,
+					'Accept'        => 'application/json',
 					'Content-Type'  => 'multipart/form-data; boundary=' . $multipart_body['boundary'],
 				),
 				'body'    => $multipart_body['body'],
