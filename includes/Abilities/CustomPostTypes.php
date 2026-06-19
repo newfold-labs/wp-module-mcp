@@ -13,6 +13,13 @@ namespace BLU\Abilities;
  * with the numeric `id` (which LLMs would otherwise routinely drop).
  */
 class CustomPostTypes {
+	
+	/**
+	 * Base REST API namespace used to discover the latest versioned namespace.
+	 *
+	 * @var string
+	 */
+	private string $base_namespace = 'wp';
 
 	/**
 	 * Constructor - registers custom post type abilities.
@@ -34,10 +41,26 @@ class CustomPostTypes {
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type' => 'object',
+					'data'   => array(
+							'type'        => 'object',
+							'description' => 'An object containing the native query or body parameters required by the target endpoint. You can use blu-get-function-details to retreive it, if needed.',
+						),
 				),
-				'execute_callback'    => function () {
-					$request  = new \WP_REST_Request( 'GET', '/wp/v2/types' );
+				'execute_callback'    => function ( $input ) {
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'types' );
+
+					if ( ! $root ) {
+						return;
+					}
+
+					$data   	= $input['data'] ?? array();
+					$method 	= 'GET';
+					$request  	= new \WP_REST_Request( $method, $root );
+					
+					$request->set_query_params( $data );
+					
 					$response = rest_do_request( $request );
+					
 					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
