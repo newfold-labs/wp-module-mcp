@@ -9,6 +9,13 @@ namespace BLU\Abilities;
 class Posts {
 
 	/**
+	 * Base REST API namespace used to discover the latest versioned namespace.
+	 *
+	 * @var string
+	 */
+	private string $base_namespace = 'wp';
+
+	/**
 	 * Constructor - registers all post-related abilities.
 	 */
 	public function __construct() {
@@ -30,21 +37,30 @@ class Posts {
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
-					'properties' => array(
+					'data' => array(
 						'type'        => 'object',
 						'description' => 'An object containing the native query or body parameters required by the target endpoint. You can use blu-get-function-details to retreive it, if needed.',
 					),
 				),
 				'execute_callback'    => function ( $input = null ) {
-					error_log( 'input: ' . print_r( $input, true ) );
-					$request = new \WP_REST_Request( 'GET', '/wp/v2/posts' );
+					
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'posts' );
+
+					if ( ! $root ) {
+						return;
+					}
+
+					$data   	= $input['data'] ?? array();
+					$method 	= 'GET';
+					$request  	= new \WP_REST_Request( $method, $root );
+
 					$all_statuses = 'publish,future,draft,pending,private';
 					if ( $input ) {
 						// Default to all statuses when not specified or empty (WP defaults to publish only).
-						if ( ! isset( $input['status'] ) || '' === $input['status'] ) {
-							$input['status'] = $all_statuses;
+						if ( ! isset( $data['status'] ) || '' === $data['status'] ) {
+							$data['status'] = $all_statuses;
 						}
-						$request->set_query_params( $input );
+						$request->set_query_params( $data );
 					} else {
 						$request->set_param( 'status', $all_statuses );
 					}
