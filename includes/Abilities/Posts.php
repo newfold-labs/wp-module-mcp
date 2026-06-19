@@ -31,25 +31,12 @@ class Posts {
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
-						'search'   => array(
-							'type'        => 'string',
-							'description' => 'Search term',
-						),
-						'status'   => array(
-							'type'        => 'string',
-							'description' => 'Post status(es): publish, draft, pending, future, private. Comma-separated for multiple. Omit to search all statuses.',
-						),
-						'page'     => array(
-							'type'        => 'integer',
-							'description' => 'Page number',
-						),
-						'per_page' => array(
-							'type'        => 'integer',
-							'description' => 'Posts per page',
-						),
+						'type'        => 'object',
+						'description' => 'An object containing the native query or body parameters required by the target endpoint. You can use blu-get-function-details to retreive it, if needed.',
 					),
 				),
 				'execute_callback'    => function ( $input = null ) {
+					error_log( 'input: ' . print_r( $input, true ) );
 					$request = new \WP_REST_Request( 'GET', '/wp/v2/posts' );
 					$all_statuses = 'publish,future,draft,pending,private';
 					if ( $input ) {
