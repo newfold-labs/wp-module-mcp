@@ -39,6 +39,10 @@ class ImageEdit {
 							'type'        => 'string',
 							'description' => 'URL of the existing image to edit. Must be an accessible HTTP/HTTPS URL.',
 						),
+						'reference_url' => array(
+							'type'        => 'string',
+							'description' => 'URL of a second reference image to blend or combine with the source. Use this when the user has uploaded an image and wants to merge, blend, or apply elements from it onto the source. Must be an accessible HTTP/HTTPS URL.',
+						),
 						'orientation' => array(
 							'type'        => 'string',
 							'description' => 'The orientation of the image. Defaults to landscape.',
@@ -153,17 +157,33 @@ class ImageEdit {
 		if ( ! empty( $input['fit'] ) ) {
 			$fields['fit'] = (string) $input['fit'];
 		}
-		$multipart_body = $this->build_multipart_body(
-			$fields,
+		$files = array(
 			array(
-				array(
-					'field'    => 'images[]',
-					'filename' => $image_payload['filename'],
-					'content'  => $image_payload['content'],
-					'mime'     => $image_payload['mime'],
-				),
-			)
+				'field'    => 'images[]',
+				'filename' => $image_payload['filename'],
+				'content'  => $image_payload['content'],
+				'mime'     => $image_payload['mime'],
+			),
 		);
+
+		// If a reference image is provided, fetch and append it as a second image.
+		$raw_reference_url = (string) ( $input['reference_url'] ?? '' );
+		if ( ! empty( $raw_reference_url ) ) {
+			$reference_url = esc_url_raw( $raw_reference_url );
+			if ( filter_var( $raw_reference_url, FILTER_VALIDATE_URL ) && $this->is_allowed_source_url( $reference_url ) ) {
+				$reference_payload = $this->fetch_source_image( $reference_url );
+				if ( is_array( $reference_payload ) && isset( $reference_payload['content'] ) ) {
+					$files[] = array(
+						'field'    => 'images[]',
+						'filename' => $reference_payload['filename'],
+						'content'  => $reference_payload['content'],
+						'mime'     => $reference_payload['mime'],
+					);
+				}
+			}
+		}
+
+		$multipart_body = $this->build_multipart_body( $fields, $files );
 		$response       = wp_remote_post(
 			trailingslashit( $api_url ) . 'api/v1/imagegen/edit',
 			array(

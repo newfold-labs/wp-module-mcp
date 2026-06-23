@@ -21,6 +21,34 @@ class LogoGen {
 	 */
 	private function register_abilities(): void {
 		blu_register_ability(
+			'blu/set-logo-from-image',
+			array(
+				'label'               => 'Set Logo From Image',
+				'description'         => 'Set an existing image URL as the site logo. Use this after optionally calling blu/edit-image to clean the image (e.g. remove background with background:transparent). Sideloads the image into the media library and sets it as the active site logo.',
+				'category'            => 'blu-mcp',
+				'input_schema'        => array(
+					'type'       => 'object',
+					'properties' => array(
+						'source_url' => array(
+							'type'        => 'string',
+							'description' => 'URL of the image to use as the site logo. Can be a temp upload URL or a CDN URL returned by blu/edit-image.',
+						),
+					),
+					'required'   => array( 'source_url' ),
+				),
+				'execute_callback'    => array( $this, 'set_from_image' ),
+				'permission_callback' => fn() => current_user_can( 'manage_options' ),
+				'meta'                => array(
+					'annotations' => array(
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => false,
+					),
+				),
+			)
+		);
+
+		blu_register_ability(
 			'blu/regenerate-logo',
 			array(
 				'label'               => 'Regenerate Logo',
@@ -125,10 +153,6 @@ class LogoGen {
 
 		$cdn_url = $data['url'];
 
-		require_once ABSPATH . 'wp-admin/includes/media.php';
-		require_once ABSPATH . 'wp-admin/includes/file.php';
-		require_once ABSPATH . 'wp-admin/includes/image.php';
-
 		$desc = __( 'Site logo (AI generated)', 'wp-module-mcp' );
 		if ( ! empty( $input['subject_name'] ) ) {
 			$desc = sprintf(
@@ -137,14 +161,54 @@ class LogoGen {
 				substr( (string) $input['subject_name'], 0, 100 )
 			);
 		}
-		$attachment_id = media_sideload_image( $cdn_url, 0, $desc, 'id' );
+
+		return $this->sideload_and_set_logo( $cdn_url, $desc );
+	}
+
+	/**
+	 * Set an existing image URL as the site logo.
+	 *
+	 * @param array $input Tool input parameters.
+	 * @return array Standardized ability response.
+	 */
+	public function set_from_image( array $input ): array {
+		set_time_limit( 120 );
+
+		$raw_url = (string) ( $input['source_url'] ?? '' );
+		$url     = esc_url_raw( $raw_url );
+
+		if ( empty( $url ) || ! filter_var( $raw_url, FILTER_VALIDATE_URL ) ) {
+			return blu_prepare_ability_response( 400, 'A valid source_url is required.' );
+		}
+
+		if ( ! $this->is_allowed_url( $url ) ) {
+			return blu_prepare_ability_response( 400, 'source_url is not allowed.' );
+		}
+
+		$desc = __( 'Site logo (uploaded)', 'wp-module-mcp' );
+
+		return $this->sideload_and_set_logo( $url, $desc );
+	}
+
+	/**
+	 * Sideload an image URL into the media library and set it as the site logo.
+	 *
+	 * @param string $url  Image URL to sideload.
+	 * @param string $desc Attachment description/title.
+	 * @return array Standardized ability response.
+	 */
+	private function sideload_and_set_logo( string $url, string $desc ): array {
+		require_once ABSPATH . 'wp-admin/includes/media.php';
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+		require_once ABSPATH . 'wp-admin/includes/image.php';
+
+		$attachment_id = media_sideload_image( $url, 0, $desc, 'id' );
 
 		if ( is_wp_error( $attachment_id ) ) {
 			return blu_prepare_ability_response( 500, $attachment_id->get_error_message() );
 		}
 
 		$attachment_id = (int) $attachment_id;
-
 		update_option( 'site_logo', $attachment_id );
 
 		$local_url = wp_get_attachment_url( $attachment_id );
@@ -154,8 +218,23 @@ class LogoGen {
 			array(
 				'message'       => __( 'Site logo updated.', 'wp-module-mcp' ),
 				'attachment_id' => $attachment_id,
-				'url'           => $local_url ? $local_url : $cdn_url,
+				'url'           => $local_url ?: $url,
 			)
 		);
+	}
+
+	/**
+	 * SSRF guard — allow local site, hiive.cloud CDN, and unsplash only.
+	 *
+	 * @param string $url URL to check.
+	 * @return bool
+	 */
+	private function is_allowed_url( string $url ): bool {
+		$host      = strtolower( (string) wp_parse_url( $url, PHP_URL_HOST ) );
+		$site_host = strtolower( (string) wp_parse_url( home_url(), PHP_URL_HOST ) );
+
+		return $host === $site_host
+			|| preg_match( '/(^|\.)hiive\.cloud$/', $host )
+			|| preg_match( '/(^|\.)unsplash\.com$/', $host );
 	}
 }
