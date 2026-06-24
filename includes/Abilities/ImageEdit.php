@@ -249,6 +249,49 @@ class ImageEdit {
 	 * @return array
 	 */
 	private function fetch_source_image( string $url ): array {
+		$allowed_mimes = array(
+			'image/jpeg' => 'jpg',
+			'image/png'  => 'png',
+			'image/webp' => 'webp',
+		);
+
+		// For local-site URLs, read directly from the filesystem to avoid loopback
+		// HTTP issues (SSL certificate problems, blocked requests on local dev envs).
+		$url_host  = strtolower( (string) wp_parse_url( $url, PHP_URL_HOST ) );
+		$site_host = strtolower( (string) wp_parse_url( home_url(), PHP_URL_HOST ) );
+		if ( $url_host === $site_host ) {
+			$url_path = wp_parse_url( $url, PHP_URL_PATH );
+			if ( ! is_string( $url_path ) ) {
+				return array( 'status' => 400, 'error' => __( 'Invalid local URL path.', 'wp-module-mcp' ) );
+			}
+			$abs_root = realpath( ABSPATH );
+			$abs_file = realpath( $abs_root . '/' . ltrim( $url_path, '/' ) );
+			if ( false === $abs_file || strpos( $abs_file, $abs_root ) !== 0 ) {
+				return array( 'status' => 400, 'error' => __( 'Local file path is outside the WordPress root.', 'wp-module-mcp' ) );
+			}
+			if ( ! is_file( $abs_file ) ) {
+				return array( 'status' => 404, 'error' => __( 'Local source image not found.', 'wp-module-mcp' ) );
+			}
+			$content = file_get_contents( $abs_file ); // phpcs:ignore WordPress.WP.AlternativeFunctions
+			if ( false === $content || '' === $content ) {
+				return array( 'status' => 400, 'error' => __( 'Could not read local source image.', 'wp-module-mcp' ) );
+			}
+			$max_bytes = 10 * 1024 * 1024;
+			if ( strlen( $content ) > $max_bytes ) {
+				return array( 'status' => 400, 'error' => __( 'Source image exceeds 10 MB limit.', 'wp-module-mcp' ) );
+			}
+			$mime = is_callable( 'mime_content_type' ) ? strtolower( mime_content_type( $abs_file ) ) : '';
+			if ( ! isset( $allowed_mimes[ $mime ] ) ) {
+				return array( 'status' => 400, 'error' => __( 'Unsupported source image type.', 'wp-module-mcp' ) );
+			}
+			return array(
+				'filename' => basename( $abs_file ),
+				'content'  => $content,
+				'mime'     => $mime,
+			);
+		}
+
+		// Remote URL — fetch via HTTP.
 		$response = wp_remote_get(
 			$url,
 			array(
@@ -259,41 +302,38 @@ class ImageEdit {
 		if ( is_wp_error( $response ) ) {
 			return array(
 				'status' => 502,
-				'error'  => 'Unable to fetch source image: ' . $response->get_error_message(),
+				/* translators: %s: error message from wp_remote_get */
+				'error'  => sprintf( __( 'Unable to fetch source image: %s', 'wp-module-mcp' ), $response->get_error_message() ),
 			);
 		}
 		$status_code = wp_remote_retrieve_response_code( $response );
 		if ( $status_code < 200 || $status_code >= 300 ) {
 			return array(
 				'status' => 400,
-				'error'  => 'Unable to fetch source image (HTTP ' . $status_code . ').',
+				/* translators: %d: HTTP status code */
+				'error'  => sprintf( __( 'Unable to fetch source image (HTTP %d).', 'wp-module-mcp' ), $status_code ),
 			);
 		}
 		$content = wp_remote_retrieve_body( $response );
 		if ( '' === $content ) {
 			return array(
 				'status' => 400,
-				'error'  => 'Source image is empty.',
+				'error'  => __( 'Source image is empty.', 'wp-module-mcp' ),
 			);
 		}
-		$max_bytes = 10 * 1024 * 1024; // matches Laravel images.* max:10240 (KB)
+		$max_bytes = 10 * 1024 * 1024;
 		if ( strlen( $content ) > $max_bytes ) {
 			return array(
 				'status' => 400,
-				'error'  => 'Source image exceeds 10MB limit.',
+				'error'  => __( 'Source image exceeds 10 MB limit.', 'wp-module-mcp' ),
 			);
 		}
-		$content_type  = wp_remote_retrieve_header( $response, 'content-type' );
-		$mime          = is_string( $content_type ) ? strtolower( trim( explode( ';', $content_type )[0] ) ) : '';
-		$allowed_mimes = array(
-			'image/jpeg' => 'jpg',
-			'image/png'  => 'png',
-			'image/webp' => 'webp',
-		);
+		$content_type = wp_remote_retrieve_header( $response, 'content-type' );
+		$mime         = is_string( $content_type ) ? strtolower( trim( explode( ';', $content_type )[0] ) ) : '';
 		if ( ! isset( $allowed_mimes[ $mime ] ) ) {
 			return array(
 				'status' => 400,
-				'error'  => 'Unsupported source image type.',
+				'error'  => __( 'Unsupported source image type.', 'wp-module-mcp' ),
 			);
 		}
 		$path     = wp_parse_url( $url, PHP_URL_PATH );

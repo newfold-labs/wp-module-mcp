@@ -108,7 +108,7 @@ class LogoGen {
 		}
 
 		if ( empty( $hiive_token ) ) {
-			return blu_prepare_ability_response( 401, 'Unable to retrieve Hiive authentication token for logo generation.' );
+			return blu_prepare_ability_response( 401, __( 'Unable to retrieve Hiive authentication token for logo generation.', 'wp-module-mcp' ) );
 		}
 
 		$body = array(
@@ -136,19 +136,27 @@ class LogoGen {
 		if ( is_wp_error( $response ) ) {
 			$message = $response->get_error_message();
 			if ( false !== strpos( $message, 'timed out' ) || false !== strpos( $message, 'cURL error 28' ) ) {
-				return blu_prepare_ability_response( 504, 'Logo generation timed out' );
+				return blu_prepare_ability_response( 504, __( 'Logo generation timed out.', 'wp-module-mcp' ) );
 			}
-			return blu_prepare_ability_response( 502, 'Logo generation service unavailable: ' . $message );
+			return blu_prepare_ability_response(
+				502,
+				/* translators: %s: error message */
+				sprintf( __( 'Logo generation service unavailable: %s', 'wp-module-mcp' ), $message )
+			);
 		}
 
 		$status_code = wp_remote_retrieve_response_code( $response );
 		if ( $status_code < 200 || $status_code >= 300 ) {
-			return blu_prepare_ability_response( $status_code, 'Logo generation failed with status ' . $status_code );
+			return blu_prepare_ability_response(
+				$status_code,
+				/* translators: %d: HTTP status code */
+				sprintf( __( 'Logo generation failed with status %d.', 'wp-module-mcp' ), $status_code )
+			);
 		}
 
 		$data = json_decode( wp_remote_retrieve_body( $response ), true );
 		if ( empty( $data['url'] ) ) {
-			return blu_prepare_ability_response( 500, 'No image URL in response' );
+			return blu_prepare_ability_response( 500, __( 'No image URL in response.', 'wp-module-mcp' ) );
 		}
 
 		$cdn_url = $data['url'];
@@ -178,11 +186,11 @@ class LogoGen {
 		$url     = esc_url_raw( $raw_url );
 
 		if ( empty( $url ) || ! filter_var( $raw_url, FILTER_VALIDATE_URL ) ) {
-			return blu_prepare_ability_response( 400, 'A valid source_url is required.' );
+			return blu_prepare_ability_response( 400, __( 'A valid source_url is required.', 'wp-module-mcp' ) );
 		}
 
 		if ( ! $this->is_allowed_url( $url ) ) {
-			return blu_prepare_ability_response( 400, 'source_url is not allowed.' );
+			return blu_prepare_ability_response( 400, __( 'source_url is not allowed.', 'wp-module-mcp' ) );
 		}
 
 		$desc = __( 'Site logo (uploaded)', 'wp-module-mcp' );
