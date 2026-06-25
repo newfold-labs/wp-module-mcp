@@ -83,7 +83,8 @@
   "require": {
     "wordpress/mcp-adapter": "^0.5.0",
     "wordpress/abilities-api": "^0.4.0",
-    "firebase/php-jwt": "^6.10.0"
+    "firebase/php-jwt": "^6.10.0",
+    "smalot/pdfparser": "^2.0"
   },
   "require-dev": {
     "johnpbloch/wordpress": "@stable",
