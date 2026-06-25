@@ -162,7 +162,7 @@ function blu_get_ability_by_type( $type = 'tool' ) {
 	foreach ( $all_abilities as $ability ) {
 		$meta         = $ability->get_meta();
 		$ability_type = 'tool';
-		$public = true;
+		$public       = true;
 
 		if ( isset( $meta['mcp']['type'] ) ) {
 			$ability_type = $meta['mcp']['type'];
