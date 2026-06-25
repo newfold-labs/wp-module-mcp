@@ -31,7 +31,9 @@ jobs:
       merge-method: squash
       update-types: patch,minor
       dry-run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry-run || false }}
+    # checks: read lets the reusable read check-run status via the Checks API.
+    # GITHUB_TOKEN reaches the called workflow automatically — no secrets: inherit.
     permissions:
       contents: write
       pull-requests: write
-    secrets: inherit
+      checks: read
