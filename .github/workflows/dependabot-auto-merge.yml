@@ -1,20 +1,15 @@
 name: Dependabot Auto-Merge
 on:
-  workflow_run:
-    workflows:
-      - Lint
-      - Codecoverage-Main
-      - Build and Test Module Updates in Brand Plugins (Playwright tests)
-    types: [completed]
-
-# Serialize firings per PR so two CI workflows finishing in parallel do not race
-# each other to the merge step. cancel-in-progress is false because cancelling a
-# run mid-merge could leave the PR approved-but-not-merged. The fallback to
-# workflow_run.id covers events where pull_requests is empty (push to default
-# branch, fork PR) — the job's `if:` filter rejects those anyway.
-concurrency:
-  group: dependabot-auto-merge-${{ github.event.workflow_run.pull_requests[0].number || github.event.workflow_run.id }}
-  cancel-in-progress: false
+  schedule:
+    # Twice a day (06:00 and 18:00 UTC). The sweep is cheap; the second run just
+    # lowers the latency before a freshly-green or freshly-rebased PR is merged.
+    - cron: "0 6,18 * * *"
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: Log what would be merged without merging.
+        type: boolean
+        default: false
 
 # Disable permissions for all available scopes by default.
 # Any needed permissions should be configured individually for each job.
@@ -22,22 +17,23 @@ permissions: {}
 
 jobs:
   # Delegates to the central reusable workflow in newfold-labs/workflows.
-  # workflow_run runs from the default-branch workflow file (no PR code checkout
-  # required), so GITHUB_TOKEN has write scope. The reusable workflow re-checks
-  # all check runs for the head SHA before merging — this gate replaces native
-  # auto-merge so the merge is held back when CI fails, even when branch protection
-  # has no required status checks configured.
-  dependabot-auto-merge:
-    if: >
-      github.event.workflow_run.event == 'pull_request' &&
-      github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.actor.login == 'dependabot[bot]' &&
-      github.event.workflow_run.pull_requests[0] != null
+  # It discovers every open Dependabot PR on a schedule and merges the eligible
+  # ones (not draft, mergeable, all check runs green, an opted-in bump type), so
+  # the merge is held back when CI fails even when branch protection has no
+  # required status checks configured. Majors are left for a human.
+  #
+  # NOTE: pinned to the feature branch until the workflows change lands on main;
+  # bump to a tagged ref / commit SHA on @main afterwards.
+  auto-merge:
+    name: Auto-merge Dependabot PRs
     uses: newfold-labs/workflows/.github/workflows/reusable-dependabot-auto-merge.yml@enhance/PRESS0-4266
     with:
-      pr-number: ${{ github.event.workflow_run.pull_requests[0].number }}
-      head-sha: ${{ github.event.workflow_run.head_sha }}
+      merge-method: squash
+      update-types: patch,minor
+      dry-run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry-run || false }}
+    # checks: read lets the reusable read check-run status via the Checks API.
+    # GITHUB_TOKEN reaches the called workflow automatically — no secrets: inherit.
     permissions:
       contents: write
       pull-requests: write
-    secrets: inherit
+      checks: read
