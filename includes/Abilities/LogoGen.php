@@ -226,7 +226,7 @@ class LogoGen {
 			array(
 				'message'       => __( 'Site logo updated.', 'wp-module-mcp' ),
 				'attachment_id' => $attachment_id,
-				'url'           => $local_url ?: $url,
+				'url'           => $local_url ? $local_url : $url,
 			)
 		);
 	}

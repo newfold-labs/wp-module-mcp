@@ -77,7 +77,7 @@ class LogoGenWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 			);
 		}
 
-		HiiveConnection::$token      = 'test-hiive-token';
+		HiiveConnection::$token       = 'test-hiive-token';
 		$this->last_request_args      = null;
 		$this->last_logo_request_args = null;
 	}
