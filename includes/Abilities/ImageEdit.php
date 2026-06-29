@@ -22,6 +22,40 @@ class ImageEdit {
 	 */
 	private function register_abilities(): void {
 		blu_register_ability(
+			'blu/extract-image-colors',
+			array(
+				'label'               => 'Extract Image Colors',
+				'description'         => 'Analyze an uploaded image and return its dominant colors as hex codes. Use this when the user asks to apply a logo or image color to the site\'s global styles (accent color, primary color, brand color, etc.).',
+				'category'            => 'blu-mcp',
+				'input_schema'        => array(
+					'type'       => 'object',
+					'properties' => array(
+						'image_url'  => array(
+							'type'        => 'string',
+							'description' => 'URL of the image to analyze. Must be a URL on this site (e.g. from the [User uploaded images] list).',
+						),
+						'max_colors' => array(
+							'type'        => 'integer',
+							'description' => 'Maximum number of dominant colors to return. Defaults to 5.',
+							'minimum'     => 1,
+							'maximum'     => 10,
+						),
+					),
+					'required'   => array( 'image_url' ),
+				),
+				'execute_callback'    => array( $this, 'extract_colors' ),
+				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
+				'meta'                => array(
+					'annotations' => array(
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
+					),
+				),
+			)
+		);
+
+		blu_register_ability(
 			'blu/edit-image',
 			array(
 				'label'               => 'Edit Image',
@@ -30,48 +64,52 @@ class ImageEdit {
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
-						'prompt'      => array(
+						'prompt'        => array(
 							'type'        => 'string',
 							'description' => 'What to change in the image — describe the desired result or the modification (e.g. "add a dog under the table", "make the background white", "change the shirt to red"). Max 1000 characters.',
 							'maxLength'   => 1000,
 						),
-						'source_url'  => array(
+						'source_url'    => array(
 							'type'        => 'string',
 							'description' => 'URL of the existing image to edit. Must be an accessible HTTP/HTTPS URL.',
 						),
-						'orientation' => array(
+						'reference_url' => array(
+							'type'        => 'string',
+							'description' => 'URL of a second reference image to blend or combine with the source. Use this when the user has uploaded an image and wants to merge, blend, or apply elements from it onto the source. Must be an accessible HTTP/HTTPS URL.',
+						),
+						'orientation'   => array(
 							'type'        => 'string',
 							'description' => 'The orientation of the image. Defaults to landscape.',
 							'enum'        => array( 'landscape', 'portrait', 'square' ),
 						),
-						'width'       => array(
+						'width'         => array(
 							'type'        => 'integer',
 							'description' => 'The width of the image. Defaults to 1024.',
 							'maximum'     => 1920,
 							'minimum'     => 1,
 						),
-						'height'      => array(
+						'height'        => array(
 							'type'        => 'integer',
 							'description' => 'The height of the image. Defaults to 1024.',
 							'maximum'     => 1080,
 							'minimum'     => 1,
 						),
-						'quality'     => array(
+						'quality'       => array(
 							'type'        => 'integer',
 							'description' => 'The quality of the image. Defaults to 85.',
 							'maximum'     => 100,
 							'minimum'     => 1,
 						),
-						'background'  => array(
+						'background'    => array(
 							'type'        => 'string',
 							'description' => 'The background of the image. Defaults to auto.',
 							'enum'        => array( 'transparent', 'opaque', 'auto' ),
 						),
-						'trim'        => array(
+						'trim'          => array(
 							'type'        => 'boolean',
 							'description' => 'Whether to trim the image. Defaults to false.',
 						),
-						'fit'         => array(
+						'fit'           => array(
 							'type'        => 'string',
 							'description' => 'The fit of the image. Defaults to cover.',
 							'enum'        => array( 'cover', 'contain', 'fill', 'none', 'scale-down' ),
@@ -90,6 +128,156 @@ class ImageEdit {
 				),
 			)
 		);
+	}
+
+	/**
+	 * Extract dominant colors from an image using GD.
+	 *
+	 * @param array $input Tool input parameters.
+	 * @return array Standardized ability response.
+	 */
+	public function extract_colors( array $input ): array {
+		if ( ! function_exists( 'imagecreatefromstring' ) ) {
+			return blu_prepare_ability_response( 500, __( 'GD image library is not available on this server.', 'wp-module-mcp' ) );
+		}
+
+		$raw_url = (string) ( $input['image_url'] ?? '' );
+		$url     = esc_url_raw( $raw_url );
+		if ( empty( $url ) || ! filter_var( $raw_url, FILTER_VALIDATE_URL ) ) {
+			return blu_prepare_ability_response( 400, __( 'A valid image_url is required.', 'wp-module-mcp' ) );
+		}
+
+		if ( ! $this->is_allowed_source_url( $url ) ) {
+			return blu_prepare_ability_response( 400, __( 'The image_url is not allowed.', 'wp-module-mcp' ) );
+		}
+
+		$image_payload = $this->fetch_source_image( $url );
+		if ( isset( $image_payload['error'] ) ) {
+			return blu_prepare_ability_response( (int) $image_payload['status'], (string) $image_payload['error'] );
+		}
+
+		$max_colors = min( max( (int) ( $input['max_colors'] ?? 5 ), 1 ), 10 );
+		$colors     = $this->analyze_image_colors( $image_payload['content'], $max_colors );
+
+		if ( empty( $colors ) ) {
+			return blu_prepare_ability_response(
+				200,
+				array(
+					'colors'  => array(),
+					'message' => __( 'No distinct colors found. The image may be mostly white, black, or transparent.', 'wp-module-mcp' ),
+				)
+			);
+		}
+
+		return blu_prepare_ability_response(
+			200,
+			array(
+				'dominant' => $colors[0]['hex'],
+				'colors'   => $colors,
+				'message'  => sprintf(
+					/* translators: %s: dominant hex color value */
+					__( 'Dominant color: %s. Use this hex value with blu/update-global-styles to apply it as the accent or primary color.', 'wp-module-mcp' ),
+					$colors[0]['hex']
+				),
+			)
+		);
+	}
+
+	/**
+	 * Sample pixels from image binary data and return dominant non-background colors.
+	 *
+	 * Resizes to an 80×80 thumbnail for efficient sampling, skips transparent,
+	 * near-white, and near-black pixels, then quantizes to 32-step bins to group
+	 * similar shades before ranking by frequency.
+	 *
+	 * @param string $content    Raw image binary content.
+	 * @param int    $max_colors Maximum colors to return.
+	 * @return array Array of {hex, percentage} sorted by frequency descending.
+	 */
+	private function analyze_image_colors( string $content, int $max_colors ): array {
+		$img = @imagecreatefromstring( $content ); // phpcs:ignore WordPress.PHP.NoSilencedErrors
+		if ( false === $img ) {
+			return array();
+		}
+
+		// Convert palette-mode images (indexed PNG/GIF) to truecolor so that
+		// GD maps the transparent colour index to a real alpha channel before
+		// resampling — otherwise transparent pixels blend as opaque colours.
+		if ( ! imageistruecolor( $img ) ) {
+			imagepalettetotruecolor( $img );
+			imagealphablending( $img, false );
+			imagesavealpha( $img, true );
+		}
+
+		$sample_w = 80;
+		$sample_h = 80;
+		$thumb    = imagecreatetruecolor( $sample_w, $sample_h );
+
+		// Preserve transparency during resampling.
+		imagealphablending( $thumb, false );
+		imagesavealpha( $thumb, true );
+		$transparent = imagecolorallocatealpha( $thumb, 255, 255, 255, 127 );
+		imagefill( $thumb, 0, 0, $transparent );
+		imagealphablending( $thumb, true );
+
+		imagecopyresampled( $thumb, $img, 0, 0, 0, 0, $sample_w, $sample_h, imagesx( $img ), imagesy( $img ) );
+		unset( $img );
+
+		$color_counts = array();
+		$total        = 0;
+
+		for ( $x = 0; $x < $sample_w; $x++ ) {
+			for ( $y = 0; $y < $sample_h; $y++ ) {
+				$rgba  = imagecolorat( $thumb, $x, $y );
+				$alpha = ( $rgba >> 24 ) & 0x7F;
+
+				// Skip mostly-transparent pixels (127 = fully transparent in GD).
+				if ( $alpha > 90 ) {
+					continue;
+				}
+
+				$r = ( $rgba >> 16 ) & 0xFF;
+				$g = ( $rgba >> 8 ) & 0xFF;
+				$b = $rgba & 0xFF;
+
+				// Skip near-white (typical image backgrounds).
+				if ( $r > 230 && $g > 230 && $b > 230 ) {
+					continue;
+				}
+
+				// Skip near-black.
+				if ( $r < 20 && $g < 20 && $b < 20 ) {
+					continue;
+				}
+
+				// Quantize to 32-step bins to group perceptually similar shades.
+				$qr  = (int) round( $r / 32 ) * 32;
+				$qg  = (int) round( $g / 32 ) * 32;
+				$qb  = (int) round( $b / 32 ) * 32;
+				$key = sprintf( '%02x%02x%02x', min( 255, $qr ), min( 255, $qg ), min( 255, $qb ) );
+
+				$color_counts[ $key ] = ( $color_counts[ $key ] ?? 0 ) + 1;
+				++$total;
+			}
+		}
+
+		unset( $thumb );
+
+		if ( 0 === $total || empty( $color_counts ) ) {
+			return array();
+		}
+
+		arsort( $color_counts );
+
+		$colors = array();
+		foreach ( array_slice( $color_counts, 0, $max_colors, true ) as $hex => $count ) {
+			$colors[] = array(
+				'hex'        => '#' . $hex,
+				'percentage' => (int) round( $count / $total * 100 ),
+			);
+		}
+
+		return $colors;
 	}
 
 	/**
@@ -153,17 +341,33 @@ class ImageEdit {
 		if ( ! empty( $input['fit'] ) ) {
 			$fields['fit'] = (string) $input['fit'];
 		}
-		$multipart_body = $this->build_multipart_body(
-			$fields,
+		$files = array(
 			array(
-				array(
-					'field'    => 'images[]',
-					'filename' => $image_payload['filename'],
-					'content'  => $image_payload['content'],
-					'mime'     => $image_payload['mime'],
-				),
-			)
+				'field'    => 'images[]',
+				'filename' => $image_payload['filename'],
+				'content'  => $image_payload['content'],
+				'mime'     => $image_payload['mime'],
+			),
 		);
+
+		// If a reference image is provided, fetch and append it as a second image.
+		$raw_reference_url = (string) ( $input['reference_url'] ?? '' );
+		if ( ! empty( $raw_reference_url ) ) {
+			$reference_url = esc_url_raw( $raw_reference_url );
+			if ( filter_var( $raw_reference_url, FILTER_VALIDATE_URL ) && $this->is_allowed_source_url( $reference_url ) ) {
+				$reference_payload = $this->fetch_source_image( $reference_url );
+				if ( is_array( $reference_payload ) && isset( $reference_payload['content'] ) ) {
+					$files[] = array(
+						'field'    => 'images[]',
+						'filename' => $reference_payload['filename'],
+						'content'  => $reference_payload['content'],
+						'mime'     => $reference_payload['mime'],
+					);
+				}
+			}
+		}
+
+		$multipart_body = $this->build_multipart_body( $fields, $files );
 		$response       = wp_remote_post(
 			trailingslashit( $api_url ) . 'api/v1/imagegen/edit',
 			array(
@@ -229,6 +433,67 @@ class ImageEdit {
 	 * @return array
 	 */
 	private function fetch_source_image( string $url ): array {
+		$allowed_mimes = array(
+			'image/jpeg' => 'jpg',
+			'image/png'  => 'png',
+			'image/webp' => 'webp',
+		);
+
+		// For local-site URLs, read directly from the filesystem to avoid loopback
+		// HTTP issues (SSL certificate problems, blocked requests on local dev envs).
+		$url_host  = strtolower( (string) wp_parse_url( $url, PHP_URL_HOST ) );
+		$site_host = strtolower( (string) wp_parse_url( home_url(), PHP_URL_HOST ) );
+		if ( $url_host === $site_host ) {
+			$url_path = wp_parse_url( $url, PHP_URL_PATH );
+			if ( ! is_string( $url_path ) ) {
+				return array(
+					'status' => 400,
+					'error'  => __( 'Invalid local URL path.', 'wp-module-mcp' ),
+				);
+			}
+			$abs_root = realpath( ABSPATH );
+			$abs_file = realpath( $abs_root . '/' . ltrim( $url_path, '/' ) );
+			if ( false === $abs_file || strpos( $abs_file, $abs_root ) !== 0 ) {
+				return array(
+					'status' => 400,
+					'error'  => __( 'Local file path is outside the WordPress root.', 'wp-module-mcp' ),
+				);
+			}
+			if ( ! is_file( $abs_file ) ) {
+				return array(
+					'status' => 404,
+					'error'  => __( 'Local source image not found.', 'wp-module-mcp' ),
+				);
+			}
+			$content = file_get_contents( $abs_file ); // phpcs:ignore WordPress.WP.AlternativeFunctions
+			if ( false === $content || '' === $content ) {
+				return array(
+					'status' => 400,
+					'error'  => __( 'Could not read local source image.', 'wp-module-mcp' ),
+				);
+			}
+			$max_bytes = 10 * 1024 * 1024;
+			if ( strlen( $content ) > $max_bytes ) {
+				return array(
+					'status' => 400,
+					'error'  => __( 'Source image exceeds 10 MB limit.', 'wp-module-mcp' ),
+				);
+			}
+			$mime = is_callable( 'mime_content_type' ) ? strtolower( mime_content_type( $abs_file ) ) : '';
+			if ( ! isset( $allowed_mimes[ $mime ] ) ) {
+				return array(
+					'status' => 400,
+					'error'  => __( 'Unsupported source image type.', 'wp-module-mcp' ),
+				);
+			}
+			return array(
+				'filename' => basename( $abs_file ),
+				'content'  => $content,
+				'mime'     => $mime,
+			);
+		}
+
+		// Remote URL — fetch via HTTP.
 		$response = wp_remote_get(
 			$url,
 			array(
@@ -239,41 +504,38 @@ class ImageEdit {
 		if ( is_wp_error( $response ) ) {
 			return array(
 				'status' => 502,
-				'error'  => 'Unable to fetch source image: ' . $response->get_error_message(),
+				/* translators: %s: error message from wp_remote_get */
+				'error'  => sprintf( __( 'Unable to fetch source image: %s', 'wp-module-mcp' ), $response->get_error_message() ),
 			);
 		}
 		$status_code = wp_remote_retrieve_response_code( $response );
 		if ( $status_code < 200 || $status_code >= 300 ) {
 			return array(
 				'status' => 400,
-				'error'  => 'Unable to fetch source image (HTTP ' . $status_code . ').',
+				/* translators: %d: HTTP status code */
+				'error'  => sprintf( __( 'Unable to fetch source image (HTTP %d).', 'wp-module-mcp' ), $status_code ),
 			);
 		}
 		$content = wp_remote_retrieve_body( $response );
 		if ( '' === $content ) {
 			return array(
 				'status' => 400,
-				'error'  => 'Source image is empty.',
+				'error'  => __( 'Source image is empty.', 'wp-module-mcp' ),
 			);
 		}
-		$max_bytes = 10 * 1024 * 1024; // matches Laravel images.* max:10240 (KB)
+		$max_bytes = 10 * 1024 * 1024;
 		if ( strlen( $content ) > $max_bytes ) {
 			return array(
 				'status' => 400,
-				'error'  => 'Source image exceeds 10MB limit.',
+				'error'  => __( 'Source image exceeds 10 MB limit.', 'wp-module-mcp' ),
 			);
 		}
-		$content_type  = wp_remote_retrieve_header( $response, 'content-type' );
-		$mime          = is_string( $content_type ) ? strtolower( trim( explode( ';', $content_type )[0] ) ) : '';
-		$allowed_mimes = array(
-			'image/jpeg' => 'jpg',
-			'image/png'  => 'png',
-			'image/webp' => 'webp',
-		);
+		$content_type = wp_remote_retrieve_header( $response, 'content-type' );
+		$mime         = is_string( $content_type ) ? strtolower( trim( explode( ';', $content_type )[0] ) ) : '';
 		if ( ! isset( $allowed_mimes[ $mime ] ) ) {
 			return array(
 				'status' => 400,
-				'error'  => 'Unsupported source image type.',
+				'error'  => __( 'Unsupported source image type.', 'wp-module-mcp' ),
 			);
 		}
 		$path     = wp_parse_url( $url, PHP_URL_PATH );

@@ -19,7 +19,7 @@ class LogoGenWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	 *
 	 * @var string[]
 	 */
-	private $registered_abilities = array( 'blu/regenerate-logo' );
+	private $registered_abilities = array( 'blu/regenerate-logo', 'blu/set-logo-from-image' );
 
 	/**
 	 * Whether the ability has been registered in this test instance.
@@ -77,7 +77,7 @@ class LogoGenWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 			);
 		}
 
-		HiiveConnection::$token      = 'test-hiive-token';
+		HiiveConnection::$token       = 'test-hiive-token';
 		$this->last_request_args      = null;
 		$this->last_logo_request_args = null;
 	}
