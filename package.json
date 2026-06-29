@@ -1,6 +1,6 @@
 {
     "name": "wp-module-mcp",
-    "version": "1.7.1",
+    "version": "1.7.2",
     "engines": {
         "node": ">=22.11.0",
         "npm": ">=10.9.0"
