@@ -138,17 +138,17 @@ class ImageEdit {
 	 */
 	public function extract_colors( array $input ): array {
 		if ( ! function_exists( 'imagecreatefromstring' ) ) {
-			return blu_prepare_ability_response( 500, 'GD image library is not available on this server.' );
+			return blu_prepare_ability_response( 500, __( 'GD image library is not available on this server.', 'wp-module-mcp' ) );
 		}
 
 		$raw_url = (string) ( $input['image_url'] ?? '' );
 		$url     = esc_url_raw( $raw_url );
 		if ( empty( $url ) || ! filter_var( $raw_url, FILTER_VALIDATE_URL ) ) {
-			return blu_prepare_ability_response( 400, 'A valid image_url is required.' );
+			return blu_prepare_ability_response( 400, __( 'A valid image_url is required.', 'wp-module-mcp' ) );
 		}
 
 		if ( ! $this->is_allowed_source_url( $url ) ) {
-			return blu_prepare_ability_response( 400, 'image_url is not allowed.' );
+			return blu_prepare_ability_response( 400, __( 'The image_url is not allowed.', 'wp-module-mcp' ) );
 		}
 
 		$image_payload = $this->fetch_source_image( $url );
@@ -164,7 +164,7 @@ class ImageEdit {
 				200,
 				array(
 					'colors'  => array(),
-					'message' => 'No distinct colors found. The image may be mostly white, black, or transparent.',
+					'message' => __( 'No distinct colors found. The image may be mostly white, black, or transparent.', 'wp-module-mcp' ),
 				)
 			);
 		}
@@ -174,7 +174,11 @@ class ImageEdit {
 			array(
 				'dominant' => $colors[0]['hex'],
 				'colors'   => $colors,
-				'message'  => 'Dominant color: ' . $colors[0]['hex'] . '. Use this hex value with blu/update-global-styles to apply it as the accent or primary color.',
+				'message'  => sprintf(
+					/* translators: %s: dominant hex color value */
+					__( 'Dominant color: %s. Use this hex value with blu/update-global-styles to apply it as the accent or primary color.', 'wp-module-mcp' ),
+					$colors[0]['hex']
+				),
 			)
 		);
 	}
