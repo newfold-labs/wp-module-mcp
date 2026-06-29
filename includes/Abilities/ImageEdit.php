@@ -217,7 +217,7 @@ class ImageEdit {
 		imagealphablending( $thumb, true );
 
 		imagecopyresampled( $thumb, $img, 0, 0, 0, 0, $sample_w, $sample_h, imagesx( $img ), imagesy( $img ) );
-		imagedestroy( $img );
+		unset( $img );
 
 		$color_counts = array();
 		$total        = 0;
@@ -257,7 +257,7 @@ class ImageEdit {
 			}
 		}
 
-		imagedestroy( $thumb );
+		unset( $thumb );
 
 		if ( 0 === $total || empty( $color_counts ) ) {
 			return array();
