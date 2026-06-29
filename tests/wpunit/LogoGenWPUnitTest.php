@@ -19,7 +19,7 @@ class LogoGenWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	 *
 	 * @var string[]
 	 */
-	private $registered_abilities = array( 'blu/regenerate-logo' );
+	private $registered_abilities = array( 'blu/regenerate-logo', 'blu/set-logo-from-image' );
 
 	/**
 	 * Whether the ability has been registered in this test instance.
