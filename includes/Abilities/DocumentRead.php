@@ -73,6 +73,13 @@ class DocumentRead {
 		$mime       = is_callable( 'mime_content_type' ) ? strtolower( (string) mime_content_type( $abs_file ) ) : '';
 		$text_types = array( 'text/plain', 'text/markdown', 'text/csv' );
 
+		// Guard against very large files before reading into memory.
+		$file_size     = filesize( $abs_file );
+		$max_file_size = 50 * 1024 * 1024; // 50 MB
+		if ( false !== $file_size && $file_size > $max_file_size ) {
+			return blu_prepare_ability_response( 400, __( 'Document exceeds the 50 MB size limit.', 'wp-module-mcp' ) );
+		}
+
 		if ( in_array( $mime, $text_types, true ) ) {
 			$content = file_get_contents( $abs_file ); // phpcs:ignore WordPress.WP.AlternativeFunctions
 		} elseif ( 'application/pdf' === $mime ) {
@@ -81,7 +88,7 @@ class DocumentRead {
 			return blu_prepare_ability_response( 400, __( 'Unsupported document type.', 'wp-module-mcp' ) );
 		}
 
-		if ( false === $content ) {
+		if ( false === $content || '' === $content ) {
 			return blu_prepare_ability_response( 500, __( 'Could not read document content.', 'wp-module-mcp' ) );
 		}
 
@@ -123,9 +130,9 @@ class DocumentRead {
 			$smalot_src = dirname( __DIR__, 2 ) . '/vendor/smalot/pdfparser/src';
 			if ( is_dir( $smalot_src ) ) {
 				spl_autoload_register(
-					static function ( $class ) use ( $smalot_src ) {
-						if ( 0 === strpos( $class, 'Smalot\\' ) ) {
-							$file = $smalot_src . DIRECTORY_SEPARATOR . str_replace( '\\', DIRECTORY_SEPARATOR, $class ) . '.php';
+					static function ( $class_name ) use ( $smalot_src ) {
+						if ( 0 === strpos( $class_name, 'Smalot\\' ) ) {
+							$file = $smalot_src . DIRECTORY_SEPARATOR . str_replace( '\\', DIRECTORY_SEPARATOR, $class_name ) . '.php';
 							if ( file_exists( $file ) ) {
 								require_once $file; // phpcs:ignore WordPressVIPMinimum.Files.IncludingFile.UsingVariable
 							}
