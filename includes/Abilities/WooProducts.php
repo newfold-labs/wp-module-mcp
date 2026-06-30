@@ -9,6 +9,27 @@ namespace BLU\Abilities;
 class WooProducts {
 
 	/**
+	 * Base REST API namespace used to discover the latest versioned namespace.
+	 *
+	 * @var string
+	 */
+	private string $base_namespace = 'wc';
+
+	/**
+	 * Resolved WooCommerce REST API namespace (e.g. "wc/v3").
+	 *
+	 * @var string
+	 */
+	private string $wc_namespace = '';
+
+	/**
+	 * Resolved base products route (e.g. "/wc/v3/products").
+	 *
+	 * @var string
+	 */
+	private string $products_route = '';
+
+	/**
 	 * Constructor - registers WooCommerce product abilities if WooCommerce is active.
 	 */
 	public function __construct() {
@@ -16,42 +37,68 @@ class WooProducts {
 			return;
 		}
 
+		$wc_namespace = RestApiUtils::get_latest_namespace( $this->base_namespace );
+
+		if ( ! $wc_namespace ) {
+			return;
+		}
+
+		$products_route = RestApiUtils::find_route_by_resource( $wc_namespace, 'products' );
+
+		if ( ! $products_route ) {
+			return;
+		}
+
+		$this->wc_namespace   = $wc_namespace;
+		$this->products_route = $products_route;
+
 		$this->register_product_abilities();
 		$this->register_category_abilities();
 		$this->register_tag_abilities();
 		$this->register_brand_abilities();
+		$this->register_attribute_abilities();
+		$this->register_variation_abilities();
 	}
 
 	/**
 	 * Register product abilities.
 	 */
 	private function register_product_abilities(): void {
+		$products_route = $this->products_route;
+
+		// Extract dynamic schema for product list (GET)
+		$search_schema = RestApiUtils::extract_input_schema( $products_route, 'GET' );
+
+		if ( ! $search_schema ) {
+			$search_schema = array(
+				'type'       => 'object',
+				'properties' => array(
+					'search'   => array(
+						'type'        => 'string',
+						'description' => 'Search term',
+					),
+					'page'     => array(
+						'type'        => 'integer',
+						'description' => 'Page number',
+					),
+					'per_page' => array(
+						'type'        => 'integer',
+						'description' => 'Products per page',
+					),
+				),
+			);
+		}
+
 		// Search products
 		blu_register_ability(
 			'blu/wc-products-search',
 			array(
 				'label'               => 'Search WooCommerce Products',
-				'description'         => 'Search and filter WooCommerce products with pagination',
+				'description'         => sprintf( 'Search and filter WooCommerce products with pagination using %s API', $this->wc_namespace ),
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
-					'type'       => 'object',
-					'properties' => array(
-						'search'   => array(
-							'type'        => 'string',
-							'description' => 'Search term',
-						),
-						'page'     => array(
-							'type'        => 'integer',
-							'description' => 'Page number',
-						),
-						'per_page' => array(
-							'type'        => 'integer',
-							'description' => 'Products per page',
-						),
-					),
-				),
-				'execute_callback'    => function ( $input = null ) {
-					$request = new \WP_REST_Request( 'GET', '/wc/v3/products' );
+				'input_schema'        => $search_schema,
+				'execute_callback'    => function ( $input = null ) use ( $products_route ) {
+					$request = new \WP_REST_Request( 'GET', $products_route );
 					if ( $input ) {
 						$request->set_query_params( $input );
 					}
@@ -70,25 +117,47 @@ class WooProducts {
 			)
 		);
 
+		// Find the single product route
+		$product_pattern = '(?P<id>[\d]+)';
+		$product_route   = RestApiUtils::find_route_by_resource( $this->wc_namespace, 'products/' . $product_pattern );
+
+		if ( ! $product_route ) {
+			return;
+		}
+
+		// Extract dynamic schema for single product (GET)
+		$get_schema = RestApiUtils::extract_input_schema( $product_route, 'GET' );
+
+		if ( ! $get_schema ) {
+			$get_schema = array(
+				'type'       => 'object',
+				'properties' => array(
+					'id' => array(
+						'type'        => 'integer',
+						'description' => 'Product ID',
+					),
+				),
+				'required'   => array( 'id' ),
+			);
+		}
+
 		// Get product
 		blu_register_ability(
 			'blu/wc-get-product',
 			array(
 				'label'               => 'Get WooCommerce Product',
-				'description'         => 'Get a WooCommerce product by ID',
+				'description'         => sprintf( 'Get a WooCommerce product by ID using %s API', $this->wc_namespace ),
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
-					'type'       => 'object',
-					'properties' => array(
-						'id' => array(
-							'type'        => 'integer',
-							'description' => 'Product ID',
-						),
-					),
-					'required'   => array( 'id' ),
-				),
-				'execute_callback'    => function ( $input ) {
-					$request  = new \WP_REST_Request( 'GET', '/wc/v3/products/' . $input['id'] );
+				'input_schema'        => $get_schema,
+				'execute_callback'    => function ( $input ) use ( $product_route, $product_pattern ) {
+					if ( ! $input || ! isset( $input['id'] ) ) {
+						return array(
+							'status'  => 'error',
+							'message' => 'Product ID is required',
+						);
+					}
+					$route    = str_replace( $product_pattern, (string) (int) $input['id'], $product_route );
+					$request  = new \WP_REST_Request( 'GET', $route );
 					$response = rest_do_request( $request );
 
 					return blu_standardize_rest_response( $response );
@@ -104,176 +173,108 @@ class WooProducts {
 			)
 		);
 
+		// Extract dynamic schema for product creation (POST)
+		$add_schema = RestApiUtils::extract_input_schema( $products_route, 'POST' );
+
+		if ( ! $add_schema ) {
+			$add_schema = array(
+				'type'        => 'object',
+				'properties'  => array(
+					'name'                 => array(
+						'type'        => 'string',
+						'description' => 'Product name',
+					),
+					'type'                 => array(
+						'type'        => 'string',
+						'description' => 'Product type',
+					),
+					'description'          => array(
+						'type'        => 'string',
+						'description' => 'Product description',
+					),
+					'short_description'    => array(
+						'type'        => 'string',
+						'description' => 'Product short description',
+					),
+					'regular_price'        => array(
+						'type'        => 'string',
+						'description' => 'Product price',
+					),
+					'sale_price'           => array(
+						'type'        => 'string',
+						'description' => 'Product sale price',
+					),
+					'categories'           => array(
+						'type'        => 'array',
+						'description' => 'List of categories',
+						'items'       => array(
+							'type'       => 'object',
+							'properties' => array(
+								'id' => array(
+									'description' => 'Category ID.',
+									'type'        => 'integer',
+								),
+							),
+						),
+					),
+					'tags'                 => array(
+						'type'        => 'array',
+						'description' => 'List of tags',
+						'items'       => array(
+							'type'       => 'object',
+							'properties' => array(
+								'id' => array(
+									'description' => 'Tag ID.',
+									'type'        => 'integer',
+								),
+							),
+						),
+					),
+					'brands'               => array(
+						'type'        => 'array',
+						'description' => 'List of brands',
+						'items'       => array(
+							'type'       => 'object',
+							'properties' => array(
+								'id' => array(
+									'description' => 'Brand ID.',
+									'type'        => 'integer',
+								),
+							),
+						),
+					),
+					'status'               => array(
+						'description' => 'Product status (post status).',
+						'type'        => 'string',
+						'default'     => 'draft',
+						'enum'        => array_merge(
+							array_keys( get_post_statuses() ),
+							array(
+								'future',
+								'auto-draft',
+								'trash',
+							)
+						),
+					),
+				),
+				'required'    => array( 'name' ),
+			);
+		}
+
 		// Add product
 		blu_register_ability(
 			'blu/wc-add-product',
 			array(
 				'label'               => 'Add WooCommerce Product',
-				'description'         => 'Create a WooCommerce product, or start the guided add-product flow. If ready is false or omitted, no product is created—the response returns assistant-only steps (A/B options, suggestions).',
+				'description'         => sprintf( 'Create a WooCommerce product using %s API, or start the guided add-product flow. If ready is false or omitted, no product is created—the response returns assistant-only steps (A/B options, suggestions).', $this->wc_namespace ),
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
-					'type'        => 'object',
-					'properties'  => array(
-						'name'                 => array(
-							'type'        => 'string',
-							'description' => 'Product name',
-						),
-						'type'                 => array(
-							'type'        => 'string',
-							'description' => 'Product type',
-						),
-						'description'          => array(
-							'type'        => 'string',
-							'description' => 'Product description',
-						),
-						'short_description'    => array(
-							'type'        => 'string',
-							'description' => 'Product short description',
-						),
-						'regular_price'        => array(
-							'type'        => 'string',
-							'description' => 'Product price',
-						),
-						'sale_price'           => array(
-							'type'        => 'string',
-							'description' => 'Product sale price',
-						),
-						'categories'           => array(
-							'type'        => 'array',
-							'description' => 'List of categories',
-							'items'       => array(
-								'type'       => 'object',
-								'properties' => array(
-									'id' => array(
-										'description' => 'Category ID.',
-										'type'        => 'integer',
-									),
-								),
-							),
-						),
-						'tags'                 => array(
-							'type'        => 'array',
-							'description' => 'List of tags',
-							'items'       => array(
-								'type'       => 'object',
-								'properties' => array(
-									'id' => array(
-										'description' => 'Tag ID.',
-										'type'        => 'integer',
-									),
-								),
-							),
-						),
-						'brands'               => array(
-							'type'        => 'array',
-							'description' => 'List of brands',
-							'items'       => array(
-								'type'       => 'object',
-								'properties' => array(
-									'id' => array(
-										'description' => 'Brand ID.',
-										'type'        => 'integer',
-									),
-								),
-							),
-						),
-						'variation_attributes' => array(
-							'type'        => 'array',
-							'description' => 'List of variation attributes',
-							'items'       => array(
-								'type'       => 'object',
-								'properties' => array(
-									'name'  => array(
-										'description' => 'Attribute name',
-										'type'        => 'string',
-									),
-									'terms' => array(
-										'type'        => 'array',
-										'items'       => array( 'type' => 'string' ),
-										'description' => 'Attribute name',
-									),
-								),
-							),
-						),
-						'status'               => array(
-							'description' => 'Product status (post status).',
-							'type'        => 'string',
-							'default'     => 'draft',
-							'enum'        => array_merge(
-								array_keys( get_post_statuses() ),
-								array(
-									'future',
-									'auto-draft',
-									'trash',
-								)
-							),
-						),
-					),
-					'required'    => array( 'name' ),
-				),
-				'execute_callback'    => function ( $input ) {
+				'input_schema'        => $add_schema,
+				'execute_callback'    => function ( $input ) use ( $products_route, $product_route, $product_pattern ) {
 
-					$request = new \WP_REST_Request( 'POST', '/wc/v3/products' );
-
-					$variation_attributes = $input['variation_attributes'] ?? array();
-					if ( $variation_attributes ) {
-						$input['type'] = 'variable';
-					}
-
-					if ( isset( $input['variation_attributes'] ) ) {
-						unset( $input['variation_attributes'] );
-					}
+					$request = new \WP_REST_Request( 'POST', $products_route );
 
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
-
-					if ( ! $response->is_error() && (bool) $variation_attributes ) {
-						$data       = $response->get_data();
-						$product_id = absint( $data['id'] ?? 0 );
-
-						if ( $product_id ) {
-							$product            = wc_get_product( $product_id );
-							$position           = 0;
-							$product_attributes = array();
-
-							foreach ( $variation_attributes as $attribute ) {
-								$attribute_id   = 0;
-								$attribute_name = wc_clean( esc_html( $attribute['name'] ) );
-
-								$terms = wc_get_text_attributes( implode( WC_DELIMITER, $attribute['terms'] ) );
-
-								$product_attribute = new \WC_Product_Attribute();
-								$product_attribute->set_id( $attribute_id );
-								$product_attribute->set_name( $attribute_name );
-								$product_attribute->set_options( $terms );
-								$product_attribute->set_position( $position );
-								$product_attribute->set_visible( true );
-								$product_attribute->set_variation( true );
-
-								$product_attributes[] = $product_attribute;
-
-								$position++;
-							}
-
-							$product->set_attributes( $product_attributes );
-							$product->save();
-
-							/**
-							 * The variable product
-							 *
-							 * @var $variation \WC_Product_Variation
-							 */
-							$variation = wc_get_product_object( 'variation' );
-							if ( isset( $input['regular_price'] ) ) {
-								$variation->set_regular_price( $input['regular_price'] );
-							}
-							$variation->set_parent_id( $product->get_id() );
-							$variation->save();
-
-							$request  = new \WP_REST_Request( 'GET', '/wc/v3/products/' . $product_id );
-							$response = rest_do_request( $request );
-						}
-					}
 
 					return blu_standardize_rest_response( $response );
 				},
@@ -288,96 +289,103 @@ class WooProducts {
 			),
 		);
 
+		// Extract dynamic schema for product update (PUT)
+		$update_schema = RestApiUtils::extract_input_schema( $product_route, 'PUT' );
+
+		if ( ! $update_schema ) {
+			$update_schema = array(
+				'type'       => 'object',
+				'properties' => array(
+					'id'                => array(
+						'type'        => 'integer',
+						'description' => 'Product ID',
+					),
+					'name'              => array(
+						'type'        => 'string',
+						'description' => 'Product name',
+					),
+					'description'       => array(
+						'type'        => 'string',
+						'description' => 'Product description',
+					),
+					'short_description' => array(
+						'type'        => 'string',
+						'description' => 'Product short description',
+					),
+					'regular_price'     => array(
+						'type'        => 'string',
+						'description' => 'Product price',
+					),
+					'sale_price'        => array(
+						'type'        => 'string',
+						'description' => 'Product sale price',
+					),
+					'categories'        => array(
+						'type'        => 'array',
+						'description' => 'List of categories',
+						'items'       => array(
+							'type'       => 'object',
+							'properties' => array(
+								'id' => array(
+									'description' => 'Category ID.',
+									'type'        => 'integer',
+								),
+							),
+						),
+					),
+					'tags'              => array(
+						'type'        => 'array',
+						'description' => 'List of tags',
+						'items'       => array(
+							'type'       => 'object',
+							'properties' => array(
+								'id' => array(
+									'description' => 'Tag ID.',
+									'type'        => 'integer',
+								),
+							),
+						),
+					),
+					'brands'            => array(
+						'type'        => 'array',
+						'description' => 'List of brands',
+						'items'       => array(
+							'type'       => 'object',
+							'properties' => array(
+								'id' => array(
+									'description' => 'Brand ID.',
+									'type'        => 'integer',
+								),
+							),
+						),
+					),
+					'status'            => array(
+						'description' => 'Product status (post status).',
+						'type'        => 'string',
+						'default'     => 'draft',
+						'enum'        => array_merge(
+							array_keys( get_post_statuses() ),
+							array(
+								'future',
+								'auto-draft',
+								'trash',
+							)
+						),
+					),
+				),
+				'required'   => array( 'id' ),
+			);
+		}
+
 		// Update product
 		blu_register_ability(
 			'blu/wc-update-product',
 			array(
 				'label'               => 'Update WooCommerce Product',
-				'description'         => 'Update a WooCommerce product by ID',
+				'description'         => sprintf( 'Update a WooCommerce product by ID using %s API', $this->wc_namespace ),
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
-					'type'       => 'object',
-					'properties' => array(
-						'id'                => array(
-							'type'        => 'integer',
-							'description' => 'Product ID',
-						),
-						'name'              => array(
-							'type'        => 'string',
-							'description' => 'Product name',
-						),
-						'description'       => array(
-							'type'        => 'string',
-							'description' => 'Product description',
-						),
-						'short_description' => array(
-							'type'        => 'string',
-							'description' => 'Product short description',
-						),
-						'regular_price'     => array(
-							'type'        => 'string',
-							'description' => 'Product price',
-						),
-						'sale_price'        => array(
-							'type'        => 'string',
-							'description' => 'Product sale price',
-						),
-						'categories'        => array(
-							'type'        => 'array',
-							'description' => 'List of categories',
-							'items'       => array(
-								'type'       => 'object',
-								'properties' => array(
-									'id' => array(
-										'description' => 'Category ID.',
-										'type'        => 'integer',
-									),
-								),
-							),
-						),
-						'tags'              => array(
-							'type'        => 'array',
-							'description' => 'List of tags',
-							'items'       => array(
-								'type'       => 'object',
-								'properties' => array(
-									'id' => array(
-										'description' => 'Tag ID.',
-										'type'        => 'integer',
-									),
-								),
-							),
-						),
-						'brands'            => array(
-							'type'        => 'array',
-							'description' => 'List of brands',
-							'items'       => array(
-								'type'       => 'object',
-								'properties' => array(
-									'id' => array(
-										'description' => 'Brand ID.',
-										'type'        => 'integer',
-									),
-								),
-							),
-						),
-						'status'            => array(
-							'description' => 'Product status (post status).',
-							'type'        => 'string',
-							'default'     => 'draft',
-							'enum'        => array_merge(
-								array_keys( get_post_statuses() ),
-								array(
-									'future',
-									'auto-draft',
-									'trash',
-								)
-							),
-						),
-					),
-					'required'   => array( 'id' ),
-				),
-				'execute_callback'    => function ( $input ) {
+				'input_schema'        => $update_schema,
+				'execute_callback'    => function ( $input ) use ( $product_route, $product_pattern ) {
 					$id = $input['id'];
 					unset( $input['id'] );
 
@@ -396,7 +404,9 @@ class WooProducts {
 						$input['brands'] = array_merge( $input['brands'], $stored_brand );
 					}
 
-					$request = new \WP_REST_Request( 'PUT', '/wc/v3/products/' . $id );
+					$route = str_replace( $product_pattern, (string) $id, $product_route );
+
+					$request = new \WP_REST_Request( 'PUT', $route );
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
 
@@ -418,7 +428,7 @@ class WooProducts {
 			'blu/wc-delete-product',
 			array(
 				'label'               => 'Delete WooCommerce Product',
-				'description'         => 'Delete a WooCommerce product by ID',
+				'description'         => sprintf( 'Delete a WooCommerce product by ID using %s API', $this->wc_namespace ),
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
@@ -430,8 +440,9 @@ class WooProducts {
 					),
 					'required'   => array( 'id' ),
 				),
-				'execute_callback'    => function ( $input ) {
-					$request = new \WP_REST_Request( 'DELETE', '/wc/v3/products/' . $input['id'] );
+				'execute_callback'    => function ( $input ) use ( $product_route, $product_pattern ) {
+					$route   = str_replace( $product_pattern, (string) (int) $input['id'], $product_route );
+					$request = new \WP_REST_Request( 'DELETE', $route );
 					$request->set_param( 'force', true );
 					$response = rest_do_request( $request );
 
@@ -453,29 +464,43 @@ class WooProducts {
 	 * Register product category abilities.
 	 */
 	private function register_category_abilities(): void {
+		$categories_route = RestApiUtils::find_route_by_resource( $this->wc_namespace, 'products/categories' );
+
+		if ( ! $categories_route ) {
+			return;
+		}
+
+		$category_pattern = '(?P<id>[\d]+)';
+		$category_route   = RestApiUtils::find_route_by_resource( $this->wc_namespace, 'products/categories/' . $category_pattern );
+
 		// List categories
+		$list_schema = RestApiUtils::extract_input_schema( $categories_route, 'GET' );
+
+		if ( ! $list_schema ) {
+			$list_schema = array(
+				'type'       => 'object',
+				'properties' => array(
+					'patterns' => array(
+						'type'        => 'array',
+						'description' => 'List of relevant categories and regex based on product name',
+						'items'       => array( 'type' => 'string' ),
+						'maxItems'    => 5,
+					),
+				),
+			);
+		}
 
 		blu_register_ability(
 			'blu/wc-list-product-categories',
 			array(
 				'label'               => 'List WooCommerce Product Categories',
-				'description'         => 'List all WooCommerce product categories',
+				'description'         => sprintf( 'List all WooCommerce product categories using %s API', $this->wc_namespace ),
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
-					'type'       => 'object',
-					'properties' => array(
-						'patterns' => array(
-							'type'        => 'array',
-							'description' => 'List of relevant categories and regex based on product name',
-							'items'       => array( 'type' => 'string' ),
-							'maxItems'    => 5,
-						),
-					),
-				),
-				'execute_callback'    => function ( $input ) {
+				'input_schema'        => $list_schema,
+				'execute_callback'    => function ( $input ) use ( $categories_route ) {
 					$page       = 1;
 					$categories = array();
-					$request    = new \WP_REST_Request( 'GET', '/wc/v3/products/categories' );
+					$request    = new \WP_REST_Request( 'GET', $categories_route );
 					do {
 						$request->set_query_params( array( 'page' => $page ) );
 						$response = rest_do_request( $request );
@@ -521,7 +546,7 @@ class WooProducts {
 			'blu/wc-add-product-category',
 			array(
 				'label'               => 'Add WooCommerce Product Category',
-				'description'         => 'Add one or more new WooCommerce product categories',
+				'description'         => sprintf( 'Add one or more new WooCommerce product categories using %s API', $this->wc_namespace ),
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
@@ -595,31 +620,43 @@ class WooProducts {
 			)
 		);
 
+		if ( ! $category_route ) {
+			return;
+		}
+
+		// Extract dynamic schema for category update (PUT)
+		$update_category_schema = RestApiUtils::extract_input_schema( $category_route, 'PUT' );
+
+		if ( ! $update_category_schema ) {
+			$update_category_schema = array(
+				'type'       => 'object',
+				'properties' => array(
+					'id'   => array(
+						'type'        => 'integer',
+						'description' => 'Category ID',
+					),
+					'name' => array(
+						'type'        => 'string',
+						'description' => 'Category name',
+					),
+				),
+				'required'   => array( 'id' ),
+			);
+		}
+
 		// Update category
 		blu_register_ability(
 			'blu/wc-update-product-category',
 			array(
 				'label'               => 'Update WooCommerce Product Category',
-				'description'         => 'Update a WooCommerce product category',
+				'description'         => sprintf( 'Update a WooCommerce product category using %s API', $this->wc_namespace ),
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
-					'type'       => 'object',
-					'properties' => array(
-						'id'   => array(
-							'type'        => 'integer',
-							'description' => 'Category ID',
-						),
-						'name' => array(
-							'type'        => 'string',
-							'description' => 'Category name',
-						),
-					),
-					'required'   => array( 'id' ),
-				),
-				'execute_callback'    => function ( $input ) {
+				'input_schema'        => $update_category_schema,
+				'execute_callback'    => function ( $input ) use ( $category_route, $category_pattern ) {
 					$id = $input['id'];
 					unset( $input['id'] );
-					$request = new \WP_REST_Request( 'PUT', '/wc/v3/products/categories/' . $id );
+					$route   = str_replace( $category_pattern, (string) $id, $category_route );
+					$request = new \WP_REST_Request( 'PUT', $route );
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
 
@@ -641,7 +678,7 @@ class WooProducts {
 			'blu/wc-delete-product-category',
 			array(
 				'label'               => 'Delete WooCommerce Product Category',
-				'description'         => 'Delete a WooCommerce product category',
+				'description'         => sprintf( 'Delete a WooCommerce product category using %s API', $this->wc_namespace ),
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
@@ -653,8 +690,9 @@ class WooProducts {
 					),
 					'required'   => array( 'id' ),
 				),
-				'execute_callback'    => function ( $input ) {
-					$request = new \WP_REST_Request( 'DELETE', '/wc/v3/products/categories/' . $input['id'] );
+				'execute_callback'    => function ( $input ) use ( $category_route, $category_pattern ) {
+					$route   = str_replace( $category_pattern, (string) (int) $input['id'], $category_route );
+					$request = new \WP_REST_Request( 'DELETE', $route );
 					$request->set_param( 'force', true );
 					$response = rest_do_request( $request );
 
@@ -676,12 +714,21 @@ class WooProducts {
 	 * Register product tag abilities.
 	 */
 	private function register_tag_abilities(): void {
+		$tags_route = RestApiUtils::find_route_by_resource( $this->wc_namespace, 'products/tags' );
+
+		if ( ! $tags_route ) {
+			return;
+		}
+
+		$tag_pattern = '(?P<id>[\d]+)';
+		$tag_route   = RestApiUtils::find_route_by_resource( $this->wc_namespace, 'products/tags/' . $tag_pattern );
+
 		// List tags
 		blu_register_ability(
 			'blu/wc-list-product-tags',
 			array(
 				'label'               => 'List WooCommerce Product Tags',
-				'description'         => 'List all WooCommerce product tags',
+				'description'         => sprintf( 'List all WooCommerce product tags using %s API', $this->wc_namespace ),
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
@@ -694,10 +741,10 @@ class WooProducts {
 						),
 					),
 				),
-				'execute_callback'    => function ( $input ) {
+				'execute_callback'    => function ( $input ) use ( $tags_route ) {
 					$page    = 1;
 					$tags    = array();
-					$request = new \WP_REST_Request( 'GET', '/wc/v3/products/tags' );
+					$request = new \WP_REST_Request( 'GET', $tags_route );
 					do {
 						$request->set_query_params( array( 'page' => $page ) );
 						$response = rest_do_request( $request );
@@ -743,7 +790,7 @@ class WooProducts {
 			'blu/wc-add-product-tag',
 			array(
 				'label'               => 'Add WooCommerce Product Tag',
-				'description'         => 'Add one or more new WooCommerce product tag',
+				'description'         => sprintf( 'Add one or more new WooCommerce product tag using %s API', $this->wc_namespace ),
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
@@ -778,31 +825,43 @@ class WooProducts {
 			)
 		);
 
+		if ( ! $tag_route ) {
+			return;
+		}
+
+		// Extract dynamic schema for tag update (PUT)
+		$update_tag_schema = RestApiUtils::extract_input_schema( $tag_route, 'PUT' );
+
+		if ( ! $update_tag_schema ) {
+			$update_tag_schema = array(
+				'type'       => 'object',
+				'properties' => array(
+					'id'   => array(
+						'type'        => 'integer',
+						'description' => 'Tag ID',
+					),
+					'name' => array(
+						'type'        => 'string',
+						'description' => 'Tag name',
+					),
+				),
+				'required'   => array( 'id' ),
+			);
+		}
+
 		// Update tag
 		blu_register_ability(
 			'blu/wc-update-product-tag',
 			array(
 				'label'               => 'Update WooCommerce Product Tag',
-				'description'         => 'Update a WooCommerce product tag',
+				'description'         => sprintf( 'Update a WooCommerce product tag using %s API', $this->wc_namespace ),
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
-					'type'       => 'object',
-					'properties' => array(
-						'id'   => array(
-							'type'        => 'integer',
-							'description' => 'Tag ID',
-						),
-						'name' => array(
-							'type'        => 'string',
-							'description' => 'Tag name',
-						),
-					),
-					'required'   => array( 'id' ),
-				),
-				'execute_callback'    => function ( $input ) {
+				'input_schema'        => $update_tag_schema,
+				'execute_callback'    => function ( $input ) use ( $tag_route, $tag_pattern ) {
 					$id = $input['id'];
 					unset( $input['id'] );
-					$request = new \WP_REST_Request( 'PUT', '/wc/v3/products/tags/' . $id );
+					$route   = str_replace( $tag_pattern, (string) $id, $tag_route );
+					$request = new \WP_REST_Request( 'PUT', $route );
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
 
@@ -824,7 +883,7 @@ class WooProducts {
 			'blu/wc-delete-product-tag',
 			array(
 				'label'               => 'Delete WooCommerce Product Tag',
-				'description'         => 'Delete a WooCommerce product tag',
+				'description'         => sprintf( 'Delete a WooCommerce product tag using %s API', $this->wc_namespace ),
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
@@ -836,8 +895,9 @@ class WooProducts {
 					),
 					'required'   => array( 'id' ),
 				),
-				'execute_callback'    => function ( $input ) {
-					$request = new \WP_REST_Request( 'DELETE', '/wc/v3/products/tags/' . $input['id'] );
+				'execute_callback'    => function ( $input ) use ( $tag_route, $tag_pattern ) {
+					$route   = str_replace( $tag_pattern, (string) (int) $input['id'], $tag_route );
+					$request = new \WP_REST_Request( 'DELETE', $route );
 					$request->set_param( 'force', true );
 					$response = rest_do_request( $request );
 
@@ -859,12 +919,21 @@ class WooProducts {
 	 * Register product brand abilities.
 	 */
 	private function register_brand_abilities(): void {
+		$brands_route = RestApiUtils::find_route_by_resource( $this->wc_namespace, 'products/brands' );
+
+		if ( ! $brands_route ) {
+			return;
+		}
+
+		$brand_pattern = '(?P<id>[\d]+)';
+		$brand_route   = RestApiUtils::find_route_by_resource( $this->wc_namespace, 'products/brands/' . $brand_pattern );
+
 		// List brands
 		blu_register_ability(
 			'blu/wc-list-product-brands',
 			array(
 				'label'               => 'List WooCommerce Product Brands',
-				'description'         => 'List all WooCommerce product brands',
+				'description'         => sprintf( 'List all WooCommerce product brands using %s API', $this->wc_namespace ),
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
@@ -877,8 +946,8 @@ class WooProducts {
 						),
 					),
 				),
-				'execute_callback'    => function ( $input ) {
-					$request = new \WP_REST_Request( 'GET', '/wc/v3/products/brands' );
+				'execute_callback'    => function ( $input ) use ( $brands_route ) {
+					$request = new \WP_REST_Request( 'GET', $brands_route );
 					$brands  = array();
 					$page    = 1;
 					do {
@@ -925,7 +994,7 @@ class WooProducts {
 			'blu/wc-add-product-brand',
 			array(
 				'label'               => 'Add WooCommerce Product Brand',
-				'description'         => 'Add one or more new WooCommerce product brand',
+				'description'         => sprintf( 'Add one or more new WooCommerce product brand using %s API', $this->wc_namespace ),
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
@@ -961,31 +1030,43 @@ class WooProducts {
 			)
 		);
 
+		if ( ! $brand_route ) {
+			return;
+		}
+
+		// Extract dynamic schema for brand update (PUT)
+		$update_brand_schema = RestApiUtils::extract_input_schema( $brand_route, 'PUT' );
+
+		if ( ! $update_brand_schema ) {
+			$update_brand_schema = array(
+				'type'       => 'object',
+				'properties' => array(
+					'id'   => array(
+						'type'        => 'integer',
+						'description' => 'Brand ID',
+					),
+					'name' => array(
+						'type'        => 'string',
+						'description' => 'Brand name',
+					),
+				),
+				'required'   => array( 'id' ),
+			);
+		}
+
 		// Update brand
 		blu_register_ability(
 			'blu/wc-update-product-brand',
 			array(
 				'label'               => 'Update WooCommerce Product Brand',
-				'description'         => 'Update a WooCommerce product brand',
+				'description'         => sprintf( 'Update a WooCommerce product brand using %s API', $this->wc_namespace ),
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
-					'type'       => 'object',
-					'properties' => array(
-						'id'   => array(
-							'type'        => 'integer',
-							'description' => 'Brand ID',
-						),
-						'name' => array(
-							'type'        => 'string',
-							'description' => 'Brand name',
-						),
-					),
-					'required'   => array( 'id' ),
-				),
-				'execute_callback'    => function ( $input ) {
+				'input_schema'        => $update_brand_schema,
+				'execute_callback'    => function ( $input ) use ( $brand_route, $brand_pattern ) {
 					$id = $input['id'];
 					unset( $input['id'] );
-					$request = new \WP_REST_Request( 'PUT', '/wc/v3/products/brands/' . $id );
+					$route   = str_replace( $brand_pattern, (string) $id, $brand_route );
+					$request = new \WP_REST_Request( 'PUT', $route );
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
 
@@ -1007,7 +1088,7 @@ class WooProducts {
 			'blu/wc-delete-product-brand',
 			array(
 				'label'               => 'Delete WooCommerce Product Brand',
-				'description'         => 'Delete a WooCommerce product brand',
+				'description'         => sprintf( 'Delete a WooCommerce product brand using %s API', $this->wc_namespace ),
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
@@ -1019,8 +1100,9 @@ class WooProducts {
 					),
 					'required'   => array( 'id' ),
 				),
-				'execute_callback'    => function ( $input ) {
-					$request = new \WP_REST_Request( 'DELETE', '/wc/v3/products/brands/' . $input['id'] );
+				'execute_callback'    => function ( $input ) use ( $brand_route, $brand_pattern ) {
+					$route   = str_replace( $brand_pattern, (string) (int) $input['id'], $brand_route );
+					$request = new \WP_REST_Request( 'DELETE', $route );
 					$request->set_param( 'force', true );
 					$response = rest_do_request( $request );
 
@@ -1040,6 +1122,629 @@ class WooProducts {
 
 
 
+	/**
+	 * Register product attribute abilities.
+	 */
+	private function register_attribute_abilities(): void {
+		$attributes_route = RestApiUtils::find_route_by_resource( $this->wc_namespace, 'products/attributes' );
+
+		if ( ! $attributes_route ) {
+			return;
+		}
+
+		// Extract dynamic schema for attribute list (GET)
+		$list_schema = RestApiUtils::extract_input_schema( $attributes_route, 'GET' );
+
+		if ( ! $list_schema ) {
+			$list_schema = array(
+				'type'       => 'object',
+				'properties' => array(
+					'context' => array(
+						'type'        => 'string',
+						'description' => 'Scope under which the request is made (view or edit)',
+					),
+				),
+			);
+		}
+
+		// List attributes
+		blu_register_ability(
+			'blu/wc-list-product-attributes',
+			array(
+				'label'               => 'List WooCommerce Product Attributes',
+				'description'         => sprintf( 'List all WooCommerce product attributes using %s API', $this->wc_namespace ),
+				'category'            => 'blu-mcp',
+				'input_schema'        => $list_schema,
+				'execute_callback'    => function ( $input = null ) use ( $attributes_route ) {
+					$request = new \WP_REST_Request( 'GET', $attributes_route );
+					if ( $input ) {
+						$request->set_query_params( $input );
+					}
+					$response = rest_do_request( $request );
+					return blu_standardize_rest_response( $response );
+				},
+				'permission_callback' => fn() => current_user_can( 'manage_woocommerce' ),
+				'meta'                => array(
+					'annotations' => array(
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
+					),
+				),
+			)
+		);
+
+		// Extract dynamic schema for attribute creation (POST)
+		$create_schema = RestApiUtils::extract_input_schema( $attributes_route, 'POST' );
+
+		if ( ! $create_schema ) {
+			$create_schema = array(
+				'type'       => 'object',
+				'properties' => array(
+					'name'         => array(
+						'type'        => 'string',
+						'description' => 'Attribute name (e.g. Color, Size)',
+					),
+					'slug'         => array(
+						'type'        => 'string',
+						'description' => 'Unique slug (max 28 characters). Auto-generated if omitted.',
+					),
+					'type'         => array(
+						'type'        => 'string',
+						'description' => 'Attribute type (select, text, etc.)',
+						'default'     => 'select',
+					),
+					'order_by'     => array(
+						'type'        => 'string',
+						'description' => 'Default sort order (menu_order, name, name_num, id)',
+						'default'     => 'menu_order',
+						'enum'        => array( 'menu_order', 'name', 'name_num', 'id' ),
+					),
+					'has_archives' => array(
+						'type'        => 'boolean',
+						'description' => 'Enable attribute archives',
+						'default'     => false,
+					),
+					'terms'        => array(
+						'type'        => 'array',
+						'description' => 'Optional list of term names to create for this attribute (e.g. ["Red","Blue","Green"])',
+						'items'       => array( 'type' => 'string' ),
+					),
+				),
+				'required'   => array( 'name' ),
+			);
+		} else {
+			// Inject the extra `terms` field not present in the WC schema
+			$create_schema['properties']['terms'] = array(
+				'type'        => 'array',
+				'description' => 'Optional list of term names to create for this attribute (e.g. ["Red","Blue","Green"])',
+				'items'       => array( 'type' => 'string' ),
+			);
+		}
+
+		// Add attribute (+ optional terms)
+		blu_register_ability(
+			'blu/wc-add-product-attribute',
+			array(
+				'label'               => 'Add WooCommerce Product Attribute',
+				'description'         => sprintf( 'Create a WooCommerce product attribute and optionally its terms using %s API', $this->wc_namespace ),
+				'category'            => 'blu-mcp',
+				'input_schema'        => $create_schema,
+				'execute_callback'    => function ( $input ) use ( $attributes_route ) {
+					$terms = $input['terms'] ?? array();
+					unset( $input['terms'] );
+
+					$request = new \WP_REST_Request( 'POST', $attributes_route );
+					$request->set_body_params( $input );
+					$response = rest_do_request( $request );
+					$result   = blu_standardize_rest_response( $response );
+
+					if ( ! in_array( $result['statusCode'], array( 200, 201 ), true ) || empty( $terms ) ) {
+						return $result;
+					}
+
+					$attribute_id   = $result['message']['id'];
+					$attribute_slug = $result['message']['slug'] ?? '';
+					$created_terms  = array();
+
+					// A freshly created attribute's pa_* taxonomy is not registered in the
+					// current request context, so the REST terms endpoint returns 404.
+					// Register a minimal taxonomy entry so wp_insert_term() can resolve it.
+					try {
+						if ( $attribute_slug && ! taxonomy_exists( $attribute_slug ) ) {
+							register_taxonomy( $attribute_slug, array( 'product' ) );
+						}
+
+						foreach ( $terms as $term_name ) {
+							$inserted = wp_insert_term( trim( $term_name ), $attribute_slug );
+							if ( ! is_wp_error( $inserted ) ) {
+								$created_terms[] = array(
+									'id'   => $inserted['term_id'],
+									'name' => trim( $term_name ),
+									'slug' => sanitize_title( $term_name ),
+								);
+							} else {
+								$created_terms[] = array(
+									'name'  => trim( $term_name ),
+									'error' => $inserted->get_error_message(),
+								);
+							}
+						}
+					} catch ( \Throwable $e ) {
+						$result['message']['terms_error'] = $e->getMessage();
+						return $result;
+					}
+
+					$result['message']['terms'] = $created_terms;
+					return $result;
+				},
+				'permission_callback' => fn() => current_user_can( 'manage_woocommerce' ),
+				'meta'                => array(
+					'annotations' => array(
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => false,
+					),
+				),
+			)
+		);
+
+		// Find single attribute route
+		$attribute_pattern = '(?P<id>[\d]+)';
+		$attribute_route   = RestApiUtils::find_route_by_resource( $this->wc_namespace, 'products/attributes/' . $attribute_pattern );
+
+		if ( ! $attribute_route ) {
+			return;
+		}
+
+		// Delete attribute
+		blu_register_ability(
+			'blu/wc-delete-product-attribute',
+			array(
+				'label'               => 'Delete WooCommerce Product Attribute',
+				'description'         => sprintf( 'Delete a WooCommerce product attribute and all its terms using %s API', $this->wc_namespace ),
+				'category'            => 'blu-mcp',
+				'input_schema'        => array(
+					'type'       => 'object',
+					'properties' => array(
+						'id' => array(
+							'type'        => 'integer',
+							'description' => 'Attribute ID',
+						),
+					),
+					'required'   => array( 'id' ),
+				),
+				'execute_callback'    => function ( $input ) use ( $attribute_route, $attribute_pattern ) {
+					$route   = str_replace( $attribute_pattern, (string) (int) $input['id'], $attribute_route );
+					$request = new \WP_REST_Request( 'DELETE', $route );
+					$request->set_param( 'force', true );
+					$response = rest_do_request( $request );
+					return blu_standardize_rest_response( $response );
+				},
+				'permission_callback' => fn() => current_user_can( 'manage_woocommerce' ),
+				'meta'                => array(
+					'annotations' => array(
+						'readonly'    => false,
+						'destructive' => true,
+						'idempotent'  => true,
+					),
+				),
+			)
+		);
+
+		// Find attribute terms route
+		$terms_route = RestApiUtils::find_route_by_resource( $this->wc_namespace, 'products/attributes/' . $attribute_pattern . '/terms' );
+
+		if ( ! $terms_route ) {
+			return;
+		}
+
+		// List attribute terms
+		blu_register_ability(
+			'blu/wc-list-attribute-terms',
+			array(
+				'label'               => 'List WooCommerce Attribute Terms',
+				'description'         => sprintf( 'List all terms for a WooCommerce product attribute using %s API', $this->wc_namespace ),
+				'category'            => 'blu-mcp',
+				'input_schema'        => array(
+					'type'       => 'object',
+					'properties' => array(
+						'attribute_id' => array(
+							'type'        => 'integer',
+							'description' => 'Attribute ID',
+						),
+						'search'       => array(
+							'type'        => 'string',
+							'description' => 'Search term by name',
+						),
+						'per_page'     => array(
+							'type'        => 'integer',
+							'description' => 'Results per page',
+						),
+					),
+					'required'   => array( 'attribute_id' ),
+				),
+				'execute_callback'    => function ( $input ) use ( $terms_route, $attribute_pattern ) {
+					$attribute_id = (int) $input['attribute_id'];
+					unset( $input['attribute_id'] );
+
+					$route   = str_replace( $attribute_pattern, (string) $attribute_id, $terms_route );
+					$request = new \WP_REST_Request( 'GET', $route );
+					if ( $input ) {
+						$request->set_query_params( $input );
+					}
+					$response = rest_do_request( $request );
+					return blu_standardize_rest_response( $response );
+				},
+				'permission_callback' => fn() => current_user_can( 'manage_woocommerce' ),
+				'meta'                => array(
+					'annotations' => array(
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
+					),
+				),
+			)
+		);
+
+		// Add attribute term
+		blu_register_ability(
+			'blu/wc-add-attribute-term',
+			array(
+				'label'               => 'Add WooCommerce Attribute Term',
+				'description'         => sprintf( 'Add a term to a WooCommerce product attribute using %s API', $this->wc_namespace ),
+				'category'            => 'blu-mcp',
+				'input_schema'        => array(
+					'type'       => 'object',
+					'properties' => array(
+						'attribute_id' => array(
+							'type'        => 'integer',
+							'description' => 'Attribute ID',
+						),
+						'name'         => array(
+							'type'        => 'string',
+							'description' => 'Term name (e.g. "Red")',
+						),
+						'slug'         => array(
+							'type'        => 'string',
+							'description' => 'Unique slug. Auto-generated if omitted.',
+						),
+						'description'  => array(
+							'type'        => 'string',
+							'description' => 'Term description',
+						),
+						'menu_order'   => array(
+							'type'        => 'integer',
+							'description' => 'Menu order position',
+						),
+					),
+					'required'   => array( 'attribute_id', 'name' ),
+				),
+				'execute_callback'    => function ( $input ) use ( $terms_route, $attribute_pattern ) {
+					$attribute_id = (int) $input['attribute_id'];
+					unset( $input['attribute_id'] );
+
+					$route   = str_replace( $attribute_pattern, (string) $attribute_id, $terms_route );
+					$request = new \WP_REST_Request( 'POST', $route );
+					$request->set_body_params( $input );
+					$response = rest_do_request( $request );
+					return blu_standardize_rest_response( $response );
+				},
+				'permission_callback' => fn() => current_user_can( 'manage_woocommerce' ),
+				'meta'                => array(
+					'annotations' => array(
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => false,
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Register product variation abilities.
+	 */
+	private function register_variation_abilities(): void {
+		$product_pattern    = '(?P<product_id>[\d]+)';
+		$variations_route   = RestApiUtils::find_route_by_resource( $this->wc_namespace, 'products/' . $product_pattern . '/variations' );
+
+		if ( ! $variations_route ) {
+			return;
+		}
+
+		// Extract dynamic schema for variation list (GET)
+		$list_schema = RestApiUtils::extract_input_schema( $variations_route, 'GET' );
+
+		if ( ! $list_schema ) {
+			$list_schema = array(
+				'type'       => 'object',
+				'properties' => array(
+					'product_id'  => array(
+						'type'        => 'integer',
+						'description' => 'Parent product ID',
+					),
+					'page'        => array(
+						'type'        => 'integer',
+						'description' => 'Page number',
+					),
+					'per_page'    => array(
+						'type'        => 'integer',
+						'description' => 'Variations per page',
+					),
+					'status'      => array(
+						'type'        => 'string',
+						'description' => 'Filter by status',
+					),
+					'stock_status' => array(
+						'type'        => 'string',
+						'description' => 'Filter by stock status',
+					),
+				),
+				'required'   => array( 'product_id' ),
+			);
+		} else {
+			// product_id comes from input, not the URL pattern, so we add it manually
+			if ( ! isset( $list_schema['properties'] ) ) {
+				$list_schema['properties'] = array();
+			}
+			$list_schema['properties']['product_id'] = array(
+				'type'        => 'integer',
+				'description' => 'Parent product ID',
+			);
+			$list_schema['required']   = array_merge( $list_schema['required'] ?? array(), array( 'product_id' ) );
+		}
+
+		// List variations
+		blu_register_ability(
+			'blu/wc-list-product-variations',
+			array(
+				'label'               => 'List WooCommerce Product Variations',
+				'description'         => sprintf( 'List all variations for a WooCommerce variable product using %s API', $this->wc_namespace ),
+				'category'            => 'blu-mcp',
+				'input_schema'        => $list_schema,
+				'execute_callback'    => function ( $input ) use ( $variations_route, $product_pattern ) {
+					if ( ! $input || ! isset( $input['product_id'] ) ) {
+						return array(
+							'status'  => 'error',
+							'message' => 'product_id is required',
+						);
+					}
+					$product_id = (int) $input['product_id'];
+					unset( $input['product_id'] );
+
+					$route   = str_replace( $product_pattern, (string) $product_id, $variations_route );
+					$request = new \WP_REST_Request( 'GET', $route );
+					if ( $input ) {
+						$request->set_query_params( $input );
+					}
+					$response = rest_do_request( $request );
+					return blu_standardize_rest_response( $response );
+				},
+				'permission_callback' => fn() => current_user_can( 'edit_products' ),
+				'meta'                => array(
+					'annotations' => array(
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
+					),
+				),
+			)
+		);
+
+		// Extract dynamic schema for variation creation (POST)
+		$create_schema = RestApiUtils::extract_input_schema( $variations_route, 'POST' );
+
+		if ( ! $create_schema ) {
+			$create_schema = array(
+				'type'       => 'object',
+				'properties' => array(
+					'product_id'    => array(
+						'type'        => 'integer',
+						'description' => 'Parent product ID',
+					),
+					'regular_price' => array(
+						'type'        => 'string',
+						'description' => 'Regular price',
+					),
+					'sale_price'    => array(
+						'type'        => 'string',
+						'description' => 'Sale price',
+					),
+					'sku'           => array(
+						'type'        => 'string',
+						'description' => 'Stock Keeping Unit',
+					),
+					'status'        => array(
+						'type'        => 'string',
+						'description' => 'Variation status',
+					),
+					'manage_stock'  => array(
+						'type'        => 'boolean',
+						'description' => 'Enable stock management',
+					),
+					'stock_quantity' => array(
+						'type'        => 'integer',
+						'description' => 'Stock quantity',
+					),
+					'stock_status'  => array(
+						'type'        => 'string',
+						'description' => 'Stock status (instock, outofstock, onbackorder)',
+						'enum'        => array( 'instock', 'outofstock', 'onbackorder' ),
+					),
+					'weight'        => array(
+						'type'        => 'string',
+						'description' => 'Variation weight',
+					),
+					'dimensions'    => array(
+						'type'        => 'object',
+						'description' => 'Variation dimensions',
+						'properties'  => array(
+							'length' => array( 'type' => 'string', 'description' => 'Length' ),
+							'width'  => array( 'type' => 'string', 'description' => 'Width' ),
+							'height' => array( 'type' => 'string', 'description' => 'Height' ),
+						),
+					),
+					'attributes'    => array(
+						'type'        => 'array',
+						'description' => 'Variation attribute values. Each attribute must match a product attribute. Use empty string for "Any".',
+						'items'       => array(
+							'type'       => 'object',
+							'properties' => array(
+								'id'     => array(
+									'type'        => 'integer',
+									'description' => 'Attribute ID (use 0 for custom attributes)',
+								),
+								'name'   => array(
+									'type'        => 'string',
+									'description' => 'Attribute name',
+								),
+								'option' => array(
+									'type'        => 'string',
+									'description' => 'Selected term value (e.g. "Red"). Empty string means "Any".',
+								),
+							),
+						),
+					),
+					'image'         => array(
+						'type'        => 'object',
+						'description' => 'Variation image',
+						'properties'  => array(
+							'id'  => array( 'type' => 'integer', 'description' => 'Image attachment ID' ),
+							'src' => array( 'type' => 'string', 'description' => 'Image URL' ),
+							'alt' => array( 'type' => 'string', 'description' => 'Alt text' ),
+						),
+					),
+					'description'   => array(
+						'type'        => 'string',
+						'description' => 'Variation description',
+					),
+					'virtual'       => array(
+						'type'        => 'boolean',
+						'description' => 'Whether the variation is virtual',
+					),
+					'downloadable'  => array(
+						'type'        => 'boolean',
+						'description' => 'Whether the variation is downloadable',
+					),
+					'tax_class'     => array(
+						'type'        => 'string',
+						'description' => 'Tax class',
+					),
+					'shipping_class' => array(
+						'type'        => 'string',
+						'description' => 'Shipping class slug',
+					),
+				),
+				'required'   => array( 'product_id' ),
+			);
+		} else {
+			if ( ! isset( $create_schema['properties'] ) ) {
+				$create_schema['properties'] = array();
+			}
+			$create_schema['properties']['product_id'] = array(
+				'type'        => 'integer',
+				'description' => 'Parent product ID',
+			);
+			$create_schema['required'] = array_merge( $create_schema['required'] ?? array(), array( 'product_id' ) );
+		}
+
+		// Add variation
+		blu_register_ability(
+			'blu/wc-add-product-variation',
+			array(
+				'label'               => 'Add WooCommerce Product Variation',
+				'description'         => sprintf( 'Create a variation for a WooCommerce variable product using %s API. The parent product must already exist and have attributes configured.', $this->wc_namespace ),
+				'category'            => 'blu-mcp',
+				'input_schema'        => $create_schema,
+				'execute_callback'    => function ( $input ) use ( $variations_route, $product_pattern ) {
+					if ( ! $input || ! isset( $input['product_id'] ) ) {
+						return array(
+							'status'  => 'error',
+							'message' => 'product_id is required',
+						);
+					}
+					$product_id = (int) $input['product_id'];
+					unset( $input['product_id'] );
+
+					$route   = str_replace( $product_pattern, (string) $product_id, $variations_route );
+					$request = new \WP_REST_Request( 'POST', $route );
+					$request->set_body_params( $input );
+					$response = rest_do_request( $request );
+					return blu_standardize_rest_response( $response );
+				},
+				'permission_callback' => fn() => current_user_can( 'edit_products' ),
+				'meta'                => array(
+					'annotations' => array(
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => false,
+					),
+				),
+			)
+		);
+
+		// Find generate variations route
+		$generate_route = RestApiUtils::find_route_by_resource( $this->wc_namespace, 'products/' . $product_pattern . '/variations/generate' );
+
+		if ( ! $generate_route ) {
+			return;
+		}
+
+		// Generate all variations
+		blu_register_ability(
+			'blu/wc-generate-product-variations',
+			array(
+				'label'               => 'Generate WooCommerce Product Variations',
+				'description'         => sprintf( 'Automatically generate all attribute combinations as variations for a WooCommerce variable product using %s API. The product must have variation attributes already set.', $this->wc_namespace ),
+				'category'            => 'blu-mcp',
+				'input_schema'        => array(
+					'type'       => 'object',
+					'properties' => array(
+						'product_id'     => array(
+							'type'        => 'integer',
+							'description' => 'Variable product ID',
+						),
+						'delete'         => array(
+							'type'        => 'boolean',
+							'description' => 'Delete existing unused variations before generating',
+							'default'     => false,
+						),
+						'default_values' => array(
+							'type'        => 'object',
+							'description' => 'Default field values to apply to each generated variation (e.g. {"regular_price":"10.00","stock_status":"instock"})',
+						),
+					),
+					'required'   => array( 'product_id' ),
+				),
+				'execute_callback'    => function ( $input ) use ( $generate_route, $product_pattern ) {
+					if ( ! $input || ! isset( $input['product_id'] ) ) {
+						return array(
+							'status'  => 'error',
+							'message' => 'product_id is required',
+						);
+					}
+					$product_id = (int) $input['product_id'];
+					unset( $input['product_id'] );
+
+					$route   = str_replace( $product_pattern, (string) $product_id, $generate_route );
+					$request = new \WP_REST_Request( 'POST', $route );
+					$request->set_body_params( $input );
+					$response = rest_do_request( $request );
+					return blu_standardize_rest_response( $response );
+				},
+				'permission_callback' => fn() => current_user_can( 'edit_products' ),
+				'meta'                => array(
+					'annotations' => array(
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => false,
+					),
+				),
+			)
+		);
+	}
+
 	// Utilities.
 
 	/**
@@ -1054,7 +1759,7 @@ class WooProducts {
 	private function add_product_taxonomies( $taxonomies, $type = 'categories', $hierarchical = false ) {
 		$hierarchical = 'categories' === $type ? $hierarchical : false;
 		$parent       = 0;
-		$request      = new \WP_REST_Request( 'POST', '/wc/v3/products/' . $type );
+		$request      = new \WP_REST_Request( 'POST', $this->products_route . '/' . $type );
 		$created      = array();
 		$existing     = array();
 		foreach ( $taxonomies as $taxonomy ) {
@@ -1105,7 +1810,7 @@ class WooProducts {
 	 * @return array|array[]
 	 */
 	private function get_product_taxonomy_ids( $product_id, $taxonomy = 'categories' ) {
-		$request  = new \WP_REST_Request( 'GET', '/wc/v3/products/' . $product_id );
+		$request  = new \WP_REST_Request( 'GET', $this->products_route . '/' . $product_id );
 		$response = rest_do_request( $request );
 		$ids      = array();
 		if ( is_wp_error( $response ) ) {
@@ -1134,7 +1839,7 @@ class WooProducts {
 	 * @return array
 	 */
 	private function get_taxonomy( $term_id, $taxonomy = 'categories' ) {
-		$request = new \WP_REST_Request( 'GET', '/wc/v3/products/' . $taxonomy . '/' . $term_id );
+		$request = new \WP_REST_Request( 'GET', $this->products_route . '/' . $taxonomy . '/' . $term_id );
 
 		$response = rest_do_request( $request );
 
