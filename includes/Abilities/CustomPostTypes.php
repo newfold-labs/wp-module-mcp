@@ -41,7 +41,7 @@ class CustomPostTypes {
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type' => 'object',
-					'data'   => array(
+					'properties'   => array(
 							'type'        => 'object',
 							'description' => 'An object containing the native query or body parameters required by the target endpoint. You can use blu-get-function-details to retreive it, if needed.',
 						),
@@ -53,11 +53,10 @@ class CustomPostTypes {
 						return;
 					}
 
-					$data   	= $input['data'] ?? array();
 					$method 	= 'GET';
 					$request  	= new \WP_REST_Request( $method, $root );
 					
-					$request->set_query_params( $data );
+					$request->set_query_params( $input );
 					
 					$response = rest_do_request( $request );
 					
