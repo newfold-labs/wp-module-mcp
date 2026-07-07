@@ -1,6 +1,6 @@
 # BLU MCP
 
-The Bluehost MCP module exposes tools via the **Bluehost MCP Server** at `/wp-json/blu/mcp`. These are WordPress abilities exposed as MCP tools for AI assistants and MCP clients.
+The Bluehost MCP module exposes tools via the **Bluehost MCP Server** at the WordPress REST route `/wp-json/blu/mcp`. These are WordPress abilities exposed as MCP tools for AI assistants and MCP clients.
 
 **Developer documentation:** see **[docs/index.md](docs/index.md)** (table of contents) and **[AGENTS.md](AGENTS.md)** for agents and repo orientation.
 
