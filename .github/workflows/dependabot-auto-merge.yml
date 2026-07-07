@@ -1,9 +1,12 @@
 name: Dependabot Auto-Merge
 on:
   schedule:
-    # Twice a day (06:00 and 18:00 UTC). The sweep is cheap; the second run just
-    # lowers the latency before a freshly-green or freshly-rebased PR is merged.
-    - cron: "0 6,18 * * *"
+    # Dependabot opens this repo's PRs in a tight window around 14:45 UTC, so both
+    # sweeps run after it. 15:30 catches same-day PRs once their CI is green;
+    # 20:00 is a safety net for slow CI and for grouped PRs that Dependabot only
+    # rebases (new head SHA -> new CI) after the first sweep merged a sibling.
+    - cron: "30 15 * * *"
+    - cron: "0 20 * * *"
   workflow_dispatch:
     inputs:
       dry-run:
