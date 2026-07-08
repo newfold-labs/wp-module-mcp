@@ -38,7 +38,7 @@ class Posts {
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
-					'data' => array(
+					'properties' => array(
 						'type'        => 'object',
 						'description' => 'An object containing the native query or body parameters required by the target endpoint. You can use blu-get-function-details to retreive it, if needed.',
 					),
@@ -102,6 +102,7 @@ class Posts {
 					}
 					$method 	= 'GET';
 					$request  	= new \WP_REST_Request( $method, $root . '/' . $input['id'] );
+					$request->set_query_params( $input );
 					$response 	= rest_do_request( $request );
 
 					return blu_standardize_rest_response( $response );
@@ -126,7 +127,7 @@ class Posts {
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
-					'data' => array(
+					'properties' => array(
 						'type'        => 'object',
 						'description' => 'An object containing the native query or body parameters required by the target endpoint. You can use blu-get-function-details to retreive it, if needed.',
 					),
@@ -165,14 +166,14 @@ class Posts {
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
-					'data' => array(
+					'properties' => array(
 						'type'        => 'object',
 						'description' => 'An object containing the native query or body parameters required by the target endpoint. You can use blu-get-function-details to retreive it, if needed.',
 					),
-					'required'   => array( 'data' ),
+					'required'   => array( 'id' ),
 				),
 				'execute_callback'    => function ( $input ) {
-					error_log( 'input: ' . print_r( $input, true ) );
+					
 					if ( empty( $input['id'] ) ) {
 						return;
 					}
@@ -213,15 +214,27 @@ class Posts {
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
-						'id' => array(
-							'type'        => 'integer',
-							'description' => 'Post ID',
-						),
+						'type'        => 'object',
+						'description' => 'An object containing the native query or body parameters required by the target endpoint. You can use blu-get-function-details to retreive it, if needed.',
 					),
 					'required'   => array( 'id' ),
 				),
 				'execute_callback'    => function ( $input ) {
-					$request = new \WP_REST_Request( 'DELETE', '/wp/v2/posts/' . $input['id'] );
+					if ( empty( $input['id'] ) ) {
+						return;
+					}
+
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'posts');
+
+					if ( ! $root ) {
+						return;
+					}
+
+					$id = $input['id'];
+					unset( $input['id'] );
+					$method 	= 'DELETE';
+					$request  	= new \WP_REST_Request( $method, $root . '/' . $id );
+
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
 				},
@@ -249,10 +262,26 @@ class Posts {
 				'description'         => 'List all WordPress post categories',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
-					'type' => 'object',
+					'type'       => 'object',
+					'properties' => array(
+						'type'        => 'object',
+						'description' => 'An object containing the native query or body parameters required by the target endpoint. You can use blu-get-function-details to retreive it, if needed.',
+					),
 				),
-				'execute_callback'    => function () {
-					$request = new \WP_REST_Request( 'GET', '/wp/v2/categories' );
+				'execute_callback'    => function ( $input = null ) {
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'categories');
+
+					if ( ! $root ) {
+						return;
+					}
+
+					$method 	= 'GET';
+					$request  	= new \WP_REST_Request( $method, $root );
+
+					if( $input ) {
+						$request->set_query_params( $input );
+					}
+
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
 				},
@@ -277,23 +306,20 @@ class Posts {
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
-						'name'        => array(
-							'type'        => 'string',
-							'description' => 'Category name',
-						),
-						'description' => array(
-							'type'        => 'string',
-							'description' => 'Category description',
-						),
-						'slug'        => array(
-							'type'        => 'string',
-							'description' => 'Category slug',
-						),
+						'type'        => 'object',
+						'description' => 'An object containing the native query or body parameters required by the target endpoint. You can use blu-get-function-details to retreive it, if needed.',
 					),
 					'required'   => array( 'name' ),
 				),
 				'execute_callback'    => function ( $input ) {
-					$request = new \WP_REST_Request( 'POST', '/wp/v2/categories' );
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'categories');
+
+					if ( ! $root ) {
+						return;
+					}
+
+					$method 	= 'POST';
+					$request  	= new \WP_REST_Request( $method, $root );
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
@@ -319,25 +345,27 @@ class Posts {
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
-						'id'          => array(
-							'type'        => 'integer',
-							'description' => 'Category ID',
-						),
-						'name'        => array(
-							'type'        => 'string',
-							'description' => 'Category name',
-						),
-						'description' => array(
-							'type'        => 'string',
-							'description' => 'Category description',
-						),
+						'type'        => 'object',
+						'description' => 'An object containing the native query or body parameters required by the target endpoint. You can use blu-get-function-details to retreive it, if needed.',
 					),
 					'required'   => array( 'id' ),
 				),
 				'execute_callback'    => function ( $input ) {
+					if ( empty( $input['id'] ) ) {
+						return;
+					}
+
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'categories');
+
+					if ( ! $root ) {
+						return;
+					}
+
 					$id = $input['id'];
 					unset( $input['id'] );
-					$request = new \WP_REST_Request( 'PUT', '/wp/v2/categories/' . $id );
+					$method 	= 'PUT';
+					$request  	= new \WP_REST_Request( $method, $root . '/' . $id );
+
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
@@ -363,15 +391,26 @@ class Posts {
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
-						'id' => array(
-							'type'        => 'integer',
-							'description' => 'Category ID',
-						),
+						'type'        => 'object',
+						'description' => 'An object containing the native query or body parameters required by the target endpoint. You can use blu-get-function-details to retreive it, if needed.',
 					),
 					'required'   => array( 'id' ),
 				),
 				'execute_callback'    => function ( $input ) {
-					$request = new \WP_REST_Request( 'DELETE', '/wp/v2/categories/' . $input['id'] );
+					if ( empty( $input['id'] ) ) {
+						return;
+					}
+
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'categories');
+
+					if ( ! $root ) {
+						return;
+					}
+
+					$id = $input['id'];
+					unset( $input['id'] );
+					$method 	= 'DELETE';
+					$request  	= new \WP_REST_Request( $method, $root . '/' . $id );
 					$request->set_query_params( array( 'force' => true ) );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
@@ -400,10 +439,26 @@ class Posts {
 				'description'         => 'List all WordPress post tags',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
-					'type' => 'object',
+					'type'       => 'object',
+					'properties' => array(
+						'type'        => 'object',
+						'description' => 'An object containing the native query or body parameters required by the target endpoint. You can use blu-get-function-details to retreive it, if needed.',
+					),
 				),
-				'execute_callback'    => function () {
-					$request = new \WP_REST_Request( 'GET', '/wp/v2/tags' );
+				'execute_callback'    => function ( $input = null ) {
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'tags');
+
+					if ( ! $root ) {
+						return;
+					}
+
+					$method 	= 'GET';
+					$request  	= new \WP_REST_Request( $method, $root );
+
+					if( $input ) {
+						$request->set_query_params( $input );
+					}
+
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
 				},
@@ -428,23 +483,20 @@ class Posts {
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
-						'name'        => array(
-							'type'        => 'string',
-							'description' => 'Tag name',
-						),
-						'description' => array(
-							'type'        => 'string',
-							'description' => 'Tag description',
-						),
-						'slug'        => array(
-							'type'        => 'string',
-							'description' => 'Tag slug',
-						),
+						'type'        => 'object',
+						'description' => 'An object containing the native query or body parameters required by the target endpoint. You can use blu-get-function-details to retreive it, if needed.',
 					),
 					'required'   => array( 'name' ),
 				),
 				'execute_callback'    => function ( $input ) {
-					$request = new \WP_REST_Request( 'POST', '/wp/v2/tags' );
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'tags');
+
+					if ( ! $root ) {
+						return;
+					}
+
+					$method 	= 'POST';
+					$request  	= new \WP_REST_Request( $method, $root );
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
@@ -470,25 +522,26 @@ class Posts {
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
-						'id'          => array(
-							'type'        => 'integer',
-							'description' => 'Tag ID',
-						),
-						'name'        => array(
-							'type'        => 'string',
-							'description' => 'Tag name',
-						),
-						'description' => array(
-							'type'        => 'string',
-							'description' => 'Tag description',
-						),
+						'type'        => 'object',
+						'description' => 'An object containing the native query or body parameters required by the target endpoint. You can use blu-get-function-details to retreive it, if needed.',
 					),
 					'required'   => array( 'id' ),
 				),
 				'execute_callback'    => function ( $input ) {
+					if ( empty( $input['id'] ) ) {
+						return;
+					}
+
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'tags');
+
+					if ( ! $root ) {
+						return;
+					}
+
 					$id = $input['id'];
 					unset( $input['id'] );
-					$request = new \WP_REST_Request( 'PUT', '/wp/v2/tags/' . $id );
+					$method 	= 'PUT';
+					$request  	= new \WP_REST_Request( $method, $root . '/' . $id );
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
@@ -514,15 +567,26 @@ class Posts {
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
-						'id' => array(
-							'type'        => 'integer',
-							'description' => 'Tag ID',
-						),
+						'type'        => 'object',
+						'description' => 'An object containing the native query or body parameters required by the target endpoint. You can use blu-get-function-details to retreive it, if needed.',
 					),
 					'required'   => array( 'id' ),
 				),
 				'execute_callback'    => function ( $input ) {
-					$request = new \WP_REST_Request( 'DELETE', '/wp/v2/tags/' . $input['id'] );
+					if ( empty( $input['id'] ) ) {
+						return;
+					}
+
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'tags');
+
+					if ( ! $root ) {
+						return;
+					}
+
+					$id = $input['id'];
+					unset( $input['id'] );
+					$method 	= 'DELETE';
+					$request  	= new \WP_REST_Request( $method, $root . '/' . $id );
 					$request->set_query_params( array( 'force' => true ) );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );

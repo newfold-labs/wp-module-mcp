@@ -473,21 +473,25 @@ class WooProducts {
 		$category_pattern = '(?P<id>[\d]+)';
 		$category_route   = RestApiUtils::find_route_by_resource( $this->wc_namespace, 'products/categories/' . $category_pattern );
 
+		$default_schema = array(
+			'type'       => 'object',
+			'properties' => array(
+				'patterns' => array(
+					'type'        => 'array',
+					'description' => 'List of relevant categories and regex based on product name',
+					'items'       => array( 'type' => 'string' ),
+					'maxItems'    => 5,
+				),
+			),
+		);
 		// List categories
 		$list_schema = RestApiUtils::extract_input_schema( $categories_route, 'GET' );
 
+
 		if ( ! $list_schema ) {
-			$list_schema = array(
-				'type'       => 'object',
-				'properties' => array(
-					'patterns' => array(
-						'type'        => 'array',
-						'description' => 'List of relevant categories and regex based on product name',
-						'items'       => array( 'type' => 'string' ),
-						'maxItems'    => 5,
-					),
-				),
-			);
+			$list_schema = $default_schema;
+		}else{
+			$list_schema['properties']['patterns'] = $default_schema['properties']['patterns'];
 		}
 
 		blu_register_ability(
@@ -723,6 +727,27 @@ class WooProducts {
 		$tag_pattern = '(?P<id>[\d]+)';
 		$tag_route   = RestApiUtils::find_route_by_resource( $this->wc_namespace, 'products/tags/' . $tag_pattern );
 
+
+		$default_schema = array(
+			'type'       => 'object',
+			'properties' => array(
+				'patterns' => array(
+					'type'        => 'array',
+					'description' => 'List of relevant tags and regex based on product name',
+					'items'       => array( 'type' => 'string' ),
+					'maxItems'    => 5,
+				),
+			),
+		);
+		// List tags
+		$list_schema = RestApiUtils::extract_input_schema( $tags_route, 'GET' );
+
+
+		if ( ! $list_schema ) {
+			$list_schema = $default_schema;
+		}else{
+			$list_schema['properties']['patterns'] = $default_schema['properties']['patterns'];
+		}
 		// List tags
 		blu_register_ability(
 			'blu/wc-list-product-tags',
@@ -730,17 +755,7 @@ class WooProducts {
 				'label'               => 'List WooCommerce Product Tags',
 				'description'         => sprintf( 'List all WooCommerce product tags using %s API', $this->wc_namespace ),
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
-					'type'       => 'object',
-					'properties' => array(
-						'patterns' => array(
-							'type'        => 'array',
-							'description' => 'List of relevant tags based on product name, product description and product category',
-							'items'       => array( 'type' => 'string' ),
-							'maxItems'    => 5,
-						),
-					),
-				),
+				'input_schema'        => $list_schema,
 				'execute_callback'    => function ( $input ) use ( $tags_route ) {
 					$page    = 1;
 					$tags    = array();
@@ -928,6 +943,26 @@ class WooProducts {
 		$brand_pattern = '(?P<id>[\d]+)';
 		$brand_route   = RestApiUtils::find_route_by_resource( $this->wc_namespace, 'products/brands/' . $brand_pattern );
 
+		$default_schema = array(
+			'type'       => 'object',
+			'properties' => array(
+				'patterns' => array(
+					'type'        => 'array',
+					'description' => 'List of relevant brands and regex based on product name',
+					'items'       => array( 'type' => 'string' ),
+					'maxItems'    => 5,
+				),
+			),
+		);
+		// List brands
+		$list_schema = RestApiUtils::extract_input_schema( $brands_route, 'GET' );
+
+
+		if ( ! $list_schema ) {
+			$list_schema = $default_schema;
+		}else{
+			$list_schema['properties']['patterns'] = $default_schema['properties']['patterns'];
+		}
 		// List brands
 		blu_register_ability(
 			'blu/wc-list-product-brands',
@@ -935,17 +970,7 @@ class WooProducts {
 				'label'               => 'List WooCommerce Product Brands',
 				'description'         => sprintf( 'List all WooCommerce product brands using %s API', $this->wc_namespace ),
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
-					'type'       => 'object',
-					'properties' => array(
-						'patterns' => array(
-							'type'        => 'array',
-							'description' => 'List of relevant brands based on product name, product description and product category',
-							'items'       => array( 'type' => 'string' ),
-							'maxItems'    => 5,
-						),
-					),
-				),
+				'input_schema'        => $list_schema,
 				'execute_callback'    => function ( $input ) use ( $brands_route ) {
 					$request = new \WP_REST_Request( 'GET', $brands_route );
 					$brands  = array();
@@ -1332,6 +1357,7 @@ class WooProducts {
 			)
 		);
 
+		$attribute_pattern = '(?P<attribute_id>[\d]+)';
 		// Find attribute terms route
 		$terms_route = RestApiUtils::find_route_by_resource( $this->wc_namespace, 'products/attributes/' . $attribute_pattern . '/terms' );
 
@@ -1339,6 +1365,7 @@ class WooProducts {
 			return;
 		}
 
+		$list_schema  = RestApiUtils::extract_input_schema( $terms_route, 'GET' );
 		// List attribute terms
 		blu_register_ability(
 			'blu/wc-list-attribute-terms',
@@ -1346,24 +1373,7 @@ class WooProducts {
 				'label'               => 'List WooCommerce Attribute Terms',
 				'description'         => sprintf( 'List all terms for a WooCommerce product attribute using %s API', $this->wc_namespace ),
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
-					'type'       => 'object',
-					'properties' => array(
-						'attribute_id' => array(
-							'type'        => 'integer',
-							'description' => 'Attribute ID',
-						),
-						'search'       => array(
-							'type'        => 'string',
-							'description' => 'Search term by name',
-						),
-						'per_page'     => array(
-							'type'        => 'integer',
-							'description' => 'Results per page',
-						),
-					),
-					'required'   => array( 'attribute_id' ),
-				),
+				'input_schema'        => $list_schema,
 				'execute_callback'    => function ( $input ) use ( $terms_route, $attribute_pattern ) {
 					$attribute_id = (int) $input['attribute_id'];
 					unset( $input['attribute_id'] );
@@ -1387,6 +1397,7 @@ class WooProducts {
 			)
 		);
 
+		$create_schema  = RestApiUtils::extract_input_schema( $terms_route, 'POST' );
 		// Add attribute term
 		blu_register_ability(
 			'blu/wc-add-attribute-term',
@@ -1394,32 +1405,7 @@ class WooProducts {
 				'label'               => 'Add WooCommerce Attribute Term',
 				'description'         => sprintf( 'Add a term to a WooCommerce product attribute using %s API', $this->wc_namespace ),
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
-					'type'       => 'object',
-					'properties' => array(
-						'attribute_id' => array(
-							'type'        => 'integer',
-							'description' => 'Attribute ID',
-						),
-						'name'         => array(
-							'type'        => 'string',
-							'description' => 'Term name (e.g. "Red")',
-						),
-						'slug'         => array(
-							'type'        => 'string',
-							'description' => 'Unique slug. Auto-generated if omitted.',
-						),
-						'description'  => array(
-							'type'        => 'string',
-							'description' => 'Term description',
-						),
-						'menu_order'   => array(
-							'type'        => 'integer',
-							'description' => 'Menu order position',
-						),
-					),
-					'required'   => array( 'attribute_id', 'name' ),
-				),
+				'input_schema'        => $create_schema,
 				'execute_callback'    => function ( $input ) use ( $terms_route, $attribute_pattern ) {
 					$attribute_id = (int) $input['attribute_id'];
 					unset( $input['attribute_id'] );
