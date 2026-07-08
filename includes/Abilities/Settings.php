@@ -9,6 +9,14 @@ namespace BLU\Abilities;
 class Settings {
 
 	/**
+	 * Base REST API namespace used to discover the latest versioned namespace.
+	 *
+	 * @var string
+	 */
+	private string $base_namespace = 'wp';
+
+
+	/**
 	 * Constructor - registers settings abilities.
 	 */
 	public function __construct() {
@@ -28,9 +36,24 @@ class Settings {
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type' => 'object',
+					'properties'   => array(
+						'type'        => 'object',
+						'description' => 'An object containing the native query or body parameters required by the target endpoint. You can use blu-get-function-details to retreive it, if needed.',
+					),
 				),
-				'execute_callback'    => function () {
-					$request = new \WP_REST_Request( 'GET', '/wp/v2/settings' );
+				'execute_callback'    => function ( $input = null) {
+
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'settings' );
+
+					if ( ! $root ) {
+						return;
+					}
+
+					$method 	= 'GET';
+					$request  	= new \WP_REST_Request( $method, $root );
+
+					$request->set_query_params( $input );
+
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
 				},
@@ -53,64 +76,22 @@ class Settings {
 				'description'         => 'Update WordPress general site settings',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
-					'type'       => 'object',
-					'properties' => array(
-						'title'                  => array(
-							'type'        => 'string',
-							'description' => 'Site title',
-						),
-						'description'            => array(
-							'type'        => 'string',
-							'description' => 'Site tagline/description',
-						),
-						'timezone_string'        => array(
-							'type'        => 'string',
-							'description' => 'Site timezone',
-						),
-						'date_format'            => array(
-							'type'        => 'string',
-							'description' => 'Date format',
-						),
-						'time_format'            => array(
-							'type'        => 'string',
-							'description' => 'Time format',
-						),
-						'start_of_week'          => array(
-							'type'        => 'integer',
-							'description' => 'Start of week (0 = Sunday, 1 = Monday, etc.)',
-						),
-						'language'               => array(
-							'type'        => 'string',
-							'description' => 'Site language',
-						),
-						'use_smilies'            => array(
-							'type'        => 'boolean',
-							'description' => 'Convert emoticons to graphics',
-						),
-						'default_category'       => array(
-							'type'        => 'integer',
-							'description' => 'Default post category',
-						),
-						'default_post_format'    => array(
-							'type'        => 'string',
-							'description' => 'Default post format',
-						),
-						'posts_per_page'         => array(
-							'type'        => 'integer',
-							'description' => 'Number of posts to show per page',
-						),
-						'default_comment_status' => array(
-							'type'        => 'string',
-							'description' => 'Default comment status (open/closed)',
-						),
-						'default_ping_status'    => array(
-							'type'        => 'string',
-							'description' => 'Default ping status (open/closed)',
-						),
+					'type' => 'object',
+					'properties'   => array(
+						'type'        => 'object',
+						'description' => 'An object containing the native query or body parameters required by the target endpoint. Use blu-get-function-details to retrieve it, if needed.',
 					),
 				),
 				'execute_callback'    => function ( $input = null ) {
-					$request = new \WP_REST_Request( 'POST', '/wp/v2/settings' );
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'settings' );
+
+					if ( ! $root ) {
+						return;
+					}
+
+					$method 	= 'POST';
+					$request  	= new \WP_REST_Request( $method, $root );
+
 					if ( $input ) {
 						$request->set_body_params( $input );
 					}
