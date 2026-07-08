@@ -490,3 +490,4 @@ if ( ! function_exists( 'blu_filter_terms_by_patterns' ) ) {
 		}
 	}
 }
+

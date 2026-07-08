@@ -9,6 +9,13 @@ namespace BLU\Abilities;
 class Users {
 
 	/**
+	 * Base REST API namespace used to discover the latest versioned namespace.
+	 *
+	 * @var string
+	 */
+	private string $base_namespace = 'wp';
+
+	/**
 	 * Constructor - registers all user-related abilities.
 	 */
 	public function __construct() {
@@ -29,32 +36,25 @@ class Users {
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
-						'search'   => array(
-							'type'        => 'string',
-							'description' => 'Search term',
-						),
-						'page'     => array(
-							'type'        => 'integer',
-							'description' => 'Page number',
-						),
-						'per_page' => array(
-							'type'        => 'integer',
-							'description' => 'Users per page',
-						),
-						'roles'    => array(
-							'type'        => 'array',
-							'description' => 'Limit to users with at least one of these role slugs (WordPress REST collection param `roles`).',
-							'items'       => array(
-								'type' => 'string',
-							),
-						),
+						'type'        => 'object',
+						'description' => 'An object containing the native query or body parameters required by the target endpoint. Use blu-get-function-details to retrieve it, if needed.',
 					),
 				),
 				'execute_callback'    => function ( $input = null ) {
-					$request = new \WP_REST_Request( 'GET', '/wp/v2/users' );
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'users');
+
+					if ( ! $root ) {
+						return blu_standardize_rest_response(
+							new \WP_Error(
+								400,
+								'A valid route for users not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
+							)
+						);
+
+					}
+
+					$request = new \WP_REST_Request( 'GET', $root );
 					$query   = is_array( $input ) ? $input : array();
-					unset( $query['context'] );
-					$query['context'] = 'edit';
 					$request->set_query_params( $query );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
@@ -89,8 +89,18 @@ class Users {
 				),
 				'execute_callback'    => function ( $input ) {
 					$user_id = (int) $input['id'];
-					$request = new \WP_REST_Request( 'GET', '/wp/v2/users/' . $user_id );
-					$request->set_query_params( array( 'context' => 'edit' ) );
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'users');
+
+					if ( ! $root ) {
+						return blu_standardize_rest_response(
+							new \WP_Error(
+								400,
+								'A valid route for users not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
+							)
+						);
+
+					}
+					$request = new \WP_REST_Request( 'GET', $root.'/' . $user_id );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
 				},
@@ -115,42 +125,27 @@ class Users {
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
-						'username'   => array(
-							'type'        => 'string',
-							'description' => 'Username',
-						),
-						'email'      => array(
-							'type'        => 'string',
-							'description' => 'Email address',
-						),
-						'password'   => array(
-							'type'        => 'string',
-							'description' => 'Password',
-						),
-						'first_name' => array(
-							'type'        => 'string',
-							'description' => 'First name',
-						),
-						'last_name'  => array(
-							'type'        => 'string',
-							'description' => 'Last name',
-						),
-						'roles'      => array(
-							'type'        => 'array',
-							'description' => 'WordPress REST `roles`: one or more role slugs (e.g. ["editor"], ["subscriber"]).',
-							'items'       => array(
-								'type' => 'string',
-							),
-							'minItems'    => 1,
-						),
+						'type'        => 'object',
+						'description' => 'An object containing the native query or body parameters required by the target endpoint. Use blu-get-function-details to retrieve it, if needed.',
 					),
 					'required'   => array( 'username', 'email', 'password', 'roles' ),
 				),
 				'execute_callback'    => function ( $input ) {
-					$request = new \WP_REST_Request( 'POST', '/wp/v2/users' );
-					unset( $input['context'] );
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'users');
+
+					if ( ! $root ) {
+						return blu_standardize_rest_response(
+							new \WP_Error(
+								400,
+								'A valid route for users not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
+							)
+						);
+
+					}
+
+					$request = new \WP_REST_Request( 'POST', $root );
 					$request->set_body_params( $input );
-					$request->set_query_params( array( 'context' => 'edit' ) );
+
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
 				},
@@ -175,39 +170,28 @@ class Users {
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
-						'id'         => array(
-							'type'        => 'integer',
-							'description' => 'User ID',
-						),
-						'email'      => array(
-							'type'        => 'string',
-							'description' => 'Email address',
-						),
-						'first_name' => array(
-							'type'        => 'string',
-							'description' => 'First name',
-						),
-						'last_name'  => array(
-							'type'        => 'string',
-							'description' => 'Last name',
-						),
-						'roles'      => array(
-							'type'        => 'array',
-							'description' => 'WordPress REST `roles` when updating roles; omit if not changing roles.',
-							'items'       => array(
-								'type' => 'string',
-							),
-						),
+						'type'        => 'object',
+						'description' => 'An object containing the native query or body parameters required by the target endpoint. You can use blu-get-function-details to retreive it, if needed.',
 					),
 					'required'   => array( 'id' ),
 				),
 				'execute_callback'    => function ( $input ) {
 					$user_id = (int) $input['id'];
-					unset( $input['id'] );
-					unset( $input['context'] );
-					$request = new \WP_REST_Request( 'PUT', '/wp/v2/users/' . $user_id );
+
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'users');
+
+					if ( ! $root ) {
+						return blu_standardize_rest_response(
+							new \WP_Error(
+								400,
+								'A valid route for users not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
+							)
+						);
+
+					}
+
+					$request = new \WP_REST_Request( 'PUT', $root.'/' . $user_id );
 					$request->set_body_params( $input );
-					$request->set_query_params( array( 'context' => 'edit' ) );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
 				},
@@ -232,23 +216,28 @@ class Users {
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
-						'id'       => array(
-							'type'        => 'integer',
-							'description' => 'User ID',
-						),
-						'reassign' => array(
-							'type'        => 'integer',
-							'description' => 'User ID to reassign posts to; omit or use 0 / false for no reassignment (the REST API always receives a `reassign` value).',
-						),
+						'type'        => 'object',
+						'description' => 'An object containing the native query or body parameters required by the target endpoint. You can use blu-get-function-details to retreive it, if needed.',
 					),
 					'required'   => array( 'id' ),
 				),
 				'execute_callback'    => function ( $input ) {
 					$user_id = (int) $input['id'];
-					$request = new \WP_REST_Request( 'DELETE', '/wp/v2/users/' . $user_id );
-					$reassign = array_key_exists( 'reassign', $input ) ? $input['reassign'] : false;
-					$request->set_param( 'reassign', $reassign );
-					$request->set_param( 'force', true );
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'users');
+
+					if ( ! $root ) {
+						return blu_standardize_rest_response(
+							new \WP_Error(
+								400,
+								'A valid route for users not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
+							)
+						);
+
+					}
+
+					$request = new \WP_REST_Request( 'DELETE', $root.'/' . $user_id );
+					unset( $input['id'] );
+					$request->set_query_params( $input );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
 				},
@@ -272,10 +261,25 @@ class Users {
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type' => 'object',
+					'properties' => array(
+						'type'        => 'object',
+						'description' => 'An object containing the native query or body parameters required by the target endpoint. You can use blu-get-function-details to retreive it, if needed.',
+					),
 				),
 				'execute_callback'    => function () {
-					$request = new \WP_REST_Request( 'GET', '/wp/v2/users/me' );
-					$request->set_query_params( array( 'context' => 'edit' ) );
+
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'users');
+
+					if ( ! $root ) {
+						return blu_standardize_rest_response(
+							new \WP_Error(
+								400,
+								'A valid route for users not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
+							)
+						);
+
+					}
+					$request = new \WP_REST_Request( 'GET',$root.'/me' );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
 				},
@@ -300,27 +304,28 @@ class Users {
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
-						'email'      => array(
-							'type'        => 'string',
-							'description' => 'Email address',
-						),
-						'first_name' => array(
-							'type'        => 'string',
-							'description' => 'First name',
-						),
-						'last_name'  => array(
-							'type'        => 'string',
-							'description' => 'Last name',
-						),
+						'type'        => 'object',
+						'description' => 'An object containing the native query or body parameters required by the target endpoint. You can use blu-get-function-details to retreive it, if needed.',
 					),
 				),
 				'execute_callback'    => function ( $input = null ) {
-					$request = new \WP_REST_Request( 'PUT', '/wp/v2/users/me' );
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'users');
+
+					if ( ! $root ) {
+						return blu_standardize_rest_response(
+							new \WP_Error(
+								400,
+								'A valid route for users not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
+							)
+						);
+
+					}
+
+						$request = new \WP_REST_Request( 'PUT', $root.'/me' );
 					if ( is_array( $input ) ) {
-						unset( $input['context'] );
+
 						$request->set_body_params( $input );
 					}
-					$request->set_query_params( array( 'context' => 'edit' ) );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
 				},
