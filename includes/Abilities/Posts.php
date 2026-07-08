@@ -28,6 +28,7 @@ class Posts {
 	 * Register post abilities.
 	 */
 	private function register_post_abilities(): void {
+
 		// Search/list posts
 		blu_register_ability(
 			'blu/posts-search',
@@ -43,24 +44,22 @@ class Posts {
 					),
 				),
 				'execute_callback'    => function ( $input = null ) {
-					
-					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'posts' );
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'posts');
 
 					if ( ! $root ) {
 						return;
 					}
 
-					$data   	= $input['data'] ?? array();
 					$method 	= 'GET';
 					$request  	= new \WP_REST_Request( $method, $root );
 
 					$all_statuses = 'publish,future,draft,pending,private';
 					if ( $input ) {
 						// Default to all statuses when not specified or empty (WP defaults to publish only).
-						if ( ! isset( $data['status'] ) || '' === $data['status'] ) {
-							$data['status'] = $all_statuses;
+						if ( ! isset( $input['status'] ) || '' === $input['status'] ) {
+							$input['status'] = $all_statuses;
 						}
-						$request->set_query_params( $data );
+						$request->set_query_params( $input );
 					} else {
 						$request->set_param( 'status', $all_statuses );
 					}
@@ -96,8 +95,15 @@ class Posts {
 					'required'   => array( 'id' ),
 				),
 				'execute_callback'    => function ( $input ) {
-					$request = new \WP_REST_Request( 'GET', '/wp/v2/posts/' . $input['id'] );
-					$response = rest_do_request( $request );
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'posts');
+
+					if ( ! $root ) {
+						return;
+					}
+					$method 	= 'GET';
+					$request  	= new \WP_REST_Request( $method, $root . '/' . $input['id'] );
+					$response 	= rest_do_request( $request );
+
 					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
@@ -120,28 +126,21 @@ class Posts {
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
-					'properties' => array(
-						'title'   => array(
-							'type'        => 'string',
-							'description' => 'Post title',
-						),
-						'content' => array(
-							'type'        => 'string',
-							'description' => 'Post content in Gutenberg block format',
-						),
-						'excerpt' => array(
-							'type'        => 'string',
-							'description' => 'Post excerpt',
-						),
-						'status'  => array(
-							'type'        => 'string',
-							'description' => 'Post status (publish, draft, etc.)',
-						),
+					'data' => array(
+						'type'        => 'object',
+						'description' => 'An object containing the native query or body parameters required by the target endpoint. You can use blu-get-function-details to retreive it, if needed.',
 					),
 					'required'   => array( 'title', 'content' ),
 				),
 				'execute_callback'    => function ( $input ) {
-					$request = new \WP_REST_Request( 'POST', '/wp/v2/posts' );
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'posts');
+
+					if ( ! $root ) {
+						return;
+					}
+
+					$method 	= 'POST';
+					$request  	= new \WP_REST_Request( $method, $root );
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
@@ -166,34 +165,29 @@ class Posts {
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
-					'properties' => array(
-						'id'      => array(
-							'type'        => 'integer',
-							'description' => 'Post ID',
-						),
-						'title'   => array(
-							'type'        => 'string',
-							'description' => 'Post title',
-						),
-						'content' => array(
-							'type'        => 'string',
-							'description' => 'Post content',
-						),
-						'excerpt' => array(
-							'type'        => 'string',
-							'description' => 'Post excerpt',
-						),
-						'status'  => array(
-							'type'        => 'string',
-							'description' => 'Post status',
-						),
+					'data' => array(
+						'type'        => 'object',
+						'description' => 'An object containing the native query or body parameters required by the target endpoint. You can use blu-get-function-details to retreive it, if needed.',
 					),
-					'required'   => array( 'id' ),
+					'required'   => array( 'data' ),
 				),
 				'execute_callback'    => function ( $input ) {
+					error_log( 'input: ' . print_r( $input, true ) );
+					if ( empty( $input['id'] ) ) {
+						return;
+					}
+
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'posts');
+
+					if ( ! $root ) {
+						return;
+					}
+
 					$id = $input['id'];
 					unset( $input['id'] );
-					$request = new \WP_REST_Request( 'PUT', '/wp/v2/posts/' . $id );
+					$method 	= 'PUT';
+					$request  	= new \WP_REST_Request( $method, $root . '/' . $id );
+					
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
