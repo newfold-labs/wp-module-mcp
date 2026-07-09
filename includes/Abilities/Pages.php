@@ -9,6 +9,13 @@ namespace BLU\Abilities;
 class Pages {
 
 	/**
+	 * Base REST API namespace used to discover the latest versioned namespace.
+	 *
+	 * @var string
+	 */
+	private string $base_namespace = 'wp';
+
+	/**
 	 * Constructor - registers all page-related abilities.
 	 */
 	public function __construct() {
@@ -29,26 +36,25 @@ class Pages {
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
-						'search'   => array(
-							'type'        => 'string',
-							'description' => 'Search term',
-						),
-						'status'   => array(
-							'type'        => 'string',
-							'description' => 'Page status(es): publish, draft, pending, future, private. Comma-separated for multiple. Omit to search all statuses.',
-						),
-						'page'     => array(
-							'type'        => 'integer',
-							'description' => 'Page number',
-						),
-						'per_page' => array(
-							'type'        => 'integer',
-							'description' => 'Pages per page',
-						),
+						'type'        => 'object',
+						'description' => 'An object containing the native query or body parameters required by the target endpoint. You can use blu-get-function-details to retreive it, if needed.',
 					),
 				),
 				'execute_callback'    => function ( $input = null ) {
-					$request = new \WP_REST_Request( 'GET', '/wp/v2/pages' );
+
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'pages');
+
+					if ( ! $root ) {
+						return blu_standardize_rest_response(
+							new \WP_Error(
+								400,
+								'A valid route for pages not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
+							)
+						);
+
+					}
+
+					$request = new \WP_REST_Request( 'GET',$root );
 					$all_statuses = 'publish,future,draft,pending,private';
 					if ( $input ) {
 						// Default to all statuses when not specified or empty (WP defaults to publish only).
@@ -91,7 +97,19 @@ class Pages {
 					'required'   => array( 'id' ),
 				),
 				'execute_callback'    => function ( $input ) {
-					$request = new \WP_REST_Request( 'GET', '/wp/v2/pages/' . $input['id'] );
+					$id = $input['id'];
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'pages');
+
+					if ( ! $root ) {
+						return blu_standardize_rest_response(
+							new \WP_Error(
+								400,
+								'A valid route for pages not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
+							)
+						);
+
+					}
+					$request = new \WP_REST_Request( 'GET', $root.'/' . $id );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
 				},
@@ -115,36 +133,27 @@ class Pages {
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
-					'properties' => array(
-						'title'   => array(
-							'type'        => 'string',
-							'description' => 'Page title',
-						),
-						'content' => array(
-							'type'        => 'string',
-							'description' => 'Page content in Gutenberg block format',
-						),
-						'excerpt' => array(
-							'type'        => 'string',
-							'description' => 'Page excerpt',
-						),
-						'parent'  => array(
-							'type'        => 'integer',
-							'description' => 'Parent page ID',
-						),
-						'order'   => array(
-							'type'        => 'integer',
-							'description' => 'Page order',
-						),
-						'status'  => array(
-							'type'        => 'string',
-							'description' => 'Page status (publish, draft, etc.)',
-						),
+					'properties'   => array(
+						'type'        => 'object',
+						'description' => 'An object containing the native query or body parameters required by the target endpoint. Use blu-get-function-details to retrieve it, if needed.',
 					),
 					'required'   => array( 'title', 'content' ),
 				),
 				'execute_callback'    => function ( $input ) {
-					$request = new \WP_REST_Request( 'POST', '/wp/v2/pages' );
+
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'pages');
+
+					if ( ! $root ) {
+						return blu_standardize_rest_response(
+							new \WP_Error(
+								400,
+								'A valid route for pages not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
+							)
+						);
+
+					}
+
+					$request = new \WP_REST_Request( 'POST', $root );
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
@@ -169,42 +178,28 @@ class Pages {
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
-					'properties' => array(
-						'id'      => array(
-							'type'        => 'integer',
-							'description' => 'Page ID',
-						),
-						'title'   => array(
-							'type'        => 'string',
-							'description' => 'Page title',
-						),
-						'content' => array(
-							'type'        => 'string',
-							'description' => 'Page content',
-						),
-						'excerpt' => array(
-							'type'        => 'string',
-							'description' => 'Page excerpt',
-						),
-						'parent'  => array(
-							'type'        => 'integer',
-							'description' => 'Parent page ID',
-						),
-						'order'   => array(
-							'type'        => 'integer',
-							'description' => 'Page order',
-						),
-						'status'  => array(
-							'type'        => 'string',
-							'description' => 'Page status',
-						),
+					'properties'   => array(
+						'type'        => 'object',
+						'description' => 'An object containing the native query or body parameters required by the target endpoint. Use blu-get-function-details to retrieve it, if needed.',
 					),
 					'required'   => array( 'id' ),
 				),
 				'execute_callback'    => function ( $input ) {
 					$id = $input['id'];
 					unset( $input['id'] );
-					$request = new \WP_REST_Request( 'PUT', '/wp/v2/pages/' . $id );
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'pages');
+
+					if ( ! $root ) {
+						return blu_standardize_rest_response(
+							new \WP_Error(
+								400,
+								'A valid route for pages not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
+							)
+						);
+
+					}
+
+					$request = new \WP_REST_Request( 'PUT', $root.'/' . $id );
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
@@ -238,7 +233,19 @@ class Pages {
 					'required'   => array( 'id' ),
 				),
 				'execute_callback'    => function ( $input ) {
-					$request = new \WP_REST_Request( 'DELETE', '/wp/v2/pages/' . $input['id'] );
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'pages');
+
+					if ( ! $root ) {
+						return blu_standardize_rest_response(
+							new \WP_Error(
+								400,
+								'A valid route for pages not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
+							)
+						);
+
+					}
+
+					$request = new \WP_REST_Request( 'DELETE', $root.'/' . $input['id'] );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
 				},
