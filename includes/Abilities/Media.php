@@ -9,6 +9,13 @@ namespace BLU\Abilities;
 class Media {
 
 	/**
+	 * Base REST API namespace used to discover the latest versioned namespace.
+	 *
+	 * @var string
+	 */
+	private string $base_namespace = 'wp';
+
+	/**
 	 * Constructor - registers all media-related abilities.
 	 */
 	public function __construct() {
@@ -37,10 +44,40 @@ class Media {
 							'type'        => 'integer',
 							'description' => 'Items per page',
 						),
+						'search'     => array(
+							'type'        => 'string',
+							'description' => 'Search term',
+						),
+						'media_type' => array(
+							'type'        => 'array',
+							'items'       => array(
+								'type' => 'string',
+							),
+							'description' => 'Media type filter (image, video, audio, application)',
+						),
+						'mime_type'  => array(
+							'type'        => 'array',
+							'description' => 'MIME type filter',
+							'items'       => array(
+								'type' => 'string',
+							),
+						),
 					),
 				),
 				'execute_callback'    => function ( $input = null ) {
-					$request = new \WP_REST_Request( 'GET', '/wp/v2/media' );
+
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'media' );
+
+					if ( ! $root ) {
+						return blu_standardize_rest_response(
+							new \WP_Error(
+								400,
+								'A valid route for media not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
+							)
+						);
+
+					}
+					$request = new \WP_REST_Request( 'GET', $root );
 					if ( $input ) {
 						$request->set_query_params( $input );
 					}
@@ -76,7 +113,19 @@ class Media {
 					'required'   => array( 'id' ),
 				),
 				'execute_callback'    => function ( $input ) {
-					$request = new \WP_REST_Request( 'GET', '/wp/v2/media/' . $input['id'] );
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'media' );
+
+					if ( ! $root ) {
+						return blu_standardize_rest_response(
+							new \WP_Error(
+								400,
+								'A valid route for media not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
+							)
+						);
+
+					}
+
+					$request = new \WP_REST_Request( 'GET', $root.'/' . $input['id'] );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
 				},
@@ -281,7 +330,20 @@ class Media {
 				'execute_callback'    => function ( $input ) {
 					$id = $input['id'];
 					unset( $input['id'] );
-					$request = new \WP_REST_Request( 'POST', '/wp/v2/media/' . $id );
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'media' );
+
+					if ( ! $root ) {
+						return blu_standardize_rest_response(
+							new \WP_Error(
+								400,
+								'A valid route for media not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
+							)
+						);
+
+					}
+
+					$request = new \WP_REST_Request( 'GET', $root.'/' . $id );
+
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
@@ -315,7 +377,18 @@ class Media {
 					'required'   => array( 'id' ),
 				),
 				'execute_callback'    => function ( $input ) {
-					$request = new \WP_REST_Request( 'DELETE', '/wp/v2/media/' . $input['id'] );
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'media' );
+
+					if ( ! $root ) {
+						return blu_standardize_rest_response(
+							new \WP_Error(
+								400,
+								'A valid route for media not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
+							)
+						);
+
+					}
+					$request = new \WP_REST_Request( 'DELETE', $root.'/' . $input['id'] );
 					$request->set_param( 'force', true );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
@@ -330,48 +403,6 @@ class Media {
 				),
 			)
 		);
-
-		// Search media
-		blu_register_ability(
-			'blu/search-media',
-			array(
-				'label'               => 'Search Media',
-				'description'         => 'Search WordPress media items by title, caption, or description',
-				'category'            => 'blu-mcp',
-				'input_schema'        => array(
-					'type'       => 'object',
-					'properties' => array(
-						'search'     => array(
-							'type'        => 'string',
-							'description' => 'Search term',
-						),
-						'media_type' => array(
-							'type'        => 'string',
-							'description' => 'Media type filter (image, video, audio, application)',
-						),
-						'mime_type'  => array(
-							'type'        => 'string',
-							'description' => 'MIME type filter',
-						),
-					),
-				),
-				'execute_callback'    => function ( $input = null ) {
-					$request = new \WP_REST_Request( 'GET', '/wp/v2/media' );
-					if ( $input ) {
-						$request->set_query_params( $input );
-					}
-					$response = rest_do_request( $request );
-					return blu_standardize_rest_response( $response );
-				},
-				'permission_callback' => fn() => current_user_can( 'upload_files' ),
-				'meta'                => array(
-					'annotations' => array(
-						'readonly'     => true,
-						'destructive'  => false,
-						'idempotent'   => true,
-					),
-				),
-			)
-		);
+		
 	}
 }
