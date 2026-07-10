@@ -3,6 +3,8 @@ declare( strict_types=1 );
 
 namespace BLU\Abilities;
 
+use BLU\RestControllerSchema\RestControllerSchemaBuilder;
+
 /**
  * Settings abilities for WordPress site settings.
  */
@@ -15,7 +17,6 @@ class Settings {
 	 */
 	private string $base_namespace = 'wp';
 
-
 	/**
 	 * Constructor - registers settings abilities.
 	 */
@@ -27,6 +28,8 @@ class Settings {
 	 * Register settings abilities.
 	 */
 	private function register_abilities(): void {
+		$schemas = RestControllerSchemaBuilder::for_settings();
+
 		// Get settings
 		blu_register_ability(
 			'blu/get-general-settings',
@@ -34,15 +37,8 @@ class Settings {
 				'label'               => 'Get General Settings',
 				'description'         => 'Get WordPress general site settings',
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
-					'type' => 'object',
-					'properties'   => array(
-						'type'        => 'object',
-						'description' => 'An object containing the native query or body parameters required by the target endpoint. You can use blu-get-function-details to retreive it, if needed.',
-					),
-				),
-				'execute_callback'    => function ( $input = null) {
-
+				'input_schema'        => $schemas->empty_object(),
+				'execute_callback'    => function ( $input = null ) {
 					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'settings' );
 
 					if ( ! $root ) {
@@ -52,13 +48,12 @@ class Settings {
 								'A valid route for settings not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
 							)
 						);
-
 					}
 
-					$method 	= 'GET';
-					$request  	= new \WP_REST_Request( $method, $root );
-
-					$request->set_query_params( $input );
+					$request = new \WP_REST_Request( 'GET', $root );
+					if ( is_array( $input ) ) {
+						$request->set_query_params( $input );
+					}
 
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
@@ -66,9 +61,9 @@ class Settings {
 				'permission_callback' => fn() => current_user_can( 'manage_options' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => true,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -81,13 +76,7 @@ class Settings {
 				'label'               => 'Update General Settings',
 				'description'         => 'Update WordPress general site settings',
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
-					'type' => 'object',
-					'properties'   => array(
-						'type'        => 'object',
-						'description' => 'An object containing the native query or body parameters required by the target endpoint. Use blu-get-function-details to retrieve it, if needed.',
-					),
-				),
+				'input_schema'        => $schemas->editable(),
 				'execute_callback'    => function ( $input = null ) {
 					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'settings' );
 
@@ -98,11 +87,9 @@ class Settings {
 								'A valid route for settings not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
 							)
 						);
-
 					}
 
-					$method 	= 'POST';
-					$request  	= new \WP_REST_Request( $method, $root );
+					$request = new \WP_REST_Request( 'POST', $root );
 
 					if ( $input ) {
 						$request->set_body_params( $input );
@@ -113,9 +100,9 @@ class Settings {
 				'permission_callback' => fn() => current_user_can( 'manage_options' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)

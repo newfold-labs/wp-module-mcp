@@ -141,78 +141,128 @@ class RestApiUtils {
 				continue;
 			}
 
-			if ( empty( $endpoint['args'] ) ) {
-				return array(
-					'type'       => 'object',
-					'properties' => array(),
-				);
-			}
-
-			$schema = array(
-				'type'       => 'object',
-				'properties' => array(),
-			);
-
-			$required = array();
-
-			foreach ( $endpoint['args'] as $arg_name => $arg_def ) {
-				$property = array();
-
-				// Map WordPress REST arg types to JSON schema types
-				
-				// Skip context argument, not needed in ability input schema
-				if( 'context' === $arg_name ) {
-					continue;
-				}
-				
-				if ( isset( $arg_def['type'] ) ) {
-					$property['type'] = self::map_rest_type_to_schema_type( $arg_def['type'] );
-				}
-
-				if ( isset( $arg_def['description'] ) ) {
-					$property['description'] = $arg_def['description'];
-				}
-
-				if ( isset( $arg_def['enum'] ) && is_array( $arg_def['enum'] ) ) {
-					$property['enum'] = $arg_def['enum'];
-				}
-
-				if ( isset( $arg_def['minimum'] ) ) {
-					$property['minimum'] = $arg_def['minimum'];
-				}
-
-				if ( isset( $arg_def['maximum'] ) ) {
-					$property['maximum'] = $arg_def['maximum'];
-				}
-
-				if ( isset( $arg_def['format'] ) ) {
-					$property['format'] = $arg_def['format'];
-				}
-
-				if ( isset( $arg_def['items'] ) ) {
-					$property['items'] = $arg_def['items'];
-				}
-
-				if ( isset( $arg_def['default'] ) ) {
-					$property['default'] = $arg_def['default'];
-				}
-
-				$schema['properties'][ $arg_name ] = $property;
-
-				// Track required fields
-				if ( isset( $arg_def['required'] ) && true === $arg_def['required'] ) {
-					$required[] = $arg_name;
-				}
-			}
-
-			if ( ! empty( $required ) ) {
-				$schema['required'] = $required;
-			}
-
-			return $schema;
+			return self::args_to_input_schema( $endpoint['args'] ?? array() );
 		}
 
 		return null;
+	}
+
+	/**
+	 * Convert REST endpoint args to a JSON Schema object.
+	 *
+	 * Used by extract_input_schema() and by controller-based schema builders
+	 * that do not depend on routes being registered yet.
+	 *
+	 * @param array<string, mixed> $args            REST endpoint argument definitions.
+	 * @param bool                 $skip_context    Whether to omit the context parameter.
+	 *
+	 * @return array<string, mixed> JSON schema object.
+	 */
+	public static function args_to_input_schema( array $args, bool $skip_context = true ): array {
+		if ( empty( $args ) ) {
+			return array(
+				'type'       => 'object',
+				'properties' => array(),
+			);
+		}
+
+		$schema = array(
+			'type'       => 'object',
+			'properties' => array(),
+		);
+
+		$required = array();
+
+		foreach ( $args as $arg_name => $arg_def ) {
+			if ( $skip_context && 'context' === $arg_name ) {
+				continue;
+			}
+
+			if ( ! is_array( $arg_def ) ) {
+				continue;
+			}
+
+			$property = array();
+
+			if ( isset( $arg_def['type'] ) ) {
+				$property['type'] = self::map_rest_type_to_schema_type( $arg_def['type'] );
+			}
+
+			if ( isset( $arg_def['description'] ) ) {
+				$property['description'] = $arg_def['description'];
+			}
+
+			if ( isset( $arg_def['enum'] ) && is_array( $arg_def['enum'] ) ) {
+				$property['enum'] = $arg_def['enum'];
+			}
+
+			if ( isset( $arg_def['minimum'] ) ) {
+				$property['minimum'] = $arg_def['minimum'];
+			}
+
+			if ( isset( $arg_def['maximum'] ) ) {
+				$property['maximum'] = $arg_def['maximum'];
+			}
+
+			if ( isset( $arg_def['format'] ) ) {
+				$property['format'] = $arg_def['format'];
+			}
+
+			if ( isset( $arg_def['items'] ) ) {
+				$property['items'] = $arg_def['items'];
+			}
+
+			if ( isset( $arg_def['default'] ) ) {
+				$property['default'] = $arg_def['default'];
+			}
+
+			$schema['properties'][ $arg_name ] = $property;
+
+			if ( isset( $arg_def['required'] ) && true === $arg_def['required'] ) {
+				$required[] = $arg_name;
+			}
+		}
+
+		if ( ! empty( $required ) ) {
+			$schema['required'] = $required;
+		}
+
+		return $schema;
+	}
+
+	/**
+	 * Build an input schema from REST controller endpoint args.
+	 *
+	 * Useful for core WP resources whose routes register late on rest_api_init
+	 * but whose controllers expose args via public methods at any time.
+	 *
+	 * @param array<string, mixed> $args              REST endpoint argument definitions.
+	 * @param array<string, mixed> $extra_properties  Additional JSON schema properties to merge.
+	 * @param string[]             $extra_required    Additional required property names.
+	 * @param bool                 $skip_context      Whether to omit the context parameter.
+	 *
+	 * @return array<string, mixed> JSON schema object.
+	 */
+	public static function schema_from_controller_args(
+		array $args,
+		array $extra_properties = array(),
+		array $extra_required = array(),
+		bool $skip_context = true
+	): array {
+		$schema = self::args_to_input_schema( $args, $skip_context );
+
+		if ( ! empty( $extra_properties ) ) {
+			foreach ( $extra_properties as $name => $property ) {
+				$schema['properties'][ $name ] = $property;
+			}
+		}
+
+		if ( ! empty( $extra_required ) ) {
+			$required = $schema['required'] ?? array();
+			$schema['required'] = array_values( array_unique( array_merge( $required, $extra_required ) ) );
+		}
+
+		return $schema;
 	}
 
 	/**
