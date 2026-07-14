@@ -13,7 +13,7 @@ class Posts {
 	 *
 	 * @var string
 	 */
-	private string $base_namespace = 'wp';
+	private $base_namespace = 'wp';
 
 	/**
 	 * Constructor - registers all post-related abilities.

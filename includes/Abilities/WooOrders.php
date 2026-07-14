@@ -13,7 +13,7 @@ class WooOrders {
 	 *
 	 * @var string
 	 */
-	private string $base_namespace = 'wc';
+	private $base_namespace = 'wc';
 
 	/**
 	 * Constructor - registers WooCommerce order abilities if WooCommerce is active.

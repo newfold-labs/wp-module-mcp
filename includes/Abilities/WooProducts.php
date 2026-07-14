@@ -13,21 +13,21 @@ class WooProducts {
 	 *
 	 * @var string
 	 */
-	private string $base_namespace = 'wc';
+	private $base_namespace = 'wc';
 
 	/**
 	 * Resolved WooCommerce REST API namespace (e.g. "wc/v3").
 	 *
 	 * @var string
 	 */
-	private string $wc_namespace = '';
+	private $wc_namespace = '';
 
 	/**
 	 * Resolved base products route (e.g. "/wc/v3/products").
 	 *
 	 * @var string
 	 */
-	private string $products_route = '';
+	private $products_route = '';
 
 	/**
 	 * Constructor - registers WooCommerce product abilities if WooCommerce is active.
