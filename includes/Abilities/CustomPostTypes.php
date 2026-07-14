@@ -3,6 +3,8 @@ declare( strict_types=1 );
 
 namespace BLU\Abilities;
 
+use BLU\RestControllerSchema\RestControllerSchemaBuilder;
+
 /**
  * CustomPostTypes abilities for WordPress custom post types.
  *
@@ -32,6 +34,7 @@ class CustomPostTypes {
 	 * Register custom post type abilities.
 	 */
 	private function register_abilities(): void {
+		$schema = RestControllerSchemaBuilder::for_cpt();
 		// List post types
 		blu_register_ability(
 			'blu/list-post-types',
@@ -39,18 +42,18 @@ class CustomPostTypes {
 				'label'               => 'List Post Types',
 				'description'         => 'List all registered WordPress post types (built-in and custom). Use this to discover which post type slugs exist before creating or searching items.',
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
-					'type' => 'object',
-					'properties'   => array(
-							'type'        => 'object',
-							'description' => 'An object containing the native query or body parameters required by the target endpoint. You can use blu-get-function-details to retreive it, if needed.',
-						),
-				),
+				'input_schema'        => $schema->collection(),
 				'execute_callback'    => function ( $input ) {
 					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'types' );
 
 					if ( ! $root ) {
-						return;
+						return blu_standardize_rest_response(
+							new \WP_Error(
+								400,
+								'A valid route for types not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
+							)
+						);
+
 					}
 
 					$method 	= 'GET';

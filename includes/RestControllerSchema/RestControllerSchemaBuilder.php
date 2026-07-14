@@ -38,6 +38,17 @@ class RestControllerSchemaBuilder {
 		return new self( $controller );
 	}
 
+
+	/**
+	 * Create a builder from any REST controller.
+	 *
+	 * @param \WP_REST_Controller $controller REST controller instance.
+	 *
+	 * @return self
+	 */
+	public static function for_cpt(): self {
+		return new self( new \WP_REST_Post_Types_Controller() );
+	}
 	/**
 	 * Create a builder for the users REST controller.
 	 *
@@ -74,6 +85,24 @@ class RestControllerSchemaBuilder {
 	 */
 	public static function for_media(): self {
 		return new self( new \WP_REST_Attachments_Controller('attachment') );
+	}
+
+	/**
+	 * Create a builder for the global styles REST controller.
+	 *
+	 * @return self
+	 */
+	public static function for_global_style(): self {
+		return new self( new \WP_REST_Global_Styles_Controller() );
+	}
+
+	/**
+	 * Create a builder for the terms REST controller.
+	 *
+	 * @return self
+	 */
+	public static function for_terms( $term = 'category'): self {
+		return new self( new \WP_REST_Terms_Controller( $term ) );
 	}
 
 	/**

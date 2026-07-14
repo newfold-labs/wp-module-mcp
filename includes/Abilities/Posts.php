@@ -3,6 +3,8 @@ declare( strict_types=1 );
 
 namespace BLU\Abilities;
 
+use BLU\RestControllerSchema\RestControllerSchemaBuilder;
+
 /**
  * Posts abilities for WordPress posts, categories, and tags.
  */
@@ -28,6 +30,7 @@ class Posts {
 	 * Register post abilities.
 	 */
 	private function register_post_abilities(): void {
+		$schema = RestControllerSchemaBuilder::for_post_type('post');
 
 		// Search/list posts
 		blu_register_ability(
@@ -36,18 +39,17 @@ class Posts {
 				'label'               => 'Search Posts',
 				'description'         => 'Search and filter WordPress posts with pagination',
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
-					'type'       => 'object',
-					'properties' => array(
-						'type'        => 'object',
-						'description' => 'An object containing the native query or body parameters required by the target endpoint. You can use blu-get-function-details to retreive it, if needed.',
-					),
-				),
+				'input_schema'        => $schema->collection(),
 				'execute_callback'    => function ( $input = null ) {
 					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'posts');
 
 					if ( ! $root ) {
-						return;
+						return blu_standardize_rest_response(
+							new \WP_Error(
+								400,
+								'A valid route for posts not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
+							)
+						);
 					}
 
 					$method 	= 'GET';
@@ -84,22 +86,19 @@ class Posts {
 				'label'               => 'Get Post',
 				'description'         => 'Get a WordPress post by ID',
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
-					'type'       => 'object',
-					'properties' => array(
-						'id' => array(
-							'type'        => 'integer',
-							'description' => 'Post ID',
-						),
-					),
-					'required'   => array( 'id' ),
-				),
+				'input_schema'        => $schema->get_item(),
 				'execute_callback'    => function ( $input ) {
 					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'posts');
 
 					if ( ! $root ) {
-						return;
+						return blu_standardize_rest_response(
+							new \WP_Error(
+								400,
+								'A valid route for posts not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
+							)
+						);
 					}
+
 					$method 	= 'GET';
 					$request  	= new \WP_REST_Request( $method, $root . '/' . $input['id'] );
 					$request->set_query_params( $input );
@@ -125,19 +124,17 @@ class Posts {
 				'label'               => 'Add Post',
 				'description'         => 'Add a new WordPress post',
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
-					'type'       => 'object',
-					'properties' => array(
-						'type'        => 'object',
-						'description' => 'An object containing the native query or body parameters required by the target endpoint. You can use blu-get-function-details to retreive it, if needed.',
-					),
-					'required'   => array( 'title', 'content' ),
-				),
+				'input_schema'        => $schema->creatable(),
 				'execute_callback'    => function ( $input ) {
 					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'posts');
 
 					if ( ! $root ) {
-						return;
+						return blu_standardize_rest_response(
+							new \WP_Error(
+								400,
+								'A valid route for posts not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
+							)
+						);
 					}
 
 					$method 	= 'POST';
@@ -164,24 +161,18 @@ class Posts {
 				'label'               => 'Update Post',
 				'description'         => 'Update a WordPress post by ID',
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
-					'type'       => 'object',
-					'properties' => array(
-						'type'        => 'object',
-						'description' => 'An object containing the native query or body parameters required by the target endpoint. You can use blu-get-function-details to retreive it, if needed.',
-					),
-					'required'   => array( 'id' ),
-				),
+				'input_schema'        => $schema->update_with_id(),
 				'execute_callback'    => function ( $input ) {
-					
-					if ( empty( $input['id'] ) ) {
-						return;
-					}
 
 					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'posts');
 
 					if ( ! $root ) {
-						return;
+						return blu_standardize_rest_response(
+							new \WP_Error(
+								400,
+								'A valid route for posts not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
+							)
+						);
 					}
 
 					$id = $input['id'];
@@ -211,23 +202,21 @@ class Posts {
 				'label'               => 'Delete Post',
 				'description'         => 'Delete a WordPress post by ID',
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
-					'type'       => 'object',
-					'properties' => array(
-						'type'        => 'object',
-						'description' => 'An object containing the native query or body parameters required by the target endpoint. You can use blu-get-function-details to retreive it, if needed.',
-					),
-					'required'   => array( 'id' ),
+				'input_schema'        => $schema->delete_with_id(
+					RestControllerSchemaBuilder::post_delete_endpoint_args(),
+					array( 'id' ),
+					'Unique identifier for the post.'
 				),
 				'execute_callback'    => function ( $input ) {
-					if ( empty( $input['id'] ) ) {
-						return;
-					}
-
 					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'posts');
 
 					if ( ! $root ) {
-						return;
+						return blu_standardize_rest_response(
+							new \WP_Error(
+								400,
+								'A valid route for posts not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
+							)
+						);
 					}
 
 					$id = $input['id'];
@@ -254,6 +243,7 @@ class Posts {
 	 * Register category abilities.
 	 */
 	private function register_category_abilities(): void {
+		$schema = RestControllerSchemaBuilder::for_terms();
 		// List categories
 		blu_register_ability(
 			'blu/list-categories',
@@ -261,20 +251,18 @@ class Posts {
 				'label'               => 'List Categories',
 				'description'         => 'List all WordPress post categories',
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
-					'type'       => 'object',
-					'properties' => array(
-						'type'        => 'object',
-						'description' => 'An object containing the native query or body parameters required by the target endpoint. You can use blu-get-function-details to retreive it, if needed.',
-					),
-				),
+				'input_schema'        => $schema->collection(),
 				'execute_callback'    => function ( $input = null ) {
 					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'categories');
 
 					if ( ! $root ) {
-						return;
+						return blu_standardize_rest_response(
+							new \WP_Error(
+								400,
+								'A valid route for categories not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
+							)
+						);
 					}
-
 					$method 	= 'GET';
 					$request  	= new \WP_REST_Request( $method, $root );
 
@@ -303,19 +291,17 @@ class Posts {
 				'label'               => 'Add Category',
 				'description'         => 'Add a new WordPress post category',
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
-					'type'       => 'object',
-					'properties' => array(
-						'type'        => 'object',
-						'description' => 'An object containing the native query or body parameters required by the target endpoint. You can use blu-get-function-details to retreive it, if needed.',
-					),
-					'required'   => array( 'name' ),
-				),
+				'input_schema'        => $schema->creatable(),
 				'execute_callback'    => function ( $input ) {
 					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'categories');
 
 					if ( ! $root ) {
-						return;
+						return blu_standardize_rest_response(
+							new \WP_Error(
+								400,
+								'A valid route for categories not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
+							)
+						);
 					}
 
 					$method 	= 'POST';
@@ -342,23 +328,18 @@ class Posts {
 				'label'               => 'Update Category',
 				'description'         => 'Update a WordPress post category',
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
-					'type'       => 'object',
-					'properties' => array(
-						'type'        => 'object',
-						'description' => 'An object containing the native query or body parameters required by the target endpoint. You can use blu-get-function-details to retreive it, if needed.',
-					),
-					'required'   => array( 'id' ),
-				),
+				'input_schema'        => $schema->update_with_id(),
 				'execute_callback'    => function ( $input ) {
-					if ( empty( $input['id'] ) ) {
-						return;
-					}
 
 					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'categories');
 
 					if ( ! $root ) {
-						return;
+						return blu_standardize_rest_response(
+							new \WP_Error(
+								400,
+								'A valid route for categories not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
+							)
+						);
 					}
 
 					$id = $input['id'];
@@ -388,23 +369,17 @@ class Posts {
 				'label'               => 'Delete Category',
 				'description'         => 'Delete a WordPress post category',
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
-					'type'       => 'object',
-					'properties' => array(
-						'type'        => 'object',
-						'description' => 'An object containing the native query or body parameters required by the target endpoint. You can use blu-get-function-details to retreive it, if needed.',
-					),
-					'required'   => array( 'id' ),
-				),
+				'input_schema'        => $schema->delete_with_id( array() ),
 				'execute_callback'    => function ( $input ) {
-					if ( empty( $input['id'] ) ) {
-						return;
-					}
-
 					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'categories');
 
 					if ( ! $root ) {
-						return;
+						return blu_standardize_rest_response(
+							new \WP_Error(
+								400,
+								'A valid route for categories not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
+							)
+						);
 					}
 
 					$id = $input['id'];
@@ -431,6 +406,7 @@ class Posts {
 	 * Register tag abilities.
 	 */
 	private function register_tag_abilities(): void {
+		$schema = RestControllerSchemaBuilder::for_terms('post_tag');
 		// List tags
 		blu_register_ability(
 			'blu/list-tags',
@@ -438,18 +414,17 @@ class Posts {
 				'label'               => 'List Tags',
 				'description'         => 'List all WordPress post tags',
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
-					'type'       => 'object',
-					'properties' => array(
-						'type'        => 'object',
-						'description' => 'An object containing the native query or body parameters required by the target endpoint. You can use blu-get-function-details to retreive it, if needed.',
-					),
-				),
+				'input_schema'        => $schema->collection(),
 				'execute_callback'    => function ( $input = null ) {
 					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'tags');
 
 					if ( ! $root ) {
-						return;
+						return blu_standardize_rest_response(
+							new \WP_Error(
+								400,
+								'A valid route for tags not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
+							)
+						);
 					}
 
 					$method 	= 'GET';
@@ -480,19 +455,17 @@ class Posts {
 				'label'               => 'Add Tag',
 				'description'         => 'Add a new WordPress post tag',
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
-					'type'       => 'object',
-					'properties' => array(
-						'type'        => 'object',
-						'description' => 'An object containing the native query or body parameters required by the target endpoint. You can use blu-get-function-details to retreive it, if needed.',
-					),
-					'required'   => array( 'name' ),
-				),
+				'input_schema'        => $schema->creatable(),
 				'execute_callback'    => function ( $input ) {
 					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'tags');
 
 					if ( ! $root ) {
-						return;
+						return blu_standardize_rest_response(
+							new \WP_Error(
+								400,
+								'A valid route for tags not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
+							)
+						);
 					}
 
 					$method 	= 'POST';
@@ -519,23 +492,18 @@ class Posts {
 				'label'               => 'Update Tag',
 				'description'         => 'Update a WordPress post tag',
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
-					'type'       => 'object',
-					'properties' => array(
-						'type'        => 'object',
-						'description' => 'An object containing the native query or body parameters required by the target endpoint. You can use blu-get-function-details to retreive it, if needed.',
-					),
-					'required'   => array( 'id' ),
-				),
+				'input_schema'        => $schema->update_with_id(),
 				'execute_callback'    => function ( $input ) {
-					if ( empty( $input['id'] ) ) {
-						return;
-					}
 
 					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'tags');
 
 					if ( ! $root ) {
-						return;
+						return blu_standardize_rest_response(
+							new \WP_Error(
+								400,
+								'A valid route for tags not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
+							)
+						);
 					}
 
 					$id = $input['id'];
@@ -564,23 +532,18 @@ class Posts {
 				'label'               => 'Delete Tag',
 				'description'         => 'Delete a WordPress post tag',
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
-					'type'       => 'object',
-					'properties' => array(
-						'type'        => 'object',
-						'description' => 'An object containing the native query or body parameters required by the target endpoint. You can use blu-get-function-details to retreive it, if needed.',
-					),
-					'required'   => array( 'id' ),
-				),
+				'input_schema'        => $schema->delete_with_id( array() ),
 				'execute_callback'    => function ( $input ) {
-					if ( empty( $input['id'] ) ) {
-						return;
-					}
 
 					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'tags');
 
 					if ( ! $root ) {
-						return;
+						return blu_standardize_rest_response(
+							new \WP_Error(
+								400,
+								'A valid route for tags not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
+							)
+						);
 					}
 
 					$id = $input['id'];

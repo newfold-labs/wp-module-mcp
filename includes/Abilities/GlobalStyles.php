@@ -3,6 +3,8 @@ declare( strict_types=1 );
 
 namespace BLU\Abilities;
 
+use BLU\RestControllerSchema\RestControllerSchemaBuilder;
+
 /**
  * Global Styles class
  *
@@ -11,6 +13,13 @@ namespace BLU\Abilities;
  * theme.json configuration and user customizations.
  */
 class GlobalStyles {
+
+	/**
+	 * Base REST API namespace used to discover the latest versioned namespace.
+	 *
+	 * @var string
+	 */
+	private $base_namespace = 'wp';
 
 	/**
 	 * Constructor
@@ -37,25 +46,32 @@ class GlobalStyles {
 	 * @return void
 	 */
 	private function register_get_global_styles(): void {
+		$schema = RestControllerSchemaBuilder::for_global_style();
+
 		blu_register_ability(
 			'blu/get-global-styles',
 			array(
 				'label'               => 'Get Global Styles',
 				'description'         => 'Get a specific global styles configuration by ID. Returns theme.json settings and user customizations including colors, typography, and spacing. Only use this when you need to inspect the current styles — do NOT call this before blu/update-global-styles, which resolves the ID automatically.',
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
-					'type'       => 'object',
-					'properties' => array(
-						'id' => array(
-							'type'        => 'integer',
-							'description' => 'Global styles ID',
-						),
-					),
-					'required'   => array( 'id' ),
-				),
+				'input_schema'        => $schema->get_item(),
 				'execute_callback'    => function ( $input ) {
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'global-styles' );
+
+					if ( ! $root ) {
+						return blu_standardize_rest_response(
+							new \WP_Error(
+								400,
+								'A valid route for global-styles not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
+							)
+						);
+
+					}
+
+					$method   = 'GET';
 					$id       = intval( $input['id'] );
-					$request  = new \WP_REST_Request( 'GET', '/wp/v2/global-styles/' . $id );
+					$root = str_replace( '(?P<id>[\/\d+]+)', '' . $id, $root );
+					$request  = new \WP_REST_Request( $method, $root );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
 				},
@@ -254,8 +270,21 @@ class GlobalStyles {
 		if ( ! $global_styles_id ) {
 			return blu_prepare_ability_response( 500, 'Could not find global styles post' );
 		}
+		$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'global-styles' );
 
-		$request = new \WP_REST_Request( 'POST', '/wp/v2/global-styles/' . $global_styles_id );
+		if ( ! $root ) {
+			return blu_standardize_rest_response(
+				new \WP_Error(
+					400,
+					'A valid route for global-styles not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
+				)
+			);
+
+		}
+
+		$method  = 'POST';
+		$root    = str_replace( '(?P<id>[\/\d+]+)', '' . $global_styles_id, $root );
+		$request = new \WP_REST_Request( $method, $root );
 
 		// Prepare the update data.
 		$data = array();
