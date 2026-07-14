@@ -50,7 +50,13 @@ class CustomPostTypes {
 					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'types' );
 
 					if ( ! $root ) {
-						return;
+						return blu_standardize_rest_response(
+							new \WP_Error(
+								400,
+								'A valid route for types not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
+							)
+						);
+
 					}
 
 					$method 	= 'GET';

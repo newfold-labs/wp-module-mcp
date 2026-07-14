@@ -47,7 +47,13 @@ class Posts {
 					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'posts');
 
 					if ( ! $root ) {
-						return;
+						return blu_standardize_rest_response(
+							new \WP_Error(
+								400,
+								'A valid route for posts not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
+							)
+						);
+
 					}
 
 					$method 	= 'GET';
@@ -98,7 +104,13 @@ class Posts {
 					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'posts');
 
 					if ( ! $root ) {
-						return;
+						return blu_standardize_rest_response(
+							new \WP_Error(
+								400,
+								'A valid route for posts not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
+							)
+						);
+
 					}
 					$method 	= 'GET';
 					$request  	= new \WP_REST_Request( $method, $root . '/' . $input['id'] );
@@ -137,7 +149,13 @@ class Posts {
 					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'posts');
 
 					if ( ! $root ) {
-						return;
+						return blu_standardize_rest_response(
+							new \WP_Error(
+								400,
+								'A valid route for posts not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
+							)
+						);
+
 					}
 
 					$method 	= 'POST';
@@ -173,15 +191,17 @@ class Posts {
 					'required'   => array( 'id' ),
 				),
 				'execute_callback'    => function ( $input ) {
-					
-					if ( empty( $input['id'] ) ) {
-						return;
-					}
 
 					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'posts');
 
 					if ( ! $root ) {
-						return;
+						return blu_standardize_rest_response(
+							new \WP_Error(
+								400,
+								'A valid route for posts not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
+							)
+						);
+
 					}
 
 					$id = $input['id'];
@@ -220,14 +240,16 @@ class Posts {
 					'required'   => array( 'id' ),
 				),
 				'execute_callback'    => function ( $input ) {
-					if ( empty( $input['id'] ) ) {
-						return;
-					}
-
 					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'posts');
 
 					if ( ! $root ) {
-						return;
+						return blu_standardize_rest_response(
+							new \WP_Error(
+								400,
+								'A valid route for posts not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
+							)
+						);
+
 					}
 
 					$id = $input['id'];
@@ -272,9 +294,14 @@ class Posts {
 					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'categories');
 
 					if ( ! $root ) {
-						return;
-					}
+						return blu_standardize_rest_response(
+							new \WP_Error(
+								400,
+								'A valid route for categories not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
+							)
+						);
 
+					}
 					$method 	= 'GET';
 					$request  	= new \WP_REST_Request( $method, $root );
 
@@ -315,7 +342,13 @@ class Posts {
 					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'categories');
 
 					if ( ! $root ) {
-						return;
+						return blu_standardize_rest_response(
+							new \WP_Error(
+								400,
+								'A valid route for categories not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
+							)
+						);
+
 					}
 
 					$method 	= 'POST';
@@ -351,14 +384,17 @@ class Posts {
 					'required'   => array( 'id' ),
 				),
 				'execute_callback'    => function ( $input ) {
-					if ( empty( $input['id'] ) ) {
-						return;
-					}
 
 					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'categories');
 
 					if ( ! $root ) {
-						return;
+						return blu_standardize_rest_response(
+							new \WP_Error(
+								400,
+								'A valid route for categories not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
+							)
+						);
+
 					}
 
 					$id = $input['id'];
@@ -397,14 +433,17 @@ class Posts {
 					'required'   => array( 'id' ),
 				),
 				'execute_callback'    => function ( $input ) {
-					if ( empty( $input['id'] ) ) {
-						return;
-					}
 
 					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'categories');
 
 					if ( ! $root ) {
-						return;
+						return blu_standardize_rest_response(
+							new \WP_Error(
+								400,
+								'A valid route for categories not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
+							)
+						);
+
 					}
 
 					$id = $input['id'];
@@ -449,9 +488,14 @@ class Posts {
 					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'tags');
 
 					if ( ! $root ) {
-						return;
-					}
+						return blu_standardize_rest_response(
+							new \WP_Error(
+								400,
+								'A valid route for tags not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
+							)
+						);
 
+					}
 					$method 	= 'GET';
 					$request  	= new \WP_REST_Request( $method, $root );
 
@@ -492,7 +536,13 @@ class Posts {
 					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'tags');
 
 					if ( ! $root ) {
-						return;
+						return blu_standardize_rest_response(
+							new \WP_Error(
+								400,
+								'A valid route for tags not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
+							)
+						);
+
 					}
 
 					$method 	= 'POST';
@@ -528,14 +578,17 @@ class Posts {
 					'required'   => array( 'id' ),
 				),
 				'execute_callback'    => function ( $input ) {
-					if ( empty( $input['id'] ) ) {
-						return;
-					}
 
 					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'tags');
 
 					if ( ! $root ) {
-						return;
+						return blu_standardize_rest_response(
+							new \WP_Error(
+								400,
+								'A valid route for tags not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
+							)
+						);
+
 					}
 
 					$id = $input['id'];
@@ -573,14 +626,17 @@ class Posts {
 					'required'   => array( 'id' ),
 				),
 				'execute_callback'    => function ( $input ) {
-					if ( empty( $input['id'] ) ) {
-						return;
-					}
 
 					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'tags');
 
 					if ( ! $root ) {
-						return;
+						return blu_standardize_rest_response(
+							new \WP_Error(
+								400,
+								'A valid route for tags not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
+							)
+						);
+
 					}
 
 					$id = $input['id'];

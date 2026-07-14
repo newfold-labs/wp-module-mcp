@@ -278,7 +278,6 @@ class Prompts {
 						'product_id' => array(
 							'type'        => 'integer',
 							'description' => 'Existing WooCommerce product ID. When set, the assistant loads the product and uses its data to build category search patterns.',
-							'minimum'     => 1,
 						),
 						'name'       => array(
 							'type'        => 'string',
