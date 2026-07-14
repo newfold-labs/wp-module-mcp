@@ -35,13 +35,13 @@ class Settings {
 				'description'         => 'Get WordPress general site settings',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
-					'type' => 'object',
-					'properties'   => array(
+					'type'       => 'object',
+					'properties' => array(
 						'type'        => 'object',
 						'description' => 'An object containing the native query or body parameters required by the target endpoint. You can use blu-get-function-details to retreive it, if needed.',
 					),
 				),
-				'execute_callback'    => function ( $input = null) {
+				'execute_callback'    => function ( $input = null ) {
 
 					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'settings' );
 
@@ -55,8 +55,8 @@ class Settings {
 
 					}
 
-					$method 	= 'GET';
-					$request  	= new \WP_REST_Request( $method, $root );
+					$method     = 'GET';
+					$request    = new \WP_REST_Request( $method, $root );
 
 					$request->set_query_params( $input );
 
@@ -66,9 +66,9 @@ class Settings {
 				'permission_callback' => fn() => current_user_can( 'manage_options' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => true,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -82,8 +82,8 @@ class Settings {
 				'description'         => 'Update WordPress general site settings',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
-					'type' => 'object',
-					'properties'   => array(
+					'type'       => 'object',
+					'properties' => array(
 						'type'        => 'object',
 						'description' => 'An object containing the native query or body parameters required by the target endpoint. Use blu-get-function-details to retrieve it, if needed.',
 					),
@@ -101,8 +101,8 @@ class Settings {
 
 					}
 
-					$method 	= 'POST';
-					$request  	= new \WP_REST_Request( $method, $root );
+					$method     = 'POST';
+					$request    = new \WP_REST_Request( $method, $root );
 
 					if ( $input ) {
 						$request->set_body_params( $input );
@@ -113,9 +113,9 @@ class Settings {
 				'permission_callback' => fn() => current_user_can( 'manage_options' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)

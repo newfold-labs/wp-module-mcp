@@ -42,7 +42,7 @@ class Pages {
 				),
 				'execute_callback'    => function ( $input = null ) {
 
-					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'pages');
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'pages' );
 
 					if ( ! $root ) {
 						return blu_standardize_rest_response(
@@ -54,7 +54,7 @@ class Pages {
 
 					}
 
-					$request = new \WP_REST_Request( 'GET',$root );
+					$request = new \WP_REST_Request( 'GET', $root );
 					$all_statuses = 'publish,future,draft,pending,private';
 					if ( $input ) {
 						// Default to all statuses when not specified or empty (WP defaults to publish only).
@@ -98,7 +98,7 @@ class Pages {
 				),
 				'execute_callback'    => function ( $input ) {
 					$id = $input['id'];
-					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'pages');
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'pages' );
 
 					if ( ! $root ) {
 						return blu_standardize_rest_response(
@@ -109,7 +109,7 @@ class Pages {
 						);
 
 					}
-					$request = new \WP_REST_Request( 'GET', $root.'/' . $id );
+					$request = new \WP_REST_Request( 'GET', $root . '/' . $id );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
 				},
@@ -133,7 +133,7 @@ class Pages {
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
-					'properties'   => array(
+					'properties' => array(
 						'type'        => 'object',
 						'description' => 'An object containing the native query or body parameters required by the target endpoint. Use blu-get-function-details to retrieve it, if needed.',
 					),
@@ -141,7 +141,7 @@ class Pages {
 				),
 				'execute_callback'    => function ( $input ) {
 
-					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'pages');
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'pages' );
 
 					if ( ! $root ) {
 						return blu_standardize_rest_response(
@@ -178,7 +178,7 @@ class Pages {
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
-					'properties'   => array(
+					'properties' => array(
 						'type'        => 'object',
 						'description' => 'An object containing the native query or body parameters required by the target endpoint. Use blu-get-function-details to retrieve it, if needed.',
 					),
@@ -187,7 +187,7 @@ class Pages {
 				'execute_callback'    => function ( $input ) {
 					$id = $input['id'];
 					unset( $input['id'] );
-					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'pages');
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'pages' );
 
 					if ( ! $root ) {
 						return blu_standardize_rest_response(
@@ -199,7 +199,7 @@ class Pages {
 
 					}
 
-					$request = new \WP_REST_Request( 'PUT', $root.'/' . $id );
+					$request = new \WP_REST_Request( 'PUT', $root . '/' . $id );
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
@@ -233,7 +233,7 @@ class Pages {
 					'required'   => array( 'id' ),
 				),
 				'execute_callback'    => function ( $input ) {
-					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'pages');
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'pages' );
 
 					if ( ! $root ) {
 						return blu_standardize_rest_response(
@@ -245,7 +245,7 @@ class Pages {
 
 					}
 
-					$request = new \WP_REST_Request( 'DELETE', $root.'/' . $input['id'] );
+					$request = new \WP_REST_Request( 'DELETE', $root . '/' . $input['id'] );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
 				},

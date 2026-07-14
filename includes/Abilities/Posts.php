@@ -44,7 +44,7 @@ class Posts {
 					),
 				),
 				'execute_callback'    => function ( $input = null ) {
-					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'posts');
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'posts' );
 
 					if ( ! $root ) {
 						return blu_standardize_rest_response(
@@ -56,8 +56,8 @@ class Posts {
 
 					}
 
-					$method 	= 'GET';
-					$request  	= new \WP_REST_Request( $method, $root );
+					$method     = 'GET';
+					$request    = new \WP_REST_Request( $method, $root );
 
 					$all_statuses = 'publish,future,draft,pending,private';
 					if ( $input ) {
@@ -101,7 +101,7 @@ class Posts {
 					'required'   => array( 'id' ),
 				),
 				'execute_callback'    => function ( $input ) {
-					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'posts');
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'posts' );
 
 					if ( ! $root ) {
 						return blu_standardize_rest_response(
@@ -112,10 +112,10 @@ class Posts {
 						);
 
 					}
-					$method 	= 'GET';
-					$request  	= new \WP_REST_Request( $method, $root . '/' . $input['id'] );
+					$method     = 'GET';
+					$request    = new \WP_REST_Request( $method, $root . '/' . $input['id'] );
 					$request->set_query_params( $input );
-					$response 	= rest_do_request( $request );
+					$response   = rest_do_request( $request );
 
 					return blu_standardize_rest_response( $response );
 				},
@@ -146,7 +146,7 @@ class Posts {
 					'required'   => array( 'title', 'content' ),
 				),
 				'execute_callback'    => function ( $input ) {
-					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'posts');
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'posts' );
 
 					if ( ! $root ) {
 						return blu_standardize_rest_response(
@@ -158,8 +158,8 @@ class Posts {
 
 					}
 
-					$method 	= 'POST';
-					$request  	= new \WP_REST_Request( $method, $root );
+					$method     = 'POST';
+					$request    = new \WP_REST_Request( $method, $root );
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
@@ -192,7 +192,7 @@ class Posts {
 				),
 				'execute_callback'    => function ( $input ) {
 
-					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'posts');
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'posts' );
 
 					if ( ! $root ) {
 						return blu_standardize_rest_response(
@@ -206,9 +206,9 @@ class Posts {
 
 					$id = $input['id'];
 					unset( $input['id'] );
-					$method 	= 'PUT';
-					$request  	= new \WP_REST_Request( $method, $root . '/' . $id );
-					
+					$method     = 'PUT';
+					$request    = new \WP_REST_Request( $method, $root . '/' . $id );
+
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
@@ -240,7 +240,7 @@ class Posts {
 					'required'   => array( 'id' ),
 				),
 				'execute_callback'    => function ( $input ) {
-					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'posts');
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'posts' );
 
 					if ( ! $root ) {
 						return blu_standardize_rest_response(
@@ -254,8 +254,8 @@ class Posts {
 
 					$id = $input['id'];
 					unset( $input['id'] );
-					$method 	= 'DELETE';
-					$request  	= new \WP_REST_Request( $method, $root . '/' . $id );
+					$method     = 'DELETE';
+					$request    = new \WP_REST_Request( $method, $root . '/' . $id );
 
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
@@ -291,7 +291,7 @@ class Posts {
 					),
 				),
 				'execute_callback'    => function ( $input = null ) {
-					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'categories');
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'categories' );
 
 					if ( ! $root ) {
 						return blu_standardize_rest_response(
@@ -302,10 +302,10 @@ class Posts {
 						);
 
 					}
-					$method 	= 'GET';
-					$request  	= new \WP_REST_Request( $method, $root );
+					$method     = 'GET';
+					$request    = new \WP_REST_Request( $method, $root );
 
-					if( $input ) {
+					if ( $input ) {
 						$request->set_query_params( $input );
 					}
 
@@ -339,7 +339,7 @@ class Posts {
 					'required'   => array( 'name' ),
 				),
 				'execute_callback'    => function ( $input ) {
-					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'categories');
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'categories' );
 
 					if ( ! $root ) {
 						return blu_standardize_rest_response(
@@ -351,8 +351,8 @@ class Posts {
 
 					}
 
-					$method 	= 'POST';
-					$request  	= new \WP_REST_Request( $method, $root );
+					$method     = 'POST';
+					$request    = new \WP_REST_Request( $method, $root );
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
@@ -385,7 +385,7 @@ class Posts {
 				),
 				'execute_callback'    => function ( $input ) {
 
-					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'categories');
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'categories' );
 
 					if ( ! $root ) {
 						return blu_standardize_rest_response(
@@ -399,8 +399,8 @@ class Posts {
 
 					$id = $input['id'];
 					unset( $input['id'] );
-					$method 	= 'PUT';
-					$request  	= new \WP_REST_Request( $method, $root . '/' . $id );
+					$method     = 'PUT';
+					$request    = new \WP_REST_Request( $method, $root . '/' . $id );
 
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
@@ -434,7 +434,7 @@ class Posts {
 				),
 				'execute_callback'    => function ( $input ) {
 
-					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'categories');
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'categories' );
 
 					if ( ! $root ) {
 						return blu_standardize_rest_response(
@@ -448,8 +448,8 @@ class Posts {
 
 					$id = $input['id'];
 					unset( $input['id'] );
-					$method 	= 'DELETE';
-					$request  	= new \WP_REST_Request( $method, $root . '/' . $id );
+					$method     = 'DELETE';
+					$request    = new \WP_REST_Request( $method, $root . '/' . $id );
 					$request->set_query_params( array( 'force' => true ) );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
@@ -485,7 +485,7 @@ class Posts {
 					),
 				),
 				'execute_callback'    => function ( $input = null ) {
-					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'tags');
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'tags' );
 
 					if ( ! $root ) {
 						return blu_standardize_rest_response(
@@ -496,10 +496,10 @@ class Posts {
 						);
 
 					}
-					$method 	= 'GET';
-					$request  	= new \WP_REST_Request( $method, $root );
+					$method     = 'GET';
+					$request    = new \WP_REST_Request( $method, $root );
 
-					if( $input ) {
+					if ( $input ) {
 						$request->set_query_params( $input );
 					}
 
@@ -533,7 +533,7 @@ class Posts {
 					'required'   => array( 'name' ),
 				),
 				'execute_callback'    => function ( $input ) {
-					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'tags');
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'tags' );
 
 					if ( ! $root ) {
 						return blu_standardize_rest_response(
@@ -545,8 +545,8 @@ class Posts {
 
 					}
 
-					$method 	= 'POST';
-					$request  	= new \WP_REST_Request( $method, $root );
+					$method     = 'POST';
+					$request    = new \WP_REST_Request( $method, $root );
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
@@ -579,7 +579,7 @@ class Posts {
 				),
 				'execute_callback'    => function ( $input ) {
 
-					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'tags');
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'tags' );
 
 					if ( ! $root ) {
 						return blu_standardize_rest_response(
@@ -593,8 +593,8 @@ class Posts {
 
 					$id = $input['id'];
 					unset( $input['id'] );
-					$method 	= 'PUT';
-					$request  	= new \WP_REST_Request( $method, $root . '/' . $id );
+					$method     = 'PUT';
+					$request    = new \WP_REST_Request( $method, $root . '/' . $id );
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
@@ -627,7 +627,7 @@ class Posts {
 				),
 				'execute_callback'    => function ( $input ) {
 
-					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'tags');
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'tags' );
 
 					if ( ! $root ) {
 						return blu_standardize_rest_response(
@@ -641,8 +641,8 @@ class Posts {
 
 					$id = $input['id'];
 					unset( $input['id'] );
-					$method 	= 'DELETE';
-					$request  	= new \WP_REST_Request( $method, $root . '/' . $id );
+					$method     = 'DELETE';
+					$request    = new \WP_REST_Request( $method, $root . '/' . $id );
 					$request->set_query_params( array( 'force' => true ) );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );

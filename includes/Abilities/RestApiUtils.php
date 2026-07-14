@@ -103,11 +103,8 @@ class RestApiUtils {
 				if ( $normalized_route === $search_route || $route === $search_route ) {
 					return $route;
 				}
-			} else {
-				// Partial match
-				if ( strpos( $route, $search_route ) === 0 ) {
+			} elseif ( strpos( $route, $search_route ) === 0 ) {
 					return $route;
-				}
 			}
 		}
 
@@ -159,12 +156,12 @@ class RestApiUtils {
 				$property = array();
 
 				// Map WordPress REST arg types to JSON schema types
-				
+
 				// Skip context argument, not needed in ability input schema
-				if( 'context' === $arg_name ) {
+				if ( 'context' === $arg_name ) {
 					continue;
 				}
-				
+
 				if ( isset( $arg_def['type'] ) ) {
 					$property['type'] = self::map_rest_type_to_schema_type( $arg_def['type'] );
 				}
@@ -275,10 +272,10 @@ class RestApiUtils {
 	 * @return array Array of route strings.
 	 */
 	public static function get_routes_for_namespace( string $namespace ): array {
-		$server    = rest_get_server();
+		$server     = rest_get_server();
 		$all_routes = $server->get_routes();
-		$namespace = trim( $namespace, '/' );
-		$routes    = array();
+		$namespace  = trim( $namespace, '/' );
+		$routes     = array();
 
 		foreach ( array_keys( $all_routes ) as $route ) {
 			if ( strpos( ltrim( $route, '/' ), $namespace . '/' ) === 0 ) {

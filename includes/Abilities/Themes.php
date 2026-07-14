@@ -75,7 +75,7 @@ class Themes {
 						);
 
 					}
-					$request = new \WP_REST_Request( 'GET',$root );
+					$request = new \WP_REST_Request( 'GET', $root );
 
 					if ( ! $input ) {
 						$input = array( 'status' => 'active' );

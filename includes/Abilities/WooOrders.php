@@ -97,13 +97,13 @@ class WooOrders {
 		);
 
 		// Find the single order route pattern
-		$order_pattern 	= '(?P<id>[\d]+)';
-		$order_route 	= RestApiUtils::find_route_by_resource( $wc_namespace, 'orders/' . $order_pattern );
-	
+		$order_pattern = '(?P<id>[\d]+)';
+		$order_route   = RestApiUtils::find_route_by_resource( $wc_namespace, 'orders/' . $order_pattern );
+
 		if ( ! $order_route ) {
 			return;
 		}
-	
+
 		// Extract dynamic schema from the REST API for PATCH method
 		$input_schema = RestApiUtils::extract_input_schema( $order_route, 'PUT' );
 
@@ -124,7 +124,7 @@ class WooOrders {
 				'required'   => array( 'id' ),
 			);
 		}
-	
+
 		// Update order
 		blu_register_ability(
 			'blu/wc-update-order',

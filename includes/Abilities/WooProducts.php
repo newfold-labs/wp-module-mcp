@@ -178,33 +178,33 @@ class WooProducts {
 
 		if ( ! $add_schema ) {
 			$add_schema = array(
-				'type'        => 'object',
-				'properties'  => array(
-					'name'                 => array(
+				'type'       => 'object',
+				'properties' => array(
+					'name'              => array(
 						'type'        => 'string',
 						'description' => 'Product name',
 					),
-					'type'                 => array(
+					'type'              => array(
 						'type'        => 'string',
 						'description' => 'Product type',
 					),
-					'description'          => array(
+					'description'       => array(
 						'type'        => 'string',
 						'description' => 'Product description',
 					),
-					'short_description'    => array(
+					'short_description' => array(
 						'type'        => 'string',
 						'description' => 'Product short description',
 					),
-					'regular_price'        => array(
+					'regular_price'     => array(
 						'type'        => 'string',
 						'description' => 'Product price',
 					),
-					'sale_price'           => array(
+					'sale_price'        => array(
 						'type'        => 'string',
 						'description' => 'Product sale price',
 					),
-					'categories'           => array(
+					'categories'        => array(
 						'type'        => 'array',
 						'description' => 'List of categories',
 						'items'       => array(
@@ -217,7 +217,7 @@ class WooProducts {
 							),
 						),
 					),
-					'tags'                 => array(
+					'tags'              => array(
 						'type'        => 'array',
 						'description' => 'List of tags',
 						'items'       => array(
@@ -230,7 +230,7 @@ class WooProducts {
 							),
 						),
 					),
-					'brands'               => array(
+					'brands'            => array(
 						'type'        => 'array',
 						'description' => 'List of brands',
 						'items'       => array(
@@ -243,7 +243,7 @@ class WooProducts {
 							),
 						),
 					),
-					'status'               => array(
+					'status'            => array(
 						'description' => 'Product status (post status).',
 						'type'        => 'string',
 						'default'     => 'draft',
@@ -257,7 +257,7 @@ class WooProducts {
 						),
 					),
 				),
-				'required'    => array( 'name' ),
+				'required'   => array( 'name' ),
 			);
 		}
 
@@ -487,10 +487,9 @@ class WooProducts {
 		// List categories
 		$list_schema = RestApiUtils::extract_input_schema( $categories_route, 'GET' );
 
-
 		if ( ! $list_schema ) {
 			$list_schema = $default_schema;
-		}else{
+		} else {
 			$list_schema['properties']['patterns'] = $default_schema['properties']['patterns'];
 		}
 
@@ -727,7 +726,6 @@ class WooProducts {
 		$tag_pattern = '(?P<id>[\d]+)';
 		$tag_route   = RestApiUtils::find_route_by_resource( $this->wc_namespace, 'products/tags/' . $tag_pattern );
 
-
 		$default_schema = array(
 			'type'       => 'object',
 			'properties' => array(
@@ -742,10 +740,9 @@ class WooProducts {
 		// List tags
 		$list_schema = RestApiUtils::extract_input_schema( $tags_route, 'GET' );
 
-
 		if ( ! $list_schema ) {
 			$list_schema = $default_schema;
-		}else{
+		} else {
 			$list_schema['properties']['patterns'] = $default_schema['properties']['patterns'];
 		}
 		// List tags
@@ -957,10 +954,9 @@ class WooProducts {
 		// List brands
 		$list_schema = RestApiUtils::extract_input_schema( $brands_route, 'GET' );
 
-
 		if ( ! $list_schema ) {
 			$list_schema = $default_schema;
-		}else{
+		} else {
 			$list_schema['properties']['patterns'] = $default_schema['properties']['patterns'];
 		}
 		// List brands
@@ -1365,7 +1361,7 @@ class WooProducts {
 			return;
 		}
 
-		$list_schema  = RestApiUtils::extract_input_schema( $terms_route, 'GET' );
+		$list_schema = RestApiUtils::extract_input_schema( $terms_route, 'GET' );
 		// List attribute terms
 		blu_register_ability(
 			'blu/wc-list-attribute-terms',
@@ -1397,7 +1393,7 @@ class WooProducts {
 			)
 		);
 
-		$create_schema  = RestApiUtils::extract_input_schema( $terms_route, 'POST' );
+		$create_schema = RestApiUtils::extract_input_schema( $terms_route, 'POST' );
 		// Add attribute term
 		blu_register_ability(
 			'blu/wc-add-attribute-term',
@@ -1432,8 +1428,8 @@ class WooProducts {
 	 * Register product variation abilities.
 	 */
 	private function register_variation_abilities(): void {
-		$product_pattern    = '(?P<product_id>[\d]+)';
-		$variations_route   = RestApiUtils::find_route_by_resource( $this->wc_namespace, 'products/' . $product_pattern . '/variations' );
+		$product_pattern  = '(?P<product_id>[\d]+)';
+		$variations_route = RestApiUtils::find_route_by_resource( $this->wc_namespace, 'products/' . $product_pattern . '/variations' );
 
 		if ( ! $variations_route ) {
 			return;
@@ -1446,19 +1442,19 @@ class WooProducts {
 			$list_schema = array(
 				'type'       => 'object',
 				'properties' => array(
-					'product_id'  => array(
+					'product_id'   => array(
 						'type'        => 'integer',
 						'description' => 'Parent product ID',
 					),
-					'page'        => array(
+					'page'         => array(
 						'type'        => 'integer',
 						'description' => 'Page number',
 					),
-					'per_page'    => array(
+					'per_page'     => array(
 						'type'        => 'integer',
 						'description' => 'Variations per page',
 					),
-					'status'      => array(
+					'status'       => array(
 						'type'        => 'string',
 						'description' => 'Filter by status',
 					),
@@ -1478,7 +1474,7 @@ class WooProducts {
 				'type'        => 'integer',
 				'description' => 'Parent product ID',
 			);
-			$list_schema['required']   = array_merge( $list_schema['required'] ?? array(), array( 'product_id' ) );
+			$list_schema['required']                 = array_merge( $list_schema['required'] ?? array(), array( 'product_id' ) );
 		}
 
 		// List variations
@@ -1525,27 +1521,27 @@ class WooProducts {
 			$create_schema = array(
 				'type'       => 'object',
 				'properties' => array(
-					'product_id'    => array(
+					'product_id'     => array(
 						'type'        => 'integer',
 						'description' => 'Parent product ID',
 					),
-					'regular_price' => array(
+					'regular_price'  => array(
 						'type'        => 'string',
 						'description' => 'Regular price',
 					),
-					'sale_price'    => array(
+					'sale_price'     => array(
 						'type'        => 'string',
 						'description' => 'Sale price',
 					),
-					'sku'           => array(
+					'sku'            => array(
 						'type'        => 'string',
 						'description' => 'Stock Keeping Unit',
 					),
-					'status'        => array(
+					'status'         => array(
 						'type'        => 'string',
 						'description' => 'Variation status',
 					),
-					'manage_stock'  => array(
+					'manage_stock'   => array(
 						'type'        => 'boolean',
 						'description' => 'Enable stock management',
 					),
@@ -1553,25 +1549,34 @@ class WooProducts {
 						'type'        => 'integer',
 						'description' => 'Stock quantity',
 					),
-					'stock_status'  => array(
+					'stock_status'   => array(
 						'type'        => 'string',
 						'description' => 'Stock status (instock, outofstock, onbackorder)',
 						'enum'        => array( 'instock', 'outofstock', 'onbackorder' ),
 					),
-					'weight'        => array(
+					'weight'         => array(
 						'type'        => 'string',
 						'description' => 'Variation weight',
 					),
-					'dimensions'    => array(
+					'dimensions'     => array(
 						'type'        => 'object',
 						'description' => 'Variation dimensions',
 						'properties'  => array(
-							'length' => array( 'type' => 'string', 'description' => 'Length' ),
-							'width'  => array( 'type' => 'string', 'description' => 'Width' ),
-							'height' => array( 'type' => 'string', 'description' => 'Height' ),
+							'length' => array(
+								'type'        => 'string',
+								'description' => 'Length',
+							),
+							'width'  => array(
+								'type'        => 'string',
+								'description' => 'Width',
+							),
+							'height' => array(
+								'type'        => 'string',
+								'description' => 'Height',
+							),
 						),
 					),
-					'attributes'    => array(
+					'attributes'     => array(
 						'type'        => 'array',
 						'description' => 'Variation attribute values. Each attribute must match a product attribute. Use empty string for "Any".',
 						'items'       => array(
@@ -1592,28 +1597,37 @@ class WooProducts {
 							),
 						),
 					),
-					'image'         => array(
+					'image'          => array(
 						'type'        => 'object',
 						'description' => 'Variation image',
 						'properties'  => array(
-							'id'  => array( 'type' => 'integer', 'description' => 'Image attachment ID' ),
-							'src' => array( 'type' => 'string', 'description' => 'Image URL' ),
-							'alt' => array( 'type' => 'string', 'description' => 'Alt text' ),
+							'id'  => array(
+								'type'        => 'integer',
+								'description' => 'Image attachment ID',
+							),
+							'src' => array(
+								'type'        => 'string',
+								'description' => 'Image URL',
+							),
+							'alt' => array(
+								'type'        => 'string',
+								'description' => 'Alt text',
+							),
 						),
 					),
-					'description'   => array(
+					'description'    => array(
 						'type'        => 'string',
 						'description' => 'Variation description',
 					),
-					'virtual'       => array(
+					'virtual'        => array(
 						'type'        => 'boolean',
 						'description' => 'Whether the variation is virtual',
 					),
-					'downloadable'  => array(
+					'downloadable'   => array(
 						'type'        => 'boolean',
 						'description' => 'Whether the variation is downloadable',
 					),
-					'tax_class'     => array(
+					'tax_class'      => array(
 						'type'        => 'string',
 						'description' => 'Tax class',
 					),
@@ -1632,7 +1646,7 @@ class WooProducts {
 				'type'        => 'integer',
 				'description' => 'Parent product ID',
 			);
-			$create_schema['required'] = array_merge( $create_schema['required'] ?? array(), array( 'product_id' ) );
+			$create_schema['required']                 = array_merge( $create_schema['required'] ?? array(), array( 'product_id' ) );
 		}
 
 		// Add variation

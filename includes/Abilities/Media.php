@@ -36,11 +36,11 @@ class Media {
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
-						'page'     => array(
+						'page'       => array(
 							'type'        => 'integer',
 							'description' => 'Page number',
 						),
-						'per_page' => array(
+						'per_page'   => array(
 							'type'        => 'integer',
 							'description' => 'Items per page',
 						),
@@ -87,9 +87,9 @@ class Media {
 				'permission_callback' => fn() => current_user_can( 'upload_files' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => true,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -125,16 +125,16 @@ class Media {
 
 					}
 
-					$request = new \WP_REST_Request( 'GET', $root.'/' . $input['id'] );
+					$request = new \WP_REST_Request( 'GET', $root . '/' . $input['id'] );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'upload_files' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => true,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -187,18 +187,21 @@ class Media {
 					$mime_type = get_post_mime_type( $id );
 					$file_data = file_get_contents( $file_path );
 
-					return blu_prepare_ability_response( 200, array(
-						'results'  => $file_data,
-						'type'     => 'image',
-						'mimeType' => $mime_type,
-					));
+					return blu_prepare_ability_response(
+						200,
+						array(
+							'results'  => $file_data,
+							'type'     => 'image',
+							'mimeType' => $mime_type,
+						)
+					);
 				},
 				'permission_callback' => fn() => current_user_can( 'upload_files' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => true,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -280,15 +283,15 @@ class Media {
 					if ( ! empty( $input['alt_text'] ) ) {
 						update_post_meta( $attach_id, '_wp_attachment_image_alt', $input['alt_text'] );
 					}
-					
+
 					return blu_prepare_ability_response( 201, get_post( $attach_id ) );
 				},
 				'permission_callback' => fn() => current_user_can( 'upload_files' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => false,
-						'idempotent'   => false,
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => false,
 					),
 				),
 			)
@@ -342,7 +345,7 @@ class Media {
 
 					}
 
-					$request = new \WP_REST_Request( 'GET', $root.'/' . $id );
+					$request = new \WP_REST_Request( 'GET', $root . '/' . $id );
 
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
@@ -351,9 +354,9 @@ class Media {
 				'permission_callback' => fn() => current_user_can( 'upload_files' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -388,7 +391,7 @@ class Media {
 						);
 
 					}
-					$request = new \WP_REST_Request( 'DELETE', $root.'/' . $input['id'] );
+					$request = new \WP_REST_Request( 'DELETE', $root . '/' . $input['id'] );
 					$request->set_param( 'force', true );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
@@ -396,13 +399,12 @@ class Media {
 				'permission_callback' => fn() => current_user_can( 'delete_posts' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => true,
-						'idempotent'   => true,
+						'readonly'    => false,
+						'destructive' => true,
+						'idempotent'  => true,
 					),
 				),
 			)
 		);
-		
 	}
 }

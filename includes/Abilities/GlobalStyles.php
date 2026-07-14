@@ -76,7 +76,8 @@ class GlobalStyles {
 
 					$method   = 'GET';
 					$id       = intval( $input['id'] );
-					$request  = new \WP_REST_Request( $method, "$root/$id" );
+					$root = str_replace( '(?P<id>[\/\d+]+)', '' . $id, $root );
+					$request  = new \WP_REST_Request( $method, "$root" );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
 				},
@@ -289,7 +290,8 @@ class GlobalStyles {
 		}
 
 		$method  = 'POST';
-		$request = new \WP_REST_Request( $method, "$root/$global_styles_id" );
+		$root    = str_replace( '(?P<id>[\/\d+]+)', '' . $global_styles_id, $root );
+		$request = new \WP_REST_Request( $method, "$root" );
 
 		// Prepare the update data.
 		$data = array();
@@ -417,8 +419,8 @@ class GlobalStyles {
 	 */
 	private function detect_misplaced_application( string $path, $value ): ?string {
 		$app_keys = 'typography\.font(?:Family|Size|Style|Weight)'
-		            . '|typography\.(?:lineHeight|letterSpacing|textDecoration|textTransform)'
-		            . '|color\.(?:background|text|gradient)';
+					. '|typography\.(?:lineHeight|letterSpacing|textDecoration|textTransform)'
+					. '|color\.(?:background|text|gradient)';
 
 		// Two shapes, captured into the same `sub` group:
 		// settings.<sub>

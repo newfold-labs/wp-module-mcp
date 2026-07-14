@@ -41,7 +41,7 @@ class Users {
 					),
 				),
 				'execute_callback'    => function ( $input = null ) {
-					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'users');
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'users' );
 
 					if ( ! $root ) {
 						return blu_standardize_rest_response(
@@ -89,7 +89,7 @@ class Users {
 				),
 				'execute_callback'    => function ( $input ) {
 					$user_id = (int) $input['id'];
-					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'users');
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'users' );
 
 					if ( ! $root ) {
 						return blu_standardize_rest_response(
@@ -100,7 +100,7 @@ class Users {
 						);
 
 					}
-					$request = new \WP_REST_Request( 'GET', $root.'/' . $user_id );
+					$request = new \WP_REST_Request( 'GET', $root . '/' . $user_id );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
 				},
@@ -131,7 +131,7 @@ class Users {
 					'required'   => array( 'username', 'email', 'password', 'roles' ),
 				),
 				'execute_callback'    => function ( $input ) {
-					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'users');
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'users' );
 
 					if ( ! $root ) {
 						return blu_standardize_rest_response(
@@ -178,7 +178,7 @@ class Users {
 				'execute_callback'    => function ( $input ) {
 					$user_id = (int) $input['id'];
 
-					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'users');
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'users' );
 
 					if ( ! $root ) {
 						return blu_standardize_rest_response(
@@ -190,7 +190,7 @@ class Users {
 
 					}
 
-					$request = new \WP_REST_Request( 'PUT', $root.'/' . $user_id );
+					$request = new \WP_REST_Request( 'PUT', $root . '/' . $user_id );
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
@@ -223,7 +223,7 @@ class Users {
 				),
 				'execute_callback'    => function ( $input ) {
 					$user_id = (int) $input['id'];
-					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'users');
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'users' );
 
 					if ( ! $root ) {
 						return blu_standardize_rest_response(
@@ -235,7 +235,7 @@ class Users {
 
 					}
 
-					$request = new \WP_REST_Request( 'DELETE', $root.'/' . $user_id );
+					$request = new \WP_REST_Request( 'DELETE', $root . '/' . $user_id );
 					unset( $input['id'] );
 					$request->set_query_params( $input );
 					$response = rest_do_request( $request );
@@ -260,7 +260,7 @@ class Users {
 				'description'         => 'Get the current logged-in user',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
-					'type' => 'object',
+					'type'       => 'object',
 					'properties' => array(
 						'type'        => 'object',
 						'description' => 'An object containing the native query or body parameters required by the target endpoint. You can use blu-get-function-details to retreive it, if needed.',
@@ -268,7 +268,7 @@ class Users {
 				),
 				'execute_callback'    => function () {
 
-					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'users');
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'users' );
 
 					if ( ! $root ) {
 						return blu_standardize_rest_response(
@@ -279,7 +279,7 @@ class Users {
 						);
 
 					}
-					$request = new \WP_REST_Request( 'GET',$root.'/me' );
+					$request = new \WP_REST_Request( 'GET', $root . '/me' );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
 				},
@@ -309,7 +309,7 @@ class Users {
 					),
 				),
 				'execute_callback'    => function ( $input = null ) {
-					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'users');
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'users' );
 
 					if ( ! $root ) {
 						return blu_standardize_rest_response(
@@ -321,7 +321,7 @@ class Users {
 
 					}
 
-						$request = new \WP_REST_Request( 'PUT', $root.'/me' );
+						$request = new \WP_REST_Request( 'PUT', $root . '/me' );
 					if ( is_array( $input ) ) {
 
 						$request->set_body_params( $input );
