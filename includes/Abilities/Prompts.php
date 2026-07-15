@@ -278,7 +278,7 @@ class Prompts {
 						'product_id' => array(
 							'type'        => 'integer',
 							'description' => 'Existing WooCommerce product ID. When set, the assistant loads the product and uses its data to build category search patterns.',
-							'minimum'     => 1,
+							'default'     => 0,
 						),
 						'name'       => array(
 							'type'        => 'string',
@@ -380,7 +380,7 @@ class Prompts {
 						'product_id' => array(
 							'type'        => 'integer',
 							'description' => 'Existing WooCommerce product ID. When set, the assistant loads the product and uses its data to build tag search patterns.',
-							'minimum'     => 1,
+							'default'     => 0,
 						),
 						'name'       => array(
 							'type'        => 'string',
@@ -482,7 +482,7 @@ class Prompts {
 						'product_id' => array(
 							'type'        => 'integer',
 							'description' => 'Existing WooCommerce product ID. When set, the assistant loads the product and uses its data to build tag search patterns.',
-							'minimum'     => 1,
+							'default'     => 0,
 						),
 						'name'       => array(
 							'type'        => 'string',

@@ -19,6 +19,13 @@ namespace BLU\Abilities;
 class Themes {
 
 	/**
+	 * Base REST API namespace used to discover the latest versioned namespace.
+	 *
+	 * @var string
+	 */
+	private $base_namespace = 'wp';
+
+	/**
 	 * Constructor
 	 */
 	public function __construct() {
@@ -57,13 +64,24 @@ class Themes {
 					),
 				),
 				'execute_callback'    => function ( $input = null ) {
-					$request = new \WP_REST_Request( 'GET', '/wp/v2/themes' );
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'themes' );
 
+					if ( ! $root ) {
+						return blu_standardize_rest_response(
+							new \WP_Error(
+								400,
+								'A valid route for themes not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
+							)
+						);
+
+					}
+					$request = new \WP_REST_Request( 'GET', $root );
 					if ( ! $input ) {
 						$input = array( 'status' => 'active' );
 					}
 					$request->set_query_params( $input );
 					$response = rest_do_request( $request );
+
 					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_theme_options' ),
