@@ -8,12 +8,22 @@ updates:
     allow:
       - dependency-type: direct
     schedule:
-      interval: "daily"
+      interval: "weekly"
     commit-message:
       prefix: "GitHub Actions"
       include: "scope"
     labels:
       - "dependencies"
+    # Group all minor/patch bumps into one PR (one CI run, nothing for siblings
+    # to conflict on). Majors fall outside the group and arrive as individual
+    # PRs for human review (auto-merge is scoped to patch,minor).
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
 
   # Maintain dependencies for npm
   - package-ecosystem: "npm"
@@ -22,7 +32,7 @@ updates:
     allow:
       - dependency-type: direct
     schedule:
-      interval: "daily"
+      interval: "weekly"
     versioning-strategy: increase
     commit-message:
       prefix: "NPM"
@@ -31,13 +41,20 @@ updates:
     labels:
       - "dependencies"
       - "javascript"
+    groups:
+      npm:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
 
   # Maintain dependencies for Composer
   - package-ecosystem: "composer"
     directory: "/"
     target-branch: "main"
     schedule:
-      interval: "daily"
+      interval: "weekly"
     allow:
       - dependency-type: direct
     versioning-strategy: increase
@@ -48,3 +65,10 @@ updates:
     labels:
       - "dependencies"
       - "php"
+    groups:
+      composer:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"

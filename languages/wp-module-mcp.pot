@@ -12,16 +12,176 @@ msgstr ""
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-module-mcp\n"
 
-#: includes/Abilities/LogoGen.php:132
+#: includes/Abilities/ColorGen.php:71
+msgid "Unable to retrieve Hiive authentication token for palette generation."
+msgstr ""
+
+#: includes/Abilities/ColorGen.php:76
+msgid "A prompt is required."
+msgstr ""
+
+#: includes/Abilities/ColorGen.php:99
+msgid "Palette generation timed out."
+msgstr ""
+
+#. translators: %s: error message
+#: includes/Abilities/ColorGen.php:104
+#, php-format
+msgid "Palette generation service unavailable: %s"
+msgstr ""
+
+#. translators: %d: HTTP status code
+#: includes/Abilities/ColorGen.php:113
+#, php-format
+msgid "Palette generation failed with status %d."
+msgstr ""
+
+#: includes/Abilities/ColorGen.php:119
+msgid "No palettes returned by the generation service."
+msgstr ""
+
+#. translators: %d: number of palettes
+#: includes/Abilities/ColorGen.php:141
+#, php-format
+msgid "%d color palette(s) generated. Present them to the user and apply the chosen one with blu/update-global-styles."
+msgstr ""
+
+#: includes/Abilities/DocumentRead.php:56
+#: includes/Abilities/LogoGen.php:189
+msgid "A valid source_url is required."
+msgstr ""
+
+#: includes/Abilities/DocumentRead.php:63
+#: includes/Abilities/DocumentRead.php:70
+msgid "Document not found or not accessible."
+msgstr ""
+
+#: includes/Abilities/DocumentRead.php:80
+msgid "Document exceeds the 50 MB size limit."
+msgstr ""
+
+#: includes/Abilities/DocumentRead.php:88
+msgid "Unsupported document type."
+msgstr ""
+
+#: includes/Abilities/DocumentRead.php:92
+msgid "Could not read document content."
+msgstr ""
+
+#: includes/Abilities/DocumentRead.php:108
+msgid "Document content (truncated to 30 000 characters)."
+msgstr ""
+
+#: includes/Abilities/DocumentRead.php:109
+msgid "Document content read successfully."
+msgstr ""
+
+#: includes/Abilities/ImageEdit.php:141
+msgid "GD image library is not available on this server."
+msgstr ""
+
+#: includes/Abilities/ImageEdit.php:147
+msgid "A valid image_url is required."
+msgstr ""
+
+#: includes/Abilities/ImageEdit.php:151
+msgid "The image_url is not allowed."
+msgstr ""
+
+#: includes/Abilities/ImageEdit.php:167
+msgid "No distinct colors found. The image may be mostly white, black, or transparent."
+msgstr ""
+
+#. translators: %s: dominant hex color value
+#: includes/Abilities/ImageEdit.php:179
+#, php-format
+msgid "Dominant color: %s. Use this hex value with blu/update-global-styles to apply it as the accent or primary color."
+msgstr ""
+
+#: includes/Abilities/ImageEdit.php:451
+msgid "Invalid local URL path."
+msgstr ""
+
+#: includes/Abilities/ImageEdit.php:459
+msgid "Local file path is outside the WordPress root."
+msgstr ""
+
+#: includes/Abilities/ImageEdit.php:465
+msgid "Local source image not found."
+msgstr ""
+
+#: includes/Abilities/ImageEdit.php:472
+msgid "Could not read local source image."
+msgstr ""
+
+#: includes/Abilities/ImageEdit.php:479
+#: includes/Abilities/ImageEdit.php:530
+msgid "Source image exceeds 10 MB limit."
+msgstr ""
+
+#: includes/Abilities/ImageEdit.php:486
+#: includes/Abilities/ImageEdit.php:538
+msgid "Unsupported source image type."
+msgstr ""
+
+#. translators: %s: error message from wp_remote_get
+#: includes/Abilities/ImageEdit.php:508
+#, php-format
+msgid "Unable to fetch source image: %s"
+msgstr ""
+
+#. translators: %d: HTTP status code
+#: includes/Abilities/ImageEdit.php:516
+#, php-format
+msgid "Unable to fetch source image (HTTP %d)."
+msgstr ""
+
+#: includes/Abilities/ImageEdit.php:523
+msgid "Source image is empty."
+msgstr ""
+
+#: includes/Abilities/LogoGen.php:111
+msgid "Unable to retrieve Hiive authentication token for logo generation."
+msgstr ""
+
+#: includes/Abilities/LogoGen.php:139
+msgid "Logo generation timed out."
+msgstr ""
+
+#. translators: %s: error message
+#: includes/Abilities/LogoGen.php:144
+#, php-format
+msgid "Logo generation service unavailable: %s"
+msgstr ""
+
+#. translators: %d: HTTP status code
+#: includes/Abilities/LogoGen.php:153
+#, php-format
+msgid "Logo generation failed with status %d."
+msgstr ""
+
+#: includes/Abilities/LogoGen.php:159
+msgid "No image URL in response."
+msgstr ""
+
+#: includes/Abilities/LogoGen.php:164
 msgid "Site logo (AI generated)"
 msgstr ""
 
 #. translators: %s: brand or site name for the logo attachment title/description
-#: includes/Abilities/LogoGen.php:136
+#: includes/Abilities/LogoGen.php:168
 #, php-format
 msgid "Site logo (AI generated) — %s"
 msgstr ""
 
-#: includes/Abilities/LogoGen.php:155
+#: includes/Abilities/LogoGen.php:193
+msgid "source_url is not allowed."
+msgstr ""
+
+#: includes/Abilities/LogoGen.php:196
+msgid "Site logo (uploaded)"
+msgstr ""
+
+#: includes/Abilities/LogoGen.php:227
 msgid "Site logo updated."
 msgstr ""
