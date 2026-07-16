@@ -71,6 +71,7 @@ class DocumentRead {
 		}
 
 		$mime       = is_callable( 'mime_content_type' ) ? strtolower( (string) mime_content_type( $abs_file ) ) : '';
+		$extension  = strtolower( (string) pathinfo( $abs_file, PATHINFO_EXTENSION ) );
 		$text_types = array( 'text/plain', 'text/markdown', 'text/csv' );
 
 		// Guard against very large files before reading into memory.
@@ -82,8 +83,11 @@ class DocumentRead {
 
 		if ( in_array( $mime, $text_types, true ) ) {
 			$content = file_get_contents( $abs_file ); // phpcs:ignore WordPress.WP.AlternativeFunctions
-		} elseif ( 'application/pdf' === $mime ) {
+		} elseif ( 'application/pdf' === $mime || 'pdf' === $extension ) {
 			$content = $this->extract_pdf_text( $abs_file );
+			if ( 'application/pdf' !== $mime ) {
+				$mime = 'application/pdf';
+			}
 		} else {
 			return blu_prepare_ability_response( 400, __( 'Unsupported document type.', 'wp-module-mcp' ) );
 		}
@@ -121,26 +125,7 @@ class DocumentRead {
 	 * @return string Extracted text or fallback message.
 	 */
 	private function extract_pdf_text( string $path ): string {
-		// smalot/pdfparser ships in wp-module-mcp's own vendor. If the parent
-		// plugin's autoloader doesn't include it (common in monorepo setups),
-		// register a targeted PSR-0 autoloader for the Smalot\ namespace only —
-		// avoids reloading shared packages (e.g. lucatume/wp-browser) that would
-		// trigger "Cannot redeclare" fatals.
-		if ( ! class_exists( '\Smalot\PdfParser\Parser' ) ) {
-			$smalot_src = dirname( __DIR__, 2 ) . '/vendor/smalot/pdfparser/src';
-			if ( is_dir( $smalot_src ) ) {
-				spl_autoload_register(
-					static function ( $class_name ) use ( $smalot_src ) {
-						if ( 0 === strpos( $class_name, 'Smalot\\' ) ) {
-							$file = $smalot_src . DIRECTORY_SEPARATOR . str_replace( '\\', DIRECTORY_SEPARATOR, $class_name ) . '.php';
-							if ( file_exists( $file ) ) {
-								require_once $file; // phpcs:ignore WordPressVIPMinimum.Files.IncludingFile.UsingVariable
-							}
-						}
-					}
-				);
-			}
-		}
+		$this->register_smalot_pdfparser_autoloader();
 
 		// Primary: smalot/pdfparser — works on any PHP host, no binaries needed.
 		if ( class_exists( '\Smalot\PdfParser\Parser' ) ) {
@@ -168,5 +153,42 @@ class DocumentRead {
 		}
 
 		return 'PDF content could not be extracted automatically on this server. Ask the user to upload a .txt version of the document instead.';
+	}
+
+	/**
+	 * Register a targeted autoloader for smalot/pdfparser when Composer did not load it.
+	 *
+	 * Checks the module vendor tree and the parent brand-plugin vendor tree.
+	 *
+	 * @return void
+	 */
+	private function register_smalot_pdfparser_autoloader(): void {
+		if ( class_exists( '\Smalot\PdfParser\Parser' ) ) {
+			return;
+		}
+
+		$smalot_src_candidates = array(
+			dirname( __DIR__, 2 ) . '/vendor/smalot/pdfparser/src',
+			dirname( __DIR__, 4 ) . '/smalot/pdfparser/src',
+		);
+
+		foreach ( $smalot_src_candidates as $smalot_src ) {
+			if ( ! is_dir( $smalot_src ) ) {
+				continue;
+			}
+
+			spl_autoload_register(
+				static function ( $class_name ) use ( $smalot_src ) {
+					if ( 0 === strpos( $class_name, 'Smalot\\' ) ) {
+						$file = $smalot_src . DIRECTORY_SEPARATOR . str_replace( '\\', DIRECTORY_SEPARATOR, $class_name ) . '.php';
+						if ( file_exists( $file ) ) {
+							require_once $file; // phpcs:ignore WordPressVIPMinimum.Files.IncludingFile.UsingVariable
+						}
+					}
+				}
+			);
+
+			return;
+		}
 	}
 }
