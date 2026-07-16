@@ -31,25 +31,14 @@ class WooOrders {
 	 * Register order abilities.
 	 */
 	private function register_order_abilities(): void {
-		// Discover latest WooCommerce REST API version
-		$wc_namespace = RestApiUtils::get_latest_namespace( $this->base_namespace );
+		$wc_namespace = $this->wc_namespace_label();
+		$orders_route = $this->resolve_wc_route( 'orders' );
 
-		if ( ! $wc_namespace ) {
-			return;
-		}
-
-		// Find the orders route
-		$orders_route = RestApiUtils::find_route_by_resource( $wc_namespace, 'orders' );
-
-		if ( ! $orders_route ) {
-			return;
-		}
-
-		// Extract dynamic schema from the REST API
-		$input_schema = RestApiUtils::extract_input_schema( $orders_route, 'GET' );
+		$input_schema = $orders_route
+			? RestApiUtils::extract_input_schema( $orders_route, 'GET' )
+			: null;
 
 		if ( ! $input_schema ) {
-			// Fallback to basic schema if extraction fails
 			$input_schema = array(
 				'type'       => 'object',
 				'properties' => array(
@@ -69,7 +58,6 @@ class WooOrders {
 			);
 		}
 
-		// Search orders
 		blu_register_ability(
 			'blu/wc-orders-search',
 			array(
@@ -77,7 +65,12 @@ class WooOrders {
 				'description'         => sprintf( 'Get a list of WooCommerce orders using %s API', $wc_namespace ),
 				'category'            => 'blu-mcp',
 				'input_schema'        => $input_schema,
-				'execute_callback'    => function ( $input = null ) use ( $orders_route ) {
+				'execute_callback'    => function ( $input = null ) {
+					$orders_route = $this->resolve_wc_route( 'orders' );
+					if ( ! $orders_route ) {
+						return $this->wc_route_error( 'orders' );
+					}
+
 					$request = new \WP_REST_Request( 'GET', $orders_route );
 					if ( $input ) {
 						$request->set_query_params( $input );
@@ -96,19 +89,14 @@ class WooOrders {
 			)
 		);
 
-		// Find the single order route pattern
 		$order_pattern = '(?P<id>[\d]+)';
-		$order_route   = RestApiUtils::find_route_by_resource( $wc_namespace, 'orders/' . $order_pattern );
+		$order_route   = $this->resolve_wc_param_route( 'orders/' . $order_pattern );
 
-		if ( ! $order_route ) {
-			return;
-		}
-
-		// Extract dynamic schema from the REST API for PATCH method
-		$input_schema = RestApiUtils::extract_input_schema( $order_route, 'PUT' );
+		$input_schema = $order_route
+			? RestApiUtils::extract_input_schema( $order_route, 'PUT' )
+			: null;
 
 		if ( ! $input_schema ) {
-			// Fallback to basic schema if extraction fails
 			$input_schema = array(
 				'type'       => 'object',
 				'properties' => array(
@@ -125,7 +113,6 @@ class WooOrders {
 			);
 		}
 
-		// Update order
 		blu_register_ability(
 			'blu/wc-update-order',
 			array(
@@ -133,7 +120,7 @@ class WooOrders {
 				'description'         => sprintf( 'Update a WooCommerce order using %s API', $wc_namespace ),
 				'category'            => 'blu-mcp',
 				'input_schema'        => $input_schema,
-				'execute_callback'    => function ( $input = null ) use ( $order_route, $order_pattern ) {
+				'execute_callback'    => function ( $input = null ) {
 					if ( ! $input || ! isset( $input['id'] ) ) {
 						return array(
 							'status'  => 'error',
@@ -141,8 +128,13 @@ class WooOrders {
 						);
 					}
 
+					$orders_route = $this->resolve_wc_route( 'orders' );
+					if ( ! $orders_route ) {
+						return $this->wc_route_error( 'orders' );
+					}
+
 					$order_id = (int) $input['id'];
-					$route    = str_replace( $order_pattern, (string) $order_id, $order_route );
+					$route    = RestApiUtils::build_item_route( $orders_route, $order_id );
 					$body     = $input;
 					unset( $body['id'] );
 
@@ -165,47 +157,13 @@ class WooOrders {
 	}
 
 	/**
-	 * Register report abilities using dynamic REST API discovery.
+	 * Register legacy wc/v3 report abilities not covered by WooAnalytics.
 	 */
 	private function register_report_abilities(): void {
-		// Discover latest WooCommerce REST API version
-		$wc_namespace = RestApiUtils::get_latest_namespace( $this->base_namespace );
+		$wc_namespace = $this->wc_namespace_label();
 
-		if ( ! $wc_namespace ) {
-			return;
-		}
-
-		// Define report endpoints
 		$reports = array(
-			'coupons-totals'   => array(
-				'ability_id'  => 'blu/wc-reports-coupons-totals',
-				'label'       => 'Get WooCommerce Coupons Report',
-				'description' => 'Get WooCommerce coupons totals report',
-				'path'        => 'reports/coupons/totals',
-				'permission'  => 'view_woocommerce_reports',
-			),
-			'customers-totals' => array(
-				'ability_id'  => 'blu/wc-reports-customers-totals',
-				'label'       => 'Get WooCommerce Customers Report',
-				'description' => 'Get WooCommerce customers totals report',
-				'path'        => 'reports/customers/totals',
-				'permission'  => 'view_woocommerce_reports',
-			),
-			'orders-totals'    => array(
-				'ability_id'  => 'blu/wc-reports-orders-totals',
-				'label'       => 'Get WooCommerce Orders Report',
-				'description' => 'Get WooCommerce orders totals report',
-				'path'        => 'reports/orders/totals',
-				'permission'  => 'view_woocommerce_reports',
-			),
-			'products-totals'  => array(
-				'ability_id'  => 'blu/wc-reports-products-totals',
-				'label'       => 'Get WooCommerce Products Report',
-				'description' => 'Get WooCommerce products totals report',
-				'path'        => 'reports/products/totals',
-				'permission'  => 'view_woocommerce_reports',
-			),
-			'reviews-totals'   => array(
+			'reviews-totals' => array(
 				'ability_id'  => 'blu/wc-reports-reviews-totals',
 				'label'       => 'Get WooCommerce Reviews Report',
 				'description' => 'Get WooCommerce reviews totals report',
@@ -214,19 +172,18 @@ class WooOrders {
 			),
 		);
 
-		// Register each report ability dynamically
 		foreach ( $reports as $report_config ) {
-			$route = RestApiUtils::find_route_by_resource( $wc_namespace, $report_config['path'] );
+			$route = $this->resolve_wc_route( $report_config['path'] );
 
-			if ( ! $route ) {
-				continue;
-			}
-
-			$input_schema = RestApiUtils::extract_input_schema( $route, 'GET' );
+			$input_schema = $route
+				? RestApiUtils::extract_input_schema( $route, 'GET' )
+				: null;
 
 			if ( ! $input_schema ) {
 				$input_schema = array( 'type' => 'object' );
 			}
+
+			$report_path = $report_config['path'];
 
 			blu_register_ability(
 				$report_config['ability_id'],
@@ -235,7 +192,12 @@ class WooOrders {
 					'description'         => sprintf( '%s using %s API', $report_config['description'], $wc_namespace ),
 					'category'            => 'blu-mcp',
 					'input_schema'        => $input_schema,
-					'execute_callback'    => function ( $input = null ) use ( $route ) {
+					'execute_callback'    => function ( $input = null ) use ( $report_path ) {
+						$route = $this->resolve_wc_route( $report_path );
+						if ( ! $route ) {
+							return $this->wc_route_error( $report_path );
+						}
+
 						$request = new \WP_REST_Request( 'GET', $route );
 						if ( $input ) {
 							$request->set_query_params( $input );
@@ -255,49 +217,114 @@ class WooOrders {
 			);
 		}
 
-		// Sales report (with parameters)
-		$sales_route = RestApiUtils::find_route_by_resource( $wc_namespace, 'reports/sales' );
+		$sales_route = $this->resolve_wc_route( 'reports/sales' );
 
-		if ( $sales_route ) {
-			$sales_schema = RestApiUtils::extract_input_schema( $sales_route, 'GET' );
+		$sales_schema = $sales_route
+			? RestApiUtils::extract_input_schema( $sales_route, 'GET' )
+			: null;
 
-			if ( ! $sales_schema ) {
-				$sales_schema = array(
-					'type'       => 'object',
-					'properties' => array(
-						'period' => array(
-							'type'        => 'string',
-							'description' => 'Report period (week, month, year)',
-						),
+		if ( ! $sales_schema ) {
+			$sales_schema = array(
+				'type'       => 'object',
+				'properties' => array(
+					'period' => array(
+						'type'        => 'string',
+						'description' => 'Report period (week, month, year)',
 					),
-				);
-			}
-
-			blu_register_ability(
-				'blu/wc-reports-sales',
-				array(
-					'label'               => 'Get WooCommerce Sales Report',
-					'description'         => sprintf( 'Get WooCommerce sales report using %s API', $wc_namespace ),
-					'category'            => 'blu-mcp',
-					'input_schema'        => $sales_schema,
-					'execute_callback'    => function ( $input = null ) use ( $sales_route ) {
-						$request = new \WP_REST_Request( 'GET', $sales_route );
-						if ( $input ) {
-							$request->set_query_params( $input );
-						}
-						$response = rest_do_request( $request );
-						return blu_standardize_rest_response( $response );
-					},
-					'permission_callback' => fn() => current_user_can( 'view_woocommerce_reports' ),
-					'meta'                => array(
-						'annotations' => array(
-							'readonly'    => true,
-							'destructive' => false,
-							'idempotent'  => true,
-						),
-					),
-				)
+				),
 			);
 		}
+
+		blu_register_ability(
+			'blu/wc-reports-sales',
+			array(
+				'label'               => 'Get WooCommerce Sales Report',
+				'description'         => sprintf( 'Get WooCommerce sales report using %s API', $wc_namespace ),
+				'category'            => 'blu-mcp',
+				'input_schema'        => $sales_schema,
+				'execute_callback'    => function ( $input = null ) {
+					$sales_route = $this->resolve_wc_route( 'reports/sales' );
+					if ( ! $sales_route ) {
+						return $this->wc_route_error( 'reports/sales' );
+					}
+
+					$request = new \WP_REST_Request( 'GET', $sales_route );
+					if ( $input ) {
+						$request->set_query_params( $input );
+					}
+					$response = rest_do_request( $request );
+					return blu_standardize_rest_response( $response );
+				},
+				'permission_callback' => fn() => current_user_can( 'view_woocommerce_reports' ),
+				'meta'                => array(
+					'annotations' => array(
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Resolved WooCommerce namespace label for ability descriptions.
+	 *
+	 * @return string
+	 */
+	private function wc_namespace_label(): string {
+		RestApiUtils::eager_load_rest_routes();
+
+		return RestApiUtils::get_latest_namespace( $this->base_namespace ) ?? 'wc';
+	}
+
+	/**
+	 * Resolve a WooCommerce collection route at execution time.
+	 *
+	 * @param string $resource_path Resource path without version prefix.
+	 *
+	 * @return string|null
+	 */
+	private function resolve_wc_route( string $resource_path ): ?string {
+		RestApiUtils::eager_load_rest_routes();
+
+		return RestApiUtils::get_latest_available_rest_route( $this->base_namespace, $resource_path );
+	}
+
+	/**
+	 * Resolve a parameterized WooCommerce route pattern at registration time.
+	 *
+	 * @param string $resource_path Resource path including (?P<name>...) segments.
+	 *
+	 * @return string|null
+	 */
+	private function resolve_wc_param_route( string $resource_path ): ?string {
+		RestApiUtils::eager_load_rest_routes();
+		$namespace = RestApiUtils::get_latest_namespace( $this->base_namespace );
+
+		if ( ! $namespace ) {
+			return null;
+		}
+
+		return RestApiUtils::find_route_by_resource( $namespace, $resource_path );
+	}
+
+	/**
+	 * Standard error when a WooCommerce route is unavailable.
+	 *
+	 * @param string $resource_path Resource path that could not be resolved.
+	 *
+	 * @return array
+	 */
+	private function wc_route_error( string $resource_path ): array {
+		return blu_standardize_rest_response(
+			new \WP_Error(
+				400,
+				sprintf(
+					'A valid route for %s not found. Please ensure WooCommerce is active and its REST API is enabled.',
+					$resource_path
+				)
+			)
+		);
 	}
 }

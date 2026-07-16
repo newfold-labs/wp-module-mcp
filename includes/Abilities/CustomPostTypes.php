@@ -3,6 +3,8 @@ declare( strict_types=1 );
 
 namespace BLU\Abilities;
 
+use BLU\RestControllerSchema\RestControllerSchemaBuilder;
+
 /**
  * CustomPostTypes abilities for WordPress custom post types.
  *
@@ -13,13 +15,13 @@ namespace BLU\Abilities;
  * with the numeric `id` (which LLMs would otherwise routinely drop).
  */
 class CustomPostTypes {
-
+	
 	/**
 	 * Base REST API namespace used to discover the latest versioned namespace.
 	 *
 	 * @var string
 	 */
-	private $base_namespace = 'wp';
+	private string $base_namespace = 'wp';
 
 	/**
 	 * Constructor - registers custom post type abilities.
@@ -32,6 +34,7 @@ class CustomPostTypes {
 	 * Register custom post type abilities.
 	 */
 	private function register_abilities(): void {
+		$schema = RestControllerSchemaBuilder::for_cpt();
 		// List post types
 		blu_register_ability(
 			'blu/list-post-types',
@@ -39,13 +42,7 @@ class CustomPostTypes {
 				'label'               => 'List Post Types',
 				'description'         => 'List all registered WordPress post types (built-in and custom). Use this to discover which post type slugs exist before creating or searching items.',
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
-					'type'       => 'object',
-					'properties' => array(
-						'type'        => 'object',
-						'description' => 'An object containing the native query or body parameters required by the target endpoint. You can use blu-get-function-details to retreive it, if needed.',
-					),
-				),
+				'input_schema'        => $schema->collection(),
 				'execute_callback'    => function ( $input ) {
 					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'types' );
 
@@ -59,13 +56,13 @@ class CustomPostTypes {
 
 					}
 
-					$method     = 'GET';
-					$request    = new \WP_REST_Request( $method, $root );
-
+					$method 	= 'GET';
+					$request  	= new \WP_REST_Request( $method, $root );
+					
 					$request->set_query_params( $input );
-
+					
 					$response = rest_do_request( $request );
-
+					
 					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),

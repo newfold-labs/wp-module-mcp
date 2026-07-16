@@ -30,6 +30,17 @@ STEP 1 — How to proceed  [REQUIRED FIRST STOP]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 DO NOT create the product yet.
+Use the tool blu-list-abilities to get a list of abilities needed to proceed :
+  . blu/wc-list-product-categories   → check if a category exists before creating it
+  • blu/wc-add-product-category      → create category (use is_google_tax + hierarchical for taxonomy paths)
+  • blu/wc-list-product-tags         → check existing tags
+  • blu/wc-add-product-tag           → create tag
+  • blu/wc-list-product-attributes   → check if a global attribute (Color, Size…) already exists
+  • blu/wc-list-attribute-terms      → check existing terms for a known attribute
+  • blu/wc-add-product-attribute     → create global attribute + terms in one call (new attributes)
+  • blu/wc-add-attribute-term        → add a single new term to an existing global attribute
+  • blu/wc-add-product               → create the product (simple or variable via attributes)
+  • blu/wc-generate-product-variations → generate all attribute combinations as purchasable variations
 
 Show the merchant exactly these two options:
 

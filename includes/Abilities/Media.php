@@ -3,6 +3,8 @@ declare( strict_types=1 );
 
 namespace BLU\Abilities;
 
+use BLU\RestControllerSchema\RestControllerSchemaBuilder;
+
 /**
  * Media abilities for WordPress media library.
  */
@@ -13,7 +15,7 @@ class Media {
 	 *
 	 * @var string
 	 */
-	private $base_namespace = 'wp';
+	private string $base_namespace = 'wp';
 
 	/**
 	 * Constructor - registers all media-related abilities.
@@ -26,6 +28,8 @@ class Media {
 	 * Register media abilities.
 	 */
 	private function register_abilities(): void {
+		$schemas = RestControllerSchemaBuilder::for_media();
+
 		// List media
 		blu_register_ability(
 			'blu/list-media',
@@ -33,56 +37,9 @@ class Media {
 				'label'               => 'List Media',
 				'description'         => 'List WordPress media items with pagination and filtering',
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
-					'type'       => 'object',
-					'properties' => array(
-						'page'       => array(
-							'type'        => 'integer',
-							'description' => 'Page number',
-						),
-						'per_page'   => array(
-							'type'        => 'integer',
-							'description' => 'Items per page',
-						),
-						'search'     => array(
-							'type'        => 'string',
-							'description' => 'Search term',
-						),
-						'media_type' => array(
-							'type'        => 'array',
-							'items'       => array(
-								'type' => 'string',
-							),
-							'description' => 'Media type filter (image, video, audio, application)',
-						),
-						'mime_type'  => array(
-							'type'        => 'array',
-							'description' => 'MIME type filter',
-							'items'       => array(
-								'type' => 'string',
-							),
-						),
-					),
-				),
+				'input_schema'        => $schemas->collection(),
 				'execute_callback'    => function ( $input = null ) {
-
-					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'media' );
-
-					if ( ! $root ) {
-						return blu_standardize_rest_response(
-							new \WP_Error(
-								400,
-								'A valid route for media not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
-							)
-						);
-
-					}
-					$request = new \WP_REST_Request( 'GET', $root );
-					if ( $input ) {
-						$request->set_query_params( $input );
-					}
-					$response = rest_do_request( $request );
-					return blu_standardize_rest_response( $response );
+					return $this->execute_list_media( $input );
 				},
 				'permission_callback' => fn() => current_user_can( 'upload_files' ),
 				'meta'                => array(
@@ -102,30 +59,24 @@ class Media {
 				'label'               => 'Get Media',
 				'description'         => 'Get a WordPress media item details by ID',
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
-					'type'       => 'object',
-					'properties' => array(
-						'id' => array(
-							'type'        => 'integer',
-							'description' => 'Media ID',
-						),
-					),
-					'required'   => array( 'id' ),
-				),
+				'input_schema'        => $schemas->get_item( 'Unique identifier for the media item.' ),
 				'execute_callback'    => function ( $input ) {
-					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'media' );
-
-					if ( ! $root ) {
-						return blu_standardize_rest_response(
-							new \WP_Error(
-								400,
-								'A valid route for media not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
-							)
-						);
-
+					$root = $this->get_media_route();
+					if ( is_array( $root ) ) {
+						return $root;
 					}
 
-					$request = new \WP_REST_Request( 'GET', $root . '/' . $input['id'] );
+					$id      = (int) $input['id'];
+					$request = new \WP_REST_Request( 'GET', RestApiUtils::build_item_route( $root, $id ) );
+					if ( isset( $input['context'] ) ) {
+						$request->set_param( 'context', $input['context'] );
+					}
+					if ( isset( $input['password'] ) ) {
+						$request->set_param( 'password', $input['password'] );
+					}
+					if ( isset( $input['excerpt_length'] ) ) {
+						$request->set_param( 'excerpt_length', $input['excerpt_length'] );
+					}
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
 				},
@@ -167,7 +118,6 @@ class Media {
 					$file_path = get_attached_file( $id );
 
 					if ( ! file_exists( $file_path ) ) {
-
 						return blu_prepare_ability_response( 404, 'File not found' );
 					}
 
@@ -180,7 +130,6 @@ class Media {
 					}
 
 					if ( ! file_exists( $file_path ) ) {
-
 						return blu_prepare_ability_response( 404, 'Requested size not found' );
 					}
 
@@ -214,32 +163,7 @@ class Media {
 				'label'               => 'Upload Media',
 				'description'         => 'Upload a new media file to WordPress',
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
-					'type'       => 'object',
-					'properties' => array(
-						'file'        => array(
-							'type'        => 'string',
-							'description' => 'Base64 encoded file data',
-						),
-						'title'       => array(
-							'type'        => 'string',
-							'description' => 'Media title',
-						),
-						'caption'     => array(
-							'type'        => 'string',
-							'description' => 'Media caption',
-						),
-						'description' => array(
-							'type'        => 'string',
-							'description' => 'Media description',
-						),
-						'alt_text'    => array(
-							'type'        => 'string',
-							'description' => 'Alt text',
-						),
-					),
-					'required'   => array( 'file' ),
-				),
+				'input_schema'        => $this->schema_for_upload( $schemas ),
 				'execute_callback'    => function ( $input ) {
 					// Process base64 file
 					$base64_data = $input['file'];
@@ -262,7 +186,6 @@ class Media {
 					$upload   = wp_upload_bits( $filename, null, $file_data );
 
 					if ( $upload['error'] ) {
-
 						return blu_prepare_ability_response( 500, 'File upload error: ' . $upload['error'] );
 					}
 
@@ -304,49 +227,16 @@ class Media {
 				'label'               => 'Update Media',
 				'description'         => 'Update a WordPress media item',
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
-					'type'       => 'object',
-					'properties' => array(
-						'id'          => array(
-							'type'        => 'integer',
-							'description' => 'Media ID',
-						),
-						'title'       => array(
-							'type'        => 'string',
-							'description' => 'Media title',
-						),
-						'caption'     => array(
-							'type'        => 'string',
-							'description' => 'Media caption',
-						),
-						'description' => array(
-							'type'        => 'string',
-							'description' => 'Media description',
-						),
-						'alt_text'    => array(
-							'type'        => 'string',
-							'description' => 'Alt text',
-						),
-					),
-					'required'   => array( 'id' ),
-				),
+				'input_schema'        => $schemas->update_with_id( 'Unique identifier for the media item.' ),
 				'execute_callback'    => function ( $input ) {
-					$id = $input['id'];
-					unset( $input['id'] );
-					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'media' );
-
-					if ( ! $root ) {
-						return blu_standardize_rest_response(
-							new \WP_Error(
-								400,
-								'A valid route for media not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
-							)
-						);
-
+					$root = $this->get_media_route();
+					if ( is_array( $root ) ) {
+						return $root;
 					}
 
-					$request = new \WP_REST_Request( 'GET', $root . '/' . $id );
-
+					$id = (int) $input['id'];
+					unset( $input['id'] );
+					$request = new \WP_REST_Request( 'POST', RestApiUtils::build_item_route( $root, $id ) );
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
@@ -369,30 +259,25 @@ class Media {
 				'label'               => 'Delete Media',
 				'description'         => 'Delete a WordPress media item permanently',
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
-					'type'       => 'object',
-					'properties' => array(
-						'id' => array(
-							'type'        => 'integer',
-							'description' => 'Media ID',
-						),
-					),
-					'required'   => array( 'id' ),
+				'input_schema'        => $schemas->delete_with_id(
+					RestControllerSchemaBuilder::post_delete_endpoint_args(),
+					array( 'id' ),
+					'Unique identifier for the media item.'
 				),
 				'execute_callback'    => function ( $input ) {
-					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'media' );
-
-					if ( ! $root ) {
-						return blu_standardize_rest_response(
-							new \WP_Error(
-								400,
-								'A valid route for media not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
-							)
-						);
-
+					$root = $this->get_media_route();
+					if ( is_array( $root ) ) {
+						return $root;
 					}
-					$request = new \WP_REST_Request( 'DELETE', $root . '/' . $input['id'] );
-					$request->set_param( 'force', true );
+
+					$id = (int) $input['id'];
+					unset( $input['id'] );
+					if ( ! array_key_exists( 'force', $input ) ) {
+						$input['force'] = true;
+					}
+
+					$request = new \WP_REST_Request( 'DELETE', RestApiUtils::build_item_route( $root, $id ) );
+					$request->set_query_params( $input );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
 				},
@@ -406,5 +291,96 @@ class Media {
 				),
 			)
 		);
+
+		// Search media (deprecated alias of list-media)
+		blu_register_ability(
+			'blu/search-media',
+			array(
+				'label'               => 'Search Media',
+				'description'         => 'Deprecated alias of blu/list-media. Search WordPress media items by title, caption, or description. Prefer blu/list-media for new integrations.',
+				'category'            => 'blu-mcp',
+				'input_schema'        => $schemas->collection(),
+				'execute_callback'    => function ( $input = null ) {
+					return $this->execute_list_media( $input );
+				},
+				'permission_callback' => fn() => current_user_can( 'upload_files' ),
+				'meta'                => array(
+					'annotations' => array(
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Execute list/search media against the attachments collection route.
+	 *
+	 * @param array<string, mixed>|null $input Query parameters.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function execute_list_media( $input = null ) {
+		$root = $this->get_media_route();
+		if ( is_array( $root ) ) {
+			return $root;
+		}
+
+		$request = new \WP_REST_Request( 'GET', $root );
+		if ( $input ) {
+			$request->set_query_params( $input );
+		}
+		$response = rest_do_request( $request );
+
+		return blu_standardize_rest_response( $response );
+	}
+
+	/**
+	 * Resolve the media REST route or return a standardized error response.
+	 *
+	 * @return string|array<string, mixed> Route string or error response array.
+	 */
+	private function get_media_route() {
+		$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'media' );
+
+		if ( ! $root ) {
+			return blu_standardize_rest_response(
+				new \WP_Error(
+					400,
+					'A valid route for media not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
+				)
+			);
+		}
+
+		return $root;
+	}
+
+	/**
+	 * Hybrid upload schema: creatable attachment fields plus base64 file input.
+	 *
+	 * @param RestControllerSchemaBuilder $schemas Schema builder for media.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function schema_for_upload( RestControllerSchemaBuilder $schemas ): array {
+		$schema = $schemas->creatable();
+
+		$schema['properties']['file'] = array(
+			'type'        => 'string',
+			'description' => 'Base64 encoded file data',
+		);
+
+		$schema['required'] = array_values(
+			array_unique(
+				array_merge(
+					$schema['required'] ?? array(),
+					array( 'file' )
+				)
+			)
+		);
+
+		return $schema;
 	}
 }

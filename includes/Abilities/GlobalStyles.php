@@ -76,8 +76,8 @@ class GlobalStyles {
 
 					$method   = 'GET';
 					$id       = intval( $input['id'] );
-					$root = str_replace( '(?P<id>[\/\d+]+)', '' . $id, $root );
-					$request  = new \WP_REST_Request( $method, "$root" );
+					$root     = RestApiUtils::build_item_route( $root, $id );
+					$request  = new \WP_REST_Request( $method, $root );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
 				},
@@ -290,8 +290,8 @@ class GlobalStyles {
 		}
 
 		$method  = 'POST';
-		$root    = str_replace( '(?P<id>[\/\d+]+)', '' . $global_styles_id, $root );
-		$request = new \WP_REST_Request( $method, "$root" );
+		$root    = RestApiUtils::build_item_route( $root, $global_styles_id );
+		$request = new \WP_REST_Request( $method, $root );
 
 		// Prepare the update data.
 		$data = array();

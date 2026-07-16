@@ -138,78 +138,254 @@ class RestApiUtils {
 				continue;
 			}
 
-			if ( empty( $endpoint['args'] ) ) {
-				return array(
-					'type'       => 'object',
-					'properties' => array(),
-				);
-			}
-
-			$schema = array(
-				'type'       => 'object',
-				'properties' => array(),
-			);
-
-			$required = array();
-
-			foreach ( $endpoint['args'] as $arg_name => $arg_def ) {
-				$property = array();
-
-				// Map WordPress REST arg types to JSON schema types
-
-				// Skip context argument, not needed in ability input schema
-				if ( 'context' === $arg_name ) {
-					continue;
-				}
-
-				if ( isset( $arg_def['type'] ) ) {
-					$property['type'] = self::map_rest_type_to_schema_type( $arg_def['type'] );
-				}
-
-				if ( isset( $arg_def['description'] ) ) {
-					$property['description'] = $arg_def['description'];
-				}
-
-				if ( isset( $arg_def['enum'] ) && is_array( $arg_def['enum'] ) ) {
-					$property['enum'] = $arg_def['enum'];
-				}
-
-				if ( isset( $arg_def['minimum'] ) ) {
-					$property['minimum'] = $arg_def['minimum'];
-				}
-
-				if ( isset( $arg_def['maximum'] ) ) {
-					$property['maximum'] = $arg_def['maximum'];
-				}
-
-				if ( isset( $arg_def['format'] ) ) {
-					$property['format'] = $arg_def['format'];
-				}
-
-				if ( isset( $arg_def['items'] ) ) {
-					$property['items'] = $arg_def['items'];
-				}
-
-				if ( isset( $arg_def['default'] ) ) {
-					$property['default'] = $arg_def['default'];
-				}
-
-				$schema['properties'][ $arg_name ] = $property;
-
-				// Track required fields
-				if ( isset( $arg_def['required'] ) && true === $arg_def['required'] ) {
-					$required[] = $arg_name;
-				}
-			}
-
-			if ( ! empty( $required ) ) {
-				$schema['required'] = $required;
-			}
-
-			return $schema;
+			return self::args_to_input_schema( $endpoint['args'] ?? array() );
 		}
 
 		return null;
+	}
+
+	/**
+	 * Convert REST endpoint args to a JSON Schema object.
+	 *
+	 * Used by extract_input_schema() and by controller-based schema builders
+	 * that do not depend on routes being registered yet.
+	 *
+	 * @param array<string, mixed> $args            REST endpoint argument definitions.
+	 * @param bool                 $skip_context    Whether to omit the context parameter.
+	 *
+	 * @return array<string, mixed> JSON schema object.
+	 */
+	public static function args_to_input_schema( array $args, bool $skip_context = true ): array {
+		if ( empty( $args ) ) {
+			return array(
+				'type'                 => 'object',
+				'properties'           => array(),
+				'additionalProperties' => true,
+			);
+		}
+
+		$schema = array(
+			'type'       => 'object',
+			'properties' => array(),
+		);
+
+		$required = array();
+
+		foreach ( $args as $arg_name => $arg_def ) {
+			if ( $skip_context && 'context' === $arg_name ) {
+				continue;
+			}
+
+			if ( ! is_array( $arg_def ) ) {
+				continue;
+			}
+
+			$property = array();
+
+			if ( isset( $arg_def['type'] ) ) {
+				$property['type'] = self::map_rest_type_to_schema_type( $arg_def['type'] );
+			}
+
+			if ( isset( $arg_def['description'] ) ) {
+				$property['description'] = $arg_def['description'];
+			}
+
+			if ( isset( $arg_def['enum'] ) && is_array( $arg_def['enum'] ) ) {
+				$property['enum'] = $arg_def['enum'];
+			}
+
+			if ( isset( $arg_def['minimum'] ) ) {
+				$property['minimum'] = $arg_def['minimum'];
+			}
+
+			if ( isset( $arg_def['maximum'] ) ) {
+				$property['maximum'] = $arg_def['maximum'];
+			}
+
+			if ( isset( $arg_def['format'] ) ) {
+				$property['format'] = $arg_def['format'];
+			}
+
+			if ( isset( $arg_def['items'] ) ) {
+				$property['items'] = $arg_def['items'];
+			}
+
+			if ( isset( $arg_def['default'] ) ) {
+				$property['default'] = $arg_def['default'];
+			}
+
+			$schema['properties'][ $arg_name ] = $property;
+
+			if ( isset( $arg_def['required'] ) && true === $arg_def['required'] ) {
+				$required[] = $arg_name;
+			}
+		}
+
+		if ( ! empty( $required ) ) {
+			$schema['required'] = $required;
+		}
+
+		$schema['additionalProperties'] = true;
+
+		return $schema;
+	}
+
+	/**
+	 * Build an input schema from REST controller endpoint args.
+	 *
+	 * Useful for core WP resources whose routes register late on rest_api_init
+	 * but whose controllers expose args via public methods at any time.
+	 *
+	 * @param array<string, mixed> $args              REST endpoint argument definitions.
+	 * @param array<string, mixed> $extra_properties  Additional JSON schema properties to merge.
+	 * @param string[]             $extra_required    Additional required property names.
+	 * @param bool                 $skip_context      Whether to omit the context parameter.
+	 *
+	 * @return array<string, mixed> JSON schema object.
+	 */
+	public static function schema_from_controller_args(
+		array $args,
+		array $extra_properties = array(),
+		array $extra_required = array(),
+		bool $skip_context = true
+	): array {
+		$schema = self::args_to_input_schema( $args, $skip_context );
+
+		if ( ! empty( $extra_properties ) ) {
+			foreach ( $extra_properties as $name => $property ) {
+				$schema['properties'][ $name ] = $property;
+			}
+		}
+
+		if ( ! empty( $extra_required ) ) {
+			$required           = $schema['required'] ?? array();
+			$schema['required'] = array_values( array_unique( array_merge( $required, $extra_required ) ) );
+		}
+
+		return $schema;
+	}
+
+	/**
+	 * Force lazy-loaded REST namespaces to register before route discovery.
+	 *
+	 * WC 10.3+ attaches a rest_pre_dispatch filter that only registers its
+	 * namespace when the incoming request route starts with that namespace or
+	 * with `/` for discovery. Firing the filter with a synthetic root request
+	 * triggers the same discovery path WC uses for /wp-json/ calls.
+	 *
+	 * @return void
+	 */
+	public static function eager_load_rest_routes(): void {
+		if ( ! apply_filters( 'blu_mcp_list_api_eager_load', true ) ) {
+			return;
+		}
+
+		$root_request = new \WP_REST_Request( 'GET', '/' );
+		apply_filters( 'rest_pre_dispatch', null, rest_get_server(), $root_request );
+	}
+
+	/**
+	 * Build a concrete item route from a collection or parameterized route.
+	 *
+	 * Strips a trailing (?P<name>...) capture group and appends the numeric ID.
+	 *
+	 * @param string   $route REST route (collection or parameterized).
+	 * @param int|null $id    Item ID.
+	 *
+	 * @return string Concrete REST route path.
+	 */
+	public static function build_item_route( string $route, $id ): string {
+		$base = preg_replace( '#/\(\?P<[^>]+>[^)]+\)$#', '', $route );
+
+		return $base . '/' . (int) $id;
+	}
+
+	/**
+	 * Replace named capture groups in a REST route with concrete values.
+	 *
+	 * @param string              $route  REST route containing (?P<name>...) patterns.
+	 * @param array<string, mixed> $params Map of capture name => replacement value.
+	 *
+	 * @return string Route with substitutions applied.
+	 */
+	public static function substitute_route_params( string $route, array $params ): string {
+		foreach ( $params as $name => $value ) {
+			$route = preg_replace(
+				'#\(\?P<' . preg_quote( (string) $name, '#' ) . '>[^)]+\)#',
+				(string) $value,
+				$route,
+				1
+			);
+		}
+
+		return $route;
+	}
+
+	/**
+	 * Resolve a concrete item route from a base namespace, resource path, and ID.
+	 *
+	 * Combines get_latest_available_rest_route() and build_item_route() so callers
+	 * do not repeat collection discovery and ID substitution logic.
+	 *
+	 * @param string   $base_namespace Base namespace prefix (e.g. "wc", "wp").
+	 * @param string   $resource_path  Resource path without version (e.g. "products").
+	 * @param int|null $id             Item ID.
+	 *
+	 * @return string|null Concrete route path, or null when discovery fails.
+	 */
+	public static function resolve_item_route( string $base_namespace, string $resource_path, $id ): ?string {
+		self::eager_load_rest_routes();
+		$route = self::get_latest_available_rest_route( $base_namespace, $resource_path );
+
+		if ( ! $route ) {
+			return null;
+		}
+
+		return self::build_item_route( $route, $id );
+	}
+
+	/**
+	 * Discover a parameterized route and substitute named capture groups.
+	 *
+	 * @param string               $base_namespace          Base namespace prefix (e.g. "wc").
+	 * @param string               $resource_pattern_path   Path including (?P<name>...) segments.
+	 * @param array<string, mixed> $params                  Capture name => value map.
+	 *
+	 * @return string|null Concrete route path, or null when discovery fails.
+	 */
+	public static function resolve_param_route( string $base_namespace, string $resource_pattern_path, array $params ): ?string {
+		self::eager_load_rest_routes();
+		$namespace = self::get_latest_namespace( $base_namespace );
+
+		if ( ! $namespace ) {
+			return null;
+		}
+
+		$route = self::find_route_by_resource( $namespace, $resource_pattern_path );
+
+		if ( ! $route ) {
+			return null;
+		}
+
+		return self::substitute_route_params( $route, $params );
+	}
+
+	/**
+	 * JSON Schema for pass-through REST parameter objects.
+	 *
+	 * Use when an ability accepts arbitrary native endpoint args not fully enumerated
+	 * in the schema builder. Known fields can be merged via schema_from_controller_args().
+	 *
+	 * @param string $description Human-readable schema description.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public static function passthrough_object_schema( string $description ): array {
+		return array(
+			'type'                 => 'object',
+			'description'          => $description,
+			'additionalProperties' => true,
+		);
 	}
 
 	/**

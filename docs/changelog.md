@@ -11,6 +11,10 @@ Notable changes are listed here; older history may be on **GitHub Releases**.
 
 ## [Unreleased]
 
+- **RestApiUtils:** centralized route helpers (`build_item_route`, `resolve_item_route`, `resolve_param_route`, `eager_load_rest_routes`); controller schemas now set `additionalProperties: true` for native REST pass-through params.
+- **Users:** restore default `context=edit` on read/update calls so email and other edit-context fields are returned (overridable via `context` input).
+- **Media:** `blu/search-media` retained as a deprecated alias of `blu/list-media`; both share the same handler.
+- **WooAnalytics:** new `WooAnalytics` class for `wc-analytics` stats reports with execute-time route resolution; legacy `wc/v3` totals moved off `WooOrders`.
 - Documentation: added **AGENTS.md**, **CLAUDE.md** (symlink), and **docs/** per Newfold module documentation standards (replaces superseded `add/docs` branch work).
 
 ---

@@ -260,7 +260,7 @@ All abilities below are accessible through the gateway. The **Ability name** col
 | `blu/upload-media` | `blu-upload-media` | Upload a new media file to WordPress |
 | `blu/update-media` | `blu-update-media` | Update a WordPress media item |
 | `blu/delete-media` | `blu-delete-media` | Delete a WordPress media item permanently |
-| `blu/search-media` | `blu-search-media` | Search WordPress media by title, caption, or description |
+| `blu/search-media` | `blu-search-media` | **Deprecated** — alias of `blu/list-media`; use `blu/list-media` for new integrations |
 
 #### Custom post types
 
@@ -387,6 +387,7 @@ Two surfaces are exposed:
 | `blu/wc-reports-customers-totals` | `blu-wc-reports-customers-totals` | Get WooCommerce customers totals report |
 | `blu/wc-reports-orders-totals` | `blu-wc-reports-orders-totals` | Get WooCommerce orders totals report |
 | `blu/wc-reports-products-totals` | `blu-wc-reports-products-totals` | Get WooCommerce products totals report |
+| `blu/wc-reports-revenue-stats` | `blu-wc-reports-revenue-stats` | Get WooCommerce revenue stats report (wc-analytics) |
 | `blu/wc-reports-reviews-totals` | `blu-wc-reports-reviews-totals` | Get WooCommerce reviews totals report |
 | `blu/wc-reports-sales` | `blu-wc-reports-sales` | Get WooCommerce sales report |
 
