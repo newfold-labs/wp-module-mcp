@@ -17,6 +17,7 @@ use BLU\Abilities\RestApiCrud;
 use BLU\Abilities\Settings;
 use BLU\Abilities\SiteInfo;
 use BLU\Abilities\Users;
+use BLU\Abilities\WooAnalytics;
 use BLU\Abilities\WooOrders;
 use BLU\Abilities\WooProducts;
 use BLU\Abilities\Themes;
@@ -150,6 +151,7 @@ class McpServer {
 		new GlobalStyles();
 		new WooProducts();
 		new WooOrders();
+		new WooAnalytics();
 		new Themes();
 		new BlockEditor();
 		new ImageGen();
