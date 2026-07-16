@@ -16,7 +16,7 @@ class WooAnalytics {
 	 *
 	 * @var string
 	 */
-	private string $base_namespace = 'wc-analytics';
+	private $base_namespace = 'wc-analytics';
 
 	/**
 	 * Constructor - registers WooCommerce analytics abilities if WooCommerce is active.

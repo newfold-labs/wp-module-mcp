@@ -303,7 +303,7 @@ class RestApiUtils {
 	/**
 	 * Replace named capture groups in a REST route with concrete values.
 	 *
-	 * @param string              $route  REST route containing (?P<name>...) patterns.
+	 * @param string               $route  REST route containing (?P<name>...) patterns.
 	 * @param array<string, mixed> $params Map of capture name => replacement value.
 	 *
 	 * @return string Route with substitutions applied.

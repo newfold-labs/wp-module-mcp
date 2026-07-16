@@ -18,31 +18,20 @@ class RestControllerSchemaBuilder {
 	 *
 	 * @var \WP_REST_Controller
 	 */
-	private \WP_REST_Controller $controller;
+	private $controller;
 
 	/**
+	 * The construct
+	 *
 	 * @param \WP_REST_Controller $controller REST controller instance.
 	 */
 	public function __construct( \WP_REST_Controller $controller ) {
 		$this->controller = $controller;
 	}
 
-	/**
-	 * Create a builder from any REST controller.
-	 *
-	 * @param \WP_REST_Controller $controller REST controller instance.
-	 *
-	 * @return self
-	 */
-	public static function from_controller( \WP_REST_Controller $controller ): self {
-		return new self( $controller );
-	}
-
 
 	/**
 	 * Create a builder from any REST controller.
-	 *
-	 * @param \WP_REST_Controller $controller REST controller instance.
 	 *
 	 * @return self
 	 */
@@ -84,7 +73,7 @@ class RestControllerSchemaBuilder {
 	 * @return self
 	 */
 	public static function for_media(): self {
-		return new self( new \WP_REST_Attachments_Controller('attachment') );
+		return new self( new \WP_REST_Attachments_Controller( 'attachment' ) );
 	}
 
 	/**
@@ -99,9 +88,11 @@ class RestControllerSchemaBuilder {
 	/**
 	 * Create a builder for the terms REST controller.
 	 *
+	 * @param string $term Term slug (e.g. "category", "post_tag").
+	 *
 	 * @return self
 	 */
-	public static function for_terms( $term = 'category'): self {
+	public static function for_terms( $term = 'category' ): self {
 		return new self( new \WP_REST_Terms_Controller( $term ) );
 	}
 
@@ -288,8 +279,8 @@ class RestControllerSchemaBuilder {
 			return array();
 		}
 
-		$schema          = $this->controller->get_item_schema();
-		$get_item_args   = array();
+		$schema        = $this->controller->get_item_schema();
+		$get_item_args = array();
 
 		if ( isset( $schema['properties']['excerpt'] ) ) {
 			$get_item_args['excerpt_length'] = array(

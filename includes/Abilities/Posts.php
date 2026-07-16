@@ -15,7 +15,7 @@ class Posts {
 	 *
 	 * @var string
 	 */
-	private string $base_namespace = 'wp';
+	private $base_namespace = 'wp';
 
 	/**
 	 * Constructor - registers all post-related abilities.
@@ -30,7 +30,7 @@ class Posts {
 	 * Register post abilities.
 	 */
 	private function register_post_abilities(): void {
-		$schema = RestControllerSchemaBuilder::for_post_type('post');
+		$schema = RestControllerSchemaBuilder::for_post_type( 'post' );
 
 		// Search/list posts
 		blu_register_ability(
@@ -41,7 +41,7 @@ class Posts {
 				'category'            => 'blu-mcp',
 				'input_schema'        => $schema->collection(),
 				'execute_callback'    => function ( $input = null ) {
-					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'posts');
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'posts' );
 
 					if ( ! $root ) {
 						return blu_standardize_rest_response(
@@ -52,8 +52,8 @@ class Posts {
 						);
 					}
 
-					$method 	= 'GET';
-					$request  	= new \WP_REST_Request( $method, $root );
+					$method     = 'GET';
+					$request    = new \WP_REST_Request( $method, $root );
 
 					$all_statuses = 'publish,future,draft,pending,private';
 					if ( $input ) {
@@ -88,7 +88,7 @@ class Posts {
 				'category'            => 'blu-mcp',
 				'input_schema'        => $schema->get_item(),
 				'execute_callback'    => function ( $input ) {
-					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'posts');
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'posts' );
 
 					if ( ! $root ) {
 						return blu_standardize_rest_response(
@@ -99,10 +99,10 @@ class Posts {
 						);
 					}
 
-					$method 	= 'GET';
-					$request  	= new \WP_REST_Request( $method, $root . '/' . $input['id'] );
+					$method     = 'GET';
+					$request    = new \WP_REST_Request( $method, $root . '/' . $input['id'] );
 					$request->set_query_params( $input );
-					$response 	= rest_do_request( $request );
+					$response   = rest_do_request( $request );
 
 					return blu_standardize_rest_response( $response );
 				},
@@ -126,7 +126,7 @@ class Posts {
 				'category'            => 'blu-mcp',
 				'input_schema'        => $schema->creatable(),
 				'execute_callback'    => function ( $input ) {
-					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'posts');
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'posts' );
 
 					if ( ! $root ) {
 						return blu_standardize_rest_response(
@@ -137,8 +137,8 @@ class Posts {
 						);
 					}
 
-					$method 	= 'POST';
-					$request  	= new \WP_REST_Request( $method, $root );
+					$method     = 'POST';
+					$request    = new \WP_REST_Request( $method, $root );
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
@@ -164,7 +164,7 @@ class Posts {
 				'input_schema'        => $schema->update_with_id(),
 				'execute_callback'    => function ( $input ) {
 
-					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'posts');
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'posts' );
 
 					if ( ! $root ) {
 						return blu_standardize_rest_response(
@@ -177,9 +177,9 @@ class Posts {
 
 					$id = $input['id'];
 					unset( $input['id'] );
-					$method 	= 'PUT';
-					$request  	= new \WP_REST_Request( $method, $root . '/' . $id );
-					
+					$method     = 'PUT';
+					$request    = new \WP_REST_Request( $method, $root . '/' . $id );
+
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
@@ -208,7 +208,7 @@ class Posts {
 					'Unique identifier for the post.'
 				),
 				'execute_callback'    => function ( $input ) {
-					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'posts');
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'posts' );
 
 					if ( ! $root ) {
 						return blu_standardize_rest_response(
@@ -221,8 +221,8 @@ class Posts {
 
 					$id = $input['id'];
 					unset( $input['id'] );
-					$method 	= 'DELETE';
-					$request  	= new \WP_REST_Request( $method, $root . '/' . $id );
+					$method     = 'DELETE';
+					$request    = new \WP_REST_Request( $method, $root . '/' . $id );
 
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
@@ -253,7 +253,7 @@ class Posts {
 				'category'            => 'blu-mcp',
 				'input_schema'        => $schema->collection(),
 				'execute_callback'    => function ( $input = null ) {
-					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'categories');
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'categories' );
 
 					if ( ! $root ) {
 						return blu_standardize_rest_response(
@@ -263,10 +263,10 @@ class Posts {
 							)
 						);
 					}
-					$method 	= 'GET';
-					$request  	= new \WP_REST_Request( $method, $root );
+					$method     = 'GET';
+					$request    = new \WP_REST_Request( $method, $root );
 
-					if( $input ) {
+					if ( $input ) {
 						$request->set_query_params( $input );
 					}
 
@@ -293,7 +293,7 @@ class Posts {
 				'category'            => 'blu-mcp',
 				'input_schema'        => $schema->creatable(),
 				'execute_callback'    => function ( $input ) {
-					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'categories');
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'categories' );
 
 					if ( ! $root ) {
 						return blu_standardize_rest_response(
@@ -304,8 +304,8 @@ class Posts {
 						);
 					}
 
-					$method 	= 'POST';
-					$request  	= new \WP_REST_Request( $method, $root );
+					$method     = 'POST';
+					$request    = new \WP_REST_Request( $method, $root );
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
@@ -331,7 +331,7 @@ class Posts {
 				'input_schema'        => $schema->update_with_id(),
 				'execute_callback'    => function ( $input ) {
 
-					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'categories');
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'categories' );
 
 					if ( ! $root ) {
 						return blu_standardize_rest_response(
@@ -344,8 +344,8 @@ class Posts {
 
 					$id = $input['id'];
 					unset( $input['id'] );
-					$method 	= 'PUT';
-					$request  	= new \WP_REST_Request( $method, $root . '/' . $id );
+					$method     = 'PUT';
+					$request    = new \WP_REST_Request( $method, $root . '/' . $id );
 
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
@@ -371,7 +371,7 @@ class Posts {
 				'category'            => 'blu-mcp',
 				'input_schema'        => $schema->delete_with_id( array() ),
 				'execute_callback'    => function ( $input ) {
-					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'categories');
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'categories' );
 
 					if ( ! $root ) {
 						return blu_standardize_rest_response(
@@ -384,8 +384,8 @@ class Posts {
 
 					$id = $input['id'];
 					unset( $input['id'] );
-					$method 	= 'DELETE';
-					$request  	= new \WP_REST_Request( $method, $root . '/' . $id );
+					$method     = 'DELETE';
+					$request    = new \WP_REST_Request( $method, $root . '/' . $id );
 					$request->set_query_params( array( 'force' => true ) );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
@@ -406,7 +406,7 @@ class Posts {
 	 * Register tag abilities.
 	 */
 	private function register_tag_abilities(): void {
-		$schema = RestControllerSchemaBuilder::for_terms('post_tag');
+		$schema = RestControllerSchemaBuilder::for_terms( 'post_tag' );
 		// List tags
 		blu_register_ability(
 			'blu/list-tags',
@@ -416,7 +416,7 @@ class Posts {
 				'category'            => 'blu-mcp',
 				'input_schema'        => $schema->collection(),
 				'execute_callback'    => function ( $input = null ) {
-					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'tags');
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'tags' );
 
 					if ( ! $root ) {
 						return blu_standardize_rest_response(
@@ -427,10 +427,10 @@ class Posts {
 						);
 					}
 
-					$method 	= 'GET';
-					$request  	= new \WP_REST_Request( $method, $root );
+					$method     = 'GET';
+					$request    = new \WP_REST_Request( $method, $root );
 
-					if( $input ) {
+					if ( $input ) {
 						$request->set_query_params( $input );
 					}
 
@@ -457,7 +457,7 @@ class Posts {
 				'category'            => 'blu-mcp',
 				'input_schema'        => $schema->creatable(),
 				'execute_callback'    => function ( $input ) {
-					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'tags');
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'tags' );
 
 					if ( ! $root ) {
 						return blu_standardize_rest_response(
@@ -468,8 +468,8 @@ class Posts {
 						);
 					}
 
-					$method 	= 'POST';
-					$request  	= new \WP_REST_Request( $method, $root );
+					$method     = 'POST';
+					$request    = new \WP_REST_Request( $method, $root );
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
@@ -495,7 +495,7 @@ class Posts {
 				'input_schema'        => $schema->update_with_id(),
 				'execute_callback'    => function ( $input ) {
 
-					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'tags');
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'tags' );
 
 					if ( ! $root ) {
 						return blu_standardize_rest_response(
@@ -508,8 +508,8 @@ class Posts {
 
 					$id = $input['id'];
 					unset( $input['id'] );
-					$method 	= 'PUT';
-					$request  	= new \WP_REST_Request( $method, $root . '/' . $id );
+					$method     = 'PUT';
+					$request    = new \WP_REST_Request( $method, $root . '/' . $id );
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
@@ -535,7 +535,7 @@ class Posts {
 				'input_schema'        => $schema->delete_with_id( array() ),
 				'execute_callback'    => function ( $input ) {
 
-					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'tags');
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'tags' );
 
 					if ( ! $root ) {
 						return blu_standardize_rest_response(
@@ -548,8 +548,8 @@ class Posts {
 
 					$id = $input['id'];
 					unset( $input['id'] );
-					$method 	= 'DELETE';
-					$request  	= new \WP_REST_Request( $method, $root . '/' . $id );
+					$method     = 'DELETE';
+					$request    = new \WP_REST_Request( $method, $root . '/' . $id );
 					$request->set_query_params( array( 'force' => true ) );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );

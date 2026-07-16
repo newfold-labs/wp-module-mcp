@@ -15,13 +15,13 @@ use BLU\RestControllerSchema\RestControllerSchemaBuilder;
  * with the numeric `id` (which LLMs would otherwise routinely drop).
  */
 class CustomPostTypes {
-	
+
 	/**
 	 * Base REST API namespace used to discover the latest versioned namespace.
 	 *
 	 * @var string
 	 */
-	private string $base_namespace = 'wp';
+	private $base_namespace = 'wp';
 
 	/**
 	 * Constructor - registers custom post type abilities.
@@ -56,13 +56,13 @@ class CustomPostTypes {
 
 					}
 
-					$method 	= 'GET';
-					$request  	= new \WP_REST_Request( $method, $root );
-					
+					$method     = 'GET';
+					$request    = new \WP_REST_Request( $method, $root );
+
 					$request->set_query_params( $input );
-					
+
 					$response = rest_do_request( $request );
-					
+
 					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),

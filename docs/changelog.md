@@ -15,6 +15,7 @@ Notable changes are listed here; older history may be on **GitHub Releases**.
 - **Users:** restore default `context=edit` on read/update calls so email and other edit-context fields are returned (overridable via `context` input).
 - **Media:** `blu/search-media` retained as a deprecated alias of `blu/list-media`; both share the same handler.
 - **WooAnalytics:** new `WooAnalytics` class for `wc-analytics` stats reports with execute-time route resolution; legacy `wc/v3` totals moved off `WooOrders`.
+- **WooProducts:** `blu/wc-reports-reviews-totals` moved from `WooOrders` (product reviews report).
 - Documentation: added **AGENTS.md**, **CLAUDE.md** (symlink), and **docs/** per Newfold module documentation standards (replaces superseded `add/docs` branch work).
 
 ---

@@ -340,6 +340,7 @@ Two surfaces are exposed:
 | `blu/wc-list-product-variations` | `blu-wc-list-product-variations`     | List all variations for a WooCommerce variable product |
 | `blu/wc-add-product-variation` | `blu-wc-add-product-variation`       | Create a variation for a WooCommerce variable product |
 | `blu/wc-generate-product-variations` | `blu-wc-generate-product-variations` | Automatically generate all attribute combinations as variations for a WooCommerce variable product |
+| `blu/wc-reports-reviews-totals` | `blu-wc-reports-reviews-totals` | Get WooCommerce reviews totals report |
 
 #### Product categories
 
@@ -388,7 +389,6 @@ Two surfaces are exposed:
 | `blu/wc-reports-orders-totals` | `blu-wc-reports-orders-totals` | Get WooCommerce orders totals report |
 | `blu/wc-reports-products-totals` | `blu-wc-reports-products-totals` | Get WooCommerce products totals report |
 | `blu/wc-reports-revenue-stats` | `blu-wc-reports-revenue-stats` | Get WooCommerce revenue stats report (wc-analytics) |
-| `blu/wc-reports-reviews-totals` | `blu-wc-reports-reviews-totals` | Get WooCommerce reviews totals report |
 | `blu/wc-reports-sales` | `blu-wc-reports-sales` | Get WooCommerce sales report |
 
 ---
