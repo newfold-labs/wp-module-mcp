@@ -56,9 +56,9 @@ class DocumentRead {
 			return blu_prepare_ability_response( 400, __( 'A valid source_url is required.', 'wp-module-mcp' ) );
 		}
 
-		// Resolve to filesystem path — must be inside nfd-chat-temp (SSRF / path-traversal guard).
+		// Resolve to filesystem path — must be inside the chat temp upload dir (SSRF / path-traversal guard).
 		$upload_dir = wp_upload_dir();
-		$base_path  = realpath( $upload_dir['basedir'] . '/nfd-chat-temp' );
+		$base_path  = realpath( $upload_dir['basedir'] . '/' . blu_mcp_chat_temp_subdir() );
 		if ( false === $base_path ) {
 			return blu_prepare_ability_response( 404, __( 'Document not found or not accessible.', 'wp-module-mcp' ) );
 		}
