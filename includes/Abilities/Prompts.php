@@ -7,8 +7,6 @@
 
 namespace BLU\Abilities;
 
-
-
 /**
  * The class
  */
