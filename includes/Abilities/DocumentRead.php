@@ -4,6 +4,7 @@ declare( strict_types=1 );
 
 namespace BLU\Abilities;
 
+use Smalot\PdfParser\Parser;
 /**
  * Document read ability — exposes uploaded temp documents to the AI.
  */
@@ -125,12 +126,10 @@ class DocumentRead {
 	 * @return string Extracted text or fallback message.
 	 */
 	private function extract_pdf_text( string $path ): string {
-		$this->register_smalot_pdfparser_autoloader();
-
 		// Primary: smalot/pdfparser — works on any PHP host, no binaries needed.
 		if ( class_exists( '\Smalot\PdfParser\Parser' ) ) {
 			try {
-				$parser = new \Smalot\PdfParser\Parser();
+				$parser = new Parser();
 				$pdf    = $parser->parseFile( $path );
 				$text   = $pdf->getText();
 				if ( is_string( $text ) && '' !== trim( $text ) ) {
@@ -153,42 +152,5 @@ class DocumentRead {
 		}
 
 		return 'PDF content could not be extracted automatically on this server. Ask the user to upload a .txt version of the document instead.';
-	}
-
-	/**
-	 * Register a targeted autoloader for smalot/pdfparser when Composer did not load it.
-	 *
-	 * Checks the module vendor tree and the parent brand-plugin vendor tree.
-	 *
-	 * @return void
-	 */
-	private function register_smalot_pdfparser_autoloader(): void {
-		if ( class_exists( '\Smalot\PdfParser\Parser' ) ) {
-			return;
-		}
-
-		$smalot_src_candidates = array(
-			dirname( __DIR__, 2 ) . '/vendor/smalot/pdfparser/src',
-			dirname( __DIR__, 4 ) . '/smalot/pdfparser/src',
-		);
-
-		foreach ( $smalot_src_candidates as $smalot_src ) {
-			if ( ! is_dir( $smalot_src ) ) {
-				continue;
-			}
-
-			spl_autoload_register(
-				static function ( $class_name ) use ( $smalot_src ) {
-					if ( 0 === strpos( $class_name, 'Smalot\\' ) ) {
-						$file = $smalot_src . DIRECTORY_SEPARATOR . str_replace( '\\', DIRECTORY_SEPARATOR, $class_name ) . '.php';
-						if ( file_exists( $file ) ) {
-							require_once $file; // phpcs:ignore WordPressVIPMinimum.Files.IncludingFile.UsingVariable
-						}
-					}
-				}
-			);
-
-			return;
-		}
 	}
 }
