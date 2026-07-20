@@ -7,7 +7,7 @@
 
 namespace BLU\Abilities;
 
-use WP_Error;
+
 
 /**
  * The class
@@ -291,7 +291,7 @@ class Prompts {
 					$product_id   = isset( $input['product_id'] ) ? (int) $input['product_id'] : 0;
 					if ( isset( $input['product_id'] ) && $product_id <= 0 ) {
 						return blu_standardize_rest_response(
-							new WP_Error(
+							new \WP_Error(
 								'blu_invalid_product_id',
 								'product_id must be a positive integer when provided.',
 								array( 'status' => 400 )
@@ -600,7 +600,7 @@ class Prompts {
 				'execute_callback'    => function ( $input ) {
 					if ( ! isset( $input['id'] ) ) {
 						return blu_standardize_rest_response(
-							new WP_Error(
+							new \WP_Error(
 								400,
 								'Miss required Product ID.',
 							)
@@ -610,7 +610,7 @@ class Prompts {
 					$product    = wc_get_product( $input['id'] );
 					if ( ! $product ) {
 						return blu_standardize_rest_response(
-							new WP_Error(
+							new \WP_Error(
 								400,
 								'Invalid Product ID.',
 							)
