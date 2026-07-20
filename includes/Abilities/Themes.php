@@ -67,13 +67,7 @@ class Themes {
 					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'themes' );
 
 					if ( ! $root ) {
-						return blu_standardize_rest_response(
-							new \WP_Error(
-								400,
-								'A valid route for themes not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
-							)
-						);
-
+						return blu_standardize_route_unavailable_for_resource( 'themes' );
 					}
 					$request = new \WP_REST_Request( 'GET', $root );
 

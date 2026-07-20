@@ -20,10 +20,166 @@ namespace BLU\Abilities;
 class RestApiUtils {
 
 	/**
+	 * Per-request cache of registered REST routes.
+	 *
+	 * @var array<string, mixed>|null
+	 */
+	private static $routes_cache = null;
+
+	/**
+	 * Per-request cache of registered REST namespaces.
+	 *
+	 * @var string[]|null
+	 */
+	private static $namespaces_cache = null;
+
+	/**
+	 * Whether eager_load_rest_routes() has already run this request.
+	 *
+	 * @var bool
+	 */
+	private static $eager_loaded = false;
+
+	/**
+	 * Per-request cache for get_latest_namespace() results.
+	 *
+	 * @var array<string, string|null>
+	 */
+	private static $latest_namespace_cache = array();
+
+	/**
+	 * Per-request cache for find_route_by_resource() results.
+	 *
+	 * @var array<string, string|null>
+	 */
+	private static $find_route_cache = array();
+
+	/**
+	 * Whether routes were cached before rest_api_init completed.
+	 *
+	 * @var bool
+	 */
+	private static $routes_cached_pre_init = false;
+
+	/**
+	 * Whether namespaces were cached before rest_api_init completed.
+	 *
+	 * @var bool
+	 */
+	private static $namespaces_cached_pre_init = false;
+
+	/**
 	 * Private constructor to prevent instantiation of utility class.
 	 */
 	private function __construct() {
 		// Static utility class - prevent instantiation
+	}
+
+	/**
+	 * Reset per-request caches (primarily for tests).
+	 *
+	 * @return void
+	 */
+	public static function reset_cache(): void {
+		self::$routes_cache               = null;
+		self::$namespaces_cache           = null;
+		self::$eager_loaded               = false;
+		self::$latest_namespace_cache     = array();
+		self::$find_route_cache           = array();
+		self::$routes_cached_pre_init     = false;
+		self::$namespaces_cached_pre_init = false;
+	}
+
+	/**
+	 * Clear route-discovery caches so the next lookup reads fresh server state.
+	 *
+	 * @return void
+	 */
+	private static function invalidate_route_discovery_cache(): void {
+		self::$routes_cache               = null;
+		self::$namespaces_cache           = null;
+		self::$routes_cached_pre_init     = false;
+		self::$namespaces_cached_pre_init = false;
+		self::$latest_namespace_cache     = array();
+		self::$find_route_cache           = array();
+	}
+
+	/**
+	 * Ensure core REST routes are registered before discovery.
+	 *
+	 * @return void
+	 */
+	private static function ensure_rest_routes_registered(): void {
+		if ( ! did_action( 'rest_api_init' ) ) {
+			rest_api_init();
+		}
+	}
+
+	/**
+	 * Trigger lazy REST namespace registration (e.g. WooCommerce 10.3+).
+	 *
+	 * @return void
+	 */
+	private static function trigger_lazy_rest_registration(): void {
+		if ( ! apply_filters( 'blu_mcp_list_api_eager_load', true ) ) {
+			return;
+		}
+
+		$root_request = new \WP_REST_Request( 'GET', '/' );
+		apply_filters( 'rest_pre_dispatch', null, rest_get_server(), $root_request );
+	}
+
+	/**
+	 * Get registered REST routes, cached for the current request.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private static function get_cached_routes(): array {
+		if ( self::$routes_cached_pre_init && did_action( 'rest_api_init' ) ) {
+			self::$routes_cache           = null;
+			self::$routes_cached_pre_init = false;
+		}
+
+		if ( null === self::$routes_cache ) {
+			self::$routes_cache           = rest_get_server()->get_routes();
+			self::$routes_cached_pre_init = ! did_action( 'rest_api_init' );
+		}
+
+		return self::$routes_cache;
+	}
+
+	/**
+	 * Get registered REST namespaces, cached for the current request.
+	 *
+	 * @return string[]
+	 */
+	private static function get_cached_namespaces(): array {
+		if ( self::$namespaces_cached_pre_init && did_action( 'rest_api_init' ) ) {
+			self::$namespaces_cache           = null;
+			self::$namespaces_cached_pre_init = false;
+		}
+
+		if ( null === self::$namespaces_cache ) {
+			self::$namespaces_cache           = rest_get_server()->get_namespaces();
+			self::$namespaces_cached_pre_init = ! did_action( 'rest_api_init' );
+		}
+
+		return self::$namespaces_cache;
+	}
+
+	/**
+	 * Normalize a route pattern for comparison by stripping named capture groups
+	 * and collapsing repeated slashes.
+	 *
+	 * @param string $route REST route pattern.
+	 *
+	 * @return string Normalized route path.
+	 */
+	public static function normalize_route_for_match( string $route ): string {
+		$normalized = preg_replace( '#/\(\?P<[^>]+>[^)]+\)#', '', $route );
+		$normalized = preg_replace( '#/+#', '/', (string) $normalized );
+
+		return $normalized;
 	}
 
 	/**
@@ -43,15 +199,19 @@ class RestApiUtils {
 	 * @return string|null The latest versioned namespace, or null if not found.
 	 */
 	public static function get_latest_namespace( string $base_namespace ): ?string {
-		$server     = rest_get_server();
-		$namespaces = $server->get_namespaces();
-
 		$base_namespace = trim( $base_namespace, '/' );
-		$versions       = array();
+
+		if ( array_key_exists( $base_namespace, self::$latest_namespace_cache ) ) {
+			return self::$latest_namespace_cache[ $base_namespace ];
+		}
+
+		$namespaces = self::get_cached_namespaces();
+		$versions   = array();
 
 		foreach ( $namespaces as $ns ) {
 			// Exact match (unversioned namespace like "wc-analytics")
 			if ( $ns === $base_namespace ) {
+				self::$latest_namespace_cache[ $base_namespace ] = $ns;
 				return $ns;
 			}
 
@@ -62,12 +222,19 @@ class RestApiUtils {
 		}
 
 		if ( empty( $versions ) ) {
+			if ( did_action( 'rest_api_init' ) ) {
+				self::$latest_namespace_cache[ $base_namespace ] = null;
+			}
 			return null;
 		}
 
 		// Return the highest version
 		krsort( $versions, SORT_NUMERIC );
-		return reset( $versions );
+		$result = reset( $versions );
+
+		self::$latest_namespace_cache[ $base_namespace ] = $result;
+
+		return $result;
 	}
 
 	/**
@@ -89,23 +256,32 @@ class RestApiUtils {
 	 * @return string|null The matching route, or null if not found.
 	 */
 	public static function find_route_by_resource( string $namespace, string $resource_path, bool $exact_match = true ): ?string {
-		$server = rest_get_server();
-		$routes = $server->get_routes();
-
 		$namespace     = trim( $namespace, '/' );
 		$resource_path = trim( $resource_path, '/' );
-		$search_route  = '/' . $namespace . '/' . $resource_path;
+		$cache_key     = $namespace . '|' . $resource_path . '|' . ( $exact_match ? '1' : '0' );
+
+		if ( array_key_exists( $cache_key, self::$find_route_cache ) ) {
+			return self::$find_route_cache[ $cache_key ];
+		}
+
+		$routes       = self::get_cached_routes();
+		$search_route = '/' . $namespace . '/' . $resource_path;
 
 		foreach ( array_keys( $routes ) as $route ) {
 			if ( $exact_match ) {
-				// Exact match or parameterized version of the same route
-				$normalized_route = preg_replace( '#/\(\?P<[^>]+>[^)]+\)#', '', $route );
+				$normalized_route = self::normalize_route_for_match( $route );
 				if ( $normalized_route === $search_route || $route === $search_route ) {
+					self::$find_route_cache[ $cache_key ] = $route;
 					return $route;
 				}
 			} elseif ( strpos( $route, $search_route ) === 0 ) {
-					return $route;
+				self::$find_route_cache[ $cache_key ] = $route;
+				return $route;
 			}
+		}
+
+		if ( did_action( 'rest_api_init' ) ) {
+			self::$find_route_cache[ $cache_key ] = null;
 		}
 
 		return null;
@@ -124,8 +300,7 @@ class RestApiUtils {
 	 * @return array|null JSON schema object, or null if route/method not found.
 	 */
 	public static function extract_input_schema( string $route, string $method ): ?array {
-		$server = rest_get_server();
-		$routes = $server->get_routes();
+		$routes = self::get_cached_routes();
 
 		if ( ! isset( $routes[ $route ] ) ) {
 			return null;
@@ -142,6 +317,32 @@ class RestApiUtils {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Log when registration-time schema discovery falls back to a minimal schema.
+	 *
+	 * Runtime validation still applies via the native REST endpoint. Enable logging
+	 * with the `blu_mcp_log_schema_fallback` filter (defaults to WP_DEBUG).
+	 *
+	 * @param string $ability_id Ability identifier (e.g. "blu/wc-reports-orders-totals").
+	 * @param string $reason     Short reason discovery failed.
+	 *
+	 * @return void
+	 */
+	public static function log_registration_schema_fallback( string $ability_id, string $reason ): void {
+		if ( ! apply_filters( 'blu_mcp_log_schema_fallback', defined( 'WP_DEBUG' ) && WP_DEBUG ) ) {
+			return;
+		}
+
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+		error_log(
+			sprintf(
+				'[wp-module-mcp] Registration-time schema fallback for %s: %s. Runtime REST validation still applies.',
+				$ability_id,
+				$reason
+			)
+		);
 	}
 
 	/**
@@ -276,32 +477,51 @@ class RestApiUtils {
 	 * @return void
 	 */
 	public static function eager_load_rest_routes(): void {
-		if ( ! apply_filters( 'blu_mcp_list_api_eager_load', true ) ) {
+		if ( self::$eager_loaded ) {
 			return;
 		}
 
-		$root_request = new \WP_REST_Request( 'GET', '/' );
-		apply_filters( 'rest_pre_dispatch', null, rest_get_server(), $root_request );
+		self::ensure_rest_routes_registered();
+		self::trigger_lazy_rest_registration();
+
+		self::$eager_loaded = true;
+
+		// Routes/namespaces may have changed after lazy registration.
+		self::invalidate_route_discovery_cache();
 	}
 
 	/**
 	 * Build a concrete item route from a collection or parameterized route.
 	 *
 	 * Strips a trailing (?P<name>...) capture group and appends the numeric ID.
+	 * Returns null when the ID is missing or not a positive integer.
 	 *
 	 * @param string   $route REST route (collection or parameterized).
 	 * @param int|null $id    Item ID.
 	 *
-	 * @return string Concrete REST route path.
+	 * @return string|null Concrete REST route path, or null when ID is invalid.
 	 */
-	public static function build_item_route( string $route, $id ): string {
+	public static function build_item_route( string $route, $id ): ?string {
+		if ( null === $id || '' === $id ) {
+			return null;
+		}
+
+		$numeric_id = is_numeric( $id ) ? (int) $id : 0;
+		if ( $numeric_id <= 0 ) {
+			return null;
+		}
+
 		$base = preg_replace( '#/\(\?P<[^>]+>[^)]+\)$#', '', $route );
 
-		return $base . '/' . (int) $id;
+		return $base . '/' . $numeric_id;
 	}
 
 	/**
 	 * Replace named capture groups in a REST route with concrete values.
+	 *
+	 * Numeric IDs are inserted as-is. Other values are rawurlencoded for safe
+	 * use in path segments (e.g. slugs). Callers should pass integer IDs when
+	 * the capture pattern expects digits.
 	 *
 	 * @param string               $route  REST route containing (?P<name>...) patterns.
 	 * @param array<string, mixed> $params Map of capture name => replacement value.
@@ -310,9 +530,11 @@ class RestApiUtils {
 	 */
 	public static function substitute_route_params( string $route, array $params ): string {
 		foreach ( $params as $name => $value ) {
+			$encoded = is_numeric( $value ) ? (string) (int) $value : rawurlencode( (string) $value );
+
 			$route = preg_replace(
 				'#\(\?P<' . preg_quote( (string) $name, '#' ) . '>[^)]+\)#',
-				(string) $value,
+				$encoded,
 				$route,
 				1
 			);
@@ -423,8 +645,7 @@ class RestApiUtils {
 	 * @return array Array of namespace strings.
 	 */
 	public static function get_all_namespaces(): array {
-		$server = rest_get_server();
-		return $server->get_namespaces();
+		return self::get_cached_namespaces();
 	}
 
 	/**
@@ -435,7 +656,7 @@ class RestApiUtils {
 	 * @return bool True if namespace is registered, false otherwise.
 	 */
 	public static function namespace_exists( string $namespace ): bool {
-		$namespaces = self::get_all_namespaces();
+		$namespaces = self::get_cached_namespaces();
 		$namespace  = trim( $namespace, '/' );
 		return in_array( $namespace, $namespaces, true );
 	}
@@ -448,8 +669,7 @@ class RestApiUtils {
 	 * @return array Array of route strings.
 	 */
 	public static function get_routes_for_namespace( string $namespace ): array {
-		$server     = rest_get_server();
-		$all_routes = $server->get_routes();
+		$all_routes = self::get_cached_routes();
 		$namespace  = trim( $namespace, '/' );
 		$routes     = array();
 
@@ -474,8 +694,7 @@ class RestApiUtils {
 	 * @return array|null Endpoint information, or null if not found.
 	 */
 	public static function get_endpoint_info( string $route, string $method ): ?array {
-		$server = rest_get_server();
-		$routes = $server->get_routes();
+		$routes = self::get_cached_routes();
 
 		if ( ! isset( $routes[ $route ] ) ) {
 			return null;
@@ -512,19 +731,37 @@ class RestApiUtils {
 	 * @return string|null The matching REST route, or null if the namespace or resource is not found.
 	 */
 	public static function get_latest_available_rest_route( string $base_namespace, string $resource_path ): ?string {
+		self::eager_load_rest_routes();
+
+		$route = self::resolve_latest_available_rest_route( $base_namespace, $resource_path );
+		if ( null !== $route ) {
+			return $route;
+		}
+
+		// Retry with a fresh snapshot in case the first lookup used a stale per-request cache
+		// (e.g. routes enumerated before rest_api_init or lazy namespaces registered later).
+		self::ensure_rest_routes_registered();
+		self::invalidate_route_discovery_cache();
+		self::trigger_lazy_rest_registration();
+
+		return self::resolve_latest_available_rest_route( $base_namespace, $resource_path );
+	}
+
+	/**
+	 * Resolve the latest REST route without retry logic.
+	 *
+	 * @param string $base_namespace Base namespace prefix (e.g., "wc", "wp", "wc-analytics").
+	 * @param string $resource_path  Resource path without version (e.g., "types", "orders", "posts").
+	 *
+	 * @return string|null The matching REST route, or null if the namespace or resource is not found.
+	 */
+	private static function resolve_latest_available_rest_route( string $base_namespace, string $resource_path ): ?string {
 		$namespace = self::get_latest_namespace( $base_namespace );
 
 		if ( ! $namespace ) {
 			return null;
 		}
 
-		// Find the orders route
-		$types_route = self::find_route_by_resource( $namespace, $resource_path );
-
-		if ( ! $types_route ) {
-			return null;
-		}
-
-		return $types_route;
+		return self::find_route_by_resource( $namespace, $resource_path );
 	}
 }

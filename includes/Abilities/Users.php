@@ -42,12 +42,7 @@ class Users {
 					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'users' );
 
 					if ( ! $root ) {
-						return blu_standardize_rest_response(
-							new \WP_Error(
-								400,
-								'A valid route for users not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
-							)
-						);
+						return blu_standardize_route_unavailable_for_resource( 'users' );
 					}
 
 					$request = new \WP_REST_Request( 'GET', $root );
@@ -82,12 +77,7 @@ class Users {
 					$root    = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'users' );
 
 					if ( ! $root ) {
-						return blu_standardize_rest_response(
-							new \WP_Error(
-								400,
-								'A valid route for users not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
-							)
-						);
+						return blu_standardize_route_unavailable_for_resource( 'users' );
 					}
 					$request = new \WP_REST_Request( 'GET', RestApiUtils::build_item_route( $root, $user_id ) );
 					$request->set_query_params( array( 'context' => $this->resolve_user_context( $input ) ) );
@@ -117,12 +107,7 @@ class Users {
 					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'users' );
 
 					if ( ! $root ) {
-						return blu_standardize_rest_response(
-							new \WP_Error(
-								400,
-								'A valid route for users not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
-							)
-						);
+						return blu_standardize_route_unavailable_for_resource( 'users' );
 					}
 
 					$request = new \WP_REST_Request( 'POST', $root );
@@ -159,12 +144,7 @@ class Users {
 					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'users' );
 
 					if ( ! $root ) {
-						return blu_standardize_rest_response(
-							new \WP_Error(
-								400,
-								'A valid route for users not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
-							)
-						);
+						return blu_standardize_route_unavailable_for_resource( 'users' );
 					}
 
 					$request = new \WP_REST_Request( 'PUT', RestApiUtils::build_item_route( $root, $user_id ) );
@@ -201,12 +181,7 @@ class Users {
 					$root    = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'users' );
 
 					if ( ! $root ) {
-						return blu_standardize_rest_response(
-							new \WP_Error(
-								400,
-								'A valid route for users not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
-							)
-						);
+						return blu_standardize_route_unavailable_for_resource( 'users' );
 					}
 
 					$request = new \WP_REST_Request( 'DELETE', $root . '/' . $user_id );
@@ -238,12 +213,7 @@ class Users {
 					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'users' );
 
 					if ( ! $root ) {
-						return blu_standardize_rest_response(
-							new \WP_Error(
-								400,
-								'A valid route for users not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
-							)
-						);
+						return blu_standardize_route_unavailable_for_resource( 'users' );
 					}
 					$request = new \WP_REST_Request( 'GET', $root . '/me' );
 					$request->set_query_params( array( 'context' => $this->resolve_user_context( is_array( $input ) ? $input : array() ) ) );
@@ -273,12 +243,7 @@ class Users {
 					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'users' );
 
 					if ( ! $root ) {
-						return blu_standardize_rest_response(
-							new \WP_Error(
-								400,
-								'A valid route for users not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
-							)
-						);
+						return blu_standardize_route_unavailable_for_resource( 'users' );
 					}
 
 					$request = new \WP_REST_Request( 'PUT', $root . '/me' );

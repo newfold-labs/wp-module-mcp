@@ -42,12 +42,7 @@ class Pages {
 					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'pages' );
 
 					if ( ! $root ) {
-						return blu_standardize_rest_response(
-							new \WP_Error(
-								400,
-								'A valid route for pages not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
-							)
-						);
+						return blu_standardize_route_unavailable_for_resource( 'pages' );
 					}
 
 					$request      = new \WP_REST_Request( 'GET', $root );
@@ -88,12 +83,7 @@ class Pages {
 					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'pages' );
 
 					if ( ! $root ) {
-						return blu_standardize_rest_response(
-							new \WP_Error(
-								400,
-								'A valid route for pages not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
-							)
-						);
+						return blu_standardize_route_unavailable_for_resource( 'pages' );
 					}
 					$request = new \WP_REST_Request( 'GET', $root . '/' . $id );
 					if ( isset( $input['context'] ) ) {
@@ -131,12 +121,7 @@ class Pages {
 					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'pages' );
 
 					if ( ! $root ) {
-						return blu_standardize_rest_response(
-							new \WP_Error(
-								400,
-								'A valid route for pages not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
-							)
-						);
+						return blu_standardize_route_unavailable_for_resource( 'pages' );
 					}
 
 					$request = new \WP_REST_Request( 'POST', $root );
@@ -169,12 +154,7 @@ class Pages {
 					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'pages' );
 
 					if ( ! $root ) {
-						return blu_standardize_rest_response(
-							new \WP_Error(
-								400,
-								'A valid route for pages not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
-							)
-						);
+						return blu_standardize_route_unavailable_for_resource( 'pages' );
 					}
 
 					$request = new \WP_REST_Request( 'PUT', $root . '/' . $id );
@@ -198,7 +178,7 @@ class Pages {
 			'blu/delete-page',
 			array(
 				'label'               => 'Delete Page',
-				'description'         => 'Delete a WordPress page by ID',
+				'description'         => 'Delete a WordPress page by ID permanently (moves to trash when force=false)',
 				'category'            => 'blu-mcp',
 				'input_schema'        => $schemas->delete_with_id(
 					RestControllerSchemaBuilder::post_delete_endpoint_args(),
@@ -209,16 +189,14 @@ class Pages {
 					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'pages' );
 
 					if ( ! $root ) {
-						return blu_standardize_rest_response(
-							new \WP_Error(
-								400,
-								'A valid route for pages not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
-							)
-						);
+						return blu_standardize_route_unavailable_for_resource( 'pages' );
 					}
 
 					$id = (int) $input['id'];
 					unset( $input['id'] );
+					if ( ! array_key_exists( 'force', $input ) ) {
+						$input['force'] = true;
+					}
 
 					$request = new \WP_REST_Request( 'DELETE', $root . '/' . $id );
 					$request->set_query_params( $input );

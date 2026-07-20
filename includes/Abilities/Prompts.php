@@ -278,6 +278,7 @@ class Prompts {
 						'product_id' => array(
 							'type'        => 'integer',
 							'description' => 'Existing WooCommerce product ID. When set, the assistant loads the product and uses its data to build category search patterns.',
+							'minimum'     => 1,
 						),
 						'name'       => array(
 							'type'        => 'string',
@@ -288,6 +289,15 @@ class Prompts {
 				),
 				'execute_callback'    => function ( $input ) {
 					$product_id   = isset( $input['product_id'] ) ? (int) $input['product_id'] : 0;
+					if ( isset( $input['product_id'] ) && $product_id <= 0 ) {
+						return blu_standardize_rest_response(
+							new WP_Error(
+								'blu_invalid_product_id',
+								'product_id must be a positive integer when provided.',
+								array( 'status' => 400 )
+							)
+						);
+					}
 					$product_name = isset( $input['name'] ) ? sanitize_text_field( $input['name'] ) : '';
 
 					$has_id = $product_id > 0;

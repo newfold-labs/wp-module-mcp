@@ -66,8 +66,22 @@ class FunctionsWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$error  = new \WP_Error( 'code', 'Error message' );
 		$result = blu_standardize_rest_response( $error );
 		$this->assertIsArray( $result );
-		$this->assertSame( 'code', $result['statusCode'] );
+		$this->assertSame( 500, $result['statusCode'] );
+		$this->assertSame( 'code', $result['errorCode'] );
 		$this->assertSame( 'Error message', $result['message'] );
+	}
+
+	/**
+	 * Verifies blu_standardize_route_unavailable returns 404 with slugged error code.
+	 *
+	 * @return void
+	 */
+	public function test_blu_standardize_route_unavailable_returns_404_with_error_code() {
+		$result = blu_standardize_route_unavailable_for_resource( 'posts' );
+		$this->assertSame( 404, $result['statusCode'] );
+		$this->assertSame( 'error', $result['status'] );
+		$this->assertSame( 'blu_rest_route_unavailable', $result['errorCode'] );
+		$this->assertStringContainsString( 'posts', $result['message'] );
 	}
 
 	/**

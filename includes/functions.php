@@ -226,6 +226,58 @@ function blu_prepare_ability_response( $status, $message ) {
 }
 
 /**
+ * Build a WP_Error for an unavailable REST route.
+ *
+ * @param string $message Human-readable error message.
+ * @param int    $status  HTTP status code (default 404).
+ *
+ * @return \WP_Error
+ */
+function blu_rest_route_unavailable_error( string $message, int $status = 404 ): \WP_Error {
+	return new \WP_Error(
+		'blu_rest_route_unavailable',
+		$message,
+		array( 'status' => $status )
+	);
+}
+
+/**
+ * Standardize a REST route-unavailable error into an ability response.
+ *
+ * @param string $message Human-readable error message.
+ * @param int    $status  HTTP status code (default 404).
+ *
+ * @return array<string, mixed>
+ */
+function blu_standardize_route_unavailable( string $message, int $status = 404 ): array {
+	return blu_standardize_rest_response( blu_rest_route_unavailable_error( $message, $status ) );
+}
+
+/**
+ * Standardize a REST route-unavailable error for a named resource.
+ *
+ * @param string $resource_label Resource name shown in the message (e.g. "posts", "orders").
+ * @param string $context        One of: wp, wc, wc-analytics.
+ * @param int    $status         HTTP status code (default 404).
+ *
+ * @return array<string, mixed>
+ */
+function blu_standardize_route_unavailable_for_resource( string $resource_label, string $context = 'wp', int $status = 404 ): array {
+	$hints = array(
+		'wp'           => 'Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
+		'wc'           => 'Please ensure WooCommerce is active and its REST API is enabled.',
+		'wc-analytics' => 'Please ensure WooCommerce is active and its analytics REST API is available.',
+	);
+
+	$hint = $hints[ $context ] ?? $hints['wp'];
+
+	return blu_standardize_route_unavailable(
+		sprintf( 'A valid route for %s not found. %s', $resource_label, $hint ),
+		$status
+	);
+}
+
+/**
  * Standardizes a REST API response into a consistent format.
  *
  * @param mixed $response The original response which can be a WP_Error or WP_REST_Response.
@@ -236,9 +288,23 @@ function blu_standardize_rest_response( $response ) {
 
 	if ( is_wp_error( $response ) ) {
 
-		$status = $response->get_error_code() ? $response->get_error_code() : 500;
+		$code   = $response->get_error_code();
+		$data   = $response->get_error_data();
+		$status = 500;
 
-		return blu_prepare_ability_response( $status, $response->get_error_message() );
+		if ( isset( $data['status'] ) && is_numeric( $data['status'] ) ) {
+			$status = (int) $data['status'];
+		} elseif ( $code && is_numeric( $code ) ) {
+			$status = (int) $code;
+		}
+
+		$prepared = blu_prepare_ability_response( $status, $response->get_error_message() );
+
+		if ( $code && ! is_numeric( $code ) ) {
+			$prepared['errorCode'] = $code;
+		}
+
+		return $prepared;
 
 	} elseif ( $response instanceof \WP_REST_Response ) {
 

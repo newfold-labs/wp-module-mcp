@@ -1927,15 +1927,7 @@ class WooProducts {
 	 * @return array
 	 */
 	private function wc_route_error( string $resource_path ): array {
-		return blu_standardize_rest_response(
-			new \WP_Error(
-				400,
-				sprintf(
-					'A valid route for %s not found. Please ensure WooCommerce is active and its REST API is enabled.',
-					$resource_path
-				)
-			)
-		);
+		return blu_standardize_route_unavailable_for_resource( $resource_path, 'wc' );
 	}
 
 	/**

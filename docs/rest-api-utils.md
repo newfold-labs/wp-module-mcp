@@ -28,7 +28,7 @@ Returns the highest registered version for a base namespace (`wc` → `wc/v3`, `
 
 ### `get_latest_available_rest_route( string $base_namespace, string $resource_path ): ?string`
 
-Resolves the latest namespace, then finds the collection route for a resource (`products`, `posts`, `users`, etc.).
+Resolves the latest namespace, then finds the collection route for a resource (`products`, `posts`, `users`, etc.). Calls `eager_load_rest_routes()` automatically and retries with a fresh route snapshot if the first lookup fails (e.g. stale per-request cache from before `rest_api_init`).
 
 ### `find_route_by_resource( string $namespace, string $resource_path, bool $exact_match = true ): ?string`
 
@@ -60,9 +60,9 @@ Returns `{ type: object, description, additionalProperties: true }` for abilitie
 
 Avoid duplicating ID substitution logic at call sites. Use these instead of manual `str_replace( '(?P<id>...)', ... )` or `$route . '/' . $id` when the collection route may include a trailing capture group.
 
-### `build_item_route( string $route, $id ): string`
+### `build_item_route( string $route, $id ): ?string`
 
-Strips a trailing `(?P<name>...)` segment (if present) and appends `/{$id}`.
+Strips a trailing `(?P<name>...)` segment (if present) and appends `/{$id}`. Returns `null` when the ID is missing or not a positive integer.
 
 ```php
 $item = RestApiUtils::build_item_route( '/wp/v2/global-styles/(?P<id>[\d]+)', 42 );
@@ -71,7 +71,7 @@ $item = RestApiUtils::build_item_route( '/wp/v2/global-styles/(?P<id>[\d]+)', 42
 
 ### `substitute_route_params( string $route, array $params ): string`
 
-Replaces named capture groups left-to-right:
+Replaces named capture groups left-to-right. Numeric IDs are inserted as-is; other values are `rawurlencode()`'d for safe path segments:
 
 ```php
 $route = RestApiUtils::substitute_route_params(
@@ -79,6 +79,14 @@ $route = RestApiUtils::substitute_route_params(
     array( 'product_id' => 10, 'id' => 55 )
 );
 ```
+
+### `normalize_route_for_match( string $route ): string`
+
+Strips all `(?P<name>...)` segments and collapses repeated slashes. Used internally by `find_route_by_resource()` to avoid false negatives on routes with mid-path captures.
+
+### `log_registration_schema_fallback( string $ability_id, string $reason ): void`
+
+Logs when registration-time `extract_input_schema()` falls back to a minimal object schema. Runtime REST validation still applies. Enable via the `blu_mcp_log_schema_fallback` filter (defaults to `WP_DEBUG`).
 
 ### `resolve_item_route( string $base_namespace, string $resource_path, $id ): ?string`
 
@@ -112,7 +120,7 @@ blu_register_ability( 'blu/posts-search', array(
     'execute_callback' => function ( $input = null ) {
         $root = RestApiUtils::get_latest_available_rest_route( 'wp', 'posts' );
         if ( ! $root ) {
-            return blu_standardize_rest_response( new \WP_Error( 400, 'Route not found' ) );
+            return blu_standardize_route_unavailable_for_resource( 'posts' );
         }
         $request = new \WP_REST_Request( 'GET', $root );
         // ...
@@ -127,7 +135,7 @@ blu_register_ability( 'blu/posts-search', array(
     RestApiUtils::eager_load_rest_routes();
     $route = RestApiUtils::resolve_item_route( 'wc', 'products', $input['id'] );
     if ( ! $route ) {
-        return blu_standardize_rest_response( new \WP_Error( 400, 'Products route not found' ) );
+        return blu_standardize_route_unavailable_for_resource( 'products', 'wc' );
     }
     $request = new \WP_REST_Request( 'GET', $route );
     // ...

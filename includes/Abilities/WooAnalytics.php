@@ -82,6 +82,10 @@ class WooAnalytics {
 				: null;
 
 			if ( ! $input_schema ) {
+				RestApiUtils::log_registration_schema_fallback(
+					$report_config['ability_id'],
+					sprintf( 'wc-analytics route for %s not available at registration time', $report_path )
+				);
 				$input_schema = array( 'type' => 'object' );
 			}
 
@@ -151,14 +155,9 @@ class WooAnalytics {
 	 * @return array<string, mixed>
 	 */
 	private function analytics_route_error( string $resource_path ): array {
-		return blu_standardize_rest_response(
-			new \WP_Error(
-				400,
-				sprintf(
-					'A valid wc-analytics route for %s not found. Please ensure WooCommerce is active and its analytics REST API is available.',
-					$resource_path
-				)
-			)
+		return blu_standardize_route_unavailable_for_resource(
+			'wc-analytics/' . $resource_path,
+			'wc-analytics'
 		);
 	}
 }
