@@ -4,6 +4,7 @@ declare( strict_types=1 );
 
 namespace BLU\Abilities;
 
+use Smalot\PdfParser\Parser;
 /**
  * Document read ability — exposes uploaded temp documents to the AI.
  */
@@ -56,9 +57,9 @@ class DocumentRead {
 			return blu_prepare_ability_response( 400, __( 'A valid source_url is required.', 'wp-module-mcp' ) );
 		}
 
-		// Resolve to filesystem path — must be inside nfd-chat-temp (SSRF / path-traversal guard).
+		// Resolve to filesystem path — must be inside the chat temp upload dir (SSRF / path-traversal guard).
 		$upload_dir = wp_upload_dir();
-		$base_path  = realpath( $upload_dir['basedir'] . '/nfd-chat-temp' );
+		$base_path  = realpath( $upload_dir['basedir'] . '/' . blu_mcp_chat_temp_subdir() );
 		if ( false === $base_path ) {
 			return blu_prepare_ability_response( 404, __( 'Document not found or not accessible.', 'wp-module-mcp' ) );
 		}
@@ -71,6 +72,7 @@ class DocumentRead {
 		}
 
 		$mime       = is_callable( 'mime_content_type' ) ? strtolower( (string) mime_content_type( $abs_file ) ) : '';
+		$extension  = strtolower( (string) pathinfo( $abs_file, PATHINFO_EXTENSION ) );
 		$text_types = array( 'text/plain', 'text/markdown', 'text/csv' );
 
 		// Guard against very large files before reading into memory.
@@ -82,8 +84,11 @@ class DocumentRead {
 
 		if ( in_array( $mime, $text_types, true ) ) {
 			$content = file_get_contents( $abs_file ); // phpcs:ignore WordPress.WP.AlternativeFunctions
-		} elseif ( 'application/pdf' === $mime ) {
+		} elseif ( 'application/pdf' === $mime || 'pdf' === $extension ) {
 			$content = $this->extract_pdf_text( $abs_file );
+			if ( 'application/pdf' !== $mime ) {
+				$mime = 'application/pdf';
+			}
 		} else {
 			return blu_prepare_ability_response( 400, __( 'Unsupported document type.', 'wp-module-mcp' ) );
 		}
@@ -121,31 +126,10 @@ class DocumentRead {
 	 * @return string Extracted text or fallback message.
 	 */
 	private function extract_pdf_text( string $path ): string {
-		// smalot/pdfparser ships in wp-module-mcp's own vendor. If the parent
-		// plugin's autoloader doesn't include it (common in monorepo setups),
-		// register a targeted PSR-0 autoloader for the Smalot\ namespace only —
-		// avoids reloading shared packages (e.g. lucatume/wp-browser) that would
-		// trigger "Cannot redeclare" fatals.
-		if ( ! class_exists( '\Smalot\PdfParser\Parser' ) ) {
-			$smalot_src = dirname( __DIR__, 2 ) . '/vendor/smalot/pdfparser/src';
-			if ( is_dir( $smalot_src ) ) {
-				spl_autoload_register(
-					static function ( $class_name ) use ( $smalot_src ) {
-						if ( 0 === strpos( $class_name, 'Smalot\\' ) ) {
-							$file = $smalot_src . DIRECTORY_SEPARATOR . str_replace( '\\', DIRECTORY_SEPARATOR, $class_name ) . '.php';
-							if ( file_exists( $file ) ) {
-								require_once $file; // phpcs:ignore WordPressVIPMinimum.Files.IncludingFile.UsingVariable
-							}
-						}
-					}
-				);
-			}
-		}
-
 		// Primary: smalot/pdfparser — works on any PHP host, no binaries needed.
 		if ( class_exists( '\Smalot\PdfParser\Parser' ) ) {
 			try {
-				$parser = new \Smalot\PdfParser\Parser();
+				$parser = new Parser();
 				$pdf    = $parser->parseFile( $path );
 				$text   = $pdf->getText();
 				if ( is_string( $text ) && '' !== trim( $text ) ) {

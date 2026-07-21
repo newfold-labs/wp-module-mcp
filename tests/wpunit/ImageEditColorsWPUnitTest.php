@@ -36,6 +36,13 @@ class ImageEditColorsWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase 
 	private $pre_http_request_filter = null;
 
 	/**
+	 * Local filesystem fixtures created during a test, removed in tear_down.
+	 *
+	 * @var string[]
+	 */
+	private $local_fixture_paths = array();
+
+	/**
 	 * Set up: create admin user, ensure blu-mcp category.
 	 *
 	 * @return void
@@ -76,6 +83,13 @@ class ImageEditColorsWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase 
 			remove_filter( 'pre_http_request', $this->pre_http_request_filter, 10 );
 			$this->pre_http_request_filter = null;
 		}
+
+		foreach ( $this->local_fixture_paths as $path ) {
+			if ( is_file( $path ) ) {
+				unlink( $path );
+			}
+		}
+		$this->local_fixture_paths = array();
 
 		$registry = \WP_Abilities_Registry::get_instance();
 		if ( $registry ) {
@@ -201,6 +215,26 @@ class ImageEditColorsWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase 
 	 */
 	private function allowed_image_url(): string {
 		return 'https://images.unsplash.com/test-color-image.png';
+	}
+
+	/**
+	 * Write a PNG under the chat temp upload dir and return its public uploads URL.
+	 *
+	 * @param string $filename File name only.
+	 * @param string $png_data Raw PNG bytes.
+	 * @return string
+	 */
+	private function create_chat_temp_fixture( string $filename, string $png_data ): string {
+		$upload_dir  = wp_upload_dir();
+		$temp_subdir = blu_mcp_chat_temp_subdir();
+		$temp_dir    = $upload_dir['basedir'] . '/' . $temp_subdir;
+		wp_mkdir_p( $temp_dir );
+
+		$abs_path = $temp_dir . '/' . $filename;
+		file_put_contents( $abs_path, $png_data );
+		$this->local_fixture_paths[] = $abs_path;
+
+		return trailingslashit( $upload_dir['baseurl'] ) . $temp_subdir . '/' . $filename;
 	}
 
 	// -------------------------------------------------------------------------
@@ -373,5 +407,17 @@ class ImageEditColorsWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase 
 
 		$this->assertSame( 200, $result['statusCode'] );
 		$this->assertEmpty( $result['message']['colors'] );
+	}
+
+	/**
+	 * Local chat temp uploads resolve via wp_upload_dir(), not ABSPATH + URL path.
+	 */
+	public function test_extract_reads_local_chat_temp_upload() {
+		$image_url = $this->create_chat_temp_fixture( 'brand-logo.png', $this->make_solid_png( 255, 0, 0 ) );
+
+		$result = $this->execute_extract( array( 'image_url' => $image_url ) );
+
+		$this->assertSame( 200, $result['statusCode'] );
+		$this->assertSame( '#ff0000', $result['message']['dominant'] );
 	}
 }
