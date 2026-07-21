@@ -52,7 +52,9 @@ class Users {
 
 					$request = new \WP_REST_Request( 'GET', $root );
 					$query   = is_array( $input ) ? $input : array();
-					$query['context'] = 'edit';
+					if ( ! array_key_exists( 'context', $query ) ) {
+						$query['context'] = 'edit';
+					}
 					$request->set_query_params( $query );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
@@ -88,8 +90,9 @@ class Users {
 							)
 						);
 					}
+					$context = $input['context'] ?? 'edit';
 					$request = new \WP_REST_Request( 'GET', RestApiUtils::build_item_route( $root, $user_id ) );
-					$request->set_query_params( array( 'context' => 'edit' ) );
+					$request->set_query_params( array( 'context' => $context ) );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
 				},
@@ -124,10 +127,12 @@ class Users {
 						);
 					}
 
-					$request = new \WP_REST_Request( 'POST', $root );
+					$context = $input['context'] ?? 'edit';
 					unset( $input['context'] );
+
+					$request = new \WP_REST_Request( 'POST', $root );
 					$request->set_body_params( $input );
-					$request->set_query_params( array( 'context' => 'edit' ) );
+					$request->set_query_params( array( 'context' => $context ) );
 
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
@@ -153,6 +158,7 @@ class Users {
 				'input_schema'        => $schemas->update_with_id( 'Unique identifier for the user.' ),
 				'execute_callback'    => function ( $input ) {
 					$user_id = (int) $input['id'];
+					$context = $input['context'] ?? 'edit';
 					unset( $input['id'], $input['context'] );
 
 					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'users' );
@@ -168,7 +174,7 @@ class Users {
 
 					$request = new \WP_REST_Request( 'PUT', RestApiUtils::build_item_route( $root, $user_id ) );
 					$request->set_body_params( $input );
-					$request->set_query_params( array( 'context' => 'edit' ) );
+					$request->set_query_params( array( 'context' => $context ) );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
 				},
@@ -244,8 +250,9 @@ class Users {
 							)
 						);
 					}
+					$context = ( is_array( $input ) && isset( $input['context'] ) ) ? $input['context'] : 'edit';
 					$request = new \WP_REST_Request( 'GET', $root . '/me' );
-					$request->set_query_params( array( 'context' => 'edit' ) );
+					$request->set_query_params( array( 'context' => $context ) );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
 				},
@@ -280,12 +287,14 @@ class Users {
 						);
 					}
 
+					$context = ( is_array( $input ) && isset( $input['context'] ) ) ? $input['context'] : 'edit';
+
 					$request = new \WP_REST_Request( 'PUT', $root . '/me' );
 					if ( is_array( $input ) ) {
 						unset( $input['context'] );
 						$request->set_body_params( $input );
 					}
-					$request->set_query_params( array( 'context' => 'edit' ) );
+					$request->set_query_params( array( 'context' => $context ) );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
 				},
