@@ -437,7 +437,7 @@ function blu_is_valid_input_array( $input_value, $input_name, $min_items = false
 		$error = $input_name . ' can\'t be an object-shaped array';
 	}
 
-	return '' === $error ? true : new WP_Error( 400, $error );
+	return '' === $error ? true : new \WP_Error( 400, $error );
 }
 
 

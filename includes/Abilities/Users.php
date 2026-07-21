@@ -52,8 +52,7 @@ class Users {
 
 					$request = new \WP_REST_Request( 'GET', $root );
 					$query   = is_array( $input ) ? $input : array();
-					unset( $query['context'] );
-					$query['context'] = $this->resolve_user_context( $input );
+					$query['context'] = 'view';
 					$request->set_query_params( $query );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
@@ -90,7 +89,7 @@ class Users {
 						);
 					}
 					$request = new \WP_REST_Request( 'GET', RestApiUtils::build_item_route( $root, $user_id ) );
-					$request->set_query_params( array( 'context' => $this->resolve_user_context( $input ) ) );
+					$request->set_query_params( array( 'context' => 'view' ) );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
 				},
@@ -246,7 +245,7 @@ class Users {
 						);
 					}
 					$request = new \WP_REST_Request( 'GET', $root . '/me' );
-					$request->set_query_params( array( 'context' => $this->resolve_user_context( is_array( $input ) ? $input : array() ) ) );
+					$request->set_query_params( array( 'context' => 'view' ) );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
 				},
@@ -300,23 +299,5 @@ class Users {
 				),
 			)
 		);
-	}
-
-	/**
-	 * Default REST context for user read/write calls.
-	 *
-	 * WordPress omits sensitive fields (e.g. email) unless context is `edit`.
-	 * Callers may override by passing `context` in the input schema.
-	 *
-	 * @param array<string, mixed> $input Ability input.
-	 *
-	 * @return string REST context query value.
-	 */
-	private function resolve_user_context( array $input = array() ): string {
-		if ( isset( $input['context'] ) && is_string( $input['context'] ) && '' !== $input['context'] ) {
-			return $input['context'];
-		}
-
-		return 'edit';
 	}
 }
