@@ -20,10 +20,30 @@ namespace BLU\Abilities;
 class RestApiUtils {
 
 	/**
+	 * Whether eager_load_rest_routes() has already run this request.
+	 *
+	 * @var bool
+	 */
+	private static $eager_loaded = false;
+
+	/**
 	 * Private constructor to prevent instantiation of utility class.
 	 */
 	private function __construct() {
 		// Static utility class - prevent instantiation
+	}
+
+	/**
+	 * Ensure core REST routes are registered before discovery.
+	 *
+	 * @return void
+	 */
+	private static function ensure_rest_routes_registered(): void {
+		rest_get_server();
+
+		if ( ! did_action( 'rest_api_init' ) ) {
+			do_action( 'rest_api_init' );
+		}
 	}
 
 	/**
@@ -276,9 +296,17 @@ class RestApiUtils {
 	 * @return void
 	 */
 	public static function eager_load_rest_routes(): void {
+		if ( self::$eager_loaded ) {
+			return;
+		}
+
+		self::$eager_loaded = true;
+
 		if ( ! apply_filters( 'blu_mcp_list_api_eager_load', true ) ) {
 			return;
 		}
+
+		self::ensure_rest_routes_registered();
 
 		$root_request = new \WP_REST_Request( 'GET', '/' );
 		apply_filters( 'rest_pre_dispatch', null, rest_get_server(), $root_request );
