@@ -8,7 +8,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "POT-Creation-Date: 2025-02-13T09:55:55+00:00\n"
-"PO-Revision-Date: 2026-07-10T18:30:38+00:00\n"
+"PO-Revision-Date: 2026-07-21T20:45:24+00:00\n"
 "Language: de\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-module-mcp\n"
@@ -48,33 +48,33 @@ msgstr ""
 msgid "%d color palette(s) generated. Present them to the user and apply the chosen one with blu/update-global-styles."
 msgstr ""
 
-#: includes/Abilities/DocumentRead.php:56
+#: includes/Abilities/DocumentRead.php:57
 #: includes/Abilities/LogoGen.php:189
 msgid "A valid source_url is required."
 msgstr ""
 
-#: includes/Abilities/DocumentRead.php:63
-#: includes/Abilities/DocumentRead.php:70
+#: includes/Abilities/DocumentRead.php:64
+#: includes/Abilities/DocumentRead.php:71
 msgid "Document not found or not accessible."
 msgstr ""
 
-#: includes/Abilities/DocumentRead.php:80
+#: includes/Abilities/DocumentRead.php:82
 msgid "Document exceeds the 50 MB size limit."
 msgstr ""
 
-#: includes/Abilities/DocumentRead.php:88
+#: includes/Abilities/DocumentRead.php:93
 msgid "Unsupported document type."
 msgstr ""
 
-#: includes/Abilities/DocumentRead.php:92
+#: includes/Abilities/DocumentRead.php:97
 msgid "Could not read document content."
 msgstr ""
 
-#: includes/Abilities/DocumentRead.php:108
+#: includes/Abilities/DocumentRead.php:113
 msgid "Document content (truncated to 30 000 characters)."
 msgstr ""
 
-#: includes/Abilities/DocumentRead.php:109
+#: includes/Abilities/DocumentRead.php:114
 msgid "Document content read successfully."
 msgstr ""
 
@@ -101,44 +101,36 @@ msgid "Dominant color: %s. Use this hex value with blu/update-global-styles to a
 msgstr ""
 
 #: includes/Abilities/ImageEdit.php:451
-msgid "Invalid local URL path."
-msgstr ""
-
-#: includes/Abilities/ImageEdit.php:459
-msgid "Local file path is outside the WordPress root."
-msgstr ""
-
-#: includes/Abilities/ImageEdit.php:465
 msgid "Local source image not found."
 msgstr ""
 
-#: includes/Abilities/ImageEdit.php:472
+#: includes/Abilities/ImageEdit.php:458
 msgid "Could not read local source image."
 msgstr ""
 
-#: includes/Abilities/ImageEdit.php:479
-#: includes/Abilities/ImageEdit.php:530
+#: includes/Abilities/ImageEdit.php:465
+#: includes/Abilities/ImageEdit.php:522
 msgid "Source image exceeds 10 MB limit."
 msgstr ""
 
-#: includes/Abilities/ImageEdit.php:486
-#: includes/Abilities/ImageEdit.php:538
+#: includes/Abilities/ImageEdit.php:478
+#: includes/Abilities/ImageEdit.php:530
 msgid "Unsupported source image type."
 msgstr ""
 
 #. translators: %s: error message from wp_remote_get
-#: includes/Abilities/ImageEdit.php:508
+#: includes/Abilities/ImageEdit.php:500
 #, php-format
 msgid "Unable to fetch source image: %s"
 msgstr ""
 
 #. translators: %d: HTTP status code
-#: includes/Abilities/ImageEdit.php:516
+#: includes/Abilities/ImageEdit.php:508
 #, php-format
 msgid "Unable to fetch source image (HTTP %d)."
 msgstr ""
 
-#: includes/Abilities/ImageEdit.php:523
+#: includes/Abilities/ImageEdit.php:515
 msgid "Source image is empty."
 msgstr ""
 
