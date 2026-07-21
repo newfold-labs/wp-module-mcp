@@ -100,7 +100,9 @@ class Posts {
 					}
 
 					$method     = 'GET';
-					$request    = new \WP_REST_Request( $method, $root . '/' . $input['id'] );
+					$id = $input['id'];
+					unset( $input['id'] );
+					$request    = new \WP_REST_Request( $method, $root . '/' . $id );
 					$request->set_query_params( $input );
 					$response   = rest_do_request( $request );
 

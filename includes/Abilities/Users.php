@@ -52,7 +52,7 @@ class Users {
 
 					$request = new \WP_REST_Request( 'GET', $root );
 					$query   = is_array( $input ) ? $input : array();
-					$query['context'] = 'view';
+					$query['context'] = 'edit';
 					$request->set_query_params( $query );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
@@ -89,7 +89,7 @@ class Users {
 						);
 					}
 					$request = new \WP_REST_Request( 'GET', RestApiUtils::build_item_route( $root, $user_id ) );
-					$request->set_query_params( array( 'context' => 'view' ) );
+					$request->set_query_params( array( 'context' => 'edit' ) );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
 				},
@@ -245,7 +245,7 @@ class Users {
 						);
 					}
 					$request = new \WP_REST_Request( 'GET', $root . '/me' );
-					$request->set_query_params( array( 'context' => 'view' ) );
+					$request->set_query_params( array( 'context' => 'edit' ) );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
 				},
