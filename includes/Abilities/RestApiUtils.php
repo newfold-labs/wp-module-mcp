@@ -540,6 +540,8 @@ class RestApiUtils {
 	 * @return string|null The matching REST route, or null if the namespace or resource is not found.
 	 */
 	public static function get_latest_available_rest_route( string $base_namespace, string $resource_path ): ?string {
+		self::eager_load_rest_routes();
+
 		$namespace = self::get_latest_namespace( $base_namespace );
 
 		if ( ! $namespace ) {

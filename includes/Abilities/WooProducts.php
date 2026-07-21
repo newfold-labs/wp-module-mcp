@@ -2043,7 +2043,7 @@ class WooProducts {
 		if ( ! $products_route ) {
 			return blu_prepare_ability_response( 400, 'Products route not found' );
 		}
-		$request = new \WP_REST_Request( 'GET', $products_route . '/' . $taxonomy . '/' . $term_id );
+		$request = new \WP_REST_Request( 'GET', RestApiUtils::build_item_route( $products_route . '/' . $taxonomy, $term_id ) );
 
 		$response = rest_do_request( $request );
 

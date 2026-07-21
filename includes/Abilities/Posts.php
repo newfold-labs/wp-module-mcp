@@ -102,7 +102,7 @@ class Posts {
 					$method     = 'GET';
 					$id = $input['id'];
 					unset( $input['id'] );
-					$request    = new \WP_REST_Request( $method, $root . '/' . $id );
+					$request    = new \WP_REST_Request( $method, RestApiUtils::build_item_route( $root, $id ) );
 					$request->set_query_params( $input );
 					$response   = rest_do_request( $request );
 
@@ -180,7 +180,7 @@ class Posts {
 					$id = $input['id'];
 					unset( $input['id'] );
 					$method     = 'PUT';
-					$request    = new \WP_REST_Request( $method, $root . '/' . $id );
+					$request    = new \WP_REST_Request( $method, RestApiUtils::build_item_route( $root, $id ) );
 
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
@@ -224,7 +224,7 @@ class Posts {
 					$id = $input['id'];
 					unset( $input['id'] );
 					$method     = 'DELETE';
-					$request    = new \WP_REST_Request( $method, $root . '/' . $id );
+					$request    = new \WP_REST_Request( $method, RestApiUtils::build_item_route( $root, $id ) );
 
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
@@ -347,7 +347,7 @@ class Posts {
 					$id = $input['id'];
 					unset( $input['id'] );
 					$method     = 'PUT';
-					$request    = new \WP_REST_Request( $method, $root . '/' . $id );
+					$request    = new \WP_REST_Request( $method, RestApiUtils::build_item_route( $root, $id ) );
 
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
@@ -387,7 +387,7 @@ class Posts {
 					$id = $input['id'];
 					unset( $input['id'] );
 					$method     = 'DELETE';
-					$request    = new \WP_REST_Request( $method, $root . '/' . $id );
+					$request    = new \WP_REST_Request( $method, RestApiUtils::build_item_route( $root, $id ) );
 					$request->set_query_params( array( 'force' => true ) );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
@@ -511,7 +511,7 @@ class Posts {
 					$id = $input['id'];
 					unset( $input['id'] );
 					$method     = 'PUT';
-					$request    = new \WP_REST_Request( $method, $root . '/' . $id );
+					$request    = new \WP_REST_Request( $method, RestApiUtils::build_item_route( $root, $id ) );
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
@@ -551,7 +551,7 @@ class Posts {
 					$id = $input['id'];
 					unset( $input['id'] );
 					$method     = 'DELETE';
-					$request    = new \WP_REST_Request( $method, $root . '/' . $id );
+					$request    = new \WP_REST_Request( $method, RestApiUtils::build_item_route( $root, $id ) );
 					$request->set_query_params( array( 'force' => true ) );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );

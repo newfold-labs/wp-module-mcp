@@ -95,7 +95,7 @@ class Pages {
 							)
 						);
 					}
-					$request = new \WP_REST_Request( 'GET', $root . '/' . $id );
+					$request = new \WP_REST_Request( 'GET', RestApiUtils::build_item_route( $root, $id ) );
 					if ( isset( $input['context'] ) ) {
 						$request->set_param( 'context', $input['context'] );
 					}
@@ -177,7 +177,7 @@ class Pages {
 						);
 					}
 
-					$request = new \WP_REST_Request( 'PUT', $root . '/' . $id );
+					$request = new \WP_REST_Request( 'PUT', RestApiUtils::build_item_route( $root, $id ) );
 					$request->set_body_params( $input );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
@@ -220,7 +220,7 @@ class Pages {
 					$id = (int) $input['id'];
 					unset( $input['id'] );
 
-					$request = new \WP_REST_Request( 'DELETE', $root . '/' . $id );
+					$request = new \WP_REST_Request( 'DELETE', RestApiUtils::build_item_route( $root, $id ) );
 					$request->set_query_params( $input );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
