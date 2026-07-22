@@ -254,11 +254,6 @@ class RestControllerSchemaBuilder {
 	 */
 	public static function user_delete_endpoint_args(): array {
 		return array(
-			'force'    => array(
-				'type'        => 'boolean',
-				'default'     => false,
-				'description' => 'Required to be true, as users do not support trashing.',
-			),
 			'reassign' => array(
 				'type'        => 'integer',
 				'description' => 'Reassign the deleted user\'s posts and links to this user ID.',

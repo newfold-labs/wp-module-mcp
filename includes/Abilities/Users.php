@@ -216,6 +216,7 @@ class Users {
 
 					$request = new \WP_REST_Request( 'DELETE', RestApiUtils::build_item_route( $root, $user_id ) );
 					unset( $input['id'] );
+					$input['force'] = true;
 					$request->set_query_params( $input );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
