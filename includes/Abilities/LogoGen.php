@@ -49,10 +49,39 @@ class LogoGen {
 		);
 
 		blu_register_ability(
+			'blu/edit-logo',
+			array(
+				'label'               => 'Edit Logo',
+				'description'         => 'Modify the EXISTING site logo using AI image edit. Use this for ANY change to the current logo while keeping it as the base: change colors, change/replace text, move or rearrange elements, adjust spacing, tweak style, remove background, etc. Reads the current site logo automatically — do not pass an image URL. Required parameter: prompt (describe the modification). Prefer this over blu/regenerate-logo whenever a site logo already exists and the user wants to tweak it. Do NOT use this to create a brand-new logo from scratch — use blu/regenerate-logo. Do NOT use blu/update-block-attrs for logo colors (CSS cannot recolor the logo image).',
+				'category'            => 'blu-mcp',
+				'input_schema'        => array(
+					'type'       => 'object',
+					'properties' => array(
+						'prompt' => array(
+							'type'        => 'string',
+							'description' => 'What to change in the existing logo (e.g. "change the color to navy blue", "replace the text with Acme", "move the icon to the left of the wordmark"). Max 1000 characters.',
+							'maxLength'   => 1000,
+						),
+					),
+					'required'   => array( 'prompt' ),
+				),
+				'execute_callback'    => array( $this, 'edit' ),
+				'permission_callback' => fn() => current_user_can( 'manage_options' ),
+				'meta'                => array(
+					'annotations' => array(
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => false,
+					),
+				),
+			)
+		);
+
+		blu_register_ability(
 			'blu/regenerate-logo',
 			array(
 				'label'               => 'Regenerate Logo',
-				'description'         => 'Generate or replace the site logo using AI. Use this for ANY logo-related request: "regenerate my logo", "generate a new logo", "change the logo", "update my logo", "create a logo", or similar. IMPORTANT: there is no media library UI available — you cannot open a file picker or ask the user to upload an image. This ability is the ONLY way to change the site logo. Compose the prompt from the site/brand name and any style or color preferences the user mentions. Required parameter: prompt (describe the logo: brand name, style, colors). Optional: subject_name (brand or site name), style (auto|lettermark|wordmark|combination|emblem|pictorial). Generates a new logo image, saves it to the media library, and sets it as the active site logo.',
+				'description'         => 'Generate a brand-new site logo from scratch using AI. Use this ONLY when the user wants a new logo design: "regenerate my logo", "generate a new logo", "create a logo", "redesign my logo from scratch", or similar. Do NOT use this to tweak an existing logo (colors, text, layout) — use blu/edit-logo instead. Do NOT use this when the user has uploaded an image to use as the logo — use blu/edit-image then blu/set-logo-from-image. Required parameter: prompt (describe the new logo: brand name, style, colors). Optional: subject_name (brand or site name), style (auto|lettermark|wordmark|combination|emblem|pictorial). Generates a new logo image, saves it to the media library, and sets it as the active site logo.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
@@ -87,6 +116,77 @@ class LogoGen {
 				),
 			)
 		);
+	}
+
+	/**
+	 * Edit the existing site logo via AI image edit, then set it as site_logo.
+	 *
+	 * @param array $input Tool input parameters.
+	 * @return array Standardized ability response.
+	 */
+	public function edit( array $input ): array {
+		set_time_limit( 120 );
+
+		$prompt = trim( (string) ( $input['prompt'] ?? '' ) );
+		if ( '' === $prompt ) {
+			return blu_prepare_ability_response( 400, __( 'A prompt is required describing how to edit the logo.', 'wp-module-mcp' ) );
+		}
+
+		$prompt = substr( $prompt, 0, 1000 );
+
+		$attachment_id = (int) get_option( 'site_logo', 0 );
+		if ( $attachment_id <= 0 ) {
+			return blu_prepare_ability_response( 404, __( 'No site logo is set. Generate or upload a logo first.', 'wp-module-mcp' ) );
+		}
+
+		$source_url = wp_get_attachment_url( $attachment_id );
+		if ( empty( $source_url ) ) {
+			return blu_prepare_ability_response( 404, __( 'Current site logo attachment could not be resolved.', 'wp-module-mcp' ) );
+		}
+
+		$edit_ability = blu_get_ability( 'blu/edit-image' );
+		if ( null === $edit_ability ) {
+			return blu_prepare_ability_response( 500, __( 'Image edit ability is unavailable.', 'wp-module-mcp' ) );
+		}
+
+		$edit_prompt = sprintf(
+			/* translators: %s: user edit instructions for the logo */
+			__( 'Edit this logo as follows: %s. CRITICAL: Start from this exact logo image. Apply only the requested changes. Preserve transparent background unless the user asks otherwise. Do not invent a completely different logo design unless the user explicitly asks for a redesign.', 'wp-module-mcp' ),
+			$prompt
+		);
+
+		$edit_result = $edit_ability->execute(
+			array(
+				'prompt'     => substr( $edit_prompt, 0, 1000 ),
+				'source_url' => $source_url,
+				'background' => 'transparent',
+			)
+		);
+
+		if ( is_wp_error( $edit_result ) ) {
+			return blu_prepare_ability_response( 400, $edit_result->get_error_message() );
+		}
+
+		$status = (int) ( $edit_result['statusCode'] ?? 500 );
+		if ( $status < 200 || $status >= 300 ) {
+			$message = $edit_result['message'] ?? __( 'Logo edit failed.', 'wp-module-mcp' );
+			if ( is_array( $message ) ) {
+				$message = wp_json_encode( $message );
+			}
+			return blu_prepare_ability_response( $status, (string) $message );
+		}
+
+		$cdn_url = is_array( $edit_result['message'] ?? null )
+			? (string) ( $edit_result['message']['url'] ?? '' )
+			: '';
+
+		if ( '' === $cdn_url ) {
+			return blu_prepare_ability_response( 500, __( 'No image URL in logo edit response.', 'wp-module-mcp' ) );
+		}
+
+		$desc = __( 'Site logo (AI edited)', 'wp-module-mcp' );
+
+		return $this->sideload_and_set_logo( $cdn_url, $desc );
 	}
 
 	/**
