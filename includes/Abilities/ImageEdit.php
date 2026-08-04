@@ -69,6 +69,10 @@ class ImageEdit {
 							'description' => 'What to change in the image — describe the desired result or the modification (e.g. "add a dog under the table", "make the background white", "change the shirt to red"). Max 1000 characters.',
 							'maxLength'   => 1000,
 						),
+						'alt'           => array(
+							'type'        => 'string',
+							'description' => 'Alt text: a concise factual description of what is visible, for screen readers and SEO. Describe the subject and setting, not the art style or camera settings, and omit any leading "image of" / "photo of". Aim for under 125 characters. Describe the image AFTER the edit, not the change itself. Always provide this when the image will be placed in a block.',
+						),
 						'source_url'    => array(
 							'type'        => 'string',
 							'description' => 'URL of the existing image to edit. Must be an accessible HTTP/HTTPS URL.',
