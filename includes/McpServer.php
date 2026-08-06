@@ -23,6 +23,9 @@ use BLU\Abilities\WooAnalytics;
 use BLU\Abilities\Themes;
 use BLU\Abilities\ImageGen;
 use BLU\Abilities\LogoGen;
+use BLU\Abilities\ImageEdit;
+use BLU\Abilities\DocumentRead;
+use BLU\Abilities\ColorGen;
 
 use BLU\Integrations\WooCommerceAbilities;
 use BLU\Validation\McpValidation;
@@ -156,6 +159,9 @@ class McpServer {
 		new BlockEditor();
 		new ImageGen();
 		new LogoGen();
+		new ImageEdit();
+		new DocumentRead();
+		new ColorGen();
 	}
 
 	/**

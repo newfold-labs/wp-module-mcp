@@ -3,6 +3,7 @@
 namespace BLU;
 
 use BLU\Abilities\LogoGen;
+use BLU\Abilities\ImageEdit;
 use NewfoldLabs\WP\Module\Data\HiiveConnection;
 
 require_once __DIR__ . '/_stubs/HiiveConnectionStub.php';
@@ -19,7 +20,7 @@ class LogoGenWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	 *
 	 * @var string[]
 	 */
-	private $registered_abilities = array( 'blu/regenerate-logo' );
+	private $registered_abilities = array( 'blu/regenerate-logo', 'blu/edit-logo', 'blu/set-logo-from-image', 'blu/edit-image', 'blu/extract-image-colors' );
 
 	/**
 	 * Whether the ability has been registered in this test instance.
@@ -77,7 +78,7 @@ class LogoGenWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 			);
 		}
 
-		HiiveConnection::$token      = 'test-hiive-token';
+		HiiveConnection::$token       = 'test-hiive-token';
 		$this->last_request_args      = null;
 		$this->last_logo_request_args = null;
 	}
@@ -117,6 +118,7 @@ class LogoGenWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 
 		$cb = function () {
 			new LogoGen();
+			new ImageEdit();
 		};
 		add_action( 'wp_abilities_api_init', $cb, 10 );
 
@@ -332,5 +334,154 @@ class LogoGenWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$result = $this->execute_generate( array( 'prompt' => 'A test image' ) );
 
 		$this->assertSame( 500, $result['statusCode'] );
+	}
+
+	/**
+	 * Helper: execute blu/edit-logo with input.
+	 *
+	 * @param array $input Input to pass to blu/edit-logo.
+	 * @return mixed
+	 */
+	private function execute_edit_logo( array $input ) {
+		$this->ensure_abilities_registered();
+
+		$ability = blu_get_ability( 'blu/edit-logo' );
+		$this->assertNotNull( $ability, 'Ability blu/edit-logo should be registered.' );
+
+		return $ability->execute( $input );
+	}
+
+	/**
+	 * Create a local PNG attachment and set it as the site logo.
+	 *
+	 * @return int Attachment ID.
+	 */
+	private function create_site_logo_attachment(): int {
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- test fixture bytes only.
+		$png_body = base64_decode( 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==' );
+
+		$upload_dir = wp_upload_dir();
+		$filename   = 'test-site-logo-' . wp_generate_password( 8, false ) . '.png';
+		$filepath   = trailingslashit( $upload_dir['path'] ) . $filename;
+		file_put_contents( $filepath, $png_body );
+
+		$attachment_id = wp_insert_attachment(
+			array(
+				'post_mime_type' => 'image/png',
+				'post_title'     => 'Test Site Logo',
+				'post_content'   => '',
+				'post_status'    => 'inherit',
+			),
+			$filepath
+		);
+
+		$this->assertIsInt( $attachment_id );
+		$this->assertGreaterThan( 0, $attachment_id );
+
+		update_option( 'site_logo', $attachment_id );
+
+		return $attachment_id;
+	}
+
+	/**
+	 * Mock edit API POST returning a CDN URL, then CDN GET returning a PNG for sideload.
+	 *
+	 * @return void
+	 */
+	private function mock_edit_api_and_cdn_png(): void {
+		if ( null !== $this->pre_http_request_filter ) {
+			remove_filter( 'pre_http_request', $this->pre_http_request_filter, 10 );
+		}
+
+		$cdn_url = 'https://cdn.hiive.cloud/edited-logo.png';
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- test fixture bytes only.
+		$png_body = base64_decode( 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==' );
+
+		$this->pre_http_request_filter = function ( $preempt, $args, $url ) use ( $cdn_url, $png_body ) {
+			$this->last_request_args = array(
+				'url'  => $url,
+				'args' => $args,
+			);
+
+			if ( false !== strpos( $url, '/api/v1/imagegen/edit' ) ) {
+				$this->last_logo_request_args = $this->last_request_args;
+
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => wp_json_encode( array( 'url' => $cdn_url ) ),
+					'headers'  => array(),
+				);
+			}
+
+			if ( false !== strpos( $url, 'cdn.hiive.cloud' ) ) {
+				$response = array(
+					'response' => array( 'code' => 200 ),
+					'body'     => $png_body,
+					'headers'  => array(
+						'content-type' => 'image/png',
+					),
+					'cookies'  => array(),
+				);
+
+				if ( ! empty( $args['stream'] ) && ! empty( $args['filename'] ) && is_string( $args['filename'] ) ) {
+					$dirname = dirname( $args['filename'] );
+					if ( '' !== $dirname && wp_mkdir_p( $dirname ) && wp_is_writable( $dirname ) ) {
+						file_put_contents( $args['filename'], $png_body );
+						$response['body'] = '';
+					}
+				}
+
+				return $response;
+			}
+
+			// Local attachment reads go through filesystem in ImageEdit; ignore other GETs.
+			return false;
+		};
+
+		add_filter( 'pre_http_request', $this->pre_http_request_filter, 10, 3 );
+	}
+
+	/**
+	 * Verifies edit-logo returns 404 when no site logo is set.
+	 */
+	public function test_edit_logo_returns_404_when_no_site_logo() {
+		delete_option( 'site_logo' );
+
+		$result = $this->execute_edit_logo( array( 'prompt' => 'change color to blue' ) );
+
+		$this->assertSame( 404, $result['statusCode'] );
+	}
+
+	/**
+	 * Verifies edit-logo rejects an empty prompt.
+	 */
+	public function test_edit_logo_returns_400_when_prompt_empty() {
+		$this->create_site_logo_attachment();
+
+		$result = $this->execute_edit_logo( array( 'prompt' => '   ' ) );
+
+		$this->assertSame( 400, $result['statusCode'] );
+	}
+
+	/**
+	 * Verifies edit-logo edits the existing logo and sets a new site_logo attachment.
+	 */
+	public function test_edit_logo_success_sideloads_and_sets_site_logo() {
+		$original_id = $this->create_site_logo_attachment();
+
+		$this->mock_edit_api_and_cdn_png();
+
+		$result = $this->execute_edit_logo( array( 'prompt' => 'change the color to #0057FF' ) );
+
+		$this->assertSame( 200, $result['statusCode'] );
+		$this->assertSame( 'Site logo updated.', $result['message']['message'] );
+		$this->assertIsInt( $result['message']['attachment_id'] );
+		$this->assertGreaterThan( 0, $result['message']['attachment_id'] );
+		$this->assertNotSame( $original_id, (int) $result['message']['attachment_id'] );
+		$this->assertSame( (int) $result['message']['attachment_id'], (int) get_option( 'site_logo' ) );
+
+		$this->assertNotNull( $this->last_logo_request_args );
+		$this->assertStringContainsString( '/api/v1/imagegen/edit', $this->last_logo_request_args['url'] );
+		$this->assertStringContainsString( '#0057FF', $this->last_logo_request_args['args']['body'] );
 	}
 }
