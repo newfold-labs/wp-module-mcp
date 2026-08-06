@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+ <head>
+  <meta charset="UTF-8">
+  <title>Dashboard for /home/runner/work/wp-module-mcp/wp-module-mcp/includes</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="../_css/bootstrap.min.css?v=9.2.32" rel="stylesheet" type="text/css">
+  <link href="../_css/nv.d3.min.css?v=9.2.32" rel="stylesheet" type="text/css">
+  <link href="../_css/style.css?v=9.2.32" rel="stylesheet" type="text/css">
+  <link href="../_css/custom.css" rel="stylesheet" type="text/css">
+ </head>
+ <body>
+  <header>
+   <div class="container-fluid">
+    <div class="row">
+     <div class="col-md-12">
+      <nav aria-label="breadcrumb">
+       <ol class="breadcrumb">
+         <li class="breadcrumb-item"><a href="../index.html">/home/runner/work/wp-module-mcp/wp-module-mcp</a></li>
+         <li class="breadcrumb-item"><a href="index.html">includes</a></li>
+         <li class="breadcrumb-item active">(Dashboard)</li>
+
+       </ol>
+      </nav>
+     </div>
+    </div>
+   </div>
+  </header>
+  <div class="container-fluid">
+   <div class="row">
+    <div class="col-md-12">
+     <h2>Classes</h2>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Coverage Distribution</h3>
+     <div id="classCoverageDistribution" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Complexity</h3>
+     <div id="classComplexity" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Insufficient Coverage</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Class</th>
+         <th class="text-right">Coverage</th>
+        </tr>
+       </thead>
+       <tbody>
+       <tr><td><a href="Abilities/CustomPostTypes.php.html#17">BLU\Abilities\CustomPostTypes</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/Themes.php.html#19">BLU\Abilities\Themes</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Validation/HiiveProductVerifier.php.html#14">BLU\Validation\HiiveProductVerifier</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="RestControllerSchema/RestControllerSchemaBuilder.php.html#14">BLU\RestControllerSchema\RestControllerSchemaBuilder</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/WooProducts.php.html#9">BLU\Abilities\WooProducts</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/WooOrders.php.html#9">BLU\Abilities\WooOrders</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/WooAnalytics.php.html#12">BLU\Abilities\WooAnalytics</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/Users.php.html#11">BLU\Abilities\Users</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/SiteInfo.php.html#9">BLU\Abilities\SiteInfo</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/RestApiUtils.php.html#20">BLU\Abilities\RestApiUtils</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/Resources.php.html#13">BLU\Abilities\Resources</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/Prompts.php.html#13">BLU\Abilities\Prompts</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/Posts.php.html#11">BLU\Abilities\Posts</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/Pages.php.html#11">BLU\Abilities\Pages</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/Media.php.html#11">BLU\Abilities\Media</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Validation/McpValidation.php.html#14">BLU\Validation\McpValidation</a></td><td class="text-right">43%</td></tr>
+       <tr><td><a href="McpServer.php.html#41">BLU\McpServer</a></td><td class="text-right">58%</td></tr>
+       <tr><td><a href="Integrations/WooCommerceAbilities.php.html#35">BLU\Integrations\WooCommerceAbilities</a></td><td class="text-right">65%</td></tr>
+       <tr><td><a href="Abilities/GlobalStyles.php.html#13">BLU\Abilities\GlobalStyles</a></td><td class="text-right">67%</td></tr>
+       <tr><td><a href="Abilities/ImageEdit.php.html#10">BLU\Abilities\ImageEdit</a></td><td class="text-right">74%</td></tr>
+       <tr><td><a href="Abilities/Settings.php.html#11">BLU\Abilities\Settings</a></td><td class="text-right">83%</td></tr>
+       <tr><td><a href="Abilities/LogoGen.php.html#10">BLU\Abilities\LogoGen</a></td><td class="text-right">89%</td></tr>
+
+       </tbody>
+      </table>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Project Risks</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Class</th>
+         <th class="text-right"><abbr title="Change Risk Anti-Patterns (CRAP) Index">CRAP</abbr></th>
+        </tr>
+       </thead>
+       <tbody>
+       <tr><td><a href="Abilities/WooProducts.php.html#9">BLU\Abilities\WooProducts</a></td><td class="text-right">18090</td></tr>
+       <tr><td><a href="Abilities/RestApiUtils.php.html#20">BLU\Abilities\RestApiUtils</a></td><td class="text-right">4422</td></tr>
+       <tr><td><a href="Abilities/Prompts.php.html#13">BLU\Abilities\Prompts</a></td><td class="text-right">3422</td></tr>
+       <tr><td><a href="Abilities/CustomPostTypes.php.html#17">BLU\Abilities\CustomPostTypes</a></td><td class="text-right">702</td></tr>
+       <tr><td><a href="Abilities/Media.php.html#11">BLU\Abilities\Media</a></td><td class="text-right">650</td></tr>
+       <tr><td><a href="Abilities/GlobalStyles.php.html#13">BLU\Abilities\GlobalStyles</a></td><td class="text-right">601</td></tr>
+       <tr><td><a href="RestControllerSchema/RestControllerSchemaBuilder.php.html#14">BLU\RestControllerSchema\RestControllerSchemaBuilder</a></td><td class="text-right">552</td></tr>
+       <tr><td><a href="Validation/McpValidation.php.html#14">BLU\Validation\McpValidation</a></td><td class="text-right">517</td></tr>
+       <tr><td><a href="Abilities/Posts.php.html#11">BLU\Abilities\Posts</a></td><td class="text-right">506</td></tr>
+       <tr><td><a href="Abilities/WooOrders.php.html#9">BLU\Abilities\WooOrders</a></td><td class="text-right">506</td></tr>
+       <tr><td><a href="Abilities/Resources.php.html#13">BLU\Abilities\Resources</a></td><td class="text-right">462</td></tr>
+       <tr><td><a href="Abilities/Users.php.html#11">BLU\Abilities\Users</a></td><td class="text-right">272</td></tr>
+       <tr><td><a href="Abilities/ImageEdit.php.html#10">BLU\Abilities\ImageEdit</a></td><td class="text-right">254</td></tr>
+       <tr><td><a href="Abilities/Pages.php.html#11">BLU\Abilities\Pages</a></td><td class="text-right">182</td></tr>
+       <tr><td><a href="Validation/HiiveProductVerifier.php.html#14">BLU\Validation\HiiveProductVerifier</a></td><td class="text-right">156</td></tr>
+       <tr><td><a href="Abilities/WooAnalytics.php.html#12">BLU\Abilities\WooAnalytics</a></td><td class="text-right">132</td></tr>
+       <tr><td><a href="Abilities/SiteInfo.php.html#9">BLU\Abilities\SiteInfo</a></td><td class="text-right">56</td></tr>
+       <tr><td><a href="Abilities/LogoGen.php.html#10">BLU\Abilities\LogoGen</a></td><td class="text-right">37</td></tr>
+       <tr><td><a href="Abilities/Themes.php.html#19">BLU\Abilities\Themes</a></td><td class="text-right">30</td></tr>
+       <tr><td><a href="Integrations/WooCommerceAbilities.php.html#35">BLU\Integrations\WooCommerceAbilities</a></td><td class="text-right">22</td></tr>
+       <tr><td><a href="McpServer.php.html#41">BLU\McpServer</a></td><td class="text-right">17</td></tr>
+       <tr><td><a href="Abilities/Settings.php.html#11">BLU\Abilities\Settings</a></td><td class="text-right">10</td></tr>
+
+       </tbody>
+      </table>
+     </div>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-12">
+     <h2>Methods</h2>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Coverage Distribution</h3>
+     <div id="methodCoverageDistribution" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Complexity</h3>
+     <div id="methodComplexity" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Insufficient Coverage</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Method</th>
+         <th class="text-right">Coverage</th>
+        </tr>
+       </thead>
+       <tbody>
+       <tr><td><a href="Validation/McpValidation.php.html#288"><abbr title="BLU\Validation\McpValidation::set_admin_authentication">set_admin_authentication</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/SiteInfo.php.html#92"><abbr title="BLU\Abilities\SiteInfo::get_active_theme_info">get_active_theme_info</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/WooAnalytics.php.html#153"><abbr title="BLU\Abilities\WooAnalytics::analytics_route_error">analytics_route_error</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/WooAnalytics.php.html#140"><abbr title="BLU\Abilities\WooAnalytics::resolve_analytics_route">resolve_analytics_route</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/WooAnalytics.php.html#127"><abbr title="BLU\Abilities\WooAnalytics::analytics_namespace_label">analytics_namespace_label</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/WooAnalytics.php.html#35"><abbr title="BLU\Abilities\WooAnalytics::register_report_abilities">register_report_abilities</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/WooAnalytics.php.html#24"><abbr title="BLU\Abilities\WooAnalytics::__construct">__construct</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/Users.php.html#30"><abbr title="BLU\Abilities\Users::register_abilities">register_abilities</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/Users.php.html#23"><abbr title="BLU\Abilities\Users::__construct">__construct</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/Themes.php.html#49"><abbr title="BLU\Abilities\Themes::register_get_active_theme">register_get_active_theme</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/Themes.php.html#40"><abbr title="BLU\Abilities\Themes::register_abilities">register_abilities</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/Themes.php.html#31"><abbr title="BLU\Abilities\Themes::__construct">__construct</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/SiteInfo.php.html#106"><abbr title="BLU\Abilities\SiteInfo::get_users_info">get_users_info</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/SiteInfo.php.html#67"><abbr title="BLU\Abilities\SiteInfo::get_plugins_info">get_plugins_info</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/WooOrders.php.html#33"><abbr title="BLU\Abilities\WooOrders::register_order_abilities">register_order_abilities</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/SiteInfo.php.html#21"><abbr title="BLU\Abilities\SiteInfo::register_abilities">register_abilities</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/SiteInfo.php.html#14"><abbr title="BLU\Abilities\SiteInfo::__construct">__construct</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="RestControllerSchema/RestControllerSchemaBuilder.php.html#95"><abbr title="BLU\RestControllerSchema\RestControllerSchemaBuilder::for_terms">for_terms</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/RestApiUtils.php.html#542"><abbr title="BLU\Abilities\RestApiUtils::get_latest_available_rest_route">get_latest_available_rest_route</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/RestApiUtils.php.html#504"><abbr title="BLU\Abilities\RestApiUtils::get_endpoint_info">get_endpoint_info</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/RestApiUtils.php.html#478"><abbr title="BLU\Abilities\RestApiUtils::get_routes_for_namespace">get_routes_for_namespace</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/RestApiUtils.php.html#465"><abbr title="BLU\Abilities\RestApiUtils::namespace_exists">namespace_exists</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/RestApiUtils.php.html#453"><abbr title="BLU\Abilities\RestApiUtils::get_all_namespaces">get_all_namespaces</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/RestApiUtils.php.html#426"><abbr title="BLU\Abilities\RestApiUtils::map_rest_type_to_schema_type">map_rest_type_to_schema_type</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/RestApiUtils.php.html#411"><abbr title="BLU\Abilities\RestApiUtils::passthrough_object_schema">passthrough_object_schema</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/RestApiUtils.php.html#384"><abbr title="BLU\Abilities\RestApiUtils::resolve_param_route">resolve_param_route</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/WooOrders.php.html#21"><abbr title="BLU\Abilities\WooOrders::__construct">__construct</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/WooOrders.php.html#162"><abbr title="BLU\Abilities\WooOrders::register_report_abilities">register_report_abilities</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="RestControllerSchema/RestControllerSchemaBuilder.php.html#75"><abbr title="BLU\RestControllerSchema\RestControllerSchemaBuilder::for_media">for_media</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/WooProducts.php.html#1886"><abbr title="BLU\Abilities\WooProducts::get_wc_namespace">get_wc_namespace</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="RestControllerSchema/RestControllerSchemaBuilder.php.html#57"><abbr title="BLU\RestControllerSchema\RestControllerSchemaBuilder::for_post_type">for_post_type</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="RestControllerSchema/RestControllerSchemaBuilder.php.html#46"><abbr title="BLU\RestControllerSchema\RestControllerSchemaBuilder::for_users">for_users</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="RestControllerSchema/RestControllerSchemaBuilder.php.html#38"><abbr title="BLU\RestControllerSchema\RestControllerSchemaBuilder::for_cpt">for_cpt</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="RestControllerSchema/RestControllerSchemaBuilder.php.html#28"><abbr title="BLU\RestControllerSchema\RestControllerSchemaBuilder::__construct">__construct</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="RestControllerSchema/RestControllerSchemaBuilder.php.html#84"><abbr title="BLU\RestControllerSchema\RestControllerSchemaBuilder::for_global_style">for_global_style</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/WooProducts.php.html#2041"><abbr title="BLU\Abilities\WooProducts::get_taxonomy">get_taxonomy</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/WooProducts.php.html#2007"><abbr title="BLU\Abilities\WooProducts::get_product_taxonomy_ids">get_product_taxonomy_ids</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/WooProducts.php.html#1950"><abbr title="BLU\Abilities\WooProducts::add_product_taxonomies">add_product_taxonomies</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/WooProducts.php.html#1929"><abbr title="BLU\Abilities\WooProducts::wc_route_error">wc_route_error</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/WooProducts.php.html#1912"><abbr title="BLU\Abilities\WooProducts::resolve_wc_param_route">resolve_wc_param_route</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/WooProducts.php.html#1899"><abbr title="BLU\Abilities\WooProducts::resolve_wc_route">resolve_wc_route</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/WooProducts.php.html#1877"><abbr title="BLU\Abilities\WooProducts::wc_namespace_label">wc_namespace_label</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/WooOrders.php.html#220"><abbr title="BLU\Abilities\WooOrders::wc_namespace_label">wc_namespace_label</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/WooProducts.php.html#1825"><abbr title="BLU\Abilities\WooProducts::register_report_abilities">register_report_abilities</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/WooProducts.php.html#1449"><abbr title="BLU\Abilities\WooProducts::register_variation_abilities">register_variation_abilities</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/WooProducts.php.html#1156"><abbr title="BLU\Abilities\WooProducts::register_attribute_abilities">register_attribute_abilities</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/WooProducts.php.html#936"><abbr title="BLU\Abilities\WooProducts::register_brand_abilities">register_brand_abilities</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/WooProducts.php.html#717"><abbr title="BLU\Abilities\WooProducts::register_tag_abilities">register_tag_abilities</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/WooProducts.php.html#459"><abbr title="BLU\Abilities\WooProducts::register_category_abilities">register_category_abilities</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/WooProducts.php.html#38"><abbr title="BLU\Abilities\WooProducts::register_product_abilities">register_product_abilities</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/WooProducts.php.html#21"><abbr title="BLU\Abilities\WooProducts::__construct">__construct</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/WooOrders.php.html#264"><abbr title="BLU\Abilities\WooOrders::wc_route_error">wc_route_error</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/WooOrders.php.html#246"><abbr title="BLU\Abilities\WooOrders::resolve_wc_param_route">resolve_wc_param_route</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/WooOrders.php.html#233"><abbr title="BLU\Abilities\WooOrders::resolve_wc_route">resolve_wc_route</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/RestApiUtils.php.html#364"><abbr title="BLU\Abilities\RestApiUtils::resolve_item_route">resolve_item_route</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/RestApiUtils.php.html#339"><abbr title="BLU\Abilities\RestApiUtils::substitute_route_params">substitute_route_params</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/RestApiUtils.php.html#325"><abbr title="BLU\Abilities\RestApiUtils::build_item_route">build_item_route</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="RestControllerSchema/RestControllerSchemaBuilder.php.html#190"><abbr title="BLU\RestControllerSchema\RestControllerSchemaBuilder::delete_with_id">delete_with_id</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/Media.php.html#30"><abbr title="BLU\Abilities\Media::register_abilities">register_abilities</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/Media.php.html#23"><abbr title="BLU\Abilities\Media::__construct">__construct</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/LogoGen.php.html#340"><abbr title="BLU\Abilities\LogoGen::is_allowed_url">is_allowed_url</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/LogoGen.php.html#282"><abbr title="BLU\Abilities\LogoGen::set_from_image">set_from_image</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="RestControllerSchema/RestControllerSchemaBuilder.php.html#104"><abbr title="BLU\RestControllerSchema\RestControllerSchemaBuilder::collection">collection</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="RestControllerSchema/RestControllerSchemaBuilder.php.html#115"><abbr title="BLU\RestControllerSchema\RestControllerSchemaBuilder::creatable">creatable</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="RestControllerSchema/RestControllerSchemaBuilder.php.html#126"><abbr title="BLU\RestControllerSchema\RestControllerSchemaBuilder::editable">editable</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="RestControllerSchema/RestControllerSchemaBuilder.php.html#139"><abbr title="BLU\RestControllerSchema\RestControllerSchemaBuilder::get_item">get_item</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="RestControllerSchema/RestControllerSchemaBuilder.php.html#168"><abbr title="BLU\RestControllerSchema\RestControllerSchemaBuilder::update_with_id">update_with_id</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/ImageEdit.php.html#197"><abbr title="BLU\Abilities\ImageEdit::analyze_image_colors">analyze_image_colors</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="RestControllerSchema/RestControllerSchemaBuilder.php.html#212"><abbr title="BLU\RestControllerSchema\RestControllerSchemaBuilder::context_only">context_only</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/Media.php.html#345"><abbr title="BLU\Abilities\Media::get_media_route">get_media_route</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/GlobalStyles.php.html#836"><abbr title="BLU\Abilities\GlobalStyles::explain_missing_leaf">explain_missing_leaf</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/GlobalStyles.php.html#760"><abbr title="BLU\Abilities\GlobalStyles::build_registration_snippet">build_registration_snippet</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="RestControllerSchema/RestControllerSchemaBuilder.php.html#228"><abbr title="BLU\RestControllerSchema\RestControllerSchemaBuilder::empty_object">empty_object</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="RestControllerSchema/RestControllerSchemaBuilder.php.html#240"><abbr title="BLU\RestControllerSchema\RestControllerSchemaBuilder::post_delete_endpoint_args">post_delete_endpoint_args</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="RestControllerSchema/RestControllerSchemaBuilder.php.html#255"><abbr title="BLU\RestControllerSchema\RestControllerSchemaBuilder::user_delete_endpoint_args">user_delete_endpoint_args</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="RestControllerSchema/RestControllerSchemaBuilder.php.html#272"><abbr title="BLU\RestControllerSchema\RestControllerSchemaBuilder::get_post_item_query_args">get_post_item_query_args</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Validation/HiiveProductVerifier.php.html#45"><abbr title="BLU\Validation\HiiveProductVerifier::verify_product_access">verify_product_access</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Validation/McpValidation.php.html#233"><abbr title="BLU\Validation\McpValidation::normalize_pem_key">normalize_pem_key</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/CustomPostTypes.php.html#36"><abbr title="BLU\Abilities\CustomPostTypes::register_abilities">register_abilities</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/CustomPostTypes.php.html#29"><abbr title="BLU\Abilities\CustomPostTypes::__construct">__construct</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/RestApiUtils.php.html#298"><abbr title="BLU\Abilities\RestApiUtils::eager_load_rest_routes">eager_load_rest_routes</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/Media.php.html#325"><abbr title="BLU\Abilities\Media::execute_list_media">execute_list_media</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/Media.php.html#367"><abbr title="BLU\Abilities\Media::schema_for_upload">schema_for_upload</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/Resources.php.html#17"><abbr title="BLU\Abilities\Resources::__construct">__construct</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/RestApiUtils.php.html#266"><abbr title="BLU\Abilities\RestApiUtils::schema_from_controller_args">schema_from_controller_args</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/RestApiUtils.php.html#178"><abbr title="BLU\Abilities\RestApiUtils::args_to_input_schema">args_to_input_schema</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/RestApiUtils.php.html#146"><abbr title="BLU\Abilities\RestApiUtils::extract_input_schema">extract_input_schema</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/RestApiUtils.php.html#111"><abbr title="BLU\Abilities\RestApiUtils::find_route_by_resource">find_route_by_resource</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/RestApiUtils.php.html#65"><abbr title="BLU\Abilities\RestApiUtils::get_latest_namespace">get_latest_namespace</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/RestApiUtils.php.html#41"><abbr title="BLU\Abilities\RestApiUtils::ensure_rest_routes_registered">ensure_rest_routes_registered</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/RestApiUtils.php.html#32"><abbr title="BLU\Abilities\RestApiUtils::__construct">__construct</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/Resources.php.html#133"><abbr title="BLU\Abilities\Resources::filter_google_taxonomies">filter_google_taxonomies</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/Resources.php.html#114"><abbr title="BLU\Abilities\Resources::retrieve_file">retrieve_file</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/Pages.php.html#23"><abbr title="BLU\Abilities\Pages::__construct">__construct</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/Resources.php.html#27"><abbr title="BLU\Abilities\Resources::register_google_taxonomy_resource">register_google_taxonomy_resource</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/Prompts.php.html#571"><abbr title="BLU\Abilities\Prompts::register_smart_product_prompt">register_smart_product_prompt</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/Prompts.php.html#469"><abbr title="BLU\Abilities\Prompts::register_prompt_brands">register_prompt_brands</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/Pages.php.html#30"><abbr title="BLU\Abilities\Pages::register_abilities">register_abilities</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/Posts.php.html#23"><abbr title="BLU\Abilities\Posts::__construct">__construct</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/Posts.php.html#32"><abbr title="BLU\Abilities\Posts::register_post_abilities">register_post_abilities</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/Posts.php.html#247"><abbr title="BLU\Abilities\Posts::register_category_abilities">register_category_abilities</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/Posts.php.html#410"><abbr title="BLU\Abilities\Posts::register_tag_abilities">register_tag_abilities</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/Prompts.php.html#17"><abbr title="BLU\Abilities\Prompts::__construct">__construct</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/Prompts.php.html#35"><abbr title="BLU\Abilities\Prompts::register_guided_product_creation_prompt">register_guided_product_creation_prompt</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/Prompts.php.html#139"><abbr title="BLU\Abilities\Prompts::register_prompt_description">register_prompt_description</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/Prompts.php.html#266"><abbr title="BLU\Abilities\Prompts::register_prompt_categories">register_prompt_categories</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="Abilities/Prompts.php.html#367"><abbr title="BLU\Abilities\Prompts::register_prompt_tags">register_prompt_tags</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="RestControllerSchema/RestControllerSchemaBuilder.php.html#66"><abbr title="BLU\RestControllerSchema\RestControllerSchemaBuilder::for_settings">for_settings</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="McpServer.php.html#77"><abbr title="BLU\McpServer::register_server">register_server</abbr></a></td><td class="text-right">8%</td></tr>
+       <tr><td><a href="Abilities/GlobalStyles.php.html#713"><abbr title="BLU\Abilities\GlobalStyles::detect_unresolved_preset_reference">detect_unresolved_preset_reference</abbr></a></td><td class="text-right">13%</td></tr>
+       <tr><td><a href="Validation/McpValidation.php.html#155"><abbr title="BLU\Validation\McpValidation::is_valid_token">is_valid_token</abbr></a></td><td class="text-right">18%</td></tr>
+       <tr><td><a href="McpServer.php.html#124"><abbr title="BLU\McpServer::suppress_sibling_default_server_refire">suppress_sibling_default_server_refire</abbr></a></td><td class="text-right">33%</td></tr>
+       <tr><td><a href="Abilities/GlobalStyles.php.html#420"><abbr title="BLU\Abilities\GlobalStyles::detect_misplaced_application">detect_misplaced_application</abbr></a></td><td class="text-right">37%</td></tr>
+       <tr><td><a href="Abilities/AbilityGateway.php.html#183"><abbr title="BLU\Abilities\AbilityGateway::normalize_parameters">normalize_parameters</abbr></a></td><td class="text-right">44%</td></tr>
+       <tr><td><a href="Integrations/WooCommerceAbilities.php.html#90"><abbr title="BLU\Integrations\WooCommerceAbilities::maybe_register_abilities">maybe_register_abilities</abbr></a></td><td class="text-right">44%</td></tr>
+       <tr><td><a href="Abilities/ImageEdit.php.html#551"><abbr title="BLU\Abilities\ImageEdit::resolve_local_file_from_url">resolve_local_file_from_url</abbr></a></td><td class="text-right">55%</td></tr>
+       <tr><td><a href="Abilities/GlobalStyles.php.html#583"><abbr title="BLU\Abilities\GlobalStyles::values_match">values_match</abbr></a></td><td class="text-right">57%</td></tr>
+       <tr><td><a href="Abilities/GlobalStyles.php.html#337"><abbr title="BLU\Abilities\GlobalStyles::diff_requested_vs_stored">diff_requested_vs_stored</abbr></a></td><td class="text-right">60%</td></tr>
+       <tr><td><a href="Abilities/GlobalStyles.php.html#874"><abbr title="BLU\Abilities\GlobalStyles::iter_per_block_and_global_settings">iter_per_block_and_global_settings</abbr></a></td><td class="text-right">61%</td></tr>
+       <tr><td><a href="Validation/McpValidation.php.html#246"><abbr title="BLU\Validation\McpValidation::get_public_key">get_public_key</abbr></a></td><td class="text-right">62%</td></tr>
+       <tr><td><a href="Abilities/ImageEdit.php.html#435"><abbr title="BLU\Abilities\ImageEdit::fetch_source_image">fetch_source_image</abbr></a></td><td class="text-right">63%</td></tr>
+       <tr><td><a href="Abilities/GlobalStyles.php.html#858"><abbr title="BLU\Abilities\GlobalStyles::coerce_to_array">coerce_to_array</abbr></a></td><td class="text-right">66%</td></tr>
+       <tr><td><a href="Abilities/GlobalStyles.php.html#46"><abbr title="BLU\Abilities\GlobalStyles::register_get_global_styles">register_get_global_styles</abbr></a></td><td class="text-right">66%</td></tr>
+       <tr><td><a href="Abilities/GlobalStyles.php.html#506"><abbr title="BLU\Abilities\GlobalStyles::lookup_path">lookup_path</abbr></a></td><td class="text-right">68%</td></tr>
+       <tr><td><a href="Abilities/DocumentRead.php.html#128"><abbr title="BLU\Abilities\DocumentRead::extract_pdf_text">extract_pdf_text</abbr></a></td><td class="text-right">71%</td></tr>
+       <tr><td><a href="Abilities/GlobalStyles.php.html#269"><abbr title="BLU\Abilities\GlobalStyles::execute_update_global_styles">execute_update_global_styles</abbr></a></td><td class="text-right">73%</td></tr>
+       <tr><td><a href="Validation/McpValidation.php.html#124"><abbr title="BLU\Validation\McpValidation::peek_payload">peek_payload</abbr></a></td><td class="text-right">75%</td></tr>
+       <tr><td><a href="Abilities/LogoGen.php.html#127"><abbr title="BLU\Abilities\LogoGen::edit">edit</abbr></a></td><td class="text-right">80%</td></tr>
+       <tr><td><a href="Abilities/Settings.php.html#30"><abbr title="BLU\Abilities\Settings::register_abilities">register_abilities</abbr></a></td><td class="text-right">83%</td></tr>
+       <tr><td><a href="Abilities/ImageEdit.php.html#412"><abbr title="BLU\Abilities\ImageEdit::is_allowed_source_url">is_allowed_source_url</abbr></a></td><td class="text-right">87%</td></tr>
+       <tr><td><a href="Abilities/GlobalStyles.php.html#673"><abbr title="BLU\Abilities\GlobalStyles::flatten_origin_buckets">flatten_origin_buckets</abbr></a></td><td class="text-right">87%</td></tr>
+       <tr><td><a href="Abilities/ImageEdit.php.html#289"><abbr title="BLU\Abilities\ImageEdit::edit">edit</abbr></a></td><td class="text-right">87%</td></tr>
+       <tr><td><a href="Abilities/BlockEditor.php.html#382"><abbr title="BLU\Abilities\BlockEditor::register_duplicate">register_duplicate</abbr></a></td><td class="text-right">89%</td></tr>
+
+       </tbody>
+      </table>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Project Risks</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Method</th>
+         <th class="text-right"><abbr title="Change Risk Anti-Patterns (CRAP) Index">CRAP</abbr></th>
+        </tr>
+       </thead>
+       <tbody>
+       <tr><td><a href="Abilities/CustomPostTypes.php.html#36"><abbr title="BLU\Abilities\CustomPostTypes::register_abilities">register_abilities</abbr></a></td><td class="text-right">650</td></tr>
+       <tr><td><a href="Abilities/WooProducts.php.html#38"><abbr title="BLU\Abilities\WooProducts::register_product_abilities">register_product_abilities</abbr></a></td><td class="text-right">552</td></tr>
+       <tr><td><a href="Abilities/WooProducts.php.html#1156"><abbr title="BLU\Abilities\WooProducts::register_attribute_abilities">register_attribute_abilities</abbr></a></td><td class="text-right">462</td></tr>
+       <tr><td><a href="Abilities/Media.php.html#30"><abbr title="BLU\Abilities\Media::register_abilities">register_abilities</abbr></a></td><td class="text-right">342</td></tr>
+       <tr><td><a href="Abilities/WooProducts.php.html#1449"><abbr title="BLU\Abilities\WooProducts::register_variation_abilities">register_variation_abilities</abbr></a></td><td class="text-right">342</td></tr>
+       <tr><td><a href="Abilities/RestApiUtils.php.html#178"><abbr title="BLU\Abilities\RestApiUtils::args_to_input_schema">args_to_input_schema</abbr></a></td><td class="text-right">342</td></tr>
+       <tr><td><a href="Validation/McpValidation.php.html#155"><abbr title="BLU\Validation\McpValidation::is_valid_token">is_valid_token</abbr></a></td><td class="text-right">306</td></tr>
+       <tr><td><a href="Abilities/WooProducts.php.html#459"><abbr title="BLU\Abilities\WooProducts::register_category_abilities">register_category_abilities</abbr></a></td><td class="text-right">272</td></tr>
+       <tr><td><a href="Abilities/Users.php.html#30"><abbr title="BLU\Abilities\Users::register_abilities">register_abilities</abbr></a></td><td class="text-right">240</td></tr>
+       <tr><td><a href="Abilities/ImageEdit.php.html#197"><abbr title="BLU\Abilities\ImageEdit::analyze_image_colors">analyze_image_colors</abbr></a></td><td class="text-right">240</td></tr>
+       <tr><td><a href="Abilities/Prompts.php.html#571"><abbr title="BLU\Abilities\Prompts::register_smart_product_prompt">register_smart_product_prompt</abbr></a></td><td class="text-right">182</td></tr>
+       <tr><td><a href="Abilities/Pages.php.html#30"><abbr title="BLU\Abilities\Pages::register_abilities">register_abilities</abbr></a></td><td class="text-right">156</td></tr>
+       <tr><td><a href="Abilities/Prompts.php.html#139"><abbr title="BLU\Abilities\Prompts::register_prompt_description">register_prompt_description</abbr></a></td><td class="text-right">156</td></tr>
+       <tr><td><a href="Abilities/WooProducts.php.html#717"><abbr title="BLU\Abilities\WooProducts::register_tag_abilities">register_tag_abilities</abbr></a></td><td class="text-right">156</td></tr>
+       <tr><td><a href="Abilities/WooProducts.php.html#936"><abbr title="BLU\Abilities\WooProducts::register_brand_abilities">register_brand_abilities</abbr></a></td><td class="text-right">156</td></tr>
+       <tr><td><a href="Validation/HiiveProductVerifier.php.html#45"><abbr title="BLU\Validation\HiiveProductVerifier::verify_product_access">verify_product_access</abbr></a></td><td class="text-right">156</td></tr>
+       <tr><td><a href="Abilities/WooProducts.php.html#1950"><abbr title="BLU\Abilities\WooProducts::add_product_taxonomies">add_product_taxonomies</abbr></a></td><td class="text-right">110</td></tr>
+       <tr><td><a href="Abilities/WooOrders.php.html#33"><abbr title="BLU\Abilities\WooOrders::register_order_abilities">register_order_abilities</abbr></a></td><td class="text-right">110</td></tr>
+       <tr><td><a href="Abilities/Resources.php.html#27"><abbr title="BLU\Abilities\Resources::register_google_taxonomy_resource">register_google_taxonomy_resource</abbr></a></td><td class="text-right">90</td></tr>
+       <tr><td><a href="Abilities/Posts.php.html#32"><abbr title="BLU\Abilities\Posts::register_post_abilities">register_post_abilities</abbr></a></td><td class="text-right">90</td></tr>
+       <tr><td><a href="Abilities/Prompts.php.html#266"><abbr title="BLU\Abilities\Prompts::register_prompt_categories">register_prompt_categories</abbr></a></td><td class="text-right">72</td></tr>
+       <tr><td><a href="Abilities/Prompts.php.html#367"><abbr title="BLU\Abilities\Prompts::register_prompt_tags">register_prompt_tags</abbr></a></td><td class="text-right">72</td></tr>
+       <tr><td><a href="Abilities/Resources.php.html#133"><abbr title="BLU\Abilities\Resources::filter_google_taxonomies">filter_google_taxonomies</abbr></a></td><td class="text-right">72</td></tr>
+       <tr><td><a href="Abilities/Prompts.php.html#469"><abbr title="BLU\Abilities\Prompts::register_prompt_brands">register_prompt_brands</abbr></a></td><td class="text-right">72</td></tr>
+       <tr><td><a href="Abilities/Prompts.php.html#35"><abbr title="BLU\Abilities\Prompts::register_guided_product_creation_prompt">register_guided_product_creation_prompt</abbr></a></td><td class="text-right">56</td></tr>
+       <tr><td><a href="Abilities/WooProducts.php.html#2007"><abbr title="BLU\Abilities\WooProducts::get_product_taxonomy_ids">get_product_taxonomy_ids</abbr></a></td><td class="text-right">56</td></tr>
+       <tr><td><a href="Abilities/WooAnalytics.php.html#35"><abbr title="BLU\Abilities\WooAnalytics::register_report_abilities">register_report_abilities</abbr></a></td><td class="text-right">42</td></tr>
+       <tr><td><a href="Abilities/Posts.php.html#247"><abbr title="BLU\Abilities\Posts::register_category_abilities">register_category_abilities</abbr></a></td><td class="text-right">42</td></tr>
+       <tr><td><a href="Abilities/Posts.php.html#410"><abbr title="BLU\Abilities\Posts::register_tag_abilities">register_tag_abilities</abbr></a></td><td class="text-right">42</td></tr>
+       <tr><td><a href="Abilities/RestApiUtils.php.html#111"><abbr title="BLU\Abilities\RestApiUtils::find_route_by_resource">find_route_by_resource</abbr></a></td><td class="text-right">42</td></tr>
+       <tr><td><a href="Abilities/GlobalStyles.php.html#713"><abbr title="BLU\Abilities\GlobalStyles::detect_unresolved_preset_reference">detect_unresolved_preset_reference</abbr></a></td><td class="text-right">38</td></tr>
+       <tr><td><a href="Abilities/ImageEdit.php.html#435"><abbr title="BLU\Abilities\ImageEdit::fetch_source_image">fetch_source_image</abbr></a></td><td class="text-right">35</td></tr>
+       <tr><td><a href="Abilities/ImageEdit.php.html#551"><abbr title="BLU\Abilities\ImageEdit::resolve_local_file_from_url">resolve_local_file_from_url</abbr></a></td><td class="text-right">34</td></tr>
+       <tr><td><a href="Abilities/ImageEdit.php.html#289"><abbr title="BLU\Abilities\ImageEdit::edit">edit</abbr></a></td><td class="text-right">31</td></tr>
+       <tr><td><a href="Abilities/RestApiUtils.php.html#65"><abbr title="BLU\Abilities\RestApiUtils::get_latest_namespace">get_latest_namespace</abbr></a></td><td class="text-right">30</td></tr>
+       <tr><td><a href="Abilities/WooOrders.php.html#162"><abbr title="BLU\Abilities\WooOrders::register_report_abilities">register_report_abilities</abbr></a></td><td class="text-right">30</td></tr>
+       <tr><td><a href="Abilities/WooProducts.php.html#1825"><abbr title="BLU\Abilities\WooProducts::register_report_abilities">register_report_abilities</abbr></a></td><td class="text-right">30</td></tr>
+       <tr><td><a href="Validation/McpValidation.php.html#288"><abbr title="BLU\Validation\McpValidation::set_admin_authentication">set_admin_authentication</abbr></a></td><td class="text-right">30</td></tr>
+       <tr><td><a href="Abilities/GlobalStyles.php.html#760"><abbr title="BLU\Abilities\GlobalStyles::build_registration_snippet">build_registration_snippet</abbr></a></td><td class="text-right">30</td></tr>
+       <tr><td><a href="Abilities/GlobalStyles.php.html#506"><abbr title="BLU\Abilities\GlobalStyles::lookup_path">lookup_path</abbr></a></td><td class="text-right">23</td></tr>
+       <tr><td><a href="Abilities/RestApiUtils.php.html#504"><abbr title="BLU\Abilities\RestApiUtils::get_endpoint_info">get_endpoint_info</abbr></a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="Abilities/LogoGen.php.html#282"><abbr title="BLU\Abilities\LogoGen::set_from_image">set_from_image</abbr></a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="Abilities/RestApiUtils.php.html#146"><abbr title="BLU\Abilities\RestApiUtils::extract_input_schema">extract_input_schema</abbr></a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="Abilities/RestApiUtils.php.html#266"><abbr title="BLU\Abilities\RestApiUtils::schema_from_controller_args">schema_from_controller_args</abbr></a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="RestControllerSchema/RestControllerSchemaBuilder.php.html#272"><abbr title="BLU\RestControllerSchema\RestControllerSchemaBuilder::get_post_item_query_args">get_post_item_query_args</abbr></a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="Abilities/GlobalStyles.php.html#836"><abbr title="BLU\Abilities\GlobalStyles::explain_missing_leaf">explain_missing_leaf</abbr></a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="McpServer.php.html#77"><abbr title="BLU\McpServer::register_server">register_server</abbr></a></td><td class="text-right">16</td></tr>
+       <tr><td><a href="Integrations/WooCommerceAbilities.php.html#90"><abbr title="BLU\Integrations\WooCommerceAbilities::maybe_register_abilities">maybe_register_abilities</abbr></a></td><td class="text-right">15</td></tr>
+       <tr><td><a href="Abilities/GlobalStyles.php.html#420"><abbr title="BLU\Abilities\GlobalStyles::detect_misplaced_application">detect_misplaced_application</abbr></a></td><td class="text-right">14</td></tr>
+       <tr><td><a href="Abilities/GlobalStyles.php.html#269"><abbr title="BLU\Abilities\GlobalStyles::execute_update_global_styles">execute_update_global_styles</abbr></a></td><td class="text-right">13</td></tr>
+       <tr><td><a href="Abilities/RestApiUtils.php.html#542"><abbr title="BLU\Abilities\RestApiUtils::get_latest_available_rest_route">get_latest_available_rest_route</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="Abilities/Themes.php.html#49"><abbr title="BLU\Abilities\Themes::register_get_active_theme">register_get_active_theme</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="Abilities/SiteInfo.php.html#67"><abbr title="BLU\Abilities\SiteInfo::get_plugins_info">get_plugins_info</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="Abilities/RestApiUtils.php.html#384"><abbr title="BLU\Abilities\RestApiUtils::resolve_param_route">resolve_param_route</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="Abilities/RestApiUtils.php.html#478"><abbr title="BLU\Abilities\RestApiUtils::get_routes_for_namespace">get_routes_for_namespace</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="Abilities/RestApiUtils.php.html#298"><abbr title="BLU\Abilities\RestApiUtils::eager_load_rest_routes">eager_load_rest_routes</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="Abilities/LogoGen.php.html#340"><abbr title="BLU\Abilities\LogoGen::is_allowed_url">is_allowed_url</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="Abilities/Media.php.html#325"><abbr title="BLU\Abilities\Media::execute_list_media">execute_list_media</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="Abilities/Resources.php.html#114"><abbr title="BLU\Abilities\Resources::retrieve_file">retrieve_file</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="Abilities/LogoGen.php.html#127"><abbr title="BLU\Abilities\LogoGen::edit">edit</abbr></a></td><td class="text-right">11</td></tr>
+       <tr><td><a href="Abilities/GlobalStyles.php.html#874"><abbr title="BLU\Abilities\GlobalStyles::iter_per_block_and_global_settings">iter_per_block_and_global_settings</abbr></a></td><td class="text-right">11</td></tr>
+       <tr><td><a href="Validation/McpValidation.php.html#246"><abbr title="BLU\Validation\McpValidation::get_public_key">get_public_key</abbr></a></td><td class="text-right">11</td></tr>
+       <tr><td><a href="Abilities/DocumentRead.php.html#128"><abbr title="BLU\Abilities\DocumentRead::extract_pdf_text">extract_pdf_text</abbr></a></td><td class="text-right">10</td></tr>
+       <tr><td><a href="Abilities/GlobalStyles.php.html#583"><abbr title="BLU\Abilities\GlobalStyles::values_match">values_match</abbr></a></td><td class="text-right">10</td></tr>
+       <tr><td><a href="Abilities/GlobalStyles.php.html#673"><abbr title="BLU\Abilities\GlobalStyles::flatten_origin_buckets">flatten_origin_buckets</abbr></a></td><td class="text-right">10</td></tr>
+       <tr><td><a href="Abilities/Settings.php.html#30"><abbr title="BLU\Abilities\Settings::register_abilities">register_abilities</abbr></a></td><td class="text-right">9</td></tr>
+       <tr><td><a href="Abilities/AbilityGateway.php.html#183"><abbr title="BLU\Abilities\AbilityGateway::normalize_parameters">normalize_parameters</abbr></a></td><td class="text-right">9</td></tr>
+       <tr><td><a href="Abilities/BlockEditor.php.html#382"><abbr title="BLU\Abilities\BlockEditor::register_duplicate">register_duplicate</abbr></a></td><td class="text-right">9</td></tr>
+       <tr><td><a href="Abilities/WooProducts.php.html#2041"><abbr title="BLU\Abilities\WooProducts::get_taxonomy">get_taxonomy</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="Abilities/WooProducts.php.html#1912"><abbr title="BLU\Abilities\WooProducts::resolve_wc_param_route">resolve_wc_param_route</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="RestControllerSchema/RestControllerSchemaBuilder.php.html#139"><abbr title="BLU\RestControllerSchema\RestControllerSchemaBuilder::get_item">get_item</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="Abilities/Prompts.php.html#17"><abbr title="BLU\Abilities\Prompts::__construct">__construct</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="Abilities/WooProducts.php.html#21"><abbr title="BLU\Abilities\WooProducts::__construct">__construct</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="Abilities/WooOrders.php.html#246"><abbr title="BLU\Abilities\WooOrders::resolve_wc_param_route">resolve_wc_param_route</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="Abilities/WooOrders.php.html#21"><abbr title="BLU\Abilities\WooOrders::__construct">__construct</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="Abilities/WooAnalytics.php.html#24"><abbr title="BLU\Abilities\WooAnalytics::__construct">__construct</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="Abilities/RestApiUtils.php.html#426"><abbr title="BLU\Abilities\RestApiUtils::map_rest_type_to_schema_type">map_rest_type_to_schema_type</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="Abilities/RestApiUtils.php.html#364"><abbr title="BLU\Abilities\RestApiUtils::resolve_item_route">resolve_item_route</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="Abilities/RestApiUtils.php.html#339"><abbr title="BLU\Abilities\RestApiUtils::substitute_route_params">substitute_route_params</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="Abilities/RestApiUtils.php.html#41"><abbr title="BLU\Abilities\RestApiUtils::ensure_rest_routes_registered">ensure_rest_routes_registered</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="Abilities/Media.php.html#345"><abbr title="BLU\Abilities\Media::get_media_route">get_media_route</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="McpServer.php.html#124"><abbr title="BLU\McpServer::suppress_sibling_default_server_refire">suppress_sibling_default_server_refire</abbr></a></td><td class="text-right">5</td></tr>
+       <tr><td><a href="Abilities/ImageEdit.php.html#412"><abbr title="BLU\Abilities\ImageEdit::is_allowed_source_url">is_allowed_source_url</abbr></a></td><td class="text-right">5</td></tr>
+       <tr><td><a href="Abilities/GlobalStyles.php.html#337"><abbr title="BLU\Abilities\GlobalStyles::diff_requested_vs_stored">diff_requested_vs_stored</abbr></a></td><td class="text-right">5</td></tr>
+       <tr><td><a href="Validation/McpValidation.php.html#124"><abbr title="BLU\Validation\McpValidation::peek_payload">peek_payload</abbr></a></td><td class="text-right">4</td></tr>
+       <tr><td><a href="Abilities/GlobalStyles.php.html#858"><abbr title="BLU\Abilities\GlobalStyles::coerce_to_array">coerce_to_array</abbr></a></td><td class="text-right">2</td></tr>
+       <tr><td><a href="Abilities/GlobalStyles.php.html#46"><abbr title="BLU\Abilities\GlobalStyles::register_get_global_styles">register_get_global_styles</abbr></a></td><td class="text-right">2</td></tr>
+
+       </tbody>
+      </table>
+     </div>
+    </div>
+   </div>
+   <footer>
+    <hr/>
+    <p>
+     <small>Generated by <a href="https://github.com/sebastianbergmann/php-code-coverage" target="_top">php-code-coverage 9.2.32</a> using <a href="https://secure.php.net/" target="_top">PHP 7.4.33</a> at Thu Aug 6 8:19:38 UTC 2026.</small>
+    </p>
+   </footer>
+  </div>
+  <script src="../_js/jquery.min.js?v=9.2.32" type="text/javascript"></script>
+  <script src="../_js/d3.min.js?v=9.2.32" type="text/javascript"></script>
+  <script src="../_js/nv.d3.min.js?v=9.2.32" type="text/javascript"></script>
+  <script type="text/javascript">
+$(document).ready(function() {
+  nv.addGraph(function() {
+    var chart = nv.models.multiBarChart();
+    chart.tooltips(false)
+      .showControls(false)
+      .showLegend(false)
+      .reduceXTicks(false)
+      .staggerLabels(true)
+      .yAxis.tickFormat(d3.format('d'));
+
+    d3.select('#classCoverageDistribution svg')
+      .datum(getCoverageDistributionData([15,0,0,0,0,1,1,2,1,2,6,0], "Class Coverage"))
+      .transition().duration(500).call(chart);
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+  });
+
+  nv.addGraph(function() {
+    var chart = nv.models.multiBarChart();
+    chart.tooltips(false)
+      .showControls(false)
+      .showLegend(false)
+      .reduceXTicks(false)
+      .staggerLabels(true)
+      .yAxis.tickFormat(d3.format('d'));
+
+    d3.select('#methodCoverageDistribution svg')
+      .datum(getCoverageDistributionData([108,1,2,0,2,2,2,7,3,6,18,37], "Method Coverage"))
+      .transition().duration(500).call(chart);
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+  });
+
+  function getCoverageDistributionData(data, label) {
+    var labels = [
+      '0%',
+      '0-10%',
+      '10-20%',
+      '20-30%',
+      '30-40%',
+      '40-50%',
+      '50-60%',
+      '60-70%',
+      '70-80%',
+      '80-90%',
+      '90-100%',
+      '100%'
+    ];
+    var values = [];
+    $.each(labels, function(key) {
+      values.push({x: labels[key], y: data[key]});
+    });
+
+    return [
+      {
+        key: label,
+        values: values,
+        color: "#4572A7"
+      }
+    ];
+  }
+  nv.addGraph(function() {
+    var chart = nv.models.scatterChart()
+      .showDistX(true)
+      .showDistY(true)
+      .showLegend(false)
+      .forceX([0, 100]);
+    chart.tooltipContent(function(graph) {
+      return '<p>' + graph.point.class + '</p>';
+    });
+
+    chart.xAxis.axisLabel('Code Coverage (in percent)');
+    chart.yAxis.axisLabel('Cyclomatic Complexity');
+
+    d3.select('#classComplexity svg')
+      .datum(getComplexityData([[95.95141700404858,60,"<a href=\"Abilities\/AbilityGateway.php.html#14\">BLU\\Abilities\\AbilityGateway<\/a>"],[95.4954954954955,58,"<a href=\"Abilities\/BlockEditor.php.html#21\">BLU\\Abilities\\BlockEditor<\/a>"],[95.50561797752809,15,"<a href=\"Abilities\/ColorGen.php.html#12\">BLU\\Abilities\\ColorGen<\/a>"],[0,26,"<a href=\"Abilities\/CustomPostTypes.php.html#17\">BLU\\Abilities\\CustomPostTypes<\/a>"],[92.85714285714286,28,"<a href=\"Abilities\/DocumentRead.php.html#11\">BLU\\Abilities\\DocumentRead<\/a>"],[67.17724288840262,117,"<a href=\"Abilities\/GlobalStyles.php.html#13\">BLU\\Abilities\\GlobalStyles<\/a>"],[74.2014742014742,96,"<a href=\"Abilities\/ImageEdit.php.html#10\">BLU\\Abilities\\ImageEdit<\/a>"],[98.82352941176471,15,"<a href=\"Abilities\/ImageGen.php.html#10\">BLU\\Abilities\\ImageGen<\/a>"],[89.30232558139535,36,"<a href=\"Abilities\/LogoGen.php.html#10\">BLU\\Abilities\\LogoGen<\/a>"],[0,25,"<a href=\"Abilities\/Media.php.html#11\">BLU\\Abilities\\Media<\/a>"],[0,13,"<a href=\"Abilities\/Pages.php.html#11\">BLU\\Abilities\\Pages<\/a>"],[0,22,"<a href=\"Abilities\/Posts.php.html#11\">BLU\\Abilities\\Posts<\/a>"],[0,58,"<a href=\"Abilities\/Prompts.php.html#13\">BLU\\Abilities\\Prompts<\/a>"],[0,21,"<a href=\"Abilities\/Resources.php.html#13\">BLU\\Abilities\\Resources<\/a>"],[92.64705882352942,43,"<a href=\"Abilities\/RestApiCrud.php.html#9\">BLU\\Abilities\\RestApiCrud<\/a>"],[0,66,"<a href=\"Abilities\/RestApiUtils.php.html#20\">BLU\\Abilities\\RestApiUtils<\/a>"],[83.33333333333334,10,"<a href=\"Abilities\/Settings.php.html#11\">BLU\\Abilities\\Settings<\/a>"],[0,7,"<a href=\"Abilities\/SiteInfo.php.html#9\">BLU\\Abilities\\SiteInfo<\/a>"],[0,5,"<a href=\"Abilities\/Themes.php.html#19\">BLU\\Abilities\\Themes<\/a>"],[0,16,"<a href=\"Abilities\/Users.php.html#11\">BLU\\Abilities\\Users<\/a>"],[0,11,"<a href=\"Abilities\/WooAnalytics.php.html#12\">BLU\\Abilities\\WooAnalytics<\/a>"],[0,22,"<a href=\"Abilities\/WooOrders.php.html#9\">BLU\\Abilities\\WooOrders<\/a>"],[0,134,"<a href=\"Abilities\/WooProducts.php.html#9\">BLU\\Abilities\\WooProducts<\/a>"],[65.51724137931035,14,"<a href=\"Integrations\/WooCommerceAbilities.php.html#35\">BLU\\Integrations\\WooCommerceAbilities<\/a>"],[58.46153846153847,10,"<a href=\"McpServer.php.html#41\">BLU\\McpServer<\/a>"],[0,23,"<a href=\"RestControllerSchema\/RestControllerSchemaBuilder.php.html#14\">BLU\\RestControllerSchema\\RestControllerSchemaBuilder<\/a>"],[0,12,"<a href=\"Validation\/HiiveProductVerifier.php.html#14\">BLU\\Validation\\HiiveProductVerifier<\/a>"],[43.61702127659575,51,"<a href=\"Validation\/McpValidation.php.html#14\">BLU\\Validation\\McpValidation<\/a>"]], 'Class Complexity'))
+      .transition()
+      .duration(500)
+      .call(chart);
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+  });
+
+  nv.addGraph(function() {
+    var chart = nv.models.scatterChart()
+      .showDistX(true)
+      .showDistY(true)
+      .showLegend(false)
+      .forceX([0, 100]);
+    chart.tooltipContent(function(graph) {
+      return '<p>' + graph.point.class + '</p>';
+    });
+
+    chart.xAxis.axisLabel('Code Coverage (in percent)');
+    chart.yAxis.axisLabel('Method Complexity');
+
+    d3.select('#methodComplexity svg')
+      .datum(getComplexityData([[100,1,"<a href=\"Abilities\/AbilityGateway.php.html#31\">BLU\\Abilities\\AbilityGateway::__construct<\/a>"],[92.6829268292683,14,"<a href=\"Abilities\/AbilityGateway.php.html#44\">BLU\\Abilities\\AbilityGateway::get_whitelisted_abilities<\/a>"],[100,4,"<a href=\"Abilities\/AbilityGateway.php.html#123\">BLU\\Abilities\\AbilityGateway::get_whitelisted_ability<\/a>"],[100,1,"<a href=\"Abilities\/AbilityGateway.php.html#149\">BLU\\Abilities\\AbilityGateway::to_mcp_name<\/a>"],[100,4,"<a href=\"Abilities\/AbilityGateway.php.html#160\">BLU\\Abilities\\AbilityGateway::is_gateway_ability<\/a>"],[44.44444444444444,5,"<a href=\"Abilities\/AbilityGateway.php.html#183\">BLU\\Abilities\\AbilityGateway::normalize_parameters<\/a>"],[100,14,"<a href=\"Abilities\/AbilityGateway.php.html#208\">BLU\\Abilities\\AbilityGateway::register_list_abilities<\/a>"],[97.77777777777777,4,"<a href=\"Abilities\/AbilityGateway.php.html#321\">BLU\\Abilities\\AbilityGateway::register_get_ability_schema<\/a>"],[98.27586206896551,13,"<a href=\"Abilities\/AbilityGateway.php.html#381\">BLU\\Abilities\\AbilityGateway::register_call_ability<\/a>"],[100,1,"<a href=\"Abilities\/BlockEditor.php.html#26\">BLU\\Abilities\\BlockEditor::__construct<\/a>"],[100,1,"<a href=\"Abilities\/BlockEditor.php.html#35\">BLU\\Abilities\\BlockEditor::register_abilities<\/a>"],[94.66666666666667,7,"<a href=\"Abilities\/BlockEditor.php.html#54\">BLU\\Abilities\\BlockEditor::register_edit_block<\/a>"],[97.89473684210527,16,"<a href=\"Abilities\/BlockEditor.php.html#179\">BLU\\Abilities\\BlockEditor::register_add_section<\/a>"],[97.61904761904762,2,"<a href=\"Abilities\/BlockEditor.php.html#322\">BLU\\Abilities\\BlockEditor::register_delete_block<\/a>"],[89.28571428571429,9,"<a href=\"Abilities\/BlockEditor.php.html#382\">BLU\\Abilities\\BlockEditor::register_duplicate<\/a>"],[96.22641509433963,5,"<a href=\"Abilities\/BlockEditor.php.html#514\">BLU\\Abilities\\BlockEditor::register_insert_inner_block<\/a>"],[93.84615384615384,10,"<a href=\"Abilities\/BlockEditor.php.html#581\">BLU\\Abilities\\BlockEditor::register_move_block<\/a>"],[97.61904761904762,2,"<a href=\"Abilities\/BlockEditor.php.html#672\">BLU\\Abilities\\BlockEditor::register_highlight_block<\/a>"],[97.87234042553192,3,"<a href=\"Abilities\/BlockEditor.php.html#737\">BLU\\Abilities\\BlockEditor::register_update_block_attrs<\/a>"],[97.61904761904762,2,"<a href=\"Abilities\/BlockEditor.php.html#806\">BLU\\Abilities\\BlockEditor::register_get_block_markup<\/a>"],[100,1,"<a href=\"Abilities\/ColorGen.php.html#17\">BLU\\Abilities\\ColorGen::__construct<\/a>"],[100,1,"<a href=\"Abilities\/ColorGen.php.html#24\">BLU\\Abilities\\ColorGen::register_abilities<\/a>"],[93.44262295081968,13,"<a href=\"Abilities\/ColorGen.php.html#60\">BLU\\Abilities\\ColorGen::generate<\/a>"],[0,1,"<a href=\"Abilities\/CustomPostTypes.php.html#29\">BLU\\Abilities\\CustomPostTypes::__construct<\/a>"],[0,25,"<a href=\"Abilities\/CustomPostTypes.php.html#36\">BLU\\Abilities\\CustomPostTypes::register_abilities<\/a>"],[100,1,"<a href=\"Abilities\/DocumentRead.php.html#16\">BLU\\Abilities\\DocumentRead::__construct<\/a>"],[95.34883720930233,18,"<a href=\"Abilities\/DocumentRead.php.html#52\">BLU\\Abilities\\DocumentRead::read<\/a>"],[71.42857142857143,9,"<a href=\"Abilities\/DocumentRead.php.html#128\">BLU\\Abilities\\DocumentRead::extract_pdf_text<\/a>"],[100,1,"<a href=\"Abilities\/GlobalStyles.php.html#25\">BLU\\Abilities\\GlobalStyles::__construct<\/a>"],[100,1,"<a href=\"Abilities\/GlobalStyles.php.html#34\">BLU\\Abilities\\GlobalStyles::register_abilities<\/a>"],[66.66666666666666,2,"<a href=\"Abilities\/GlobalStyles.php.html#46\">BLU\\Abilities\\GlobalStyles::register_get_global_styles<\/a>"],[100,1,"<a href=\"Abilities\/GlobalStyles.php.html#101\">BLU\\Abilities\\GlobalStyles::register_update_global_styles<\/a>"],[100,3,"<a href=\"Abilities\/GlobalStyles.php.html#191\">BLU\\Abilities\\GlobalStyles::register_get_active_global_styles<\/a>"],[100,3,"<a href=\"Abilities\/GlobalStyles.php.html#225\">BLU\\Abilities\\GlobalStyles::register_get_active_global_styles_id<\/a>"],[73.33333333333333,11,"<a href=\"Abilities\/GlobalStyles.php.html#269\">BLU\\Abilities\\GlobalStyles::execute_update_global_styles<\/a>"],[60,4,"<a href=\"Abilities\/GlobalStyles.php.html#337\">BLU\\Abilities\\GlobalStyles::diff_requested_vs_stored<\/a>"],[37.5,6,"<a href=\"Abilities\/GlobalStyles.php.html#420\">BLU\\Abilities\\GlobalStyles::detect_misplaced_application<\/a>"],[93.33333333333333,12,"<a href=\"Abilities\/GlobalStyles.php.html#463\">BLU\\Abilities\\GlobalStyles::walk_leaves<\/a>"],[68.57142857142857,16,"<a href=\"Abilities\/GlobalStyles.php.html#506\">BLU\\Abilities\\GlobalStyles::lookup_path<\/a>"],[57.14285714285714,7,"<a href=\"Abilities\/GlobalStyles.php.html#583\">BLU\\Abilities\\GlobalStyles::values_match<\/a>"],[100,14,"<a href=\"Abilities\/GlobalStyles.php.html#611\">BLU\\Abilities\\GlobalStyles::collect_known_preset_slugs<\/a>"],[87.5,10,"<a href=\"Abilities\/GlobalStyles.php.html#673\">BLU\\Abilities\\GlobalStyles::flatten_origin_buckets<\/a>"],[13.333333333333334,7,"<a href=\"Abilities\/GlobalStyles.php.html#713\">BLU\\Abilities\\GlobalStyles::detect_unresolved_preset_reference<\/a>"],[0,5,"<a href=\"Abilities\/GlobalStyles.php.html#760\">BLU\\Abilities\\GlobalStyles::build_registration_snippet<\/a>"],[0,4,"<a href=\"Abilities\/GlobalStyles.php.html#836\">BLU\\Abilities\\GlobalStyles::explain_missing_leaf<\/a>"],[66.66666666666666,2,"<a href=\"Abilities\/GlobalStyles.php.html#858\">BLU\\Abilities\\GlobalStyles::coerce_to_array<\/a>"],[61.53846153846154,8,"<a href=\"Abilities\/GlobalStyles.php.html#874\">BLU\\Abilities\\GlobalStyles::iter_per_block_and_global_settings<\/a>"],[100,1,"<a href=\"Abilities\/ImageEdit.php.html#16\">BLU\\Abilities\\ImageEdit::__construct<\/a>"],[100,1,"<a href=\"Abilities\/ImageEdit.php.html#23\">BLU\\Abilities\\ImageEdit::register_abilities<\/a>"],[93.75,7,"<a href=\"Abilities\/ImageEdit.php.html#139\">BLU\\Abilities\\ImageEdit::extract_colors<\/a>"],[0,15,"<a href=\"Abilities\/ImageEdit.php.html#197\">BLU\\Abilities\\ImageEdit::analyze_image_colors<\/a>"],[87.8048780487805,30,"<a href=\"Abilities\/ImageEdit.php.html#289\">BLU\\Abilities\\ImageEdit::edit<\/a>"],[87.5,5,"<a href=\"Abilities\/ImageEdit.php.html#412\">BLU\\Abilities\\ImageEdit::is_allowed_source_url<\/a>"],[63.95348837209303,19,"<a href=\"Abilities\/ImageEdit.php.html#435\">BLU\\Abilities\\ImageEdit::fetch_source_image<\/a>"],[55.55555555555556,15,"<a href=\"Abilities\/ImageEdit.php.html#551\">BLU\\Abilities\\ImageEdit::resolve_local_file_from_url<\/a>"],[100,3,"<a href=\"Abilities\/ImageEdit.php.html#602\">BLU\\Abilities\\ImageEdit::build_multipart_body<\/a>"],[100,1,"<a href=\"Abilities\/ImageGen.php.html#15\">BLU\\Abilities\\ImageGen::__construct<\/a>"],[100,1,"<a href=\"Abilities\/ImageGen.php.html#22\">BLU\\Abilities\\ImageGen::register_abilities<\/a>"],[97.43589743589743,13,"<a href=\"Abilities\/ImageGen.php.html#76\">BLU\\Abilities\\ImageGen::generate<\/a>"],[100,1,"<a href=\"Abilities\/LogoGen.php.html#15\">BLU\\Abilities\\LogoGen::__construct<\/a>"],[100,1,"<a href=\"Abilities\/LogoGen.php.html#22\">BLU\\Abilities\\LogoGen::register_abilities<\/a>"],[80,11,"<a href=\"Abilities\/LogoGen.php.html#127\">BLU\\Abilities\\LogoGen::edit<\/a>"],[100,13,"<a href=\"Abilities\/LogoGen.php.html#198\">BLU\\Abilities\\LogoGen::regenerate<\/a>"],[0,4,"<a href=\"Abilities\/LogoGen.php.html#282\">BLU\\Abilities\\LogoGen::set_from_image<\/a>"],[94.11764705882352,3,"<a href=\"Abilities\/LogoGen.php.html#308\">BLU\\Abilities\\LogoGen::sideload_and_set_logo<\/a>"],[0,3,"<a href=\"Abilities\/LogoGen.php.html#340\">BLU\\Abilities\\LogoGen::is_allowed_url<\/a>"],[0,1,"<a href=\"Abilities\/Media.php.html#23\">BLU\\Abilities\\Media::__construct<\/a>"],[0,18,"<a href=\"Abilities\/Media.php.html#30\">BLU\\Abilities\\Media::register_abilities<\/a>"],[0,3,"<a href=\"Abilities\/Media.php.html#325\">BLU\\Abilities\\Media::execute_list_media<\/a>"],[0,2,"<a href=\"Abilities\/Media.php.html#345\">BLU\\Abilities\\Media::get_media_route<\/a>"],[0,1,"<a href=\"Abilities\/Media.php.html#367\">BLU\\Abilities\\Media::schema_for_upload<\/a>"],[0,1,"<a href=\"Abilities\/Pages.php.html#23\">BLU\\Abilities\\Pages::__construct<\/a>"],[0,12,"<a href=\"Abilities\/Pages.php.html#30\">BLU\\Abilities\\Pages::register_abilities<\/a>"],[0,1,"<a href=\"Abilities\/Posts.php.html#23\">BLU\\Abilities\\Posts::__construct<\/a>"],[0,9,"<a href=\"Abilities\/Posts.php.html#32\">BLU\\Abilities\\Posts::register_post_abilities<\/a>"],[0,6,"<a href=\"Abilities\/Posts.php.html#247\">BLU\\Abilities\\Posts::register_category_abilities<\/a>"],[0,6,"<a href=\"Abilities\/Posts.php.html#410\">BLU\\Abilities\\Posts::register_tag_abilities<\/a>"],[0,2,"<a href=\"Abilities\/Prompts.php.html#17\">BLU\\Abilities\\Prompts::__construct<\/a>"],[0,7,"<a href=\"Abilities\/Prompts.php.html#35\">BLU\\Abilities\\Prompts::register_guided_product_creation_prompt<\/a>"],[0,12,"<a href=\"Abilities\/Prompts.php.html#139\">BLU\\Abilities\\Prompts::register_prompt_description<\/a>"],[0,8,"<a href=\"Abilities\/Prompts.php.html#266\">BLU\\Abilities\\Prompts::register_prompt_categories<\/a>"],[0,8,"<a href=\"Abilities\/Prompts.php.html#367\">BLU\\Abilities\\Prompts::register_prompt_tags<\/a>"],[0,8,"<a href=\"Abilities\/Prompts.php.html#469\">BLU\\Abilities\\Prompts::register_prompt_brands<\/a>"],[0,13,"<a href=\"Abilities\/Prompts.php.html#571\">BLU\\Abilities\\Prompts::register_smart_product_prompt<\/a>"],[0,1,"<a href=\"Abilities\/Resources.php.html#17\">BLU\\Abilities\\Resources::__construct<\/a>"],[0,9,"<a href=\"Abilities\/Resources.php.html#27\">BLU\\Abilities\\Resources::register_google_taxonomy_resource<\/a>"],[0,3,"<a href=\"Abilities\/Resources.php.html#114\">BLU\\Abilities\\Resources::retrieve_file<\/a>"],[0,8,"<a href=\"Abilities\/Resources.php.html#133\">BLU\\Abilities\\Resources::filter_google_taxonomies<\/a>"],[100,1,"<a href=\"Abilities\/RestApiCrud.php.html#14\">BLU\\Abilities\\RestApiCrud::__construct<\/a>"],[100,5,"<a href=\"Abilities\/RestApiCrud.php.html#39\">BLU\\Abilities\\RestApiCrud::derive_namespace<\/a>"],[92.3076923076923,37,"<a href=\"Abilities\/RestApiCrud.php.html#58\">BLU\\Abilities\\RestApiCrud::register_abilities<\/a>"],[0,1,"<a href=\"Abilities\/RestApiUtils.php.html#32\">BLU\\Abilities\\RestApiUtils::__construct<\/a>"],[0,2,"<a href=\"Abilities\/RestApiUtils.php.html#41\">BLU\\Abilities\\RestApiUtils::ensure_rest_routes_registered<\/a>"],[0,5,"<a href=\"Abilities\/RestApiUtils.php.html#65\">BLU\\Abilities\\RestApiUtils::get_latest_namespace<\/a>"],[0,6,"<a href=\"Abilities\/RestApiUtils.php.html#111\">BLU\\Abilities\\RestApiUtils::find_route_by_resource<\/a>"],[0,4,"<a href=\"Abilities\/RestApiUtils.php.html#146\">BLU\\Abilities\\RestApiUtils::extract_input_schema<\/a>"],[0,18,"<a href=\"Abilities\/RestApiUtils.php.html#178\">BLU\\Abilities\\RestApiUtils::args_to_input_schema<\/a>"],[0,4,"<a href=\"Abilities\/RestApiUtils.php.html#266\">BLU\\Abilities\\RestApiUtils::schema_from_controller_args<\/a>"],[0,3,"<a href=\"Abilities\/RestApiUtils.php.html#298\">BLU\\Abilities\\RestApiUtils::eager_load_rest_routes<\/a>"],[0,1,"<a href=\"Abilities\/RestApiUtils.php.html#325\">BLU\\Abilities\\RestApiUtils::build_item_route<\/a>"],[0,2,"<a href=\"Abilities\/RestApiUtils.php.html#339\">BLU\\Abilities\\RestApiUtils::substitute_route_params<\/a>"],[0,2,"<a href=\"Abilities\/RestApiUtils.php.html#364\">BLU\\Abilities\\RestApiUtils::resolve_item_route<\/a>"],[0,3,"<a href=\"Abilities\/RestApiUtils.php.html#384\">BLU\\Abilities\\RestApiUtils::resolve_param_route<\/a>"],[0,1,"<a href=\"Abilities\/RestApiUtils.php.html#411\">BLU\\Abilities\\RestApiUtils::passthrough_object_schema<\/a>"],[0,2,"<a href=\"Abilities\/RestApiUtils.php.html#426\">BLU\\Abilities\\RestApiUtils::map_rest_type_to_schema_type<\/a>"],[0,1,"<a href=\"Abilities\/RestApiUtils.php.html#453\">BLU\\Abilities\\RestApiUtils::get_all_namespaces<\/a>"],[0,1,"<a href=\"Abilities\/RestApiUtils.php.html#465\">BLU\\Abilities\\RestApiUtils::namespace_exists<\/a>"],[0,3,"<a href=\"Abilities\/RestApiUtils.php.html#478\">BLU\\Abilities\\RestApiUtils::get_routes_for_namespace<\/a>"],[0,4,"<a href=\"Abilities\/RestApiUtils.php.html#504\">BLU\\Abilities\\RestApiUtils::get_endpoint_info<\/a>"],[0,3,"<a href=\"Abilities\/RestApiUtils.php.html#542\">BLU\\Abilities\\RestApiUtils::get_latest_available_rest_route<\/a>"],[100,1,"<a href=\"Abilities\/Settings.php.html#23\">BLU\\Abilities\\Settings::__construct<\/a>"],[83.09859154929578,9,"<a href=\"Abilities\/Settings.php.html#30\">BLU\\Abilities\\Settings::register_abilities<\/a>"],[0,1,"<a href=\"Abilities\/SiteInfo.php.html#14\">BLU\\Abilities\\SiteInfo::__construct<\/a>"],[0,1,"<a href=\"Abilities\/SiteInfo.php.html#21\">BLU\\Abilities\\SiteInfo::register_abilities<\/a>"],[0,3,"<a href=\"Abilities\/SiteInfo.php.html#67\">BLU\\Abilities\\SiteInfo::get_plugins_info<\/a>"],[0,1,"<a href=\"Abilities\/SiteInfo.php.html#92\">BLU\\Abilities\\SiteInfo::get_active_theme_info<\/a>"],[0,1,"<a href=\"Abilities\/SiteInfo.php.html#106\">BLU\\Abilities\\SiteInfo::get_users_info<\/a>"],[0,1,"<a href=\"Abilities\/Themes.php.html#31\">BLU\\Abilities\\Themes::__construct<\/a>"],[0,1,"<a href=\"Abilities\/Themes.php.html#40\">BLU\\Abilities\\Themes::register_abilities<\/a>"],[0,3,"<a href=\"Abilities\/Themes.php.html#49\">BLU\\Abilities\\Themes::register_get_active_theme<\/a>"],[0,1,"<a href=\"Abilities\/Users.php.html#23\">BLU\\Abilities\\Users::__construct<\/a>"],[0,15,"<a href=\"Abilities\/Users.php.html#30\">BLU\\Abilities\\Users::register_abilities<\/a>"],[0,2,"<a href=\"Abilities\/WooAnalytics.php.html#24\">BLU\\Abilities\\WooAnalytics::__construct<\/a>"],[0,6,"<a href=\"Abilities\/WooAnalytics.php.html#35\">BLU\\Abilities\\WooAnalytics::register_report_abilities<\/a>"],[0,1,"<a href=\"Abilities\/WooAnalytics.php.html#127\">BLU\\Abilities\\WooAnalytics::analytics_namespace_label<\/a>"],[0,1,"<a href=\"Abilities\/WooAnalytics.php.html#140\">BLU\\Abilities\\WooAnalytics::resolve_analytics_route<\/a>"],[0,1,"<a href=\"Abilities\/WooAnalytics.php.html#153\">BLU\\Abilities\\WooAnalytics::analytics_route_error<\/a>"],[0,2,"<a href=\"Abilities\/WooOrders.php.html#21\">BLU\\Abilities\\WooOrders::__construct<\/a>"],[0,10,"<a href=\"Abilities\/WooOrders.php.html#33\">BLU\\Abilities\\WooOrders::register_order_abilities<\/a>"],[0,5,"<a href=\"Abilities\/WooOrders.php.html#162\">BLU\\Abilities\\WooOrders::register_report_abilities<\/a>"],[0,1,"<a href=\"Abilities\/WooOrders.php.html#220\">BLU\\Abilities\\WooOrders::wc_namespace_label<\/a>"],[0,1,"<a href=\"Abilities\/WooOrders.php.html#233\">BLU\\Abilities\\WooOrders::resolve_wc_route<\/a>"],[0,2,"<a href=\"Abilities\/WooOrders.php.html#246\">BLU\\Abilities\\WooOrders::resolve_wc_param_route<\/a>"],[0,1,"<a href=\"Abilities\/WooOrders.php.html#264\">BLU\\Abilities\\WooOrders::wc_route_error<\/a>"],[0,2,"<a href=\"Abilities\/WooProducts.php.html#21\">BLU\\Abilities\\WooProducts::__construct<\/a>"],[0,23,"<a href=\"Abilities\/WooProducts.php.html#38\">BLU\\Abilities\\WooProducts::register_product_abilities<\/a>"],[0,16,"<a href=\"Abilities\/WooProducts.php.html#459\">BLU\\Abilities\\WooProducts::register_category_abilities<\/a>"],[0,12,"<a href=\"Abilities\/WooProducts.php.html#717\">BLU\\Abilities\\WooProducts::register_tag_abilities<\/a>"],[0,12,"<a href=\"Abilities\/WooProducts.php.html#936\">BLU\\Abilities\\WooProducts::register_brand_abilities<\/a>"],[0,21,"<a href=\"Abilities\/WooProducts.php.html#1156\">BLU\\Abilities\\WooProducts::register_attribute_abilities<\/a>"],[0,18,"<a href=\"Abilities\/WooProducts.php.html#1449\">BLU\\Abilities\\WooProducts::register_variation_abilities<\/a>"],[0,5,"<a href=\"Abilities\/WooProducts.php.html#1825\">BLU\\Abilities\\WooProducts::register_report_abilities<\/a>"],[0,1,"<a href=\"Abilities\/WooProducts.php.html#1877\">BLU\\Abilities\\WooProducts::wc_namespace_label<\/a>"],[0,1,"<a href=\"Abilities\/WooProducts.php.html#1886\">BLU\\Abilities\\WooProducts::get_wc_namespace<\/a>"],[0,1,"<a href=\"Abilities\/WooProducts.php.html#1899\">BLU\\Abilities\\WooProducts::resolve_wc_route<\/a>"],[0,2,"<a href=\"Abilities\/WooProducts.php.html#1912\">BLU\\Abilities\\WooProducts::resolve_wc_param_route<\/a>"],[0,1,"<a href=\"Abilities\/WooProducts.php.html#1929\">BLU\\Abilities\\WooProducts::wc_route_error<\/a>"],[0,10,"<a href=\"Abilities\/WooProducts.php.html#1950\">BLU\\Abilities\\WooProducts::add_product_taxonomies<\/a>"],[0,7,"<a href=\"Abilities\/WooProducts.php.html#2007\">BLU\\Abilities\\WooProducts::get_product_taxonomy_ids<\/a>"],[0,2,"<a href=\"Abilities\/WooProducts.php.html#2041\">BLU\\Abilities\\WooProducts::get_taxonomy<\/a>"],[100,1,"<a href=\"Integrations\/WooCommerceAbilities.php.html#64\">BLU\\Integrations\\WooCommerceAbilities::__construct<\/a>"],[44.44444444444444,7,"<a href=\"Integrations\/WooCommerceAbilities.php.html#90\">BLU\\Integrations\\WooCommerceAbilities::maybe_register_abilities<\/a>"],[100,3,"<a href=\"Integrations\/WooCommerceAbilities.php.html#153\">BLU\\Integrations\\WooCommerceAbilities::check_ability_permission<\/a>"],[100,3,"<a href=\"Integrations\/WooCommerceAbilities.php.html#181\">BLU\\Integrations\\WooCommerceAbilities::is_blu_mcp_request<\/a>"],[100,1,"<a href=\"McpServer.php.html#49\">BLU\\McpServer::__construct<\/a>"],[8,4,"<a href=\"McpServer.php.html#77\">BLU\\McpServer::register_server<\/a>"],[33.33333333333333,3,"<a href=\"McpServer.php.html#124\">BLU\\McpServer::suppress_sibling_default_server_refire<\/a>"],[100,1,"<a href=\"McpServer.php.html#139\">BLU\\McpServer::register_abilities<\/a>"],[100,1,"<a href=\"McpServer.php.html#172\">BLU\\McpServer::register_ability_categories<\/a>"],[0,1,"<a href=\"RestControllerSchema\/RestControllerSchemaBuilder.php.html#28\">BLU\\RestControllerSchema\\RestControllerSchemaBuilder::__construct<\/a>"],[0,1,"<a href=\"RestControllerSchema\/RestControllerSchemaBuilder.php.html#38\">BLU\\RestControllerSchema\\RestControllerSchemaBuilder::for_cpt<\/a>"],[0,1,"<a href=\"RestControllerSchema\/RestControllerSchemaBuilder.php.html#46\">BLU\\RestControllerSchema\\RestControllerSchemaBuilder::for_users<\/a>"],[0,1,"<a href=\"RestControllerSchema\/RestControllerSchemaBuilder.php.html#57\">BLU\\RestControllerSchema\\RestControllerSchemaBuilder::for_post_type<\/a>"],[0,1,"<a href=\"RestControllerSchema\/RestControllerSchemaBuilder.php.html#66\">BLU\\RestControllerSchema\\RestControllerSchemaBuilder::for_settings<\/a>"],[0,1,"<a href=\"RestControllerSchema\/RestControllerSchemaBuilder.php.html#75\">BLU\\RestControllerSchema\\RestControllerSchemaBuilder::for_media<\/a>"],[0,1,"<a href=\"RestControllerSchema\/RestControllerSchemaBuilder.php.html#84\">BLU\\RestControllerSchema\\RestControllerSchemaBuilder::for_global_style<\/a>"],[0,1,"<a href=\"RestControllerSchema\/RestControllerSchemaBuilder.php.html#95\">BLU\\RestControllerSchema\\RestControllerSchemaBuilder::for_terms<\/a>"],[0,1,"<a href=\"RestControllerSchema\/RestControllerSchemaBuilder.php.html#104\">BLU\\RestControllerSchema\\RestControllerSchemaBuilder::collection<\/a>"],[0,1,"<a href=\"RestControllerSchema\/RestControllerSchemaBuilder.php.html#115\">BLU\\RestControllerSchema\\RestControllerSchemaBuilder::creatable<\/a>"],[0,1,"<a href=\"RestControllerSchema\/RestControllerSchemaBuilder.php.html#126\">BLU\\RestControllerSchema\\RestControllerSchemaBuilder::editable<\/a>"],[0,2,"<a href=\"RestControllerSchema\/RestControllerSchemaBuilder.php.html#139\">BLU\\RestControllerSchema\\RestControllerSchemaBuilder::get_item<\/a>"],[0,1,"<a href=\"RestControllerSchema\/RestControllerSchemaBuilder.php.html#168\">BLU\\RestControllerSchema\\RestControllerSchemaBuilder::update_with_id<\/a>"],[0,1,"<a href=\"RestControllerSchema\/RestControllerSchemaBuilder.php.html#190\">BLU\\RestControllerSchema\\RestControllerSchemaBuilder::delete_with_id<\/a>"],[0,1,"<a href=\"RestControllerSchema\/RestControllerSchemaBuilder.php.html#212\">BLU\\RestControllerSchema\\RestControllerSchemaBuilder::context_only<\/a>"],[0,1,"<a href=\"RestControllerSchema\/RestControllerSchemaBuilder.php.html#228\">BLU\\RestControllerSchema\\RestControllerSchemaBuilder::empty_object<\/a>"],[0,1,"<a href=\"RestControllerSchema\/RestControllerSchemaBuilder.php.html#240\">BLU\\RestControllerSchema\\RestControllerSchemaBuilder::post_delete_endpoint_args<\/a>"],[0,1,"<a href=\"RestControllerSchema\/RestControllerSchemaBuilder.php.html#255\">BLU\\RestControllerSchema\\RestControllerSchemaBuilder::user_delete_endpoint_args<\/a>"],[0,4,"<a href=\"RestControllerSchema\/RestControllerSchemaBuilder.php.html#272\">BLU\\RestControllerSchema\\RestControllerSchemaBuilder::get_post_item_query_args<\/a>"],[0,12,"<a href=\"Validation\/HiiveProductVerifier.php.html#45\">BLU\\Validation\\HiiveProductVerifier::verify_product_access<\/a>"],[100,1,"<a href=\"Validation\/McpValidation.php.html#51\">BLU\\Validation\\McpValidation::__construct<\/a>"],[100,6,"<a href=\"Validation\/McpValidation.php.html#61\">BLU\\Validation\\McpValidation::is_authenticated<\/a>"],[100,1,"<a href=\"Validation\/McpValidation.php.html#97\">BLU\\Validation\\McpValidation::get_authorization_header<\/a>"],[100,2,"<a href=\"Validation\/McpValidation.php.html#108\">BLU\\Validation\\McpValidation::extract_bearer_token<\/a>"],[75,4,"<a href=\"Validation\/McpValidation.php.html#124\">BLU\\Validation\\McpValidation::peek_payload<\/a>"],[18.75,23,"<a href=\"Validation\/McpValidation.php.html#155\">BLU\\Validation\\McpValidation::is_valid_token<\/a>"],[0,1,"<a href=\"Validation\/McpValidation.php.html#233\">BLU\\Validation\\McpValidation::normalize_pem_key<\/a>"],[62.5,8,"<a href=\"Validation\/McpValidation.php.html#246\">BLU\\Validation\\McpValidation::get_public_key<\/a>"],[0,5,"<a href=\"Validation\/McpValidation.php.html#288\">BLU\\Validation\\McpValidation::set_admin_authentication<\/a>"]], 'Method Complexity'))
+      .transition()
+      .duration(500)
+      .call(chart);
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+  });
+
+  function getComplexityData(data, label) {
+    var values = [];
+    $.each(data, function(key) {
+      var value = Math.round(data[key][0]*100) / 100;
+      values.push({
+        x: value,
+        y: data[key][1],
+        class: data[key][2],
+        size: 0.05,
+        shape: 'diamond'
+      });
+    });
+
+    return [
+      {
+        key: label,
+        values: values,
+        color: "#4572A7"
+      }
+    ];
+  }
+});
+  </script>
+ </body>
+</html>
