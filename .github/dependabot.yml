@@ -14,16 +14,6 @@ updates:
       include: "scope"
     labels:
       - "dependencies"
-    # Group all minor/patch bumps into one PR (one CI run, nothing for siblings
-    # to conflict on). Majors fall outside the group and arrive as individual
-    # PRs for human review (auto-merge is scoped to patch,minor).
-    groups:
-      github-actions:
-        patterns:
-          - "*"
-        update-types:
-          - "minor"
-          - "patch"
 
   # Maintain dependencies for npm
   - package-ecosystem: "npm"
@@ -41,13 +31,6 @@ updates:
     labels:
       - "dependencies"
       - "javascript"
-    groups:
-      npm:
-        patterns:
-          - "*"
-        update-types:
-          - "minor"
-          - "patch"
 
   # Maintain dependencies for Composer
   - package-ecosystem: "composer"
@@ -65,10 +48,3 @@ updates:
     labels:
       - "dependencies"
       - "php"
-    groups:
-      composer:
-        patterns:
-          - "*"
-        update-types:
-          - "minor"
-          - "patch"
