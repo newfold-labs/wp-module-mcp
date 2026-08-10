@@ -161,8 +161,11 @@ class McpValidation {
 
 		$peeked = $this->peek_payload( $token );
 
-		// Early exit for expired tokens (no key fetch, no Hiive).
-		if ( null !== $peeked && isset( $peeked->exp ) && is_numeric( $peeked->exp ) && (int) $peeked->exp < time() ) {
+		// Require an expiry claim, then reject already-expired tokens (no key fetch, no Hiive).
+		if ( null === $peeked || ! isset( $peeked->exp ) || ! is_numeric( $peeked->exp ) ) {
+			throw new \Exception( 'Token validation failed. The exp claim is required.' );
+		}
+		if ( (int) $peeked->exp < time() ) {
 			throw new \Exception( 'Token validation failed. The token has expired.' );
 		}
 
@@ -171,9 +174,11 @@ class McpValidation {
 			throw new \Exception( 'Token validation failed. The token is not yet valid.' );
 		}
 
-		// Choose key by audience: QA tokens (aud: qa) use staging key; production uses production key.
-		$use_staging = ( null !== $peeked && isset( $peeked->aud ) && 'qa' === $peeked->aud );
-		$public_key  = $this->get_public_key( $use_staging );
+		// Choose key by audience. The staging/QA key is trusted only off production, so a caller
+		// cannot select it on a production install by supplying aud: qa.
+		$is_production = ! function_exists( 'wp_get_environment_type' ) || 'production' === wp_get_environment_type();
+		$use_staging   = ! $is_production && isset( $peeked->aud ) && 'qa' === $peeked->aud;
+		$public_key    = $this->get_public_key( $use_staging );
 
 		// Verify signature and decode claims.
 		$decoded = JWT::decode( $token, new Key( $public_key, 'RS256' ) );
