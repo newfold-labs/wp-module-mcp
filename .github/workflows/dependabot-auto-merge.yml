@@ -3,8 +3,8 @@ on:
   schedule:
     # Dependabot opens this repo's PRs in a tight window around 14:45 UTC, so both
     # sweeps run after it. 15:30 catches same-day PRs once their CI is green;
-    # 20:00 is a safety net for slow CI and for grouped PRs that Dependabot only
-    # rebases (new head SHA -> new CI) after the first sweep merged a sibling.
+    # 20:00 is a safety net for slow CI and for PRs that Dependabot rebases
+    # (new head SHA -> new CI) after an earlier sweep merged another PR.
     - cron: "30 15 * * *"
     - cron: "0 20 * * *"
   workflow_dispatch:
@@ -24,12 +24,9 @@ jobs:
   # ones (not draft, mergeable, all check runs green, an opted-in bump type), so
   # the merge is held back when CI fails even when branch protection has no
   # required status checks configured. Majors are left for a human.
-  #
-  # NOTE: pinned to the feature branch until the workflows change lands on main;
-  # bump to a tagged ref / commit SHA on @main afterwards.
   auto-merge:
     name: Auto-merge Dependabot PRs
-    uses: newfold-labs/workflows/.github/workflows/reusable-dependabot-auto-merge.yml@enhance/PRESS0-4266
+    uses: newfold-labs/workflows/.github/workflows/reusable-dependabot-auto-merge.yml@main
     with:
       merge-method: squash
       update-types: patch,minor
