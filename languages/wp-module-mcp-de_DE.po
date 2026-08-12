@@ -8,7 +8,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "POT-Creation-Date: 2025-02-13T09:55:55+00:00\n"
-"PO-Revision-Date: 2026-07-28T12:35:27+00:00\n"
+"PO-Revision-Date: 2026-08-12T03:55:45+00:00\n"
 "Language: de\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-module-mcp\n"
@@ -78,59 +78,59 @@ msgstr ""
 msgid "Document content read successfully."
 msgstr ""
 
-#: includes/Abilities/ImageEdit.php:141
+#: includes/Abilities/ImageEdit.php:145
 msgid "GD image library is not available on this server."
 msgstr ""
 
-#: includes/Abilities/ImageEdit.php:147
+#: includes/Abilities/ImageEdit.php:151
 msgid "A valid image_url is required."
 msgstr ""
 
-#: includes/Abilities/ImageEdit.php:151
+#: includes/Abilities/ImageEdit.php:155
 msgid "The image_url is not allowed."
 msgstr ""
 
-#: includes/Abilities/ImageEdit.php:167
+#: includes/Abilities/ImageEdit.php:171
 msgid "No distinct colors found. The image may be mostly white, black, or transparent."
 msgstr ""
 
 #. translators: %s: dominant hex color value
-#: includes/Abilities/ImageEdit.php:179
+#: includes/Abilities/ImageEdit.php:183
 #, php-format
 msgid "Dominant color: %s. Use this hex value with blu/update-global-styles to apply it as the accent or primary color."
 msgstr ""
 
-#: includes/Abilities/ImageEdit.php:451
+#: includes/Abilities/ImageEdit.php:455
 msgid "Local source image not found."
 msgstr ""
 
-#: includes/Abilities/ImageEdit.php:458
+#: includes/Abilities/ImageEdit.php:462
 msgid "Could not read local source image."
 msgstr ""
 
-#: includes/Abilities/ImageEdit.php:465
-#: includes/Abilities/ImageEdit.php:522
+#: includes/Abilities/ImageEdit.php:469
+#: includes/Abilities/ImageEdit.php:526
 msgid "Source image exceeds 10 MB limit."
 msgstr ""
 
-#: includes/Abilities/ImageEdit.php:478
-#: includes/Abilities/ImageEdit.php:530
+#: includes/Abilities/ImageEdit.php:482
+#: includes/Abilities/ImageEdit.php:534
 msgid "Unsupported source image type."
 msgstr ""
 
 #. translators: %s: error message from wp_remote_get
-#: includes/Abilities/ImageEdit.php:500
+#: includes/Abilities/ImageEdit.php:504
 #, php-format
 msgid "Unable to fetch source image: %s"
 msgstr ""
 
 #. translators: %d: HTTP status code
-#: includes/Abilities/ImageEdit.php:508
+#: includes/Abilities/ImageEdit.php:512
 #, php-format
 msgid "Unable to fetch source image (HTTP %d)."
 msgstr ""
 
-#: includes/Abilities/ImageEdit.php:515
+#: includes/Abilities/ImageEdit.php:519
 msgid "Source image is empty."
 msgstr ""
 
