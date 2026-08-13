@@ -160,6 +160,7 @@ class LogoGen {
 				'prompt'     => substr( $edit_prompt, 0, 1000 ),
 				'source_url' => $source_url,
 				'background' => 'transparent',
+				'trim'       => true,
 			)
 		);
 
