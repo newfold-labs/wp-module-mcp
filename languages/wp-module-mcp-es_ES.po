@@ -8,7 +8,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "POT-Creation-Date: 2025-02-13T09:55:55+00:00\n"
-"PO-Revision-Date: 2026-08-12T03:59:00+00:00\n"
+"PO-Revision-Date: 2026-08-13T21:06:50+00:00\n"
 "Language: es\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-module-mcp\n"
@@ -49,7 +49,7 @@ msgid "%d color palette(s) generated. Present them to the user and apply the cho
 msgstr ""
 
 #: includes/Abilities/DocumentRead.php:57
-#: includes/Abilities/LogoGen.php:289
+#: includes/Abilities/LogoGen.php:290
 msgid "A valid source_url is required."
 msgstr ""
 
@@ -156,60 +156,60 @@ msgstr ""
 msgid "Edit this logo as follows: %s. CRITICAL: Start from this exact logo image. Apply only the requested changes. Preserve transparent background unless the user asks otherwise. Do not invent a completely different logo design unless the user explicitly asks for a redesign."
 msgstr ""
 
-#: includes/Abilities/LogoGen.php:172
+#: includes/Abilities/LogoGen.php:173
 msgid "Logo edit failed."
 msgstr ""
 
-#: includes/Abilities/LogoGen.php:184
+#: includes/Abilities/LogoGen.php:185
 msgid "No image URL in logo edit response."
 msgstr ""
 
-#: includes/Abilities/LogoGen.php:187
+#: includes/Abilities/LogoGen.php:188
 msgid "Site logo (AI edited)"
 msgstr ""
 
-#: includes/Abilities/LogoGen.php:211
+#: includes/Abilities/LogoGen.php:212
 msgid "Unable to retrieve Hiive authentication token for logo generation."
 msgstr ""
 
-#: includes/Abilities/LogoGen.php:239
+#: includes/Abilities/LogoGen.php:240
 msgid "Logo generation timed out."
 msgstr ""
 
 #. translators: %s: error message
-#: includes/Abilities/LogoGen.php:244
+#: includes/Abilities/LogoGen.php:245
 #, php-format
 msgid "Logo generation service unavailable: %s"
 msgstr ""
 
 #. translators: %d: HTTP status code
-#: includes/Abilities/LogoGen.php:253
+#: includes/Abilities/LogoGen.php:254
 #, php-format
 msgid "Logo generation failed with status %d."
 msgstr ""
 
-#: includes/Abilities/LogoGen.php:259
+#: includes/Abilities/LogoGen.php:260
 msgid "No image URL in response."
 msgstr ""
 
-#: includes/Abilities/LogoGen.php:264
+#: includes/Abilities/LogoGen.php:265
 msgid "Site logo (AI generated)"
 msgstr ""
 
 #. translators: %s: brand or site name for the logo attachment title/description
-#: includes/Abilities/LogoGen.php:268
+#: includes/Abilities/LogoGen.php:269
 #, php-format
 msgid "Site logo (AI generated) — %s"
 msgstr ""
 
-#: includes/Abilities/LogoGen.php:293
+#: includes/Abilities/LogoGen.php:294
 msgid "source_url is not allowed."
 msgstr ""
 
-#: includes/Abilities/LogoGen.php:296
+#: includes/Abilities/LogoGen.php:297
 msgid "Site logo (uploaded)"
 msgstr ""
 
-#: includes/Abilities/LogoGen.php:327
+#: includes/Abilities/LogoGen.php:328
 msgid "Site logo updated."
 msgstr ""
