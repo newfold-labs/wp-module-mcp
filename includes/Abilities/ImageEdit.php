@@ -380,8 +380,9 @@ class ImageEdit {
 					'Accept'        => 'application/json',
 					'Content-Type'  => 'multipart/form-data; boundary=' . $multipart_body['boundary'],
 				),
-				'body'    => $multipart_body['body'],
-				'timeout' => 120,
+				'body'      => $multipart_body['body'],
+				'timeout'   => 120,
+				'sslverify' => blu_ai_platform_sslverify(),
 			)
 		);
 		if ( is_wp_error( $response ) ) {
