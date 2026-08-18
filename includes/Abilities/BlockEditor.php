@@ -518,7 +518,7 @@ class BlockEditor {
 			'blu/insert-inner-block',
 			array(
 				'label'               => 'Insert Inner Block',
-				'description'         => 'Insert a new block as a child of an existing container block (core/columns, core/group, core/row, core/stack, core/buttons, etc.). Use this when the user asks to insert a NEW item inside a container whose design does NOT already exist on the page — e.g. "add a heading at the top of this group", "insert a button in this buttons row". If a sibling with the same design already exists, prefer blu/duplicate-block instead. Only emit the new child block_content; the parent and its existing children are not touched. Provide parent_client_id (the container) and the new block_content. Optional: index (0-based position; omit to append at the end).',
+				'description'         => 'Insert a new block as a child of an existing container block (core/columns, core/group, core/row, core/stack, core/buttons, etc.). Use this when the user asks to insert a NEW item inside a container whose design does NOT already exist on the page — e.g. "add a heading at the top of this group", "insert a button in this buttons row". If a sibling with the same design already exists, prefer blu/duplicate-block instead. Only emit the new child block_content; the parent and its existing children are not touched. Provide parent_client_id (the container) and the new block_content. Optional: index (0-based position; omit to append at the end). IMAGES: never write a full image URL into block_content. Use a __IMG_1__ (or __IMG_2__, …) placeholder for each new image and pass one descriptive entry per placeholder in image_prompts — the client generates the images and substitutes both the URL and its alt text. Leave alt="" in the markup and put the alt on the image_prompts entry. Use image_urls only when you already have resolved URLs on hand.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
@@ -534,6 +534,31 @@ class BlockEditor {
 						'index'            => array(
 							'type'        => 'integer',
 							'description' => 'Optional 0-based insert position within the parent. Omit to append at the end.',
+						),
+						'image_prompts'    => array(
+							'type'        => 'array',
+							'items'       => array(
+								'oneOf' => array(
+									array( 'type' => 'string' ),
+									array(
+										'type'       => 'object',
+										'properties' => array(
+											'prompt'      => array( 'type' => 'string' ),
+											'alt'         => array( 'type' => 'string' ),
+											'orientation' => array( 'type' => 'string' ),
+											'width'       => array( 'type' => 'integer' ),
+											'height'      => array( 'type' => 'integer' ),
+										),
+										'required'   => array( 'prompt' ),
+									),
+								),
+							),
+							'description' => 'Preferred image parameter. One entry per __IMG_N__ placeholder in block_content (in order). Each entry is either a string prompt ("A bright cafe interior, wide angle") or an object {prompt, alt?, orientation?, width?, height?}. ALWAYS use the object form and supply alt: a concise factual description of the image for screen readers. The client calls blu/generate-image per entry and substitutes each placeholder with the returned URL and its alt text. The count must match the number of unique __IMG_N__ placeholders.',
+						),
+						'image_urls'       => array(
+							'type'        => 'array',
+							'items'       => array( 'type' => 'string' ),
+							'description' => 'Fallback path for when you already have resolved image URLs. Ignored if image_prompts is provided. Replaces __IMG_1__, __IMG_2__, … in order.',
 						),
 					),
 					'required'   => array( 'parent_client_id', 'block_content' ),
@@ -553,6 +578,14 @@ class BlockEditor {
 					);
 					if ( isset( $input['index'] ) && is_int( $input['index'] ) ) {
 						$response_data['index'] = $input['index'];
+					}
+					// image_prompts is the preferred path (client generates via blu/generate-image);
+					// image_urls is a fallback when the caller already has URLs.
+					if ( ! empty( $input['image_prompts'] ) && is_array( $input['image_prompts'] ) ) {
+						$response_data['image_prompts'] = $input['image_prompts'];
+					}
+					if ( ! empty( $input['image_urls'] ) && is_array( $input['image_urls'] ) ) {
+						$response_data['image_urls'] = array_map( 'esc_url_raw', $input['image_urls'] );
 					}
 					return blu_prepare_ability_response( 200, $response_data );
 				},
