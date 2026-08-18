@@ -8,7 +8,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "POT-Creation-Date: 2025-02-13T09:55:55+00:00\n"
-"PO-Revision-Date: 2026-08-13T21:06:50+00:00\n"
+"PO-Revision-Date: 2026-08-18T13:01:41+00:00\n"
 "Language: pt_BR\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-module-mcp\n"
@@ -22,34 +22,34 @@ msgstr ""
 msgid "A prompt is required."
 msgstr ""
 
-#: includes/Abilities/ColorGen.php:99
+#: includes/Abilities/ColorGen.php:100
 msgid "Palette generation timed out."
 msgstr ""
 
 #. translators: %s: error message
-#: includes/Abilities/ColorGen.php:104
+#: includes/Abilities/ColorGen.php:105
 #, php-format
 msgid "Palette generation service unavailable: %s"
 msgstr ""
 
 #. translators: %d: HTTP status code
-#: includes/Abilities/ColorGen.php:113
+#: includes/Abilities/ColorGen.php:114
 #, php-format
 msgid "Palette generation failed with status %d."
 msgstr ""
 
-#: includes/Abilities/ColorGen.php:119
+#: includes/Abilities/ColorGen.php:120
 msgid "No palettes returned by the generation service."
 msgstr ""
 
 #. translators: %d: number of palettes
-#: includes/Abilities/ColorGen.php:141
+#: includes/Abilities/ColorGen.php:142
 #, php-format
 msgid "%d color palette(s) generated. Present them to the user and apply the chosen one with blu/update-global-styles."
 msgstr ""
 
 #: includes/Abilities/DocumentRead.php:57
-#: includes/Abilities/LogoGen.php:290
+#: includes/Abilities/LogoGen.php:291
 msgid "A valid source_url is required."
 msgstr ""
 
@@ -100,37 +100,37 @@ msgstr ""
 msgid "Dominant color: %s. Use this hex value with blu/update-global-styles to apply it as the accent or primary color."
 msgstr ""
 
-#: includes/Abilities/ImageEdit.php:455
+#: includes/Abilities/ImageEdit.php:456
 msgid "Local source image not found."
 msgstr ""
 
-#: includes/Abilities/ImageEdit.php:462
+#: includes/Abilities/ImageEdit.php:463
 msgid "Could not read local source image."
 msgstr ""
 
-#: includes/Abilities/ImageEdit.php:469
-#: includes/Abilities/ImageEdit.php:526
+#: includes/Abilities/ImageEdit.php:470
+#: includes/Abilities/ImageEdit.php:527
 msgid "Source image exceeds 10 MB limit."
 msgstr ""
 
-#: includes/Abilities/ImageEdit.php:482
-#: includes/Abilities/ImageEdit.php:534
+#: includes/Abilities/ImageEdit.php:483
+#: includes/Abilities/ImageEdit.php:535
 msgid "Unsupported source image type."
 msgstr ""
 
 #. translators: %s: error message from wp_remote_get
-#: includes/Abilities/ImageEdit.php:504
+#: includes/Abilities/ImageEdit.php:505
 #, php-format
 msgid "Unable to fetch source image: %s"
 msgstr ""
 
 #. translators: %d: HTTP status code
-#: includes/Abilities/ImageEdit.php:512
+#: includes/Abilities/ImageEdit.php:513
 #, php-format
 msgid "Unable to fetch source image (HTTP %d)."
 msgstr ""
 
-#: includes/Abilities/ImageEdit.php:519
+#: includes/Abilities/ImageEdit.php:520
 msgid "Source image is empty."
 msgstr ""
 
@@ -172,44 +172,44 @@ msgstr ""
 msgid "Unable to retrieve Hiive authentication token for logo generation."
 msgstr ""
 
-#: includes/Abilities/LogoGen.php:240
+#: includes/Abilities/LogoGen.php:241
 msgid "Logo generation timed out."
 msgstr ""
 
 #. translators: %s: error message
-#: includes/Abilities/LogoGen.php:245
+#: includes/Abilities/LogoGen.php:246
 #, php-format
 msgid "Logo generation service unavailable: %s"
 msgstr ""
 
 #. translators: %d: HTTP status code
-#: includes/Abilities/LogoGen.php:254
+#: includes/Abilities/LogoGen.php:255
 #, php-format
 msgid "Logo generation failed with status %d."
 msgstr ""
 
-#: includes/Abilities/LogoGen.php:260
+#: includes/Abilities/LogoGen.php:261
 msgid "No image URL in response."
 msgstr ""
 
-#: includes/Abilities/LogoGen.php:265
+#: includes/Abilities/LogoGen.php:266
 msgid "Site logo (AI generated)"
 msgstr ""
 
 #. translators: %s: brand or site name for the logo attachment title/description
-#: includes/Abilities/LogoGen.php:269
+#: includes/Abilities/LogoGen.php:270
 #, php-format
 msgid "Site logo (AI generated) — %s"
 msgstr ""
 
-#: includes/Abilities/LogoGen.php:294
+#: includes/Abilities/LogoGen.php:295
 msgid "source_url is not allowed."
 msgstr ""
 
-#: includes/Abilities/LogoGen.php:297
+#: includes/Abilities/LogoGen.php:298
 msgid "Site logo (uploaded)"
 msgstr ""
 
-#: includes/Abilities/LogoGen.php:328
+#: includes/Abilities/LogoGen.php:329
 msgid "Site logo updated."
 msgstr ""
