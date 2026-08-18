@@ -114,8 +114,9 @@ class ImageGen {
 					'Content-Type'  => 'application/json',
 					'Authorization' => 'Bearer ' . $hiive_token,
 				),
-				'body'    => wp_json_encode( $body ),
-				'timeout' => 90,
+				'body'      => wp_json_encode( $body ),
+				'timeout'   => 90,
+				'sslverify' => blu_ai_platform_sslverify(),
 			)
 		);
 
