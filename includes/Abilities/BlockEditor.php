@@ -579,11 +579,14 @@ class BlockEditor {
 						return blu_prepare_ability_response( 400, array( 'message' => 'block_content is required' ) );
 					}
 					$response_data = array(
-						'action'           => 'insert_inner_block',
-						'parent_client_id' => sanitize_text_field( $input['parent_client_id'] ),
-						'block_content'    => $input['block_content'],
-						'message'          => 'Inner block insert ready for execution',
+						'action'        => 'insert_inner_block',
+						'block_content' => $input['block_content'],
+						'message'       => 'Inner block insert ready for execution',
 					);
+					// Absent whenever a sibling reference carries the placement instead.
+					if ( ! empty( $input['parent_client_id'] ) ) {
+						$response_data['parent_client_id'] = sanitize_text_field( $input['parent_client_id'] );
+					}
 					if ( isset( $input['index'] ) && is_int( $input['index'] ) ) {
 						$response_data['index'] = $input['index'];
 					}
