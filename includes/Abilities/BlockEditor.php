@@ -531,9 +531,17 @@ class BlockEditor {
 							'type'        => 'string',
 							'description' => 'Valid WordPress block markup for the new child block. Must include proper <!-- wp:blockname {...} --> comments. Only the new child — do NOT re-emit the parent.',
 						),
+						'after_client_id'  => array(
+							'type'        => 'string',
+							'description' => 'PREFERRED for placement. clientId of the existing sibling the new block should follow. Use this for "next to this", "after this", "beside this" — it fixes both the container and the position, so you never compute an index. The sibling\'s own parent is used, so parent_client_id can be omitted.',
+						),
+						'before_client_id' => array(
+							'type'        => 'string',
+							'description' => 'clientId of the existing sibling the new block should precede. Mutually exclusive with after_client_id.',
+						),
 						'index'            => array(
 							'type'        => 'integer',
-							'description' => 'Optional 0-based insert position within the parent. Omit to append at the end.',
+							'description' => 'Fallback 0-based insert position within the parent, when no sibling reference applies. Omit to append at the end — but do NOT rely on appending for "next to X", which almost never means last.',
 						),
 						'image_prompts'    => array(
 							'type'        => 'array',
@@ -561,11 +569,11 @@ class BlockEditor {
 							'description' => 'Fallback path for when you already have resolved image URLs. Ignored if image_prompts is provided. Replaces __IMG_1__, __IMG_2__, … in order.',
 						),
 					),
-					'required'   => array( 'parent_client_id', 'block_content' ),
+					'required'   => array( 'block_content' ),
 				),
 				'execute_callback'    => function ( $input ) {
-					if ( empty( $input['parent_client_id'] ) ) {
-						return blu_prepare_ability_response( 400, array( 'message' => 'parent_client_id is required' ) );
+					if ( empty( $input['parent_client_id'] ) && empty( $input['after_client_id'] ) && empty( $input['before_client_id'] ) ) {
+						return blu_prepare_ability_response( 400, array( 'message' => 'parent_client_id is required unless after_client_id or before_client_id is given' ) );
 					}
 					if ( empty( $input['block_content'] ) ) {
 						return blu_prepare_ability_response( 400, array( 'message' => 'block_content is required' ) );
@@ -578,6 +586,12 @@ class BlockEditor {
 					);
 					if ( isset( $input['index'] ) && is_int( $input['index'] ) ) {
 						$response_data['index'] = $input['index'];
+					}
+					// Sibling references; the client resolves them to a parent + index.
+					foreach ( array( 'after_client_id', 'before_client_id' ) as $ref ) {
+						if ( ! empty( $input[ $ref ] ) ) {
+							$response_data[ $ref ] = sanitize_text_field( $input[ $ref ] );
+						}
 					}
 					// image_prompts is the preferred path (client generates via blu/generate-image);
 					// image_urls is a fallback when the caller already has URLs.
