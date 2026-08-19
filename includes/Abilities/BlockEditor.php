@@ -518,7 +518,7 @@ class BlockEditor {
 			'blu/insert-inner-block',
 			array(
 				'label'               => 'Insert Inner Block',
-				'description'         => 'Insert a new block as a child of an existing container block (core/columns, core/group, core/row, core/stack, core/buttons, etc.). Use this when the user asks to insert a NEW item inside a container whose design does NOT already exist on the page — e.g. "add a heading at the top of this group", "insert a button in this buttons row". If a sibling with the same design already exists, prefer blu/duplicate-block instead. Only emit the new child block_content; the parent and its existing children are not touched. Provide parent_client_id (the container) and the new block_content. Optional: index (0-based position; omit to append at the end).',
+				'description'         => 'Insert a new block as a child of an existing container block (core/columns, core/group, core/row, core/stack, core/buttons, etc.). Use this when the user asks to insert a NEW item inside a container whose design does NOT already exist on the page — e.g. "add a heading at the top of this group", "insert a button in this buttons row". If a sibling with the same design already exists, prefer blu/duplicate-block instead. Only emit the new child block_content; the parent and its existing children are not touched. Provide parent_client_id (the container) and the new block_content. Optional: index (0-based position; omit to append at the end). IMAGES: never write a full image URL into block_content. Use a __IMG_1__ (or __IMG_2__, …) placeholder for each new image and pass one descriptive entry per placeholder in image_prompts — the client generates the images and substitutes both the URL and its alt text. Leave alt="" in the markup and put the alt on the image_prompts entry. Use image_urls only when you already have resolved URLs on hand.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
@@ -531,28 +531,78 @@ class BlockEditor {
 							'type'        => 'string',
 							'description' => 'Valid WordPress block markup for the new child block. Must include proper <!-- wp:blockname {...} --> comments. Only the new child — do NOT re-emit the parent.',
 						),
+						'after_client_id'  => array(
+							'type'        => 'string',
+							'description' => 'PREFERRED for placement. clientId of the existing sibling the new block should follow. Use this for "next to this", "after this", "beside this" — it fixes both the container and the position, so you never compute an index. The sibling\'s own parent is used, so parent_client_id can be omitted.',
+						),
+						'before_client_id' => array(
+							'type'        => 'string',
+							'description' => 'clientId of the existing sibling the new block should precede. Mutually exclusive with after_client_id.',
+						),
 						'index'            => array(
 							'type'        => 'integer',
-							'description' => 'Optional 0-based insert position within the parent. Omit to append at the end.',
+							'description' => 'Fallback 0-based insert position within the parent, when no sibling reference applies. Omit to append at the end — but do NOT rely on appending for "next to X", which almost never means last.',
+						),
+						'image_prompts'    => array(
+							'type'        => 'array',
+							'items'       => array(
+								'oneOf' => array(
+									array( 'type' => 'string' ),
+									array(
+										'type'       => 'object',
+										'properties' => array(
+											'prompt'      => array( 'type' => 'string' ),
+											'alt'         => array( 'type' => 'string' ),
+											'orientation' => array( 'type' => 'string' ),
+											'width'       => array( 'type' => 'integer' ),
+											'height'      => array( 'type' => 'integer' ),
+										),
+										'required'   => array( 'prompt' ),
+									),
+								),
+							),
+							'description' => 'Preferred image parameter. One entry per __IMG_N__ placeholder in block_content (in order). Each entry is either a string prompt ("A bright cafe interior, wide angle") or an object {prompt, alt?, orientation?, width?, height?}. ALWAYS use the object form and supply alt: a concise factual description of the image for screen readers. The client calls blu/generate-image per entry and substitutes each placeholder with the returned URL and its alt text. The count must match the number of unique __IMG_N__ placeholders.',
+						),
+						'image_urls'       => array(
+							'type'        => 'array',
+							'items'       => array( 'type' => 'string' ),
+							'description' => 'Fallback path for when you already have resolved image URLs. Ignored if image_prompts is provided. Replaces __IMG_1__, __IMG_2__, … in order.',
 						),
 					),
-					'required'   => array( 'parent_client_id', 'block_content' ),
+					'required'   => array( 'block_content' ),
 				),
 				'execute_callback'    => function ( $input ) {
-					if ( empty( $input['parent_client_id'] ) ) {
-						return blu_prepare_ability_response( 400, array( 'message' => 'parent_client_id is required' ) );
+					if ( empty( $input['parent_client_id'] ) && empty( $input['after_client_id'] ) && empty( $input['before_client_id'] ) ) {
+						return blu_prepare_ability_response( 400, array( 'message' => 'parent_client_id is required unless after_client_id or before_client_id is given' ) );
 					}
 					if ( empty( $input['block_content'] ) ) {
 						return blu_prepare_ability_response( 400, array( 'message' => 'block_content is required' ) );
 					}
 					$response_data = array(
-						'action'           => 'insert_inner_block',
-						'parent_client_id' => sanitize_text_field( $input['parent_client_id'] ),
-						'block_content'    => $input['block_content'],
-						'message'          => 'Inner block insert ready for execution',
+						'action'        => 'insert_inner_block',
+						'block_content' => $input['block_content'],
+						'message'       => 'Inner block insert ready for execution',
 					);
+					// Absent whenever a sibling reference carries the placement instead.
+					if ( ! empty( $input['parent_client_id'] ) ) {
+						$response_data['parent_client_id'] = sanitize_text_field( $input['parent_client_id'] );
+					}
 					if ( isset( $input['index'] ) && is_int( $input['index'] ) ) {
 						$response_data['index'] = $input['index'];
+					}
+					// Sibling references; the client resolves them to a parent + index.
+					foreach ( array( 'after_client_id', 'before_client_id' ) as $ref ) {
+						if ( ! empty( $input[ $ref ] ) ) {
+							$response_data[ $ref ] = sanitize_text_field( $input[ $ref ] );
+						}
+					}
+					// image_prompts is the preferred path (client generates via blu/generate-image);
+					// image_urls is a fallback when the caller already has URLs.
+					if ( ! empty( $input['image_prompts'] ) && is_array( $input['image_prompts'] ) ) {
+						$response_data['image_prompts'] = $input['image_prompts'];
+					}
+					if ( ! empty( $input['image_urls'] ) && is_array( $input['image_urls'] ) ) {
+						$response_data['image_urls'] = array_map( 'esc_url_raw', $input['image_urls'] );
 					}
 					return blu_prepare_ability_response( 200, $response_data );
 				},

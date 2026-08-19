@@ -508,15 +508,48 @@ class BlockEditorWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	// ── blu/insert-inner-block ────────────────────────────────────────
 
 	/**
-	 * Verifies the schema rejects insert-inner-block calls without parent_client_id.
+	 * Verifies insert-inner-block returns 400 when no placement at all is given.
 	 */
-	public function test_insert_inner_block_requires_parent_client_id() {
+	public function test_insert_inner_block_requires_a_placement() {
 		$result = $this->execute_ability(
 			'blu/insert-inner-block',
 			array( 'block_content' => '<!-- wp:paragraph --><p>Hi</p><!-- /wp:paragraph -->' )
 		);
 
-		$this->assertInstanceOf( \WP_Error::class, $result );
+		$this->assertSame( 400, $result['statusCode'] );
+	}
+
+	/**
+	 * Verifies a sibling reference stands in for parent_client_id.
+	 */
+	public function test_insert_inner_block_accepts_sibling_reference_without_parent() {
+		$result = $this->execute_ability(
+			'blu/insert-inner-block',
+			array(
+				'block_content'   => '<!-- wp:paragraph --><p>Hi</p><!-- /wp:paragraph -->',
+				'after_client_id' => 'sibling-1',
+			)
+		);
+
+		$this->assertSame( 200, $result['statusCode'] );
+		$this->assertSame( 'sibling-1', $result['message']['after_client_id'] );
+		$this->assertArrayNotHasKey( 'parent_client_id', $result['message'] );
+	}
+
+	/**
+	 * Verifies before_client_id is forwarded the same way.
+	 */
+	public function test_insert_inner_block_forwards_before_client_id() {
+		$result = $this->execute_ability(
+			'blu/insert-inner-block',
+			array(
+				'block_content'    => '<!-- wp:paragraph --><p>Hi</p><!-- /wp:paragraph -->',
+				'before_client_id' => 'sibling-2',
+			)
+		);
+
+		$this->assertSame( 200, $result['statusCode'] );
+		$this->assertSame( 'sibling-2', $result['message']['before_client_id'] );
 	}
 
 	/**
