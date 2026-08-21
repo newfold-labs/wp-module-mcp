@@ -92,7 +92,7 @@
     "johnpbloch/wordpress": "@stable",
     "lucatume/wp-browser": "*",
     "phpunit/phpcov": "*",
-    "newfold-labs/wp-php-standards": "^1.2",
+    "newfold-labs/wp-php-standards": "^2.0",
     "wp-cli/i18n-command": "^2.7.0"
   }
 }
