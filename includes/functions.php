@@ -107,6 +107,21 @@ function blu_get_ability_category( string $slug ): ?WP_Ability_Category {
 }
 
 /**
+ * Subdirectory under wp_upload_dir() for editor chat temp uploads.
+ *
+ * Uses ChatEditor::TEMP_UPLOAD_SUBDIR when wp-module-editor-chat is loaded.
+ *
+ * @return string
+ */
+function blu_mcp_chat_temp_subdir(): string {
+	if ( class_exists( '\NewfoldLabs\WP\Module\EditorChat\ChatEditor' ) ) {
+		return \NewfoldLabs\WP\Module\EditorChat\ChatEditor::TEMP_UPLOAD_SUBDIR;
+	}
+
+	return 'nfd-chat-temp';
+}
+
+/**
  * Retrieves a list of available ability categories.
  *
  * @return string[] An array of ability categories. If the function `wp_get_ability_categories` is not available, it returns an empty array.
@@ -207,6 +222,19 @@ function blu_filter_abilities_by_namespace( array $abilities, string $namespace 
  */
 function blu_get_abilities_by_namespace( string $namespace ): array {
 	return blu_filter_abilities_by_namespace( blu_get_abilities(), $namespace );
+}
+
+/**
+ * Whether to verify TLS certificates on ai-platform requests.
+ *
+ * Defaults to true, so production is unaffected. Locally the ai-platform is
+ * served over a self-signed certificate, which PHP validates against
+ * WordPress's own CA bundle, so every call fails with cURL error 60.
+ *
+ * @return bool Whether wp_remote_* should verify the peer certificate.
+ */
+function blu_ai_platform_sslverify() {
+	return defined( 'NFD_AI_PLATFORM_SSL_VERIFY' ) ? (bool) NFD_AI_PLATFORM_SSL_VERIFY : true;
 }
 
 /**

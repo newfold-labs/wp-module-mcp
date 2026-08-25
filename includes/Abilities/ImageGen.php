@@ -34,6 +34,10 @@ class ImageGen {
 							'description' => 'Detailed description of the image to create (subject, style, lighting, mood, colours). Max 1000 characters.',
 							'maxLength'   => 1000,
 						),
+						'alt'         => array(
+							'type'        => 'string',
+							'description' => 'Alt text: a concise factual description of what is visible, for screen readers and SEO. Describe the subject and setting, not the art style or camera settings, and omit any leading "image of" / "photo of". Aim for under 125 characters. Always provide this when the image will be placed in a block.',
+						),
 						'orientation' => array(
 							'type'        => 'string',
 							'description' => 'Image orientation. Defaults to landscape.',
@@ -110,8 +114,9 @@ class ImageGen {
 					'Content-Type'  => 'application/json',
 					'Authorization' => 'Bearer ' . $hiive_token,
 				),
-				'body'    => wp_json_encode( $body ),
-				'timeout' => 90,
+				'body'      => wp_json_encode( $body ),
+				'timeout'   => 90,
+				'sslverify' => blu_ai_platform_sslverify(),
 			)
 		);
 

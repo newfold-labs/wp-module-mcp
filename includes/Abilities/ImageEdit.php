@@ -69,6 +69,10 @@ class ImageEdit {
 							'description' => 'What to change in the image — describe the desired result or the modification (e.g. "add a dog under the table", "make the background white", "change the shirt to red"). Max 1000 characters.',
 							'maxLength'   => 1000,
 						),
+						'alt'           => array(
+							'type'        => 'string',
+							'description' => 'Alt text: a concise factual description of what is visible, for screen readers and SEO. Describe the subject and setting, not the art style or camera settings, and omit any leading "image of" / "photo of". Aim for under 125 characters. Describe the image AFTER the edit, not the change itself. Always provide this when the image will be placed in a block.',
+						),
 						'source_url'    => array(
 							'type'        => 'string',
 							'description' => 'URL of the existing image to edit. Must be an accessible HTTP/HTTPS URL.',
@@ -376,8 +380,9 @@ class ImageEdit {
 					'Accept'        => 'application/json',
 					'Content-Type'  => 'multipart/form-data; boundary=' . $multipart_body['boundary'],
 				),
-				'body'    => $multipart_body['body'],
-				'timeout' => 120,
+				'body'      => $multipart_body['body'],
+				'timeout'   => 120,
+				'sslverify' => blu_ai_platform_sslverify(),
 			)
 		);
 		if ( is_wp_error( $response ) ) {
@@ -444,22 +449,8 @@ class ImageEdit {
 		$url_host  = strtolower( (string) wp_parse_url( $url, PHP_URL_HOST ) );
 		$site_host = strtolower( (string) wp_parse_url( home_url(), PHP_URL_HOST ) );
 		if ( $url_host === $site_host ) {
-			$url_path = wp_parse_url( $url, PHP_URL_PATH );
-			if ( ! is_string( $url_path ) ) {
-				return array(
-					'status' => 400,
-					'error'  => __( 'Invalid local URL path.', 'wp-module-mcp' ),
-				);
-			}
-			$abs_root = realpath( ABSPATH );
-			$abs_file = realpath( $abs_root . '/' . ltrim( $url_path, '/' ) );
-			if ( false === $abs_file || strpos( $abs_file, $abs_root ) !== 0 ) {
-				return array(
-					'status' => 400,
-					'error'  => __( 'Local file path is outside the WordPress root.', 'wp-module-mcp' ),
-				);
-			}
-			if ( ! is_file( $abs_file ) ) {
+			$abs_file = $this->resolve_local_file_from_url( $url );
+			if ( null === $abs_file ) {
 				return array(
 					'status' => 404,
 					'error'  => __( 'Local source image not found.', 'wp-module-mcp' ),
@@ -479,7 +470,13 @@ class ImageEdit {
 					'error'  => __( 'Source image exceeds 10 MB limit.', 'wp-module-mcp' ),
 				);
 			}
-			$mime = is_callable( 'mime_content_type' ) ? strtolower( mime_content_type( $abs_file ) ) : '';
+			$mime = is_callable( 'mime_content_type' ) ? strtolower( (string) mime_content_type( $abs_file ) ) : '';
+			if ( ! isset( $allowed_mimes[ $mime ] ) ) {
+				$filetype = wp_check_filetype( $abs_file, $allowed_mimes );
+				if ( ! empty( $filetype['type'] ) ) {
+					$mime = strtolower( (string) $filetype['type'] );
+				}
+			}
 			if ( ! isset( $allowed_mimes[ $mime ] ) ) {
 				return array(
 					'status' => 400,
@@ -546,6 +543,57 @@ class ImageEdit {
 			'content'  => $content,
 			'mime'     => $mime,
 		);
+	}
+
+	/**
+	 * Resolve a same-site URL to a readable filesystem path.
+	 *
+	 * Handles subdirectory installs and chat temp uploads (same approach as DocumentRead).
+	 *
+	 * @param string $url Local site image URL.
+	 * @return string|null Absolute file path, or null when not found.
+	 */
+	private function resolve_local_file_from_url( string $url ): ?string {
+		$url_path = wp_parse_url( $url, PHP_URL_PATH );
+		if ( ! is_string( $url_path ) || '' === $url_path ) {
+			return null;
+		}
+
+		$upload_dir  = wp_upload_dir();
+		$temp_subdir = blu_mcp_chat_temp_subdir();
+		$temp_dir    = $upload_dir['basedir'] . '/' . $temp_subdir;
+		if ( false !== strpos( $url_path, '/' . $temp_subdir . '/' ) ) {
+			$temp_base = realpath( $temp_dir );
+			if ( false === $temp_base ) {
+				return null;
+			}
+			$basename = basename( $url_path );
+			$abs_file = realpath( $temp_base . '/' . $basename );
+			if ( false !== $abs_file && 0 === strpos( $abs_file, $temp_base ) && is_file( $abs_file ) ) {
+				return $abs_file;
+			}
+
+			return null;
+		}
+
+		$home_path = (string) wp_parse_url( home_url(), PHP_URL_PATH );
+		$rel_path  = $url_path;
+		if ( '' !== $home_path && '/' !== $home_path && 0 === strpos( $url_path, $home_path ) ) {
+			$rel_path = substr( $url_path, strlen( $home_path ) );
+		}
+		$rel_path = ltrim( $rel_path, '/' );
+
+		$abs_root = realpath( ABSPATH );
+		if ( false === $abs_root ) {
+			return null;
+		}
+
+		$abs_file = realpath( $abs_root . '/' . $rel_path );
+		if ( false === $abs_file || 0 !== strpos( $abs_file, $abs_root ) || ! is_file( $abs_file ) ) {
+			return null;
+		}
+
+		return $abs_file;
 	}
 
 	/**

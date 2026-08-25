@@ -27,7 +27,9 @@
       "johnpbloch/wordpress-core-installer": true
     },
     "audit": {
-      "ignore": ["PKSA-y2cr-5h3j-g3ys"]
+      "ignore": {
+        "PKSA-y2cr-5h3j-g3ys": "CVE-2025-45769 (low/CWE-326): firebase/php-jwt < 7.0 accepts short HMAC (HS256) secrets; 7.0 enforces a minimum HMAC key length. This module uses php-jwt only for RS256 signature verification with a public key (includes/Validation/McpValidation.php), never HMAC or symmetric keys, so it is not affected. The fix ships only in php-jwt 7.0, which requires PHP >= 8.0, while this module still supports PHP 7.4 (see config.platform.php), so the dependency cannot be bumped yet. Revisit when the PHP 7.4 floor is dropped."
+      }
     }
   },
   "repositories": {

@@ -66,7 +66,7 @@ class DocumentReadWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		}
 
 		$upload_dir     = wp_upload_dir();
-		$this->temp_dir = $upload_dir['basedir'] . '/nfd-chat-temp';
+		$this->temp_dir = $upload_dir['basedir'] . '/' . blu_mcp_chat_temp_subdir();
 		if ( ! is_dir( $this->temp_dir ) ) {
 			wp_mkdir_p( $this->temp_dir );
 		}
@@ -146,7 +146,7 @@ class DocumentReadWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	 * @return string
 	 */
 	private function url_for( string $filename ): string {
-		return 'https://example.com/wp-content/uploads/nfd-chat-temp/' . rawurlencode( $filename );
+		return 'https://example.com/wp-content/uploads/' . blu_mcp_chat_temp_subdir() . '/' . rawurlencode( $filename );
 	}
 
 	/**
