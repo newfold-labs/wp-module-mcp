@@ -1,215 +1,212 @@
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: https://github.com/newfold-labs/wp-module-mcp/issues\n"
+"POT-Creation-Date: 2025-02-13T09:55:55+00:00\n"
+"PO-Revision-Date: 2026-09-01T20:11:32+00:00\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
+"Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-02-13T09:55:55+00:00\n"
-"PO-Revision-Date: 2026-08-18T13:01:41+00:00\n"
-"Language: de\n"
-"X-Generator: WP-CLI 2.12.0\n"
-"X-Domain: wp-module-mcp\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-
-#: includes/Abilities/ColorGen.php:71
-msgid "Unable to retrieve Hiive authentication token for palette generation."
-msgstr ""
-
-#: includes/Abilities/ColorGen.php:76
-msgid "A prompt is required."
-msgstr ""
-
-#: includes/Abilities/ColorGen.php:100
-msgid "Palette generation timed out."
-msgstr ""
-
-#. translators: %s: error message
-#: includes/Abilities/ColorGen.php:105
-#, php-format
-msgid "Palette generation service unavailable: %s"
-msgstr ""
-
-#. translators: %d: HTTP status code
-#: includes/Abilities/ColorGen.php:114
-#, php-format
-msgid "Palette generation failed with status %d."
-msgstr ""
-
-#: includes/Abilities/ColorGen.php:120
-msgid "No palettes returned by the generation service."
-msgstr ""
+"X-Domain: wp-module-mcp\n"
+"X-Generator: WP-CLI 2.12.0\n"
 
 #. translators: %d: number of palettes
 #: includes/Abilities/ColorGen.php:142
 #, php-format
 msgid "%d color palette(s) generated. Present them to the user and apply the chosen one with blu/update-global-styles."
-msgstr ""
+msgstr "%d Farbpalette(n) generiert. Präsentieren Sie sie dem Nutzer und wenden Sie die ausgewählte mit blu/update-global-styles an."
 
-#: includes/Abilities/DocumentRead.php:57
-#: includes/Abilities/LogoGen.php:291
-msgid "A valid source_url is required."
-msgstr ""
+#: includes/Abilities/LogoGen.php:132
+msgid "A prompt is required describing how to edit the logo."
+msgstr "Ein Hinweis ist erforderlich, der beschreibt, wie das Logo zu bearbeiten ist."
 
-#: includes/Abilities/DocumentRead.php:64
-#: includes/Abilities/DocumentRead.php:71
-msgid "Document not found or not accessible."
-msgstr ""
-
-#: includes/Abilities/DocumentRead.php:82
-msgid "Document exceeds the 50 MB size limit."
-msgstr ""
-
-#: includes/Abilities/DocumentRead.php:93
-msgid "Unsupported document type."
-msgstr ""
-
-#: includes/Abilities/DocumentRead.php:97
-msgid "Could not read document content."
-msgstr ""
-
-#: includes/Abilities/DocumentRead.php:113
-msgid "Document content (truncated to 30 000 characters)."
-msgstr ""
-
-#: includes/Abilities/DocumentRead.php:114
-msgid "Document content read successfully."
-msgstr ""
-
-#: includes/Abilities/ImageEdit.php:145
-msgid "GD image library is not available on this server."
-msgstr ""
+#: includes/Abilities/ColorGen.php:76
+msgid "A prompt is required."
+msgstr "Ein Hinweis ist erforderlich."
 
 #: includes/Abilities/ImageEdit.php:151
 msgid "A valid image_url is required."
-msgstr ""
+msgstr "Ein gültiger image_url ist erforderlich."
 
-#: includes/Abilities/ImageEdit.php:155
-msgid "The image_url is not allowed."
-msgstr ""
+#: includes/Abilities/DocumentRead.php:57 includes/Abilities/LogoGen.php:291
+msgid "A valid source_url is required."
+msgstr "Eine gültige source_url ist erforderlich."
 
-#: includes/Abilities/ImageEdit.php:171
-msgid "No distinct colors found. The image may be mostly white, black, or transparent."
-msgstr ""
+#: includes/Abilities/DocumentRead.php:97
+msgid "Could not read document content."
+msgstr "Konnte den Inhalt des Dokuments nicht lesen."
+
+#: includes/Abilities/ImageEdit.php:463
+msgid "Could not read local source image."
+msgstr "Konnte das lokale Quellbild nicht lesen."
+
+#: includes/Abilities/LogoGen.php:144
+msgid "Current site logo attachment could not be resolved."
+msgstr "Der aktuelle Anhang zum Website-Logo konnte nicht behoben werden."
+
+#: includes/Abilities/DocumentRead.php:113
+msgid "Document content (truncated to 30 000 characters)."
+msgstr "Dokumentinhalt (auf 30.000 Zeichen gekürzt)."
+
+#: includes/Abilities/DocumentRead.php:114
+msgid "Document content read successfully."
+msgstr "Dokumentinhalt erfolgreich gelesen."
+
+#: includes/Abilities/DocumentRead.php:82
+msgid "Document exceeds the 50 MB size limit."
+msgstr "Das Dokument überschreitet die Größenbegrenzung von 50 MB."
+
+#: includes/Abilities/DocumentRead.php:64 includes/Abilities/DocumentRead.php:71
+msgid "Document not found or not accessible."
+msgstr "Dokument nicht gefunden oder nicht zugänglich."
 
 #. translators: %s: dominant hex color value
 #: includes/Abilities/ImageEdit.php:183
 #, php-format
 msgid "Dominant color: %s. Use this hex value with blu/update-global-styles to apply it as the accent or primary color."
-msgstr ""
-
-#: includes/Abilities/ImageEdit.php:456
-msgid "Local source image not found."
-msgstr ""
-
-#: includes/Abilities/ImageEdit.php:463
-msgid "Could not read local source image."
-msgstr ""
-
-#: includes/Abilities/ImageEdit.php:470
-#: includes/Abilities/ImageEdit.php:527
-msgid "Source image exceeds 10 MB limit."
-msgstr ""
-
-#: includes/Abilities/ImageEdit.php:483
-#: includes/Abilities/ImageEdit.php:535
-msgid "Unsupported source image type."
-msgstr ""
-
-#. translators: %s: error message from wp_remote_get
-#: includes/Abilities/ImageEdit.php:505
-#, php-format
-msgid "Unable to fetch source image: %s"
-msgstr ""
-
-#. translators: %d: HTTP status code
-#: includes/Abilities/ImageEdit.php:513
-#, php-format
-msgid "Unable to fetch source image (HTTP %d)."
-msgstr ""
-
-#: includes/Abilities/ImageEdit.php:520
-msgid "Source image is empty."
-msgstr ""
-
-#: includes/Abilities/LogoGen.php:132
-msgid "A prompt is required describing how to edit the logo."
-msgstr ""
-
-#: includes/Abilities/LogoGen.php:139
-msgid "No site logo is set. Generate or upload a logo first."
-msgstr ""
-
-#: includes/Abilities/LogoGen.php:144
-msgid "Current site logo attachment could not be resolved."
-msgstr ""
-
-#: includes/Abilities/LogoGen.php:149
-msgid "Image edit ability is unavailable."
-msgstr ""
+msgstr "Dominante Farbe: %s. Verwenden Sie diesen Hex-Wert mit blu/update-global-styles, um ihn als Akzent oder Primärfarbe anzuwenden."
 
 #. translators: %s: user edit instructions for the logo
 #: includes/Abilities/LogoGen.php:154
 #, php-format
 msgid "Edit this logo as follows: %s. CRITICAL: Start from this exact logo image. Apply only the requested changes. Preserve transparent background unless the user asks otherwise. Do not invent a completely different logo design unless the user explicitly asks for a redesign."
-msgstr ""
+msgstr "Bearbeiten Sie dieses Logo wie folgt: %s. KRITISCH: Beginnen Sie mit genau diesem Logobild. Wenden Sie nur die gewünschten Änderungen an. Bewahren Sie den transparenten Hintergrund, sofern der Nutzer nicht anders verlangt. Erfinden Sie kein völlig anderes Logodesign, es sei denn, der Nutzer fordert ausdrücklich ein Redesign."
+
+#: includes/Abilities/ImageEdit.php:145
+msgid "GD image library is not available on this server."
+msgstr "Die GD-Bildbibliothek ist auf diesem Server nicht verfügbar."
+
+#: includes/Abilities/LogoGen.php:149
+msgid "Image edit ability is unavailable."
+msgstr "Bildbearbeitung ist nicht verfügbar."
+
+#: includes/Abilities/ImageEdit.php:456
+msgid "Local source image not found."
+msgstr "Lokales Quellbild nicht gefunden."
 
 #: includes/Abilities/LogoGen.php:173
 msgid "Logo edit failed."
-msgstr ""
-
-#: includes/Abilities/LogoGen.php:185
-msgid "No image URL in logo edit response."
-msgstr ""
-
-#: includes/Abilities/LogoGen.php:188
-msgid "Site logo (AI edited)"
-msgstr ""
-
-#: includes/Abilities/LogoGen.php:212
-msgid "Unable to retrieve Hiive authentication token for logo generation."
-msgstr ""
-
-#: includes/Abilities/LogoGen.php:241
-msgid "Logo generation timed out."
-msgstr ""
-
-#. translators: %s: error message
-#: includes/Abilities/LogoGen.php:246
-#, php-format
-msgid "Logo generation service unavailable: %s"
-msgstr ""
+msgstr "Logo-Bearbeitung fehlgeschlagen."
 
 #. translators: %d: HTTP status code
 #: includes/Abilities/LogoGen.php:255
 #, php-format
 msgid "Logo generation failed with status %d."
-msgstr ""
+msgstr "Die Logo-Erstellung ist mit Status %d gescheitert."
+
+#. translators: %s: error message
+#: includes/Abilities/LogoGen.php:246
+#, php-format
+msgid "Logo generation service unavailable: %s"
+msgstr "Logo-Generierungsdienst nicht verfügbar: %s"
+
+#: includes/Abilities/LogoGen.php:241
+msgid "Logo generation timed out."
+msgstr "Die Logo-Erstellung ist abgelaufen."
+
+#: includes/Abilities/ImageEdit.php:171
+msgid "No distinct colors found. The image may be mostly white, black, or transparent."
+msgstr "Keine deutlichen Farben gefunden. Das Bild kann überwiegend weiß, schwarz oder transparent sein."
+
+#: includes/Abilities/LogoGen.php:185
+msgid "No image URL in logo edit response."
+msgstr "Keine Bild-URL in der Antwort auf die Logo-Bearbeitung."
 
 #: includes/Abilities/LogoGen.php:261
 msgid "No image URL in response."
-msgstr ""
+msgstr "Keine Bild-URL als Antwort."
+
+#: includes/Abilities/ColorGen.php:120
+msgid "No palettes returned by the generation service."
+msgstr "Keine Paletten wurden vom Generationsdienst zurückgegeben."
+
+#: includes/Abilities/LogoGen.php:139
+msgid "No site logo is set. Generate or upload a logo first."
+msgstr "Es ist kein Logo der Seite festgelegt. Erstellen oder laden Sie zuerst ein Logo hoch."
+
+#. translators: %d: HTTP status code
+#: includes/Abilities/ColorGen.php:114
+#, php-format
+msgid "Palette generation failed with status %d."
+msgstr "Die Palettengenerierung schlug mit Status %d fehl."
+
+#. translators: %s: error message
+#: includes/Abilities/ColorGen.php:105
+#, php-format
+msgid "Palette generation service unavailable: %s"
+msgstr "Palettengenerierungsdienst nicht verfügbar: %s"
+
+#: includes/Abilities/ColorGen.php:100
+msgid "Palette generation timed out."
+msgstr "Die Palettengenerierung ist abgelaufen."
+
+#: includes/Abilities/LogoGen.php:188
+msgid "Site logo (AI edited)"
+msgstr "Seitenlogo (KI-bearbeitet)"
 
 #: includes/Abilities/LogoGen.php:266
 msgid "Site logo (AI generated)"
-msgstr ""
+msgstr "Site-Logo (KI-generiert)"
 
 #. translators: %s: brand or site name for the logo attachment title/description
 #: includes/Abilities/LogoGen.php:270
 #, php-format
 msgid "Site logo (AI generated) — %s"
-msgstr ""
-
-#: includes/Abilities/LogoGen.php:295
-msgid "source_url is not allowed."
-msgstr ""
+msgstr "Website-Logo (KI-generiert) — %s"
 
 #: includes/Abilities/LogoGen.php:298
 msgid "Site logo (uploaded)"
-msgstr ""
+msgstr "Site-Logo (hochgeladen)"
 
 #: includes/Abilities/LogoGen.php:329
 msgid "Site logo updated."
-msgstr ""
+msgstr "Website-Logo aktualisiert."
+
+#: includes/Abilities/ImageEdit.php:470 includes/Abilities/ImageEdit.php:527
+msgid "Source image exceeds 10 MB limit."
+msgstr "Das Quellbild überschreitet die Grenze von 10 MB."
+
+#: includes/Abilities/ImageEdit.php:520
+msgid "Source image is empty."
+msgstr "Das Quellbild ist leer."
+
+#: includes/Abilities/ImageEdit.php:155
+msgid "The image_url is not allowed."
+msgstr "Die image_url ist nicht erlaubt."
+
+#. translators: %d: HTTP status code
+#: includes/Abilities/ImageEdit.php:513
+#, php-format
+msgid "Unable to fetch source image (HTTP %d)."
+msgstr "Quellbild (HTTP %d) kann nicht abgerufen werden."
+
+#. translators: %s: error message from wp_remote_get
+#: includes/Abilities/ImageEdit.php:505
+#, php-format
+msgid "Unable to fetch source image: %s"
+msgstr "Quellbild nicht abgerufen: %s"
+
+#: includes/Abilities/LogoGen.php:212
+msgid "Unable to retrieve Hiive authentication token for logo generation."
+msgstr "Kann Hiive-Authentifizierungstoken für die Logogenerierung nicht abrufen."
+
+#: includes/Abilities/ColorGen.php:71
+msgid "Unable to retrieve Hiive authentication token for palette generation."
+msgstr "Hiive-Authentifizierungstoken für die Palettengenerierung kann nicht abgerufen werden."
+
+#: includes/Abilities/DocumentRead.php:93
+msgid "Unsupported document type."
+msgstr "Nicht unterstützter Dokumenttyp."
+
+#: includes/Abilities/ImageEdit.php:483 includes/Abilities/ImageEdit.php:535
+msgid "Unsupported source image type."
+msgstr "Nicht unterstützter Quellbildtyp."
+
+#: includes/Abilities/LogoGen.php:295
+msgid "source_url is not allowed."
+msgstr "source_url ist nicht erlaubt."
