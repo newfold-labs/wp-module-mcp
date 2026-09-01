@@ -8,6 +8,6 @@ return [
 	'po-revision-date' => '2026-08-18T13:01:41+00:00',
 	'x-generator' => 'WP-CLI 2.12.0',
 	'messages' => [
-,
+		'A prompt is required.' => 'Se requiere un mensaje.',
 	],
 ];
