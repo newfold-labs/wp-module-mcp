@@ -20,7 +20,7 @@ msgstr ""
 
 #: includes/Abilities/ColorGen.php:76
 msgid "A prompt is required."
-msgstr ""
+msgstr "Um prompt é necessário."
 
 #: includes/Abilities/ColorGen.php:100
 msgid "Palette generation timed out."
