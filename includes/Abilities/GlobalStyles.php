@@ -13,6 +13,13 @@ namespace BLU\Abilities;
 class GlobalStyles {
 
 	/**
+	 * Base REST API namespace used to discover the latest versioned namespace.
+	 *
+	 * @var string
+	 */
+	private $base_namespace = 'wp';
+
+	/**
 	 * Constructor
 	 */
 	public function __construct() {
@@ -54,8 +61,23 @@ class GlobalStyles {
 					'required'   => array( 'id' ),
 				),
 				'execute_callback'    => function ( $input ) {
+
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'global-styles' );
+
+					if ( ! $root ) {
+						return blu_standardize_rest_response(
+							new \WP_Error(
+								400,
+								'A valid route for global-styles not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
+							)
+						);
+
+					}
+
+					$method   = 'GET';
 					$id       = intval( $input['id'] );
-					$request  = new \WP_REST_Request( 'GET', '/wp/v2/global-styles/' . $id );
+					$root     = RestApiUtils::build_item_route( $root, $id );
+					$request  = new \WP_REST_Request( $method, $root );
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
 				},
@@ -255,7 +277,21 @@ class GlobalStyles {
 			return blu_prepare_ability_response( 500, 'Could not find global styles post' );
 		}
 
-		$request = new \WP_REST_Request( 'POST', '/wp/v2/global-styles/' . $global_styles_id );
+		$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'global-styles' );
+
+		if ( ! $root ) {
+			return blu_standardize_rest_response(
+				new \WP_Error(
+					400,
+					'A valid route for global-styles not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
+				)
+			);
+
+		}
+
+		$method  = 'POST';
+		$root    = RestApiUtils::build_item_route( $root, $global_styles_id );
+		$request = new \WP_REST_Request( $method, $root );
 
 		// Prepare the update data.
 		$data = array();
@@ -383,8 +419,8 @@ class GlobalStyles {
 	 */
 	private function detect_misplaced_application( string $path, $value ): ?string {
 		$app_keys = 'typography\.font(?:Family|Size|Style|Weight)'
-			. '|typography\.(?:lineHeight|letterSpacing|textDecoration|textTransform)'
-			. '|color\.(?:background|text|gradient)';
+					. '|typography\.(?:lineHeight|letterSpacing|textDecoration|textTransform)'
+					. '|color\.(?:background|text|gradient)';
 
 		// Two shapes, captured into the same `sub` group:
 		// settings.<sub>

@@ -120,8 +120,7 @@ class RestApiCrud {
 					// `/wp-json/` calls. Skippable via the `blu_mcp_list_api_eager_load` filter
 					// for sites that prefer the perf saving.
 					if ( apply_filters( 'blu_mcp_list_api_eager_load', true ) ) {
-						$root_request = new \WP_REST_Request( 'GET', '/' );
-						apply_filters( 'rest_pre_dispatch', null, rest_get_server(), $root_request );
+						RestApiUtils::eager_load_rest_routes();
 					}
 
 					$server     = rest_get_server();
@@ -271,8 +270,9 @@ class RestApiCrud {
 							'description' => 'HTTP method (uppercase).',
 						),
 						'data'   => array(
-							'type'        => 'object',
-							'description' => 'Request parameters matching the endpoint\'s args schema (see blu-get-function-details). Sent as query params for GET/DELETE, body for POST/PATCH.',
+							'type'                 => 'object',
+							'description'          => 'Request parameters matching the endpoint\'s args schema (see blu-get-function-details). Sent as query params for GET/DELETE, body for POST/PATCH.',
+							'additionalProperties' => true,
 						),
 					),
 					'required'   => array( 'route', 'method' ),

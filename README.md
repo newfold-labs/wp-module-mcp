@@ -278,7 +278,7 @@ All abilities below are accessible through the gateway. The **Ability name** col
 | `blu/upload-media` | `blu-upload-media` | Upload a new media file to WordPress |
 | `blu/update-media` | `blu-update-media` | Update a WordPress media item |
 | `blu/delete-media` | `blu-delete-media` | Delete a WordPress media item permanently |
-| `blu/search-media` | `blu-search-media` | Search WordPress media by title, caption, or description |
+| `blu/search-media` | `blu-search-media` | **Deprecated** — alias of `blu/list-media`; use `blu/list-media` for new integrations |
 
 #### Custom post types
 
@@ -348,13 +348,17 @@ Two surfaces are exposed:
 
 #### Products
 
-| Ability name | MCP tool name | Description |
-|-------------|---------------|-------------|
-| `blu/wc-products-search` | `blu-wc-products-search` | Search WooCommerce products |
-| `blu/wc-get-product` | `blu-wc-get-product` | Get a WooCommerce product by ID |
-| `blu/wc-add-product` | `blu-wc-add-product` | Add a WooCommerce product |
-| `blu/wc-update-product` | `blu-wc-update-product` | Update a WooCommerce product |
-| `blu/wc-delete-product` | `blu-wc-delete-product` | Delete a WooCommerce product |
+| Ability name | MCP tool name                        | Description |
+|-------------|--------------------------------------|-------------|
+| `blu/wc-products-search` | `blu-wc-products-search`             | Search WooCommerce products |
+| `blu/wc-get-product` | `blu-wc-get-product`                 | Get a WooCommerce product by ID |
+| `blu/wc-add-product` | `blu-wc-add-product`                 | Add a WooCommerce product |
+| `blu/wc-update-product` | `blu-wc-update-product`              | Update a WooCommerce product |
+| `blu/wc-delete-product` | `blu-wc-delete-product`              | Delete a WooCommerce product |
+| `blu/wc-list-product-variations` | `blu-wc-list-product-variations`     | List all variations for a WooCommerce variable product |
+| `blu/wc-add-product-variation` | `blu-wc-add-product-variation`       | Create a variation for a WooCommerce variable product |
+| `blu/wc-generate-product-variations` | `blu-wc-generate-product-variations` | Automatically generate all attribute combinations as variations for a WooCommerce variable product |
+| `blu/wc-reports-reviews-totals` | `blu-wc-reports-reviews-totals` | Get WooCommerce reviews totals report |
 
 #### Product categories
 
@@ -383,6 +387,16 @@ Two surfaces are exposed:
 | `blu/wc-update-product-brand` | `blu-wc-update-product-brand` | Update a WooCommerce product brand |
 | `blu/wc-delete-product-brand` | `blu-wc-delete-product-brand` | Delete a WooCommerce product brand |
 
+#### Product attributes
+
+| Ability name | MCP tool name                     | Description                                                           |
+|-------------|-----------------------------------|-----------------------------------------------------------------------|
+| `blu/wc-list-product-attributes` | `blu-wc-list-product-attributes`  | List all WooCommerce product attributes                               |
+| `blu/wc-add-product-attribute` | `blu-wc-add-product-attribute`    | Create a WooCommerce product attribute and <br/> optionally its terms |
+| `blu/wc-delete-product-attribute` | `blu-wc-delete-product-attribute` | Delete a WooCommerce product attribute and all its terms |
+| `blu/wc-list-attribute-terms` | `blu-wc-list-attribute-terms`     | List all terms for a WooCommerce product attribute |
+| `blu/wc-add-attribute-term` | `blu-wc-add-attribute-term`       | Add a term to a WooCommerce product attribute |
+
 #### Orders and reports
 
 | Ability name | MCP tool name | Description |
@@ -392,7 +406,7 @@ Two surfaces are exposed:
 | `blu/wc-reports-customers-totals` | `blu-wc-reports-customers-totals` | Get WooCommerce customers totals report |
 | `blu/wc-reports-orders-totals` | `blu-wc-reports-orders-totals` | Get WooCommerce orders totals report |
 | `blu/wc-reports-products-totals` | `blu-wc-reports-products-totals` | Get WooCommerce products totals report |
-| `blu/wc-reports-reviews-totals` | `blu-wc-reports-reviews-totals` | Get WooCommerce reviews totals report |
+| `blu/wc-reports-revenue-stats` | `blu-wc-reports-revenue-stats` | Get WooCommerce revenue stats report (wc-analytics) |
 | `blu/wc-reports-sales` | `blu-wc-reports-sales` | Get WooCommerce sales report |
 
 ---
@@ -502,7 +516,7 @@ Successful tool calls return a nested response that clients must unwrap:
     "content": [
       { "type": "text", "text": "<JSON string of the result>" }
     ],
-    "structuredContent": { ... }
+    "structuredContent": {...}
   }
 }
 ```
