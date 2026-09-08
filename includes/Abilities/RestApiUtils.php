@@ -63,6 +63,23 @@ class RestApiUtils {
 	 * @return string|null The latest versioned namespace, or null if not found.
 	 */
 	public static function get_latest_namespace( string $base_namespace ): ?string {
+		$candidates = self::get_versioned_namespaces( $base_namespace );
+
+		return $candidates[0] ?? null;
+	}
+
+	/**
+	 * Get all namespaces matching a base namespace, ordered from newest to oldest.
+	 *
+	 * Supports both versioned (e.g., `wc/v1`, `wc/v2`, `wc/v3`) and unversioned
+	 * (e.g., `wc-analytics`) namespaces. An exact unversioned match is returned as
+	 * the sole candidate, since there is no version ordering to consider.
+	 *
+	 * @param string $base_namespace Base namespace prefix (e.g., "wc", "wp", "wc-analytics").
+	 *
+	 * @return string[] Matching namespaces, highest version first. Empty if none match.
+	 */
+	public static function get_versioned_namespaces( string $base_namespace ): array {
 		$server     = rest_get_server();
 		$namespaces = $server->get_namespaces();
 
@@ -72,7 +89,7 @@ class RestApiUtils {
 		foreach ( $namespaces as $ns ) {
 			// Exact match (unversioned namespace like "wc-analytics")
 			if ( $ns === $base_namespace ) {
-				return $ns;
+				return array( $ns );
 			}
 
 			// Check for versioned namespace (e.g., "wc/v3")
@@ -82,12 +99,12 @@ class RestApiUtils {
 		}
 
 		if ( empty( $versions ) ) {
-			return null;
+			return array();
 		}
 
-		// Return the highest version
+		// Highest version first.
 		krsort( $versions, SORT_NUMERIC );
-		return reset( $versions );
+		return array_values( $versions );
 	}
 
 	/**
@@ -158,10 +175,70 @@ class RestApiUtils {
 				continue;
 			}
 
-			return self::args_to_input_schema( $endpoint['args'] ?? array() );
+			$schema = self::args_to_input_schema( $endpoint['args'] ?? array() );
+
+			return self::require_path_params( $schema, self::extract_path_param_names( $route ) );
 		}
 
 		return null;
+	}
+
+	/**
+	 * Extract named capture group identifiers from a REST route pattern.
+	 *
+	 * Native REST controllers generally do not mark named path captures (e.g. `id`,
+	 * `product_id`, `attribute_id`) required in their `args` definition, because the
+	 * URL regex already guarantees them. That guarantee does not carry over to an
+	 * ability input object, whose caller supplies `id` as a plain input property
+	 * rather than as part of a URL. This detects those captures so callers can
+	 * enforce them as required ability inputs.
+	 *
+	 * @param string $route REST route, e.g. "/wc/v3/products/(?P<id>[\d]+)".
+	 *
+	 * @return string[] Capture names found in the route, in order of appearance.
+	 */
+	public static function extract_path_param_names( string $route ): array {
+		if ( ! preg_match_all( '#\(\?P<([^>]+)>[^)]+\)#', $route, $matches ) ) {
+			return array();
+		}
+
+		return $matches[1];
+	}
+
+	/**
+	 * Ensure a set of parameter names are present (and required) in a JSON schema.
+	 *
+	 * Adds a generic integer property for any name not already present in
+	 * `properties`, and merges all names into `required` without duplicates.
+	 *
+	 * @param array<string, mixed> $schema      JSON schema object.
+	 * @param string[]             $param_names Parameter names that must be required.
+	 *
+	 * @return array<string, mixed> Updated JSON schema object.
+	 */
+	public static function require_path_params( array $schema, array $param_names ): array {
+		if ( empty( $param_names ) ) {
+			return $schema;
+		}
+
+		if ( ! isset( $schema['properties'] ) || ! is_array( $schema['properties'] ) ) {
+			$schema['properties'] = array();
+		}
+
+		foreach ( $param_names as $name ) {
+			if ( ! isset( $schema['properties'][ $name ] ) ) {
+				$schema['properties'][ $name ] = array(
+					'type'        => 'integer',
+					/* translators: %s: path parameter name, e.g. "id" or "product_id". */
+					'description' => sprintf( __( 'Path parameter: %s.', 'wp-module-mcp' ), $name ),
+				);
+			}
+		}
+
+		$required           = $schema['required'] ?? array();
+		$schema['required'] = array_values( array_unique( array_merge( $required, $param_names ) ) );
+
+		return $schema;
 	}
 
 	/**
@@ -220,6 +297,18 @@ class RestApiUtils {
 
 			if ( isset( $arg_def['maximum'] ) ) {
 				$property['maximum'] = $arg_def['maximum'];
+			}
+
+			if ( isset( $arg_def['pattern'] ) ) {
+				$property['pattern'] = $arg_def['pattern'];
+			}
+
+			if ( isset( $arg_def['minItems'] ) ) {
+				$property['minItems'] = $arg_def['minItems'];
+			}
+
+			if ( isset( $arg_def['maxItems'] ) ) {
+				$property['maxItems'] = $arg_def['maxItems'];
 			}
 
 			if ( isset( $arg_def['format'] ) ) {
@@ -383,19 +472,42 @@ class RestApiUtils {
 	 */
 	public static function resolve_param_route( string $base_namespace, string $resource_pattern_path, array $params ): ?string {
 		self::eager_load_rest_routes();
-		$namespace = self::get_latest_namespace( $base_namespace );
 
-		if ( ! $namespace ) {
-			return null;
-		}
-
-		$route = self::find_route_by_resource( $namespace, $resource_pattern_path );
+		$route = self::find_route_by_resource_across_versions( $base_namespace, $resource_pattern_path );
 
 		if ( ! $route ) {
 			return null;
 		}
 
 		return self::substitute_route_params( $route, $params );
+	}
+
+	/**
+	 * Find a resource's route across all versioned namespaces matching a base namespace,
+	 * newest first, stopping at the first namespace that actually exposes it.
+	 *
+	 * `get_latest_namespace()` alone is not resource-aware: it picks the highest
+	 * namespace first and only then looks for the resource. If a newer namespace
+	 * exists but does not expose a given resource that remains available in an
+	 * older namespace, that lookup returns null instead of falling back. This
+	 * searches every matching namespace, in descending version order, for the
+	 * requested resource.
+	 *
+	 * @param string $base_namespace Base namespace prefix (e.g. "wc", "wp").
+	 * @param string $resource_path  Resource path, optionally including (?P<name>...) segments.
+	 *
+	 * @return string|null The matching route in the newest namespace that exposes it, or null.
+	 */
+	public static function find_route_by_resource_across_versions( string $base_namespace, string $resource_path ): ?string {
+		foreach ( self::get_versioned_namespaces( $base_namespace ) as $namespace ) {
+			$route = self::find_route_by_resource( $namespace, $resource_path );
+
+			if ( $route ) {
+				return $route;
+			}
+		}
+
+		return null;
 	}
 
 	/**
@@ -525,9 +637,11 @@ class RestApiUtils {
 	/**
 	 * Resolve the latest REST route for a resource under a base namespace.
 	 *
-	 * Convenience method that discovers the highest available API version for
-	 * the given base namespace, then finds the registered route for the resource.
-	 * Equivalent to calling get_latest_namespace() followed by find_route_by_resource().
+	 * Convenience method that discovers the registered route for the resource,
+	 * searching matching namespaces in descending version order and returning
+	 * the first one that actually exposes it — the highest-versioned namespace
+	 * is not always the right answer, since a newer namespace may not (yet, or
+	 * anymore) expose every resource an older namespace still serves.
 	 *
 	 * Examples:
 	 *   Base: "wp", Resource: "types"   → Returns: "/wp/v2/types"
@@ -537,24 +651,11 @@ class RestApiUtils {
 	 * @param string $base_namespace Base namespace prefix (e.g., "wc", "wp", "wc-analytics").
 	 * @param string $resource_path  Resource path without version (e.g., "types", "orders", "posts").
 	 *
-	 * @return string|null The matching REST route, or null if the namespace or resource is not found.
+	 * @return string|null The matching REST route, or null if no matching namespace exposes it.
 	 */
 	public static function get_latest_available_rest_route( string $base_namespace, string $resource_path ): ?string {
 		self::eager_load_rest_routes();
 
-		$namespace = self::get_latest_namespace( $base_namespace );
-
-		if ( ! $namespace ) {
-			return null;
-		}
-
-		// Find the orders route
-		$types_route = self::find_route_by_resource( $namespace, $resource_path );
-
-		if ( ! $types_route ) {
-			return null;
-		}
-
-		return $types_route;
+		return self::find_route_by_resource_across_versions( $base_namespace, $resource_path );
 	}
 }

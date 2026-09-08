@@ -203,7 +203,18 @@ class Users {
 				),
 				'execute_callback'    => function ( $input ) {
 					$user_id = (int) $input['id'];
-					$root    = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'users' );
+
+					// Guard against an agent deleting the account it is currently
+					// authenticated as — an easy, hard-to-reverse mistake to make when
+					// acting on an ID pulled from a list rather than typed by a human.
+					if ( get_current_user_id() === $user_id ) {
+						return blu_prepare_ability_response(
+							400,
+							'Refusing to delete the currently logged-in user. Use a different account to delete this user.'
+						);
+					}
+
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'users' );
 
 					if ( ! $root ) {
 						return blu_standardize_rest_response(

@@ -108,6 +108,7 @@ class WooProducts {
 					'id' => array(
 						'type'        => 'integer',
 						'description' => 'Product ID',
+						'minimum'     => 1,
 					),
 				),
 				'required'   => array( 'id' ),
@@ -282,6 +283,7 @@ class WooProducts {
 					'id'                => array(
 						'type'        => 'integer',
 						'description' => 'Product ID',
+						'minimum'     => 1,
 					),
 					'name'              => array(
 						'type'        => 'string',
@@ -424,6 +426,7 @@ class WooProducts {
 						'id' => array(
 							'type'        => 'integer',
 							'description' => 'Product ID',
+							'minimum'     => 1,
 						),
 					),
 					'required'   => array( 'id' ),
@@ -627,6 +630,7 @@ class WooProducts {
 					'id'   => array(
 						'type'        => 'integer',
 						'description' => 'Category ID',
+						'minimum'     => 1,
 					),
 					'name' => array(
 						'type'        => 'string',
@@ -683,6 +687,7 @@ class WooProducts {
 						'id' => array(
 							'type'        => 'integer',
 							'description' => 'Category ID',
+							'minimum'     => 1,
 						),
 					),
 					'required'   => array( 'id' ),
@@ -846,6 +851,7 @@ class WooProducts {
 					'id'   => array(
 						'type'        => 'integer',
 						'description' => 'Tag ID',
+						'minimum'     => 1,
 					),
 					'name' => array(
 						'type'        => 'string',
@@ -902,6 +908,7 @@ class WooProducts {
 						'id' => array(
 							'type'        => 'integer',
 							'description' => 'Tag ID',
+							'minimum'     => 1,
 						),
 					),
 					'required'   => array( 'id' ),
@@ -1065,6 +1072,7 @@ class WooProducts {
 					'id'   => array(
 						'type'        => 'integer',
 						'description' => 'Brand ID',
+						'minimum'     => 1,
 					),
 					'name' => array(
 						'type'        => 'string',
@@ -1121,6 +1129,7 @@ class WooProducts {
 						'id' => array(
 							'type'        => 'integer',
 							'description' => 'Brand ID',
+							'minimum'     => 1,
 						),
 					),
 					'required'   => array( 'id' ),
@@ -1341,6 +1350,7 @@ class WooProducts {
 						'id' => array(
 							'type'        => 'integer',
 							'description' => 'Attribute ID',
+							'minimum'     => 1,
 						),
 					),
 					'required'   => array( 'id' ),
@@ -1460,6 +1470,7 @@ class WooProducts {
 					'product_id'   => array(
 						'type'        => 'integer',
 						'description' => 'Parent product ID',
+						'minimum'     => 1,
 					),
 					'page'         => array(
 						'type'        => 'integer',
@@ -1481,15 +1492,17 @@ class WooProducts {
 				'required'   => array( 'product_id' ),
 			);
 		} else {
-			// product_id comes from input, not the URL pattern, so we add it manually
+			// extract_input_schema() already marks product_id required (it's a named
+			// capture in $variations_route), but give it a friendlier description here.
 			if ( ! isset( $list_schema['properties'] ) ) {
 				$list_schema['properties'] = array();
 			}
 			$list_schema['properties']['product_id'] = array(
 				'type'        => 'integer',
 				'description' => 'Parent product ID',
+				'minimum'     => 1,
 			);
-			$list_schema['required']                 = array_merge( $list_schema['required'] ?? array(), array( 'product_id' ) );
+			$list_schema['required']                 = array_values( array_unique( array_merge( $list_schema['required'] ?? array(), array( 'product_id' ) ) ) );
 		}
 
 		// List variations
@@ -1543,6 +1556,7 @@ class WooProducts {
 					'product_id'     => array(
 						'type'        => 'integer',
 						'description' => 'Parent product ID',
+						'minimum'     => 1,
 					),
 					'regular_price'  => array(
 						'type'        => 'string',
@@ -1623,6 +1637,7 @@ class WooProducts {
 							'id'  => array(
 								'type'        => 'integer',
 								'description' => 'Image attachment ID',
+								'minimum'     => 1,
 							),
 							'src' => array(
 								'type'        => 'string',
@@ -1658,14 +1673,17 @@ class WooProducts {
 				'required'   => array( 'product_id' ),
 			);
 		} else {
+			// extract_input_schema() already marks product_id required (it's a named
+			// capture in $variations_route), but give it a friendlier description here.
 			if ( ! isset( $create_schema['properties'] ) ) {
 				$create_schema['properties'] = array();
 			}
 			$create_schema['properties']['product_id'] = array(
 				'type'        => 'integer',
 				'description' => 'Parent product ID',
+				'minimum'     => 1,
 			);
-			$create_schema['required']                 = array_merge( $create_schema['required'] ?? array(), array( 'product_id' ) );
+			$create_schema['required']                 = array_values( array_unique( array_merge( $create_schema['required'] ?? array(), array( 'product_id' ) ) ) );
 		}
 
 		// Add variation
@@ -1720,6 +1738,7 @@ class WooProducts {
 						'product_id'     => array(
 							'type'        => 'integer',
 							'description' => 'Variable product ID',
+							'minimum'     => 1,
 						),
 						'delete'         => array(
 							'type'        => 'boolean',
@@ -1777,10 +1796,12 @@ class WooProducts {
 						'product_id' => array(
 							'type'        => 'integer',
 							'description' => 'Product ID',
+							'minimum'     => 1,
 						),
 						'id'         => array(
 							'description' => 'Unique identifier for the variation.',
 							'type'        => 'integer',
+							'minimum'     => 1,
 						),
 					),
 					'required'   => array( 'product_id', 'id' ),
@@ -1910,13 +1931,9 @@ class WooProducts {
 	 * @return string|null
 	 */
 	private function resolve_wc_param_route( string $resource_path ): ?string {
-		$namespace = $this->get_wc_namespace();
+		RestApiUtils::eager_load_rest_routes();
 
-		if ( ! $namespace ) {
-			return null;
-		}
-
-		return RestApiUtils::find_route_by_resource( $namespace, $resource_path );
+		return RestApiUtils::find_route_by_resource_across_versions( $this->base_namespace, $resource_path );
 	}
 
 	/**

@@ -103,6 +103,7 @@ class WooOrders {
 					'id'     => array(
 						'type'        => 'integer',
 						'description' => 'Order ID',
+						'minimum'     => 1,
 					),
 					'status' => array(
 						'type'        => 'string',
@@ -245,13 +246,8 @@ class WooOrders {
 	 */
 	private function resolve_wc_param_route( string $resource_path ): ?string {
 		RestApiUtils::eager_load_rest_routes();
-		$namespace = RestApiUtils::get_latest_namespace( $this->base_namespace );
 
-		if ( ! $namespace ) {
-			return null;
-		}
-
-		return RestApiUtils::find_route_by_resource( $namespace, $resource_path );
+		return RestApiUtils::find_route_by_resource_across_versions( $this->base_namespace, $resource_path );
 	}
 
 	/**

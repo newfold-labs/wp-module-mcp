@@ -287,6 +287,14 @@ All abilities below are accessible through the gateway. The **Ability name** col
 | `blu/update-user` | `blu-update-user` | Update a WordPress user by ID |
 | `blu/delete-user` | `blu-delete-user` | Delete a WordPress user by ID |
 
+> **`blu/delete-user` requires `reassign`** — the same requirement the native `wp/v2/users`
+> `DELETE` endpoint enforces, since posts cannot be silently orphaned. `reassign` must be an
+> **integer** user ID; pass `0` to delete the user's content instead of reassigning it (the
+> schema's `type` is `integer`, so the literal boolean `false` is not a valid value here even
+> though native WordPress core also accepts it). `force` still defaults to `true` since users
+> do not support trashing. The ability also refuses to delete the currently authenticated
+> user, regardless of the `id` passed — switch to a different account to delete that user.
+
 #### Settings
 
 | Ability name | MCP tool name | Description |
@@ -340,7 +348,14 @@ Two surfaces are exposed:
 | `blu/wc-list-product-variations` | `blu-wc-list-product-variations`     | List all variations for a WooCommerce variable product |
 | `blu/wc-add-product-variation` | `blu-wc-add-product-variation`       | Create a variation for a WooCommerce variable product |
 | `blu/wc-generate-product-variations` | `blu-wc-generate-product-variations` | Automatically generate all attribute combinations as variations for a WooCommerce variable product |
+| `blu/wc-delete-product-variation` | `blu-wc-delete-product-variation` | Delete a variation for a WooCommerce variable product |
 | `blu/wc-reports-reviews-totals` | `blu-wc-reports-reviews-totals` | Get WooCommerce reviews totals report |
+
+> **`blu/wc-add-product` no longer accepts `variation_attributes`.** To create a variable
+> product, first create/resolve the attributes and terms with `blu/wc-add-product-attribute` /
+> `blu/wc-add-attribute-term`, pass the resolved `attributes` array to `blu/wc-add-product`,
+> then call `blu/wc-add-product-variation` or `blu/wc-generate-product-variations` to create
+> the variations themselves.
 
 #### Product categories
 
@@ -384,6 +399,7 @@ Two surfaces are exposed:
 | Ability name | MCP tool name | Description |
 |-------------|---------------|-------------|
 | `blu/wc-orders-search` | `blu-wc-orders-search` | Get a list of WooCommerce orders |
+| `blu/wc-update-order` | `blu-wc-update-order` | Update a WooCommerce order (e.g. status) by ID |
 | `blu/wc-reports-coupons-totals` | `blu-wc-reports-coupons-totals` | Get WooCommerce coupons totals report |
 | `blu/wc-reports-customers-totals` | `blu-wc-reports-customers-totals` | Get WooCommerce customers totals report |
 | `blu/wc-reports-orders-totals` | `blu-wc-reports-orders-totals` | Get WooCommerce orders totals report |
@@ -400,6 +416,33 @@ Two surfaces are exposed:
 | `blu/list-api-functions` | `blu-list-api-functions` | List all available WordPress REST API endpoints that support CRUD |
 | `blu/get-function-details` | `blu-get-function-details` | Get detailed metadata for a specific REST API route and HTTP method |
 | `blu/run-api-function` | `blu-run-api-function` | Execute a REST API request by route, method, and parameters |
+
+---
+
+### Prompts (guided workflows)
+
+These abilities return step-by-step instructions for the calling LLM rather than performing
+a single action themselves. The assistant follows the returned instructions, calling other
+`blu/*` abilities as it goes.
+
+| Ability name | MCP tool name | Description |
+|-------------|---------------|-------------|
+| `blu/guided-product-creation-prompt` | `blu-guided-product-creation-prompt` | Step-by-step wizard that guides the merchant through enriching and publishing a WooCommerce product |
+| `blu/suggest-product-description` | `blu-suggest-product-description` | Generate or improve a product's description and short description |
+| `blu/suggest-product-categories` | `blu-suggest-product-categories` | Suggest WooCommerce and Google taxonomy categories for a product |
+| `blu/suggest-product-tag` | `blu-suggest-product-tag` | Suggest WooCommerce product tags for a product |
+| `blu/suggest-product-brand` | `blu-suggest-product-brand` | Suggest WooCommerce product brands for a product |
+| `blu/smart-product-details` | `blu-smart-product-details` | Generate listing content (materials, size charts, care instructions, warranty, ingredients) for a product |
+
+> **`blu/guided-product-creation-prompt` creates taxonomy entities before the product itself
+> is confirmed.** Following its instructions, the assistant may call `blu/wc-add-product-category`,
+> `blu/wc-add-product-tag`, `blu/wc-add-product-attribute`, and `blu/wc-add-attribute-term` to
+> create categories, tags, attributes, and terms **during** the enrichment steps — before the
+> merchant sees the final recap and confirms, and before `blu/wc-add-product` is ever called.
+> Only the product itself (and its variations) waits for explicit confirmation; any new
+> taxonomy terms picked along the way are created immediately so later steps (e.g. category ID
+> lookups) can reference them. If the merchant backs out before confirming the product, those
+> taxonomy entities are **not** rolled back.
 
 ---
 
