@@ -261,15 +261,18 @@ class AbilityGateway {
 							}
 
 							if ( '' !== $search ) {
-								$haystacks = array(
-									$mcp_name,
-									(string) $ability->get_label(),
-									(string) $ability->get_description(),
-								);
-								$matched   = false;
-								foreach ( $haystacks as $haystack ) {
-									if ( false !== mb_stripos( $haystack, $search ) ) {
-										$matched = true;
+								// Match each whitespace-separated search term independently
+								// against the combined name/label/description (AND, any
+								// order) rather than requiring the whole phrase to appear
+								// verbatim. Callers (LLMs) phrase queries loosely — e.g.
+								// "image edit" — that won't literally appear in text
+								// written as "Edit Image" / "edit an existing image".
+								$haystack = $mcp_name . ' ' . $ability->get_label() . ' ' . $ability->get_description();
+								$terms    = preg_split( '/\s+/', $search, -1, PREG_SPLIT_NO_EMPTY );
+								$matched  = true;
+								foreach ( $terms as $term ) {
+									if ( false === mb_stripos( $haystack, $term ) ) {
+										$matched = false;
 										break;
 									}
 								}

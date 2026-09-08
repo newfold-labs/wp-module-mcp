@@ -24,14 +24,14 @@ class ImageGen {
 			'blu/generate-image',
 			array(
 				'label'               => 'Generate Image',
-				'description'         => 'Generate an AI image from a text prompt. Returns a CDN URL to the generated image. Use when the user requests custom imagery for their page.',
+				'description'         => 'Create a brand-new AI-generated image from a text prompt. Use only when no existing image is available to work from. If the user wants to modify or enhance an existing image, use blu/edit-image instead.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
 					'properties' => array(
 						'prompt'      => array(
 							'type'        => 'string',
-							'description' => 'A detailed description of the image to generate. Max 1000 characters.',
+							'description' => 'Detailed description of the image to create (subject, style, lighting, mood, colours). Max 1000 characters.',
 							'maxLength'   => 1000,
 						),
 						'orientation' => array(

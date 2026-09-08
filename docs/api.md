@@ -24,7 +24,9 @@ Clients typically call:
 The **transport permission callback** instantiates **`McpValidation`** with the current `WP_REST_Request`:
 
 1. If the user is **logged in** and has **`manage_options`**, the request is allowed.
-2. Otherwise a **Bearer** token is required in the `Authorization` header; JWT is verified using Firebase JWT and public keys from Hiive CDN (see [reference.md](reference.md)).
+2. Otherwise a **Bearer** JWT is required in the `Authorization` header; JWT is verified using Firebase JWT and public keys from Hiive CDN (see [reference.md](reference.md)).
+
+For **local testing**, WordPress **Application Password** auth (`Authorization: Basic …`) also works when the request is authenticated as an administrator before the MCP permission callback runs. **AI evals** in CI create an application password automatically via wp-env + WP-CLI; see [workflows.md](workflows.md).
 
 ## Tools
 
