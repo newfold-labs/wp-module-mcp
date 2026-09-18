@@ -88,8 +88,9 @@ class ColorGen {
 					'Content-Type'  => 'application/json',
 					'Authorization' => 'Bearer ' . $hiive_token,
 				),
-				'body'    => wp_json_encode( $body ),
-				'timeout' => 45,
+				'body'      => wp_json_encode( $body ),
+				'timeout'   => 45,
+				'sslverify' => blu_ai_platform_sslverify(),
 			)
 		);
 

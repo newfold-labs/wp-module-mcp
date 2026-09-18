@@ -160,6 +160,7 @@ class LogoGen {
 				'prompt'     => substr( $edit_prompt, 0, 1000 ),
 				'source_url' => $source_url,
 				'background' => 'transparent',
+				'trim'       => true,
 			)
 		);
 
@@ -228,8 +229,9 @@ class LogoGen {
 					'Content-Type'  => 'application/json',
 					'Authorization' => 'Bearer ' . $hiive_token,
 				),
-				'body'    => wp_json_encode( $body ),
-				'timeout' => 90,
+				'body'      => wp_json_encode( $body ),
+				'timeout'   => 90,
+				'sslverify' => blu_ai_platform_sslverify(),
 			)
 		);
 
