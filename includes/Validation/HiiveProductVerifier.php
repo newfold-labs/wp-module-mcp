@@ -4,7 +4,6 @@ namespace BLU\Validation;
 
 use NewfoldLabs\WP\Module\Data\HiiveConnection;
 use stdClass;
-use WP_Error;
 
 /**
  * Class HiiveProductVerifier
