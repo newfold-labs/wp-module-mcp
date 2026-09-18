@@ -25,7 +25,9 @@ composer run test-coverage   # coverage + phpcov HTML under tests/_output/
 
 ### What exists today
 
-Example test classes: **`ModuleLoadingWPUnitTest`**, **`McpServerWPUnitTest`**, **`McpValidationWPUnitTest`**, **`FunctionsWPUnitTest`**. Expand coverage when adding abilities or auth changes.
+Example test classes: **`ModuleLoadingWPUnitTest`**, **`McpServerWPUnitTest`**, **`McpValidationWPUnitTest`**, **`FunctionsWPUnitTest`**, **`CustomPostTypesWPUnitTest`**. Expand coverage when adding abilities or auth changes.
+
+Ability tests register their fixtures (post types, REST routes) in `set_up` and unregister them in `tear_down` so state does not leak between tests. `CustomPostTypesWPUnitTest` is the reference for testing an ability end to end: register the `blu-mcp` category, fire `wp_abilities_api_init`, then call `blu_get_ability( 'blu/...' )->execute( $input )` and assert on the `statusCode` / `status` / `message` response shape.
 
 ## End-to-end (Playwright)
 

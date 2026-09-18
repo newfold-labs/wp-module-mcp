@@ -5,9 +5,9 @@ return [
 	'language' => 'pt_BR',
 	'project-id-version' => '',
 	'pot-creation-date' => '2025-02-13T09:55:55+00:00',
-	'po-revision-date' => '2026-07-28T12:35:27+00:00',
+	'po-revision-date' => '2026-09-02T13:39:47+00:00',
 	'x-generator' => 'WP-CLI 2.12.0',
 	'messages' => [
-,
+		'A prompt is required.' => 'Um prompt é necessário.',
 	],
 ];

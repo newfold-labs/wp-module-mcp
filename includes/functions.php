@@ -225,6 +225,19 @@ function blu_get_abilities_by_namespace( string $namespace ): array {
 }
 
 /**
+ * Whether to verify TLS certificates on ai-platform requests.
+ *
+ * Defaults to true, so production is unaffected. Locally the ai-platform is
+ * served over a self-signed certificate, which PHP validates against
+ * WordPress's own CA bundle, so every call fails with cURL error 60.
+ *
+ * @return bool Whether wp_remote_* should verify the peer certificate.
+ */
+function blu_ai_platform_sslverify() {
+	return defined( 'NFD_AI_PLATFORM_SSL_VERIFY' ) ? (bool) NFD_AI_PLATFORM_SSL_VERIFY : true;
+}
+
+/**
  * Prepares a standardized ability response.
  *
  * @param int   $status  The HTTP status code of the response.
