@@ -83,7 +83,7 @@
     "test-coverage": "Run wpunit tests with coverage."
   },
   "require": {
-    "wordpress/mcp-adapter": "^0.5.0",
+    "wordpress/mcp-adapter": "^0.6.1",
     "wordpress/abilities-api": "^0.4.0",
     "firebase/php-jwt": "^6.10.0",
     "smalot/pdfparser": "^2.0"
