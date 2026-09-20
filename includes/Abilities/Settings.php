@@ -3,10 +3,19 @@ declare( strict_types=1 );
 
 namespace BLU\Abilities;
 
+use BLU\RestControllerSchema\RestControllerSchemaBuilder;
+
 /**
  * Settings abilities for WordPress site settings.
  */
 class Settings {
+
+	/**
+	 * Base REST API namespace used to discover the latest versioned namespace.
+	 *
+	 * @var string
+	 */
+	private $base_namespace = 'wp';
 
 	/**
 	 * Constructor - registers settings abilities.
@@ -19,6 +28,8 @@ class Settings {
 	 * Register settings abilities.
 	 */
 	private function register_abilities(): void {
+		$schemas = RestControllerSchemaBuilder::for_settings();
+
 		// Get settings
 		blu_register_ability(
 			'blu/get-general-settings',
@@ -26,20 +37,33 @@ class Settings {
 				'label'               => 'Get General Settings',
 				'description'         => 'Get WordPress general site settings',
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
-					'type' => 'object',
-				),
-				'execute_callback'    => function () {
-					$request = new \WP_REST_Request( 'GET', '/wp/v2/settings' );
+				'input_schema'        => $schemas->empty_object(),
+				'execute_callback'    => function ( $input = null ) {
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'settings' );
+
+					if ( ! $root ) {
+						return blu_standardize_rest_response(
+							new \WP_Error(
+								400,
+								'A valid route for settings not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
+							)
+						);
+					}
+
+					$request = new \WP_REST_Request( 'GET', $root );
+					if ( is_array( $input ) ) {
+						$request->set_query_params( $input );
+					}
+
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'manage_options' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => true,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -52,65 +76,21 @@ class Settings {
 				'label'               => 'Update General Settings',
 				'description'         => 'Update WordPress general site settings',
 				'category'            => 'blu-mcp',
-				'input_schema'        => array(
-					'type'       => 'object',
-					'properties' => array(
-						'title'                  => array(
-							'type'        => 'string',
-							'description' => 'Site title',
-						),
-						'description'            => array(
-							'type'        => 'string',
-							'description' => 'Site tagline/description',
-						),
-						'timezone_string'        => array(
-							'type'        => 'string',
-							'description' => 'Site timezone',
-						),
-						'date_format'            => array(
-							'type'        => 'string',
-							'description' => 'Date format',
-						),
-						'time_format'            => array(
-							'type'        => 'string',
-							'description' => 'Time format',
-						),
-						'start_of_week'          => array(
-							'type'        => 'integer',
-							'description' => 'Start of week (0 = Sunday, 1 = Monday, etc.)',
-						),
-						'language'               => array(
-							'type'        => 'string',
-							'description' => 'Site language',
-						),
-						'use_smilies'            => array(
-							'type'        => 'boolean',
-							'description' => 'Convert emoticons to graphics',
-						),
-						'default_category'       => array(
-							'type'        => 'integer',
-							'description' => 'Default post category',
-						),
-						'default_post_format'    => array(
-							'type'        => 'string',
-							'description' => 'Default post format',
-						),
-						'posts_per_page'         => array(
-							'type'        => 'integer',
-							'description' => 'Number of posts to show per page',
-						),
-						'default_comment_status' => array(
-							'type'        => 'string',
-							'description' => 'Default comment status (open/closed)',
-						),
-						'default_ping_status'    => array(
-							'type'        => 'string',
-							'description' => 'Default ping status (open/closed)',
-						),
-					),
-				),
+				'input_schema'        => $schemas->editable(),
 				'execute_callback'    => function ( $input = null ) {
-					$request = new \WP_REST_Request( 'POST', '/wp/v2/settings' );
+					$root = RestApiUtils::get_latest_available_rest_route( $this->base_namespace, 'settings' );
+
+					if ( ! $root ) {
+						return blu_standardize_rest_response(
+							new \WP_Error(
+								400,
+								'A valid route for settings not found. Please ensure that the REST API is enabled and that the latest version of the WordPress REST API is installed.',
+							)
+						);
+					}
+
+					$request = new \WP_REST_Request( 'POST', $root );
+
 					if ( $input ) {
 						// LLMs occasionally pass the WP option names
 						// (`blogname`/`blogdescription`) instead of the
@@ -135,9 +115,9 @@ class Settings {
 				'permission_callback' => fn() => current_user_can( 'manage_options' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)

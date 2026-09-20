@@ -19,6 +19,7 @@ use BLU\Abilities\SiteInfo;
 use BLU\Abilities\Users;
 use BLU\Abilities\WooOrders;
 use BLU\Abilities\WooProducts;
+use BLU\Abilities\WooAnalytics;
 use BLU\Abilities\Themes;
 use BLU\Abilities\ImageGen;
 use BLU\Abilities\LogoGen;
@@ -153,6 +154,7 @@ class McpServer {
 		new GlobalStyles();
 		new WooProducts();
 		new WooOrders();
+		new WooAnalytics();
 		new Themes();
 		new BlockEditor();
 		new ImageGen();

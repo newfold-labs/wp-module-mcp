@@ -1,6 +1,6 @@
 # BLU MCP
 
-The Bluehost MCP module exposes tools via the **Bluehost MCP Server** at the WordPress REST route `/wp-json/blu/mcp`. These are WordPress abilities exposed as MCP tools for AI assistants and MCP clients.
+The Bluehost MCP module exposes tools via the **Bluehost MCP Server** at `/wp-json/blu/mcp`. These are WordPress abilities exposed as MCP tools for AI assistants and MCP clients.
 
 **Developer documentation:** see **[docs/index.md](docs/index.md)** (table of contents) and **[AGENTS.md](AGENTS.md)** for agents and repo orientation.
 
@@ -178,24 +178,6 @@ Each item in the response is one `(route, method)` pair plus the derived `namesp
 
 The MCP transport route `/blu/mcp` is excluded from the catalog so the LLM can't discover-and-invoke its way back into the transport. The same route is also rejected by `blu-run-api-function` if passed directly.
 
-### Calling the catalog efficiently
-
-The schemas above are the *what*; this section is the *how*. Every list call has a cost — both the request schema the model carries around and the response it has to read and reason about. The filters exist precisely so the model doesn't slurp the whole registry into context every time. Used together, they're the difference between "load all 80-odd abilities and pick one" and "load the four that could possibly match."
-
-**`blu-list-abilities` — `name_prefix` and `search` are your scalpel.**
-
-- `name_prefix` is the cheapest filter. Anchor on a known surface and you cut the response immediately: `blu-posts` for the post abilities, `blu-media` for the media abilities, `blu-users` for user abilities, `blu-global-styles` for theme/styles work. The server normalizes slash form to hyphens and trims trailing `-` for you, so `blu/posts`, `blu-posts`, and `blu-posts-` all mean the same thing — you don't have to remember which one.
-- `search` does a case-insensitive substring match across each ability's `name` (hyphen form), `label`, **and** `description`. That last one is the secret weapon — a keyword like `"upload"` or `"category"` will hit descriptions even when the tool's name says nothing about it. Use `search` when you know *what* you want, `name_prefix` when you know *where* it lives.
-- They compose with AND. `name_prefix: "blu-media"` + `search: "upload"` returns just the media upload ability — a much cheaper request than fetching the whole catalog and filtering client-side. Always reach for both together when you can.
-
-**`blu-list-api-functions` — `namespace`, `methods`, and `search` keep REST discovery cheap.**
-
-- `namespace` is an exact match on the namespace WordPress registered the route under — `"wp/v2"`, `"wc/v3"`, `"wc-analytics"`, `"wc-admin/marketing"`. Single- and multi-segment both work; leading/trailing slashes are forgiven. If you already know which namespace you want, scoping to that one alone cuts the response dramatically.
-- `methods` accepts an array of `"GET"`, `"POST"`, `"PATCH"`, `"DELETE"` (uppercase, validated by the schema enum, max 4 unique). Passing `["GET"]` when you're exploring read-only routes is one of the highest-leverage filters available — on a typical WordPress install you're often dropping more than half the rows in one go.
-- `search` here is a case-insensitive substring match on the **route path only**, not the description. So `search: "posts"` matches `/wp/v2/posts` and `/wp/v2/posts/(?P<id>[\d]+)`, but won't find a route whose description happens to mention posts.
-
-**The rule of thumb:** the model's first call into either list tool should almost always carry at least one filter. An unfiltered call is a fine debug move; in production flow, it's a tax you don't need to pay.
-
 ### Whitelist
 
 The gateway only exposes abilities matching allowed namespaces or categories:
@@ -278,7 +260,7 @@ All abilities below are accessible through the gateway. The **Ability name** col
 | `blu/upload-media` | `blu-upload-media` | Upload a new media file to WordPress |
 | `blu/update-media` | `blu-update-media` | Update a WordPress media item |
 | `blu/delete-media` | `blu-delete-media` | Delete a WordPress media item permanently |
-| `blu/search-media` | `blu-search-media` | Search WordPress media by title, caption, or description |
+| `blu/search-media` | `blu-search-media` | **Deprecated** — alias of `blu/list-media`; use `blu/list-media` for new integrations |
 
 #### Custom post types
 
@@ -304,6 +286,14 @@ All abilities below are accessible through the gateway. The **Ability name** col
 | `blu/add-user` | `blu-add-user` | Add a new WordPress user |
 | `blu/update-user` | `blu-update-user` | Update a WordPress user by ID |
 | `blu/delete-user` | `blu-delete-user` | Delete a WordPress user by ID |
+
+> **`blu/delete-user` requires `reassign`** — the same requirement the native `wp/v2/users`
+> `DELETE` endpoint enforces, since posts cannot be silently orphaned. `reassign` must be an
+> **integer** user ID; pass `0` to delete the user's content instead of reassigning it (the
+> schema's `type` is `integer`, so the literal boolean `false` is not a valid value here even
+> though native WordPress core also accepts it). `force` still defaults to `true` since users
+> do not support trashing. The ability also refuses to delete the currently authenticated
+> user, regardless of the `id` passed — switch to a different account to delete that user.
 
 #### Settings
 
@@ -348,13 +338,24 @@ Two surfaces are exposed:
 
 #### Products
 
-| Ability name | MCP tool name | Description |
-|-------------|---------------|-------------|
-| `blu/wc-products-search` | `blu-wc-products-search` | Search WooCommerce products |
-| `blu/wc-get-product` | `blu-wc-get-product` | Get a WooCommerce product by ID |
-| `blu/wc-add-product` | `blu-wc-add-product` | Add a WooCommerce product |
-| `blu/wc-update-product` | `blu-wc-update-product` | Update a WooCommerce product |
-| `blu/wc-delete-product` | `blu-wc-delete-product` | Delete a WooCommerce product |
+| Ability name | MCP tool name                        | Description |
+|-------------|--------------------------------------|-------------|
+| `blu/wc-products-search` | `blu-wc-products-search`             | Search WooCommerce products |
+| `blu/wc-get-product` | `blu-wc-get-product`                 | Get a WooCommerce product by ID |
+| `blu/wc-add-product` | `blu-wc-add-product`                 | Add a WooCommerce product |
+| `blu/wc-update-product` | `blu-wc-update-product`              | Update a WooCommerce product |
+| `blu/wc-delete-product` | `blu-wc-delete-product`              | Delete a WooCommerce product |
+| `blu/wc-list-product-variations` | `blu-wc-list-product-variations`     | List all variations for a WooCommerce variable product |
+| `blu/wc-add-product-variation` | `blu-wc-add-product-variation`       | Create a variation for a WooCommerce variable product |
+| `blu/wc-generate-product-variations` | `blu-wc-generate-product-variations` | Automatically generate all attribute combinations as variations for a WooCommerce variable product |
+| `blu/wc-delete-product-variation` | `blu-wc-delete-product-variation` | Delete a variation for a WooCommerce variable product |
+| `blu/wc-reports-reviews-totals` | `blu-wc-reports-reviews-totals` | Get WooCommerce reviews totals report |
+
+> **`blu/wc-add-product` no longer accepts `variation_attributes`.** To create a variable
+> product, first create/resolve the attributes and terms with `blu/wc-add-product-attribute` /
+> `blu/wc-add-attribute-term`, pass the resolved `attributes` array to `blu/wc-add-product`,
+> then call `blu/wc-add-product-variation` or `blu/wc-generate-product-variations` to create
+> the variations themselves.
 
 #### Product categories
 
@@ -383,16 +384,27 @@ Two surfaces are exposed:
 | `blu/wc-update-product-brand` | `blu-wc-update-product-brand` | Update a WooCommerce product brand |
 | `blu/wc-delete-product-brand` | `blu-wc-delete-product-brand` | Delete a WooCommerce product brand |
 
+#### Product attributes
+
+| Ability name | MCP tool name                     | Description                                                           |
+|-------------|-----------------------------------|-----------------------------------------------------------------------|
+| `blu/wc-list-product-attributes` | `blu-wc-list-product-attributes`  | List all WooCommerce product attributes                               |
+| `blu/wc-add-product-attribute` | `blu-wc-add-product-attribute`    | Create a WooCommerce product attribute and <br/> optionally its terms |
+| `blu/wc-delete-product-attribute` | `blu-wc-delete-product-attribute` | Delete a WooCommerce product attribute and all its terms |
+| `blu/wc-list-attribute-terms` | `blu-wc-list-attribute-terms`     | List all terms for a WooCommerce product attribute |
+| `blu/wc-add-attribute-term` | `blu-wc-add-attribute-term`       | Add a term to a WooCommerce product attribute |
+
 #### Orders and reports
 
 | Ability name | MCP tool name | Description |
 |-------------|---------------|-------------|
 | `blu/wc-orders-search` | `blu-wc-orders-search` | Get a list of WooCommerce orders |
+| `blu/wc-update-order` | `blu-wc-update-order` | Update a WooCommerce order (e.g. status) by ID |
 | `blu/wc-reports-coupons-totals` | `blu-wc-reports-coupons-totals` | Get WooCommerce coupons totals report |
 | `blu/wc-reports-customers-totals` | `blu-wc-reports-customers-totals` | Get WooCommerce customers totals report |
 | `blu/wc-reports-orders-totals` | `blu-wc-reports-orders-totals` | Get WooCommerce orders totals report |
 | `blu/wc-reports-products-totals` | `blu-wc-reports-products-totals` | Get WooCommerce products totals report |
-| `blu/wc-reports-reviews-totals` | `blu-wc-reports-reviews-totals` | Get WooCommerce reviews totals report |
+| `blu/wc-reports-revenue-stats` | `blu-wc-reports-revenue-stats` | Get WooCommerce revenue stats report (wc-analytics) |
 | `blu/wc-reports-sales` | `blu-wc-reports-sales` | Get WooCommerce sales report |
 
 ---
@@ -407,38 +419,30 @@ Two surfaces are exposed:
 
 ---
 
-## When does it make sense to add a new tool?
+### Prompts (guided workflows)
 
-Tokens are the gold of the AI era. Every byte of context you spend on tool definitions, schemas, descriptions, and noisy responses is a byte the model no longer has for thinking about the user's actual problem. The gateway pattern above already saves ~96% of the upfront tool-schema cost — but every new ability we add still chips away at the reserve: one more row in `tools/list`, one more schema fetch the model might trigger, one more "which of these similar tools should I pick?" decision.
+These abilities return step-by-step instructions for the calling LLM rather than performing
+a single action themselves. The assistant follows the returned instructions, calling other
+`blu/*` abilities as it goes.
 
-So before reaching for a new ability, treat the catalog like a vault, not a catch-all. Ask first: **can `blu-run-api-function` already do this?** If the REST route shows up in `blu-list-api-functions`, the model can call it through the generic CRUD ability today — no new tool needed, no new tokens spent.
+| Ability name | MCP tool name | Description |
+|-------------|---------------|-------------|
+| `blu/guided-product-creation-prompt` | `blu-guided-product-creation-prompt` | Step-by-step wizard that guides the merchant through enriching and publishing a WooCommerce product |
+| `blu/suggest-product-description` | `blu-suggest-product-description` | Generate or improve a product's description and short description |
+| `blu/suggest-product-categories` | `blu-suggest-product-categories` | Suggest WooCommerce and Google taxonomy categories for a product |
+| `blu/suggest-product-tag` | `blu-suggest-product-tag` | Suggest WooCommerce product tags for a product |
+| `blu/suggest-product-brand` | `blu-suggest-product-brand` | Suggest WooCommerce product brands for a product |
+| `blu/smart-product-details` | `blu-smart-product-details` | Generate listing content (materials, size charts, care instructions, warranty, ingredients) for a product |
 
-A new ability earns its place in the vault only when one of these is true:
-
-### 1. It does something REST alone can't
-
-The tool introduces platform-specific behavior that no underlying REST endpoint exposes. `blu/update-global-styles` is the canonical example — on a successful write it attaches an `applied` / `not_applied` diff to the response, where each `not_applied` entry carries the dot-path and a human-readable reason ("wrong key path", "value dropped by sanitization"). The raw `PUT /wp/v2/global-styles/<id>` returns the updated record but quietly drops anything it didn't like — the model never finds out. If your "new" tool is just a rename of fields the REST route already accepts, you've added a synonym, not a tool.
-
-### 2. It bundles multiple calls into one
-
-A single logical operation that would otherwise require the model to chain several REST calls (each with its own request/response token tax) collapses cleanly into one ability. `blu/get-site-info` is a clean example — one call returns site name, URL, description, admin email, WordPress version, plugins (with active state), themes (active + all), and users in a single payload. Without it, the model would have to call site-info, list plugins, list active plugins, get themes, and list users separately — five round-trips, five JSON blobs to parse. The token math almost always wins here.
-
-### 3. It reshapes the response for the model
-
-The native REST response is noisy, deeply nested, or buries the one field the model actually needs under 4KB of metadata. A wrapper that flattens, prunes, or derives computed fields can turn a 5KB response into 500 bytes. That saving compounds every single time the tool is called — pure gold left in the reserve.
-
-### 4. It will be called constantly
-
-For high-frequency operations, a focused first-class tool beats a generic one. `blu/posts-search` and `blu/pages-search` exist as dedicated abilities precisely because content discovery dominates WordPress workflows — they ship with a tight, purpose-built schema instead of forcing the model to negotiate the full `/wp/v2/posts` collection-param surface every time. Shaving even a handful of tokens per call adds up fast across thousands of conversations.
-
-### When *not* to add a new tool
-
-- The REST endpoint already works fine through `blu-run-api-function` and the model can figure it out.
-- You only need a slightly different parameter name or shape — write better descriptions instead.
-- It's a "nice to have" for a workflow that fires once a quarter.
-- You're not sure yet. Add it later when the need is concrete; deleting a shipped tool is harder than adding one.
-
-Every tool you *don't* add is gold left in the vault for the next conversation. Spend it deliberately.
+> **`blu/guided-product-creation-prompt` creates taxonomy entities before the product itself
+> is confirmed.** Following its instructions, the assistant may call `blu/wc-add-product-category`,
+> `blu/wc-add-product-tag`, `blu/wc-add-product-attribute`, and `blu/wc-add-attribute-term` to
+> create categories, tags, attributes, and terms **during** the enrichment steps — before the
+> merchant sees the final recap and confirms, and before `blu/wc-add-product` is ever called.
+> Only the product itself (and its variations) waits for explicit confirmation; any new
+> taxonomy terms picked along the way are created immediately so later steps (e.g. category ID
+> lookups) can reference them. If the merchant backs out before confirming the product, those
+> taxonomy entities are **not** rolled back.
 
 ---
 
@@ -502,7 +506,7 @@ Successful tool calls return a nested response that clients must unwrap:
     "content": [
       { "type": "text", "text": "<JSON string of the result>" }
     ],
-    "structuredContent": { ... }
+    "structuredContent": {...}
   }
 }
 ```

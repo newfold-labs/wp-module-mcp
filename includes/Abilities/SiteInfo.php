@@ -29,27 +29,30 @@ class SiteInfo {
 					'type' => 'object',
 				),
 				'execute_callback'    => function () {
-					return blu_prepare_ability_response( 200, array(
-						'site_name'        => get_bloginfo( 'name' ),
-						'site_url'         => get_bloginfo( 'url' ),
-						'site_description' => get_bloginfo( 'description' ),
-						'site_admin_email' => get_bloginfo( 'admin_email' ),
-						'wordpress_version' => get_bloginfo( 'version' ),
-						'language'         => get_bloginfo( 'language' ),
-						'plugins'          => $this->get_plugins_info(),
-						'themes'           => array(
-							'active' => $this->get_active_theme_info(),
-							'all'    => wp_get_themes(),
-						),
-						'users'            => $this->get_users_info(),
-					));
+					return blu_prepare_ability_response(
+						200,
+						array(
+							'site_name'         => get_bloginfo( 'name' ),
+							'site_url'          => get_bloginfo( 'url' ),
+							'site_description'  => get_bloginfo( 'description' ),
+							'site_admin_email'  => get_bloginfo( 'admin_email' ),
+							'wordpress_version' => get_bloginfo( 'version' ),
+							'language'          => get_bloginfo( 'language' ),
+							'plugins'           => $this->get_plugins_info(),
+							'themes'            => array(
+								'active' => $this->get_active_theme_info(),
+								'all'    => wp_get_themes(),
+							),
+							'users'             => $this->get_users_info(),
+						)
+					);
 				},
 				'permission_callback' => fn() => current_user_can( 'manage_options' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => true,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)

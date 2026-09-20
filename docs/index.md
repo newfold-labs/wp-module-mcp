@@ -10,6 +10,7 @@ Documentation for **newfold-labs/wp-module-mcp** (WordPress abilities exposed vi
 | [getting-started.md](getting-started.md) | Prerequisites, Composer install, tests, env |
 | [architecture.md](architecture.md) | Bootstrap, hooks, adapter, server registration |
 | [backend.md](backend.md) | `McpServer`, abilities layout, validation |
+| [rest-api-utils.md](rest-api-utils.md) | Dynamic REST discovery, schemas, route helpers, timing caveats |
 | [api.md](api.md) | MCP HTTP endpoint, auth model, client usage |
 | [dependencies.md](dependencies.md) | Composer and host-plugin integration |
 | [development.md](development.md) | Lint, tests, daily workflow |
@@ -22,6 +23,6 @@ Documentation for **newfold-labs/wp-module-mcp** (WordPress abilities exposed vi
 ## Quick links by role
 
 - **New to the repo** → [overview.md](overview.md), [getting-started.md](getting-started.md).
-- **Adding or changing tools** → [architecture.md](architecture.md), [backend.md](backend.md).
+- **Adding or changing tools** → [architecture.md](architecture.md), [backend.md](backend.md), [rest-api-utils.md](rest-api-utils.md).
 - **Remote MCP clients** → [api.md](api.md), root [README.md](../README.md) (example env vars).
 - **Shipping a release** → [release.md](release.md), [changelog.md](changelog.md).
