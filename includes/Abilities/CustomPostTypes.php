@@ -40,7 +40,7 @@ class CustomPostTypes {
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
 				},
-				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
+				'permission_callback' => fn( $input = null ) => blu_can_use_post_type( $input, 'edit_posts' ),
 				'meta'                => array(
 					'annotations' => array(
 						'readonly'    => true,
@@ -146,7 +146,7 @@ class CustomPostTypes {
 						)
 					);
 				},
-				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
+				'permission_callback' => fn( $input = null ) => blu_can_use_post_type( $input, 'edit_posts' ),
 				'meta'                => array(
 					'annotations' => array(
 						'readonly'    => true,
@@ -192,9 +192,13 @@ class CustomPostTypes {
 						);
 					}
 
+					if ( ! blu_current_user_can_act_on_post( $post, 'edit_post' ) ) {
+						return blu_post_permission_denied_response( (int) $post->ID, 'read' );
+					}
+
 					return blu_prepare_ability_response( 200, blu_project_post_full( $post ) );
 				},
-				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
+				'permission_callback' => fn( $input = null ) => blu_can_use_post_type( $input, 'edit_posts' ),
 				'meta'                => array(
 					'annotations' => array(
 						'readonly'    => true,
@@ -266,7 +270,7 @@ class CustomPostTypes {
 
 					return blu_prepare_ability_response( 201, blu_project_post_full( get_post( $post_id ) ) );
 				},
-				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
+				'permission_callback' => fn( $input = null ) => blu_can_use_post_type( $input, 'edit_posts' ),
 				'meta'                => array(
 					'annotations' => array(
 						'readonly'    => false,
@@ -328,6 +332,10 @@ class CustomPostTypes {
 						);
 					}
 
+					if ( ! blu_current_user_can_act_on_post( $post, 'edit_post' ) ) {
+						return blu_post_permission_denied_response( (int) $post->ID, 'edit' );
+					}
+
 					$post_data = array( 'ID' => $post->ID );
 
 					if ( ! empty( $input['title'] ) ) {
@@ -353,7 +361,7 @@ class CustomPostTypes {
 
 					return blu_prepare_ability_response( 200, blu_project_post_full( get_post( $post_id ) ) );
 				},
-				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
+				'permission_callback' => fn( $input = null ) => blu_can_use_post_type( $input, 'edit_posts' ),
 				'meta'                => array(
 					'annotations' => array(
 						'readonly'    => false,
@@ -399,6 +407,10 @@ class CustomPostTypes {
 						);
 					}
 
+					if ( ! blu_current_user_can_act_on_post( $post, 'delete_post' ) ) {
+						return blu_post_permission_denied_response( (int) $post->ID, 'delete' );
+					}
+
 					$result = wp_delete_post( $post->ID, true );
 					if ( ! $result ) {
 						return blu_prepare_ability_response( 500, 'Failed to delete post with ID ' . $post->ID );
@@ -413,7 +425,7 @@ class CustomPostTypes {
 						)
 					);
 				},
-				'permission_callback' => fn() => current_user_can( 'delete_posts' ),
+				'permission_callback' => fn( $input = null ) => blu_can_use_post_type( $input, 'delete_posts' ),
 				'meta'                => array(
 					'annotations' => array(
 						'readonly'    => false,
