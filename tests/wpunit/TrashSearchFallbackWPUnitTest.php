@@ -2,6 +2,7 @@
 
 namespace BLU;
 
+use BLU\Abilities\CustomPostTypes;
 use BLU\Abilities\Pages;
 use BLU\Abilities\Posts;
 
@@ -23,6 +24,11 @@ use BLU\Abilities\Posts;
  * @covers ::blu_should_retry_in_trash
  */
 class TrashSearchFallbackWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
+
+	/**
+	 * Fixture post type used by the capability test.
+	 */
+	const CPT_SLUG = 'bmcp_trashbook';
 
 	/**
 	 * Names of abilities registered during tests that need cleanup.
@@ -47,7 +53,28 @@ class TrashSearchFallbackWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestC
 		wp_set_current_user( $user_id );
 
 		$this->ensure_category();
+		$this->register_fixture_post_type();
 		$this->register_abilities();
+	}
+
+	/**
+	 * Register the custom post type the capability test searches.
+	 *
+	 * @return void
+	 */
+	private function register_fixture_post_type(): void {
+		register_post_type(
+			self::CPT_SLUG,
+			array(
+				'public'       => true,
+				'show_in_rest' => true,
+				'rest_base'    => 'trashbooks',
+				'labels'       => array(
+					'name'          => 'Trash Books',
+					'singular_name' => 'Trash Book',
+				),
+			)
+		);
 	}
 
 	/**
@@ -64,6 +91,7 @@ class TrashSearchFallbackWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestC
 		$cb = function () {
 			new Posts();
 			new Pages();
+			new CustomPostTypes();
 		};
 		add_action( 'wp_abilities_api_init', $cb, 10 );
 
@@ -93,6 +121,12 @@ class TrashSearchFallbackWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestC
 			'blu/add-page',
 			'blu/update-page',
 			'blu/delete-page',
+			'blu/list-post-types',
+			'blu/cpt-search',
+			'blu/get-cpt',
+			'blu/add-cpt',
+			'blu/update-cpt',
+			'blu/delete-cpt',
 		);
 	}
 
@@ -109,6 +143,7 @@ class TrashSearchFallbackWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestC
 			}
 		}
 		$this->registered_abilities = array();
+		unregister_post_type( self::CPT_SLUG );
 		parent::tear_down();
 	}
 
@@ -319,6 +354,134 @@ class TrashSearchFallbackWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestC
 
 		$this->assertNotNull( $found, 'A trashed page must still be findable by its title.' );
 		$this->assertSame( 'trash', $found['status'], 'The page result must carry the trash status.' );
+	}
+
+	/**
+	 * A retry that fails must not replace the original response. Turning an
+	 * empty-but-successful search into a 4xx the caller never caused would be a
+	 * worse answer than "nothing matched".
+	 *
+	 * @return void
+	 */
+	public function test_a_failing_trash_retry_leaves_the_empty_success_intact(): void {
+		$post_id = self::factory()->post->create(
+			array(
+				'post_title'  => 'Retry Failure Case',
+				'post_status' => 'publish',
+			)
+		);
+		wp_trash_post( $post_id );
+
+		$fail_trash_query = static function ( $result, $server, $request ) {
+			if ( '/wp/v2/posts' === $request->get_route()
+				&& false !== strpos( (string) $request->get_param( 'status' ), 'trash' ) ) {
+				return new \WP_Error( 'rest_forbidden_status', 'Status is forbidden.', array( 'status' => 403 ) );
+			}
+			return $result;
+		};
+		add_filter( 'rest_pre_dispatch', $fail_trash_query, 10, 3 );
+		$result = blu_get_ability( 'blu/posts-search' )->execute( array( 'search' => 'Retry Failure Case' ) );
+		remove_filter( 'rest_pre_dispatch', $fail_trash_query, 10 );
+
+		$this->assertSame( 200, $result['statusCode'], 'A failed retry must not surface its own error status.' );
+		$this->assertSame( array(), $result['message'], 'A failed retry must leave the original empty result in place.' );
+	}
+
+	/**
+	 * The same guard via a route that really happens: asking for a page past
+	 * the end of the trashed set makes the retry return
+	 * `rest_post_invalid_page_number`, which must not escape.
+	 *
+	 * @return void
+	 */
+	public function test_paged_search_past_the_end_does_not_surface_a_retry_error(): void {
+		$post_id = self::factory()->post->create(
+			array(
+				'post_title'  => 'Paged Retry Case',
+				'post_status' => 'publish',
+			)
+		);
+		wp_trash_post( $post_id );
+
+		$result = blu_get_ability( 'blu/posts-search' )->execute(
+			array(
+				'search'   => 'Paged Retry Case',
+				'page'     => 2,
+				'per_page' => 10,
+			)
+		);
+
+		$this->assertSame( 200, $result['statusCode'], 'A page past the end must not return the retry\'s page-number error.' );
+		$this->assertSame( array(), $result['message'] );
+	}
+
+	/**
+	 * `blu/cpt-search` runs a bare WP_Query, which applies no capability check
+	 * of its own, so the retry scopes itself with `perm`. An author must not be
+	 * handed another user's trashed item just by searching for its title.
+	 *
+	 * @return void
+	 */
+	public function test_cpt_trash_retry_does_not_expose_another_users_trashed_item(): void {
+		$owner_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		$item_id  = self::factory()->post->create(
+			array(
+				'post_title'  => 'Someone Elses Trashed Book',
+				'post_status' => 'publish',
+				'post_type'   => self::CPT_SLUG,
+				'post_author' => $owner_id,
+			)
+		);
+		wp_trash_post( $item_id );
+
+		$author_id = self::factory()->user->create( array( 'role' => 'author' ) );
+		wp_set_current_user( $author_id );
+
+		$result  = blu_get_ability( 'blu/cpt-search' )->execute(
+			array(
+				'post_type' => self::CPT_SLUG,
+				'search'    => 'Someone Elses Trashed Book',
+			)
+		);
+		$results = $result['message']['results'] ?? array();
+
+		$this->assertNull(
+			$this->find_by_id( $results, $item_id ),
+			'The trash retry must not return an item the current user cannot edit.'
+		);
+	}
+
+	/**
+	 * The owner of a trashed CPT item still finds it, so the `perm` scoping
+	 * does not defeat the fix it guards.
+	 *
+	 * @return void
+	 */
+	public function test_cpt_trash_retry_still_finds_the_callers_own_trashed_item(): void {
+		$author_id = self::factory()->user->create( array( 'role' => 'author' ) );
+		wp_set_current_user( $author_id );
+
+		$item_id = self::factory()->post->create(
+			array(
+				'post_title'  => 'My Own Trashed Book',
+				'post_status' => 'publish',
+				'post_type'   => self::CPT_SLUG,
+				'post_author' => $author_id,
+			)
+		);
+		wp_trash_post( $item_id );
+
+		$result  = blu_get_ability( 'blu/cpt-search' )->execute(
+			array(
+				'post_type' => self::CPT_SLUG,
+				'search'    => 'My Own Trashed Book',
+			)
+		);
+		$results = $result['message']['results'] ?? array();
+		$found   = $this->find_by_id( $results, $item_id );
+
+		$this->assertNotNull( $found, 'The caller must still find their own trashed item.' );
+		$this->assertSame( 'trash', $found['status'] );
 	}
 
 	/**

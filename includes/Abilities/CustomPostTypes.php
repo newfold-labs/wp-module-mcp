@@ -126,7 +126,18 @@ class CustomPostTypes {
 					// lookup by name right after a delete finds nothing. Retry in the
 					// trash and return the match with its "trash" status.
 					if ( blu_should_retry_in_trash( $input, $results ) ) {
-						$trash_query = new \WP_Query( array_merge( $args, array( 'post_status' => 'trash' ) ) );
+						// `perm` keeps the retry to items this user may edit. Unlike the
+						// REST-backed searches, a bare WP_Query applies no such check, and
+						// the trash is not something to hand to whoever asks.
+						$trash_query = new \WP_Query(
+							array_merge(
+								$args,
+								array(
+									'post_status' => 'trash',
+									'perm'        => 'editable',
+								)
+							)
+						);
 						if ( count( $trash_query->posts ) > 0 ) {
 							$query   = $trash_query;
 							$results = array_map( 'blu_project_post_summary', $trash_query->posts );

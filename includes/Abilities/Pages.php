@@ -68,7 +68,10 @@ class Pages {
 						$retry = new \WP_REST_Request( 'GET', '/wp/v2/pages' );
 						$retry->set_query_params( array_merge( $params, array( 'status' => 'trash' ) ) );
 						$trashed = blu_standardize_rest_response( rest_do_request( $retry ) );
-						if ( is_array( $trashed['message'] ) && count( $trashed['message'] ) > 0 ) {
+						// Only swap in a retry that succeeded. A failed retry is still an
+						// array, so without this an unrelated error would replace a
+						// perfectly good "nothing matched" with a 4xx the caller never caused.
+						if ( 200 === $trashed['statusCode'] && is_array( $trashed['message'] ) && count( $trashed['message'] ) > 0 ) {
 							return $trashed;
 						}
 					}

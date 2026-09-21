@@ -33,6 +33,11 @@ So each of the four retries **once**, against `status=trash`, and only when all 
 
 The retry returns the trashed rows as-is, so the item arrives carrying `status: "trash"` and the caller can offer to restore it or delete it permanently (`force=true`). A caller that asks for specific statuses gets exactly those, and a search that matches a live item never has trash mixed in.
 
+Two guards keep the retry from making things worse:
+
+- **A failed retry is discarded.** Only a `200` with at least one row replaces the original response. A REST error is still an array, so without this check an unrelated failure (a forbidden status, or `rest_post_invalid_page_number` when `page` runs past the end of the trashed set) would replace a perfectly good "nothing matched" with a 4xx the caller never caused.
+- **`blu-cpt-search` scopes its retry with `perm => 'editable'`.** The three REST-backed searches inherit WordPress's own capability filtering; a bare `WP_Query` does not, so without this an author searching by title would be handed another user's trashed item. Note this scoping applies to the retry only. `blu-cpt-search` performs no capability filtering on the statuses a caller names explicitly, which predates this change and is tracked separately.
+
 Regression coverage: `tests/wpunit/TrashSearchFallbackWPUnitTest.php`.
 
 ## Discovery tools
