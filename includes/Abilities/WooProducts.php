@@ -40,6 +40,10 @@ class WooProducts {
 							'type'        => 'string',
 							'description' => 'Search term',
 						),
+						'status'   => array(
+							'type'        => 'string',
+							'description' => 'Product status: any, publish, draft, pending, private, trash. Omit to search every status except trash. A search term matching nothing outside the trash then retries inside it, so a just-deleted product is still found and comes back with status "trash".',
+						),
 						'page'     => array(
 							'type'        => 'integer',
 							'description' => 'Page number',
@@ -51,13 +55,26 @@ class WooProducts {
 					),
 				),
 				'execute_callback'    => function ( $input = null ) {
-					$request = new \WP_REST_Request( 'GET', '/wc/v3/products' );
-					if ( $input ) {
-						$request->set_query_params( $input );
-					}
-					$response = rest_do_request( $request );
+					$input = is_array( $input ) ? $input : array();
 
-					return blu_standardize_rest_response( $response );
+					$request = new \WP_REST_Request( 'GET', '/wc/v3/products' );
+					$request->set_query_params( $input );
+					$response = blu_standardize_rest_response( rest_do_request( $request ) );
+
+					// Trashing keeps the title but drops the product out of the statuses
+					// WooCommerce searches by default, so a lookup by name right after a
+					// delete finds nothing. Retry in the trash and return the match with
+					// its "trash" status.
+					if ( blu_should_retry_in_trash( $input, $response['message'] ?? null ) ) {
+						$retry = new \WP_REST_Request( 'GET', '/wc/v3/products' );
+						$retry->set_query_params( array_merge( $input, array( 'status' => 'trash' ) ) );
+						$trashed = blu_standardize_rest_response( rest_do_request( $retry ) );
+						if ( is_array( $trashed['message'] ) && count( $trashed['message'] ) > 0 ) {
+							return $trashed;
+						}
+					}
+
+					return $response;
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_products' ),
 				'meta'                => array(

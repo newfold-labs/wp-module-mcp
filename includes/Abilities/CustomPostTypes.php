@@ -75,7 +75,7 @@ class CustomPostTypes {
 						),
 						'status'    => array(
 							'type'        => 'string',
-							'description' => 'Filter by post status. Defaults to "publish". Pass "any" to include drafts and other statuses.',
+							'description' => 'Filter by post status. Defaults to "publish". Pass "any" to include drafts and other statuses, or "trash" for deleted items ("any" excludes the trash). A search term matching nothing outside the trash retries inside it, so a just-deleted item is still found and comes back with status "trash".',
 						),
 						'page'      => array(
 							'type'        => 'integer',
@@ -120,6 +120,18 @@ class CustomPostTypes {
 
 					$query   = new \WP_Query( $args );
 					$results = array_map( 'blu_project_post_summary', $query->posts );
+
+					// Trashing keeps the title but drops the item out of every status
+					// WP_Query searches by default ("any" excludes the trash too), so a
+					// lookup by name right after a delete finds nothing. Retry in the
+					// trash and return the match with its "trash" status.
+					if ( blu_should_retry_in_trash( $input, $results ) ) {
+						$trash_query = new \WP_Query( array_merge( $args, array( 'post_status' => 'trash' ) ) );
+						if ( count( $trash_query->posts ) > 0 ) {
+							$query   = $trash_query;
+							$results = array_map( 'blu_project_post_summary', $trash_query->posts );
+						}
+					}
 
 					return blu_prepare_ability_response(
 						200,
