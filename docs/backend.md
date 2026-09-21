@@ -19,6 +19,10 @@ updated: 2026-03-26
 
 Implementations live under **`includes/Abilities/`** (e.g. `Posts`, `Pages`, `Media`, `Users`, `SiteInfo`, `Settings`, `CustomPostTypes`, `RestApiCrud`, `GlobalStyles`, `Themes`, `WooProducts`, `WooOrders`, `Prompts`, `Resources`). Each class registers its abilities on construction.
 
+### Post-type permissions
+
+The custom post type abilities query posts directly. Their permission callbacks check the requested type's capabilities, and single-item operations check the target post's capability. Search filters inaccessible posts before pagination; totals describe accessible results.
+
 ### Searching by status
 
 Post, page, custom post type, and WooCommerce product searches default to `status=publish`. Pass `status=any` to include other non-trash statuses, or `status=trash` to locate a deleted item. Each result includes its actual `status`; a normal search never retries in the trash. Post and page searches return compact `id`, plain `title`, `status`, and `slug` entries; their get abilities provide full details. Custom post type searches check visibility before pagination and return counts of accessible items because they query posts directly rather than through a REST controller.
