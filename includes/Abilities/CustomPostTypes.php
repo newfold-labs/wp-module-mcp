@@ -40,7 +40,7 @@ class CustomPostTypes {
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
 				},
-				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
+				'permission_callback' => fn( $input = null ) => blu_can_use_post_type( $input, 'edit_posts' ),
 				'meta'                => array(
 					'annotations' => array(
 						'readonly'    => true,
@@ -118,29 +118,26 @@ class CustomPostTypes {
 						$args['post_status'] = sanitize_text_field( $input['status'] );
 					}
 
-					$query   = new \WP_Query( $args );
-					$results = array_map( 'blu_project_post_summary', $query->posts );
+					$query = new \WP_Query( $args );
+
+					// WP_Query applies no capability check of its own, so naming a
+					// non-public status would otherwise hand back everyone's drafts,
+					// private items and trash.
+					$visible  = blu_filter_posts_by_read_permission( $query->posts );
+					$filtered = count( $visible ) !== count( $query->posts );
+					$results  = array_map( 'blu_project_post_summary', $visible );
 
 					// Trashing keeps the title but drops the item out of every status
 					// WP_Query searches by default ("any" excludes the trash too), so a
 					// lookup by name right after a delete finds nothing. Retry in the
 					// trash and return the match with its "trash" status.
 					if ( blu_should_retry_in_trash( $input, $results ) ) {
-						// `perm` keeps the retry to items this user may edit. Unlike the
-						// REST-backed searches, a bare WP_Query applies no such check, and
-						// the trash is not something to hand to whoever asks.
-						$trash_query = new \WP_Query(
-							array_merge(
-								$args,
-								array(
-									'post_status' => 'trash',
-									'perm'        => 'editable',
-								)
-							)
-						);
-						if ( count( $trash_query->posts ) > 0 ) {
-							$query   = $trash_query;
-							$results = array_map( 'blu_project_post_summary', $trash_query->posts );
+						$trash_query   = new \WP_Query( array_merge( $args, array( 'post_status' => 'trash' ) ) );
+						$trash_visible = blu_filter_posts_by_read_permission( $trash_query->posts );
+						if ( count( $trash_visible ) > 0 ) {
+							$query    = $trash_query;
+							$filtered = count( $trash_visible ) !== count( $trash_query->posts );
+							$results  = array_map( 'blu_project_post_summary', $trash_visible );
 						}
 					}
 
@@ -149,14 +146,17 @@ class CustomPostTypes {
 						array(
 							'post_type' => $resolved,
 							'results'   => $results,
-							'total'     => (int) $query->found_posts,
-							'pages'     => (int) $query->max_num_pages,
+							// Once anything has been filtered out, the query's own totals
+							// describe a result set this caller never sees, so report what
+							// was actually returned rather than overstate it.
+							'total'     => $filtered ? count( $results ) : (int) $query->found_posts,
+							'pages'     => $filtered ? 1 : (int) $query->max_num_pages,
 							'page'      => (int) $page,
 							'per_page'  => (int) $per_page,
 						)
 					);
 				},
-				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
+				'permission_callback' => fn( $input = null ) => blu_can_use_post_type( $input, 'edit_posts' ),
 				'meta'                => array(
 					'annotations' => array(
 						'readonly'    => true,
@@ -202,9 +202,13 @@ class CustomPostTypes {
 						);
 					}
 
+					if ( ! blu_current_user_can_act_on_post( $post, 'edit_post' ) ) {
+						return blu_post_permission_denied_response( (int) $post->ID, 'read' );
+					}
+
 					return blu_prepare_ability_response( 200, blu_project_post_full( $post ) );
 				},
-				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
+				'permission_callback' => fn( $input = null ) => blu_can_use_post_type( $input, 'edit_posts' ),
 				'meta'                => array(
 					'annotations' => array(
 						'readonly'    => true,
@@ -276,7 +280,7 @@ class CustomPostTypes {
 
 					return blu_prepare_ability_response( 201, blu_project_post_full( get_post( $post_id ) ) );
 				},
-				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
+				'permission_callback' => fn( $input = null ) => blu_can_use_post_type( $input, 'edit_posts' ),
 				'meta'                => array(
 					'annotations' => array(
 						'readonly'    => false,
@@ -338,6 +342,10 @@ class CustomPostTypes {
 						);
 					}
 
+					if ( ! blu_current_user_can_act_on_post( $post, 'edit_post' ) ) {
+						return blu_post_permission_denied_response( (int) $post->ID, 'edit' );
+					}
+
 					$post_data = array( 'ID' => $post->ID );
 
 					if ( ! empty( $input['title'] ) ) {
@@ -363,7 +371,7 @@ class CustomPostTypes {
 
 					return blu_prepare_ability_response( 200, blu_project_post_full( get_post( $post_id ) ) );
 				},
-				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
+				'permission_callback' => fn( $input = null ) => blu_can_use_post_type( $input, 'edit_posts' ),
 				'meta'                => array(
 					'annotations' => array(
 						'readonly'    => false,
@@ -409,6 +417,10 @@ class CustomPostTypes {
 						);
 					}
 
+					if ( ! blu_current_user_can_act_on_post( $post, 'delete_post' ) ) {
+						return blu_post_permission_denied_response( (int) $post->ID, 'delete' );
+					}
+
 					$result = wp_delete_post( $post->ID, true );
 					if ( ! $result ) {
 						return blu_prepare_ability_response( 500, 'Failed to delete post with ID ' . $post->ID );
@@ -423,7 +435,7 @@ class CustomPostTypes {
 						)
 					);
 				},
-				'permission_callback' => fn() => current_user_can( 'delete_posts' ),
+				'permission_callback' => fn( $input = null ) => blu_can_use_post_type( $input, 'delete_posts' ),
 				'meta'                => array(
 					'annotations' => array(
 						'readonly'    => false,

@@ -19,6 +19,19 @@ updated: 2026-03-26
 
 Implementations live under **`includes/Abilities/`** (e.g. `Posts`, `Pages`, `Media`, `Users`, `SiteInfo`, `Settings`, `CustomPostTypes`, `RestApiCrud`, `GlobalStyles`, `Themes`, `WooProducts`, `WooOrders`, `Prompts`, `Resources`). Each class registers its abilities on construction.
 
+### Post-type abilities and permission
+
+`blu-cpt-search`, `blu-get-cpt`, `blu-add-cpt`, `blu-update-cpt` and `blu-delete-cpt` reach for posts directly rather than through the REST controllers, so they inherit none of WordPress's own checks and have to make them.
+
+Two layers, both in `includes/functions.php`:
+
+- **The coarse gate** (`blu_can_use_post_type`, wired into each `permission_callback`) resolves the requested post type and asks for *that type's* capability. A type registered with its own `capability_type` does not use `edit_posts` at all: WooCommerce `product` wants `edit_products`, so checking the generic name lets through an author who should be stopped.
+- **The per-object check** (`blu_current_user_can_act_on_post`, in the get / update / delete callbacks) asks whether the caller may touch the specific item, and answers 403 when not. Without it a caller who may edit their own items can read, rewrite and permanently delete anyone else's by naming an ID. `blu-delete-cpt` force deletes past the trash, so that one is unrecoverable.
+
+Searches filter their rows through `blu_filter_posts_by_read_permission`, which mirrors what the REST-backed searches get for free: another user's *published* work is visible, their drafts, private items and trash are not. `WP_Query`'s `perm => 'editable'` is the obvious lever and the wrong one, because it also hides other people's published posts and does nothing for `post_status => any`. Once rows have been filtered the reported `total` describes what was returned rather than the query's own count, so the caller is never told about items it cannot see.
+
+**Administrators pass every one of these checks** (`blu_user_can_capability`). That is deliberate rather than lax. Registering a post type with its own `capability_type` grants those capabilities to nobody unless the plugin also does the role work, and plenty do not, so testing the type capability alone would make such a type unmanageable through MCP where it is managed today. The transport authenticates as an administrator anyway (`McpValidation::set_admin_authentication`), so the strict path would have been a regression for every caller and a protection for none.
+
 ### Searching and the trash
 
 `blu-posts-search`, `blu-pages-search`, `blu-wc-products-search` and `blu-cpt-search` do **not** include trashed items in an ordinary listing. A listing should show what the site has, not what was thrown away.
