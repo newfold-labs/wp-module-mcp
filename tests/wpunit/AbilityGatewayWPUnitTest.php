@@ -140,25 +140,27 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	/**
 	 * Register a test ability and track it for cleanup.
 	 *
-	 * @param string   $name        Ability name.
-	 * @param string   $category    Ability category.
-	 * @param callable $execute     Execute callback.
-	 * @param string   $label       Optional label, defaults to 'Test Ability'.
-	 * @param string   $description Optional description, defaults to 'A test ability'.
+	 * @param string        $name        Ability name.
+	 * @param string        $category    Ability category.
+	 * @param callable      $execute     Execute callback.
+	 * @param string        $label        Optional label, defaults to 'Test Ability'.
+	 * @param string        $description  Optional description, defaults to 'A test ability'.
+	 * @param array|null    $input_schema Optional input schema, defaults to a bare object.
+	 * @param callable|null $permission   Optional permission callback, defaults to allow.
 	 *
 	 * @return void
 	 */
-	private function register_test_ability( string $name, string $category, callable $execute, string $label = 'Test Ability', string $description = 'A test ability' ): void {
-		$cb = function () use ( $name, $category, $execute, $label, $description ) {
+	private function register_test_ability( string $name, string $category, callable $execute, string $label = 'Test Ability', string $description = 'A test ability', ?array $input_schema = null, ?callable $permission = null ): void {
+		$cb = function () use ( $name, $category, $execute, $label, $description, $input_schema, $permission ) {
 			blu_register_ability(
 				$name,
 				array(
 					'label'               => $label,
 					'description'         => $description,
 					'category'            => $category,
-					'input_schema'        => array( 'type' => 'object' ),
+					'input_schema'        => $input_schema ?? array( 'type' => 'object' ),
 					'execute_callback'    => $execute,
-					'permission_callback' => fn() => true,
+					'permission_callback' => $permission ?? fn() => true,
 				)
 			);
 		};
@@ -384,6 +386,105 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$result  = $ability->execute( array( 'ability_name' => 'nonexistent/tool' ) );
 		$this->assertSame( 404, $result['statusCode'] );
 		$this->assertSame( 'error', $result['status'] );
+	}
+
+	/**
+	 * A schema violation is the caller's fault and the message says how to fix
+	 * it, so it must arrive as a 400 with that reason intact.
+	 *
+	 * The Abilities API reports it as the slug `ability_invalid_input` with no
+	 * status attached. A slug is not an int, so without an explicit mapping it
+	 * falls through to 500 and the 5xx redaction replaces the reason with
+	 * "Ability execution failed." The caller is then told only that something
+	 * broke, which is the one thing it cannot act on.
+	 *
+	 * @return void
+	 */
+	public function test_call_ability_surfaces_invalid_input_as_400_with_reason() {
+		$this->register_test_ability(
+			'blu/test-requires-widget',
+			'blu-mcp',
+			fn() => blu_prepare_ability_response( 200, 'never reached' ),
+			'Test Ability',
+			'A test ability',
+			array(
+				'type'       => 'object',
+				'properties' => array( 'widget' => array( 'type' => 'string' ) ),
+				'required'   => array( 'widget' ),
+			)
+		);
+		$this->register_gateway();
+
+		$result = blu_get_ability( 'blu/call-ability' )->execute(
+			array(
+				'ability_name' => 'blu-test-requires-widget',
+				'parameters'   => array(),
+			)
+		);
+
+		$this->assertSame( 400, $result['statusCode'], 'A schema violation must not be reported as a server error.' );
+		$this->assertSame( 'error', $result['status'] );
+		$this->assertStringContainsString( 'widget', $result['message'], 'The reason must survive so the caller can correct the call.' );
+	}
+
+	/**
+	 * A permission denial is likewise actionable and must not be flattened into
+	 * an opaque 500.
+	 *
+	 * @return void
+	 */
+	public function test_call_ability_surfaces_permission_denial_as_403() {
+		$this->register_test_ability(
+			'blu/test-denied',
+			'blu-mcp',
+			fn() => blu_prepare_ability_response( 200, 'never reached' ),
+			'Test Ability',
+			'A test ability',
+			null,
+			fn() => false
+		);
+		$this->register_gateway();
+
+		$result = blu_get_ability( 'blu/call-ability' )->execute(
+			array(
+				'ability_name' => 'blu-test-denied',
+				'parameters'   => array(),
+			)
+		);
+
+		$this->assertSame( 403, $result['statusCode'], 'A denial must not be reported as a server error.' );
+		$this->assertSame( 'error', $result['status'] );
+	}
+
+	/**
+	 * The redaction this change works around still has to hold: a genuine
+	 * server-side failure may carry paths, SQL or credentials in its message,
+	 * and none of that may reach the caller.
+	 *
+	 * @return void
+	 */
+	public function test_call_ability_still_redacts_genuine_server_errors() {
+		$this->register_test_ability(
+			'blu/test-explodes',
+			'blu-mcp',
+			fn() => new \WP_Error(
+				'some_internal_explosion',
+				'/var/www/secret/config.php line 42: credentials hunter2',
+				array( 'status' => 500 )
+			)
+		);
+		$this->register_gateway();
+
+		$result = blu_get_ability( 'blu/call-ability' )->execute(
+			array(
+				'ability_name' => 'blu-test-explodes',
+				'parameters'   => array(),
+			)
+		);
+
+		$this->assertSame( 500, $result['statusCode'] );
+		$this->assertSame( 'Ability execution failed.', $result['message'], 'A 5xx message must stay redacted.' );
+		$this->assertStringNotContainsString( 'hunter2', $result['message'] );
 	}
 
 	/**
