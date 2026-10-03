@@ -433,6 +433,24 @@ class AbilityGateway {
 							? $error_data['status']
 							: $result->get_error_code();
 
+						// The Abilities API rejects a bad call with a slug and no status:
+						// `ability_invalid_input` for a schema violation,
+						// `ability_invalid_permissions` for a denial. Both are the caller's
+						// fault and both describe the fix, but a slug is not an int, so
+						// without this map they fall to 500 and the redaction below throws
+						// the reason away. The caller is then told only that something
+						// failed, which is the one thing it cannot act on: it retries the
+						// same malformed call, or abandons that part of the request.
+						if ( ! is_int( $status_code ) ) {
+							$slug_statuses = array(
+								'ability_invalid_input' => 400,
+								'ability_invalid_permissions' => 403,
+							);
+							if ( isset( $slug_statuses[ $status_code ] ) ) {
+								$status_code = $slug_statuses[ $status_code ];
+							}
+						}
+
 						if ( ! is_int( $status_code ) || $status_code < 400 || $status_code > 599 ) {
 							$status_code = 500;
 						}
