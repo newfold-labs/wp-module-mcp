@@ -387,6 +387,149 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	}
 
 	/**
+	 * Verifies call-ability passes an object (associative array) result through unchanged.
+	 *
+	 * @return void
+	 */
+	public function test_call_ability_passes_object_result_through() {
+		$this->register_test_ability(
+			'blu/object-result',
+			'blu-mcp',
+			function () {
+				return array(
+					'id'    => 1,
+					'title' => 'Hello',
+				);
+			}
+		);
+		$this->register_gateway();
+		$ability = blu_get_ability( 'blu/call-ability' );
+		$result  = $ability->execute( array( 'ability_name' => 'blu-object-result' ) );
+		$this->assertSame(
+			array(
+				'id'    => 1,
+				'title' => 'Hello',
+			),
+			$result
+		);
+	}
+
+	/**
+	 * Verifies call-ability returns a list result unchanged by default (wrapping is opt-in).
+	 *
+	 * @return void
+	 */
+	public function test_call_ability_passes_list_result_through_by_default() {
+		$this->register_test_ability(
+			'blu/list-result-default',
+			'blu-mcp',
+			function () {
+				return array( array( 'id' => 1 ) );
+			}
+		);
+		$this->register_gateway();
+		$ability = blu_get_ability( 'blu/call-ability' );
+		$result  = $ability->execute( array( 'ability_name' => 'blu-list-result-default' ) );
+		$this->assertSame( array( array( 'id' => 1 ) ), $result );
+	}
+
+	/**
+	 * Verifies call-ability wraps a list result when blu_mcp_call_ability_wrap_result is enabled.
+	 *
+	 * @return void
+	 */
+	public function test_call_ability_wraps_list_result_when_enabled() {
+		add_filter( 'blu_mcp_call_ability_wrap_result', '__return_true' );
+		$this->register_test_ability(
+			'blu/list-result',
+			'blu-mcp',
+			function () {
+				return array(
+					array( 'id' => 1 ),
+					array( 'id' => 2 ),
+				);
+			}
+		);
+		$this->register_gateway();
+		$ability = blu_get_ability( 'blu/call-ability' );
+		$result  = $ability->execute( array( 'ability_name' => 'blu-list-result' ) );
+		remove_filter( 'blu_mcp_call_ability_wrap_result', '__return_true' );
+		$this->assertSame(
+			array(
+				'result' => array(
+					array( 'id' => 1 ),
+					array( 'id' => 2 ),
+				),
+			),
+			$result
+		);
+	}
+
+	/**
+	 * Verifies blu_mcp_call_ability_wrap_result receives the ability name so wrapping can be decided per ability.
+	 *
+	 * @return void
+	 */
+	public function test_call_ability_wrap_result_filter_receives_ability_name() {
+		$this->register_test_ability( 'blu/wrap-me', 'blu-mcp', fn() => array( 1 ) );
+		$this->register_test_ability( 'blu/leave-me', 'blu-mcp', fn() => array( 2 ) );
+		$this->register_gateway();
+
+		$seen   = array();
+		$filter = function ( $wrap, $result, $ability_name ) use ( &$seen ) {
+			$seen[] = $ability_name;
+			return 'blu-wrap-me' === $ability_name;
+		};
+		add_filter( 'blu_mcp_call_ability_wrap_result', $filter, 10, 3 );
+
+		$ability = blu_get_ability( 'blu/call-ability' );
+		$wrapped = $ability->execute( array( 'ability_name' => 'blu-wrap-me' ) );
+		$left    = $ability->execute( array( 'ability_name' => 'blu/leave-me' ) );
+
+		remove_filter( 'blu_mcp_call_ability_wrap_result', $filter, 10 );
+
+		$this->assertSame( array( 'result' => array( 1 ) ), $wrapped );
+		$this->assertSame( array( 2 ), $left );
+		// Hyphen form regardless of how the caller spelled the ability name.
+		$this->assertSame( array( 'blu-wrap-me', 'blu-leave-me' ), $seen );
+	}
+
+	/**
+	 * Verifies call-ability wraps empty-array and scalar results when blu_mcp_call_ability_wrap_result is enabled.
+	 *
+	 * @return void
+	 */
+	public function test_call_ability_wraps_empty_and_scalar_results_when_enabled() {
+		add_filter( 'blu_mcp_call_ability_wrap_result', '__return_true' );
+		$this->register_test_ability(
+			'blu/empty-result',
+			'blu-mcp',
+			function () {
+				return array();
+			}
+		);
+		$this->register_test_ability(
+			'blu/scalar-result',
+			'blu-mcp',
+			function () {
+				return true;
+			}
+		);
+		$this->register_gateway();
+		$ability = blu_get_ability( 'blu/call-ability' );
+
+		$this->assertSame(
+			array( 'result' => array() ),
+			$ability->execute( array( 'ability_name' => 'blu-empty-result' ) )
+		);
+		$this->assertSame(
+			array( 'result' => true ),
+			$ability->execute( array( 'ability_name' => 'blu-scalar-result' ) )
+		);
+		remove_filter( 'blu_mcp_call_ability_wrap_result', '__return_true' );
+	}
+
+	/**
 	 * Verifies list-abilities returns success response.
 	 *
 	 * @return void
