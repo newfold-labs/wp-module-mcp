@@ -197,6 +197,47 @@ class AbilityGateway {
 		return array();
 	}
 
+	/**
+	 * Ensure an ability result is a JSON object.
+	 *
+	 * The MCP adapter places the raw result in `structuredContent`, which the MCP
+	 * spec requires to be an object. Abilities are free to return a list (e.g. a
+	 * search returning `[post, post]`) or a scalar, and the adapter only wraps
+	 * those for tools it registered with a non-object output schema — not for
+	 * results proxied through this gateway. Without this, clients that validate
+	 * the response reject the whole tool call.
+	 *
+	 * Wrapping is opt-in because it changes the payload shape for abilities that
+	 * return a list or scalar, which existing lenient consumers may rely on.
+	 * Associative arrays (objects) always pass through untouched; when enabled,
+	 * everything else is wrapped under `result`, matching the wrapper key the
+	 * MCP adapter uses for its own transformed tools.
+	 *
+	 * @param mixed  $result       The raw ability result.
+	 * @param string $ability_name The MCP tool name (hyphen form) of the ability that produced it.
+	 * @return mixed The result, wrapped in an associative array when enabled and needed.
+	 */
+	private function ensure_object_result( $result, string $ability_name ) {
+		if ( is_array( $result ) && ! wp_is_numeric_array( $result ) ) {
+			return $result;
+		}
+
+		/**
+		 * Filters whether blu/call-ability wraps non-object ability results under a
+		 * `result` key so the MCP structuredContent is always a JSON object.
+		 *
+		 * @param bool   $wrap         Whether to wrap. Default false.
+		 * @param mixed  $result       The raw ability result about to be returned.
+		 * @param string $ability_name The MCP tool name (hyphen form) of the ability that
+		 *                             produced the result, as listed by blu-list-abilities.
+		 */
+		if ( ! apply_filters( 'blu_mcp_call_ability_wrap_result', false, $result, $ability_name ) ) {
+			return $result;
+		}
+
+		return array( 'result' => $result );
+	}
+
 	/* Gateway ability registration */
 
 	/**
@@ -449,7 +490,7 @@ class AbilityGateway {
 						return blu_prepare_ability_response( $status_code, $message );
 					}
 
-					return $result;
+					return $this->ensure_object_result( $result, $this->to_mcp_name( $ability->get_name() ) );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
