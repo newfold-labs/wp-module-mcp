@@ -50,13 +50,14 @@ class AbilityGateway {
 			)
 		);
 
-		// Category gate — restricts the whitelist to abilities registered under
-		// these categories. Defaults to the BLU MCP category so the gateway
-		// only exposes the curated set; integrators can broaden via the filter.
+		// WooCommerce registers native abilities under its own category. Keep
+		// namespace and public metadata checks below as additional gates.
 		$allowed_categories = apply_filters(
 			'blu_mcp_allowed_categories',
 			array(
 				'blu-mcp',
+				'woocommerce',
+				'woocommerce-rest',
 			)
 		);
 
@@ -72,6 +73,12 @@ class AbilityGateway {
 					$ability_type = $meta['mcp']['type'];
 				}
 				if ( 'tool' !== $ability_type ) {
+					return false;
+				}
+				if ( isset( $meta['mcp']['public'] ) && ! $meta['mcp']['public'] ) {
+					return false;
+				}
+				if ( str_starts_with( $name, 'woocommerce/' ) && ( $meta['mcp']['public'] ?? false ) !== true ) {
 					return false;
 				}
 
@@ -300,7 +307,7 @@ class AbilityGateway {
 
 					return blu_prepare_ability_response( 200, $result );
 				},
-				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
+				'permission_callback' => fn() => is_user_logged_in(),
 				'meta'                => array(
 					'annotations' => array(
 						'readonly'    => true,
@@ -360,7 +367,7 @@ class AbilityGateway {
 						)
 					);
 				},
-				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
+				'permission_callback' => fn() => is_user_logged_in(),
 				'meta'                => array(
 					'annotations' => array(
 						'readonly'    => true,
@@ -451,7 +458,7 @@ class AbilityGateway {
 
 					return $result;
 				},
-				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
+				'permission_callback' => fn() => is_user_logged_in(),
 				'meta'                => array(
 					'annotations' => array(
 						'readonly'    => false,
