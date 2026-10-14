@@ -449,7 +449,17 @@ class AbilityGateway {
 						return blu_prepare_ability_response( $status_code, $message );
 					}
 
-					return $result;
+					// MCP structuredContent must be a JSON object. The delegated ability
+					// may legitimately return a list or scalar, so preserve it under a
+					// stable key before the adapter serializes this gateway response.
+					if ( is_array( $result ) && ! wp_is_numeric_array( $result ) ) {
+						return $result;
+					}
+					if ( is_object( $result ) ) {
+						return $result;
+					}
+
+					return array( 'result' => $result );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(

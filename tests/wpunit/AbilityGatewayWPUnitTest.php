@@ -387,6 +387,47 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	}
 
 	/**
+	 * Gateway results must be JSON objects for MCP structuredContent.
+	 *
+	 * @return void
+	 */
+	public function test_call_ability_wraps_list_result_for_mcp() {
+		$this->register_test_ability( 'blu/list-result', 'blu-mcp', fn() => array( array( 'id' => 1 ) ) );
+		$this->register_gateway();
+
+		$result = blu_get_ability( 'blu/call-ability' )->execute( array( 'ability_name' => 'blu-list-result' ) );
+		$this->assertSame( array( 'result' => array( array( 'id' => 1 ) ) ), $result );
+	}
+
+	/**
+	 * Scalars and empty lists also need an object-shaped MCP result.
+	 *
+	 * @return void
+	 */
+	public function test_call_ability_wraps_scalar_and_empty_list_results_for_mcp() {
+		$this->register_test_ability( 'blu/scalar-result', 'blu-mcp', fn() => true );
+		$this->register_test_ability( 'blu/empty-result', 'blu-mcp', fn() => array() );
+		$this->register_gateway();
+
+		$gateway = blu_get_ability( 'blu/call-ability' );
+		$this->assertSame( array( 'result' => true ), $gateway->execute( array( 'ability_name' => 'blu-scalar-result' ) ) );
+		$this->assertSame( array( 'result' => array() ), $gateway->execute( array( 'ability_name' => 'blu-empty-result' ) ) );
+	}
+
+	/**
+	 * Existing object-shaped ability results retain their contract.
+	 *
+	 * @return void
+	 */
+	public function test_call_ability_preserves_object_result_for_mcp() {
+		$this->register_test_ability( 'blu/object-result', 'blu-mcp', fn() => array( 'id' => 1 ) );
+		$this->register_gateway();
+
+		$result = blu_get_ability( 'blu/call-ability' )->execute( array( 'ability_name' => 'blu-object-result' ) );
+		$this->assertSame( array( 'id' => 1 ), $result );
+	}
+
+	/**
 	 * Verifies list-abilities returns success response.
 	 *
 	 * @return void
