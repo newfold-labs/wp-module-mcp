@@ -219,7 +219,9 @@ jobs:
         if: steps.changes.outputs.skip != 'true'
         run: |
           if ! npx wp-env run cli wp plugin is-installed woocommerce; then
-            npx wp-env run cli wp plugin install woocommerce
+            # WordPress 6.9 in .wp-env.json cannot install the latest WooCommerce.
+            # WooCommerce 10.8 explicitly supports WordPress 6.9.
+            npx wp-env run cli wp plugin install https://downloads.wordpress.org/plugin/woocommerce.10.8.0.zip
           fi
           npx wp-env run cli wp plugin activate woocommerce
 
