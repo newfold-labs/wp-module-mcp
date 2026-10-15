@@ -10,19 +10,17 @@ The Bluehost MCP module exposes tools via the **Bluehost MCP Server** at the Wor
 
 ## Gateway mode (default)
 
-The server exposes **3 gateway tools and 3 generic REST tools** instead of every individual ability. Most abilities are discovered and called on demand; the REST catalog, details, and execution tools are directly available for site-specific endpoints.
+The server exposes **3 gateway tools** instead of ~83 individual tools. This reduces token usage by ~96% — the LLM discovers and calls abilities on demand rather than receiving all tool schemas upfront.
 
 ### Gateway tools (exposed via `tools/list`)
 
-The server registers 3 gateway tools. The default names are shown below, but **MCP clients must not hardcode these names**. Instead, call `tools/list` and identify the gateway roles by their input schema shape:
+The server registers exactly 3 gateway tools. The default names are shown below, but **MCP clients must not hardcode these names**. Instead, call `tools/list` and identify the 3 gateway roles by their input schema shape:
 
 | Role | Default name | How to identify (from `tools/list` inputSchema) |
 |------|-------------|------------------------------------------------|
 | **List** | `blu-list-abilities` | Has optional `search` and `name_prefix` properties (both string), no `ability_name` |
 | **Schema** | `blu-get-ability-schema` | Requires `ability_name` (string), no `parameters` property |
 | **Call** | `blu-call-ability` | Requires `ability_name` (string) and has optional `parameters` (object) |
-
-The same `tools/list` response also includes `blu-list-api-functions`, `blu-get-function-details`, and `blu-run-api-function`. These three tools can be called directly for REST endpoints registered on the site.
 
 ### Session setup (one-time)
 
@@ -36,7 +34,9 @@ You do **not** need to re-initialize for each tool call — reuse the session ID
 
 ### Usage flow
 
-Once a session is established, call `tools/list` to identify the gateway and REST tools. For other WordPress abilities, interact in 3 steps:
+Once a session is established, call `tools/list` to get the 3 gateway tools and identify them by schema shape. Then interact in 3 steps:
+
+For a WordPress REST API request, use the **List** tool to find `blu-list-api-functions`, `blu-get-function-details`, or `blu-run-api-function` among the available abilities. Retrieve the selected ability's schema with the **Schema** tool, then invoke it through the **Call** tool. The REST catalog reflects routes registered by currently active plugins; these abilities do not add top-level MCP tools.
 
 **1. Discover** — call the **List** tool to see what's available:
 ```json
@@ -125,7 +125,7 @@ Response `result.structuredContent.message` contains:
 ```
 Response `result.structuredContent` contains the ability's result (format varies by ability).
 
-> **Important:** Most abilities, such as `blu-posts-search`, are accessible through the **Call** gateway tool. The three generic REST tools are also advertised directly in `tools/list` and can be invoked with `tools/call`.
+> **Important:** Never call ability names directly as MCP tool names (e.g. `"name": "blu-posts-search"` at the `tools/call` level). Abilities are only accessible through the **Call** gateway tool. The only valid MCP tool names are the 3 gateway tools returned by `tools/list`.
 
 ### Filtering the list
 
@@ -163,7 +163,7 @@ Both gateway list tools (`blu-list-abilities`) and the REST catalog tool (`blu-l
 | Filter | Type | Behavior |
 |--------|------|----------|
 | `namespace` | string | Exact match on the REST namespace as WordPress registered it. Multi-segment (`"wp/v2"`, `"wc/v3"`, `"wc-admin/marketing"`) and single-segment (`"wc-analytics"`) namespaces are both supported. Leading and trailing slashes are tolerated. |
-| `methods` | array of `"GET" \| "HEAD" \| "POST" \| "PUT" \| "PATCH" \| "DELETE" \| "OPTIONS"` | Restrict to listed HTTP methods (uppercase, validated by the schema enum). Omit or pass an empty array to allow all methods. |
+| `methods` | array of `"GET" \| "POST" \| "PATCH" \| "DELETE"` | Restrict to listed HTTP methods (uppercase, validated by the schema enum). Omit or pass an empty array to allow all methods. |
 | `search` | string | Case-insensitive substring match on the route string. |
 
 ```json
@@ -411,7 +411,7 @@ Two surfaces are exposed:
 
 ## When does it make sense to add a new tool?
 
-Tokens are the gold of the AI era. Every byte of context you spend on tool definitions, schemas, descriptions, and noisy responses is a byte the model no longer has for thinking about the user's actual problem. The gateway keeps most ability schemas out of `tools/list`; the three generic REST tools are directly visible because they are useful entry points for routes supplied by active plugins. Every additional ability still adds discovery and selection cost.
+Tokens are the gold of the AI era. Every byte of context you spend on tool definitions, schemas, descriptions, and noisy responses is a byte the model no longer has for thinking about the user's actual problem. The gateway pattern above already saves ~96% of the upfront tool-schema cost — but every new ability we add still chips away at the reserve: one more row in `tools/list`, one more schema fetch the model might trigger, one more "which of these similar tools should I pick?" decision.
 
 So before reaching for a new ability, treat the catalog like a vault, not a catch-all. Ask first: **can `blu-run-api-function` already do this?** If the REST route shows up in `blu-list-api-functions`, the model can call it through the generic CRUD ability today — no new tool needed, no new tokens spent.
 

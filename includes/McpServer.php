@@ -38,27 +38,14 @@ use Bluehost\Plugin\WP\MCP\Transport\HttpTransport;
  * MCP Server registration for Bluehost abilities.
  */
 class McpServer {
-
 	/**
-	 * Names advertised by the MCP server. REST discovery and dispatch are generic
-	 * site capabilities, so advertise them alongside the gateway tools.
+	 * Names advertised through MCP tools/list.
 	 *
-	 * @param bool $use_gateway Whether the compact gateway is enabled.
+	 * @param bool $use_gateway Whether gateway mode is enabled.
 	 * @return string[] Ability names.
 	 */
 	private function get_tool_names( bool $use_gateway ): array {
-		if ( ! $use_gateway ) {
-			return blu_get_ability_by_type( 'tool' );
-		}
-
-		return array_merge(
-			AbilityGateway::GATEWAY_ABILITIES,
-			array(
-				'blu/list-api-functions',
-				'blu/get-function-details',
-				'blu/run-api-function',
-			)
-		);
+		return $use_gateway ? AbilityGateway::GATEWAY_ABILITIES : blu_get_ability_by_type( 'tool' );
 	}
 
 	/**
