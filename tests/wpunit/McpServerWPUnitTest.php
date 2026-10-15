@@ -9,6 +9,20 @@ namespace BLU;
  */
 class McpServerWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 
+	/** Generic REST tools must be advertised directly so clients can discover them. */
+	public function test_gateway_mode_advertises_rest_tools_directly(): void {
+		$server = new McpServer();
+		$method = new \ReflectionMethod( McpServer::class, 'get_tool_names' );
+		$method->setAccessible( true );
+		$names = $method->invoke( $server, true );
+		$this->assertContains( 'blu/list-abilities', $names );
+		$this->assertContains( 'blu/call-ability', $names );
+		$this->assertContains( 'blu/list-api-functions', $names );
+		$this->assertContains( 'blu/get-function-details', $names );
+		$this->assertContains( 'blu/run-api-function', $names );
+		$this->assertCount( 6, $names );
+	}
+
 	/**
 	 * Ability names introduced by tests that exercise register_abilities. Tracked so
 	 * tear_down can unregister them, otherwise downstream tests like RestApiCrudWPUnitTest

@@ -40,6 +40,28 @@ use Bluehost\Plugin\WP\MCP\Transport\HttpTransport;
 class McpServer {
 
 	/**
+	 * Names advertised by the MCP server. REST discovery and dispatch are generic
+	 * site capabilities, so advertise them alongside the gateway tools.
+	 *
+	 * @param bool $use_gateway Whether the compact gateway is enabled.
+	 * @return string[] Ability names.
+	 */
+	private function get_tool_names( bool $use_gateway ): array {
+		if ( ! $use_gateway ) {
+			return blu_get_ability_by_type( 'tool' );
+		}
+
+		return array_merge(
+			AbilityGateway::GATEWAY_ABILITIES,
+			array(
+				'blu/list-api-functions',
+				'blu/get-function-details',
+				'blu/run-api-function',
+			)
+		);
+	}
+
+	/**
 	 * Initializes the class by setting up actions to register the server and abilities
 	 * during the respective initialization hooks.
 	 *
@@ -81,12 +103,7 @@ class McpServer {
 
 		$use_gateway = apply_filters( 'blu_mcp_use_gateway', true );
 
-		if ( $use_gateway ) {
-			$abilities = AbilityGateway::GATEWAY_ABILITIES;
-		} else {
-			// Legacy: expose all individual tools directly.
-			$abilities = blu_get_ability_by_type( 'tool' );
-		}
+		$abilities = $this->get_tool_names( (bool) $use_gateway );
 
 		$prompts   = blu_get_ability_by_type( 'prompt' );
 		$resources = blu_get_ability_by_type( 'resource' );
