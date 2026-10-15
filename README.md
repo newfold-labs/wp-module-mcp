@@ -214,6 +214,24 @@ add_filter( 'blu_mcp_allowed_namespaces', function ( $namespaces ) {
 } );
 ```
 
+### Strict `structuredContent` for list results
+
+The MCP spec requires a tool's `structuredContent` to be a JSON object. `blu-call-ability` returns the target ability's result as-is, so an ability that returns a list (for example a search with several or zero matches) or a scalar produces an array `structuredContent`, which strict clients reject as malformed. Opt in to wrapping such results under a `result` key:
+
+```php
+add_filter( 'blu_mcp_call_ability_wrap_result', '__return_true' );
+```
+
+The filter also receives the raw result and the hyphen-form name of the ability that produced it, so wrapping can be limited to specific abilities:
+
+```php
+add_filter( 'blu_mcp_call_ability_wrap_result', function ( $wrap, $result, $ability_name ) {
+    return 0 === strpos( $ability_name, 'example-plugin-' ); // For abilities that start with "example-plugin-"
+}, 10, 3 );
+```
+
+Object (associative) results are never wrapped, so abilities using `blu_prepare_ability_response()` are unaffected either way.
+
 ### Legacy mode
 
 To bypass the gateway and expose all individual tools directly (previous behavior):
