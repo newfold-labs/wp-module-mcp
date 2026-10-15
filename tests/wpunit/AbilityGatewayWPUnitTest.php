@@ -529,6 +529,17 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$this->assertIsArray( $result['message'] );
 	}
 
+	/** The advertised gateway description must explain how to find REST abilities. */
+	public function test_gateway_descriptions_explain_rest_discovery() {
+		$this->register_gateway();
+		$list_description = blu_get_ability( 'blu/list-abilities' )->get_description();
+		$call_description = blu_get_ability( 'blu/call-ability' )->get_description();
+		$this->assertStringContainsString( 'REST API', $list_description );
+		$this->assertStringContainsString( 'blu-list-api-functions', $list_description );
+		$this->assertStringContainsString( 'blu-call-ability', $call_description );
+		$this->assertStringContainsString( 'blu-run-api-function', $call_description );
+	}
+
 	/**
 	 * Verifies list-abilities excludes gateway tools (they are already in tools/list).
 	 *

@@ -250,7 +250,7 @@ class AbilityGateway {
 			'blu/list-abilities',
 			array(
 				'label'               => 'List Abilities',
-				'description'         => 'List the abilities available on this site. Each entry includes `name` (hyphen form), `label`, `description`, and `annotations`. Use the optional `search` and `name_prefix` filters to narrow the catalog.',
+				'description'         => 'Discover abilities available on this site, including WordPress REST API access. For any REST endpoint, find blu-list-api-functions, blu-get-function-details, and blu-run-api-function here; they appear only when available. Each entry includes name, label, description, and annotations. Filter with search or name_prefix, then use blu-get-ability-schema and blu-call-ability.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'                 => 'object',
@@ -363,7 +363,7 @@ class AbilityGateway {
 			'blu/get-ability-schema',
 			array(
 				'label'               => 'Get Ability Schema',
-				'description'         => 'Get the full input schema for a specific ability, so the caller knows what parameters to pass when invoking it via blu-call-ability.',
+				'description'         => 'Get the full input schema for a discovered ability, including REST abilities such as blu-list-api-functions, blu-get-function-details, and blu-run-api-function, before invoking it via blu-call-ability.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
@@ -423,7 +423,7 @@ class AbilityGateway {
 			'blu/call-ability',
 			array(
 				'label'               => 'Call Ability',
-				'description'         => 'Execute an ability by name with its parameters. The gateway tools (blu-list-abilities, blu-get-ability-schema, blu-call-ability) cannot be invoked through this tool.',
+				'description'         => 'Execute a discovered ability by name with its parameters using blu-call-ability. For WordPress REST API endpoints, use ability_name blu-list-api-functions to find registered routes, blu-get-function-details for a route schema, or blu-run-api-function to dispatch a request. Get each ability input schema with blu-get-ability-schema. Gateway tools cannot be invoked through this tool.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
