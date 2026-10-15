@@ -121,7 +121,7 @@ Response `result.structuredContent.message` contains:
   }
 }
 ```
-Response `result.structuredContent` contains the ability's result (format varies by ability).
+Response `result.structuredContent` contains the ability's result. Nonempty JSON objects retain their shape, including PHP arrays with sparse numeric keys. A list, empty object/list, scalar, or `null` result is returned under `result.structuredContent.result` so MCP clients receive an object-shaped `structuredContent` value. PHP objects are serialized into adapter-compatible arrays; ability providers should return associative arrays for a stable top-level object contract.
 
 > **Important:** Never call ability names directly as MCP tool names (e.g. `"name": "blu-posts-search"` at the `tools/call` level). Abilities are only accessible through the **Call** gateway tool. The only valid MCP tool names are the 3 gateway tools returned by `tools/list`.
 

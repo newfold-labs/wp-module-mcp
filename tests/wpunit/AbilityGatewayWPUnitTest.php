@@ -387,6 +387,129 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	}
 
 	/**
+	 * Gateway results must be JSON objects for MCP structuredContent.
+	 *
+	 * @return void
+	 */
+	public function test_call_ability_wraps_list_result_for_mcp() {
+		$this->register_test_ability( 'blu/list-result', 'blu-mcp', fn() => array( array( 'id' => 1 ) ) );
+		$this->register_gateway();
+
+		$result = blu_get_ability( 'blu/call-ability' )->execute( array( 'ability_name' => 'blu-list-result' ) );
+		$this->assertSame( array( 'result' => array( array( 'id' => 1 ) ) ), $result );
+	}
+
+	/**
+	 * Scalars and empty lists also need an object-shaped MCP result.
+	 *
+	 * @return void
+	 */
+	public function test_call_ability_wraps_scalar_and_empty_list_results_for_mcp() {
+		$this->register_test_ability( 'blu/scalar-result', 'blu-mcp', fn() => true );
+		$this->register_test_ability( 'blu/empty-result', 'blu-mcp', fn() => array() );
+		$this->register_gateway();
+
+		$gateway = blu_get_ability( 'blu/call-ability' );
+		$this->assertSame( array( 'result' => true ), $gateway->execute( array( 'ability_name' => 'blu-scalar-result' ) ) );
+		$this->assertSame( array( 'result' => array() ), $gateway->execute( array( 'ability_name' => 'blu-empty-result' ) ) );
+	}
+
+	/**
+	 * Existing object-shaped ability results retain their contract.
+	 *
+	 * @return void
+	 */
+	public function test_call_ability_preserves_object_result_for_mcp() {
+		$this->register_test_ability( 'blu/object-result', 'blu-mcp', fn() => array( 'id' => 1 ) );
+		$this->register_gateway();
+
+		$result = blu_get_ability( 'blu/call-ability' )->execute( array( 'ability_name' => 'blu-object-result' ) );
+		$this->assertSame( array( 'id' => 1 ), $result );
+	}
+
+	/** Sparse numeric keys serialize as a JSON object and retain their keys. */
+	public function test_call_ability_preserves_sparse_numeric_keyed_object() {
+		$expected = array( 42 => array( 'id' => 42 ) );
+		$this->register_test_ability( 'blu/id-keyed-result', 'blu-mcp', fn() => $expected );
+		$this->register_gateway();
+
+		$result = blu_get_ability( 'blu/call-ability' )->execute( array( 'ability_name' => 'blu-id-keyed-result' ) );
+		$this->assertSame( $expected, $result );
+		$this->assertSame( '{"42":{"id":42}}', wp_json_encode( $result ) );
+	}
+
+	/** Null has no object shape and needs the same envelope as other scalars. */
+	public function test_call_ability_wraps_null_result_for_mcp() {
+		$this->register_test_ability( 'blu/null-result', 'blu-mcp', fn() => null );
+		$this->register_gateway();
+
+		$result = blu_get_ability( 'blu/call-ability' )->execute( array( 'ability_name' => 'blu-null-result' ) );
+		$this->assertSame( array( 'result' => null ), $result );
+	}
+
+	/** A PHP object must become an adapter-compatible array with the same JSON shape. */
+	public function test_call_ability_converts_object_result_for_mcp_adapter() {
+		$this->register_test_ability( 'blu/php-object-result', 'blu-mcp', fn() => (object) array( 'id' => 42 ) );
+		$this->register_gateway();
+
+		$result = blu_get_ability( 'blu/call-ability' )->execute( array( 'ability_name' => 'blu-php-object-result' ) );
+		$this->assertSame( array( 'id' => 42 ), $result );
+		$this->assertSame( '{"id":42}', wp_json_encode( $result ) );
+	}
+
+	/** JsonSerializable can produce a scalar even though the PHP value is an object. */
+	public function test_call_ability_wraps_json_serializable_scalar_result() {
+		$serializable = new class() implements \JsonSerializable {
+			/** Return a scalar JSON value. */
+			public function jsonSerialize() {
+				return 'value';
+			}
+		};
+		$this->register_test_ability( 'blu/serializable-scalar', 'blu-mcp', fn() => $serializable );
+		$this->register_gateway();
+
+		$result = blu_get_ability( 'blu/call-ability' )->execute( array( 'ability_name' => 'blu-serializable-scalar' ) );
+		$this->assertSame( array( 'result' => 'value' ), $result );
+	}
+
+	/** JsonSerializable object output keeps its existing JSON object contract. */
+	public function test_call_ability_preserves_json_serializable_object_result() {
+		$serializable = new class() implements \JsonSerializable {
+			/** Return an object-shaped JSON value. */
+			public function jsonSerialize() {
+				return (object) array( 'id' => 42 );
+			}
+		};
+		$this->register_test_ability( 'blu/serializable-object', 'blu-mcp', fn() => $serializable );
+		$this->register_gateway();
+
+		$result = blu_get_ability( 'blu/call-ability' )->execute( array( 'ability_name' => 'blu-serializable-object' ) );
+		$this->assertSame( array( 'id' => 42 ), $result );
+		$this->assertSame( '{"id":42}', wp_json_encode( $result ) );
+	}
+
+	/** Empty PHP objects cannot be represented as nonempty adapter arrays. */
+	public function test_call_ability_wraps_empty_object_result() {
+		$this->register_test_ability( 'blu/empty-object', 'blu-mcp', fn() => new \stdClass() );
+		$this->register_gateway();
+
+		$result = blu_get_ability( 'blu/call-ability' )->execute( array( 'ability_name' => 'blu-empty-object' ) );
+		$this->assertSame( array( 'result' => array() ), $result );
+	}
+
+	/** An unserializable result yields a safe error object instead of breaking MCP. */
+	public function test_call_ability_handles_unserializable_object_result() {
+		$recursive       = new \stdClass();
+		$recursive->self = $recursive;
+		$this->register_test_ability( 'blu/recursive-object', 'blu-mcp', fn() => $recursive );
+		$this->register_gateway();
+
+		$result = blu_get_ability( 'blu/call-ability' )->execute( array( 'ability_name' => 'blu-recursive-object' ) );
+		$this->assertSame( 500, $result['statusCode'] );
+		$this->assertSame( 'Ability execution failed.', $result['message'] );
+	}
+
+	/**
 	 * Verifies list-abilities returns success response.
 	 *
 	 * @return void

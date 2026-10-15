@@ -197,6 +197,39 @@ class AbilityGateway {
 		return array();
 	}
 
+	/**
+	 * Return an adapter-compatible array whose JSON shape is an MCP object.
+	 *
+	 * @param mixed $result Result returned by a delegated ability.
+	 * @return array Object-shaped result or a result envelope.
+	 */
+	private function normalize_result_for_mcp( $result ): array {
+		if ( is_array( $result ) ) {
+			// PHP serializes only consecutive zero-based keys as a JSON list.
+			// Sparse numeric keys serialize as an object and must retain their keys.
+			if ( ! empty( $result ) && array_keys( $result ) !== range( 0, count( $result ) - 1 ) ) {
+				return $result;
+			}
+			return array( 'result' => $result );
+		}
+
+		if ( is_object( $result ) ) {
+			// The adapter's structuredContent DTO accepts arrays, not PHP objects.
+			// Inspect the serialized shape because JsonSerializable may emit any type.
+			$json = wp_json_encode( $result );
+			if ( false === $json ) {
+				return blu_prepare_ability_response( 500, 'Ability execution failed.' );
+			}
+			$decoded = json_decode( $json, true );
+			if ( '{' === $json[0] && is_array( $decoded ) && ! empty( $decoded ) && array_keys( $decoded ) !== range( 0, count( $decoded ) - 1 ) ) {
+				return $decoded;
+			}
+			return array( 'result' => $decoded );
+		}
+
+		return array( 'result' => $result );
+	}
+
 	/* Gateway ability registration */
 
 	/**
@@ -449,7 +482,7 @@ class AbilityGateway {
 						return blu_prepare_ability_response( $status_code, $message );
 					}
 
-					return $result;
+					return $this->normalize_result_for_mcp( $result );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(
