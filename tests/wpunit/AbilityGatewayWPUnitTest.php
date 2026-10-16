@@ -76,6 +76,10 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 				'label'       => 'Other',
 				'description' => 'Test category',
 			),
+			'woocommerce'    => array(
+				'label'       => 'WooCommerce',
+				'description' => 'WooCommerce abilities',
+			),
 		);
 
 		foreach ( $categories as $slug => $args ) {
@@ -145,11 +149,12 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	 * @param callable $execute     Execute callback.
 	 * @param string   $label       Optional label, defaults to 'Test Ability'.
 	 * @param string   $description Optional description, defaults to 'A test ability'.
+	 * @param array    $meta        Optional ability metadata.
 	 *
 	 * @return void
 	 */
-	private function register_test_ability( string $name, string $category, callable $execute, string $label = 'Test Ability', string $description = 'A test ability' ): void {
-		$cb = function () use ( $name, $category, $execute, $label, $description ) {
+	private function register_test_ability( string $name, string $category, callable $execute, string $label = 'Test Ability', string $description = 'A test ability', array $meta = array() ): void {
+		$cb = function () use ( $name, $category, $execute, $label, $description, $meta ) {
 			blu_register_ability(
 				$name,
 				array(
@@ -159,6 +164,7 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 					'input_schema'        => array( 'type' => 'object' ),
 					'execute_callback'    => $execute,
 					'permission_callback' => fn() => true,
+					'meta'                => $meta,
 				)
 			);
 		};
@@ -521,6 +527,17 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$this->assertSame( 200, $result['statusCode'] );
 		$this->assertSame( 'success', $result['status'] );
 		$this->assertIsArray( $result['message'] );
+	}
+
+	/** The advertised gateway description must explain how to find REST abilities. */
+	public function test_gateway_descriptions_explain_rest_discovery() {
+		$this->register_gateway();
+		$list_description = blu_get_ability( 'blu/list-abilities' )->get_description();
+		$call_description = blu_get_ability( 'blu/call-ability' )->get_description();
+		$this->assertStringContainsString( 'REST API', $list_description );
+		$this->assertStringContainsString( 'blu-list-api-functions', $list_description );
+		$this->assertStringContainsString( 'blu-call-ability', $call_description );
+		$this->assertStringContainsString( 'blu-run-api-function', $call_description );
 	}
 
 	/**
@@ -936,6 +953,75 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$result  = $ability->execute( array() );
 		$names   = array_column( $result['message'], 'name' );
 		$this->assertNotContains( 'secret-hidden-tool', $names );
+	}
+
+	/** WooCommerce's public native abilities should be reachable through the Bluehost gateway. */
+	public function test_public_woocommerce_ability_is_listed_and_callable() {
+		$this->register_test_ability(
+			'woocommerce/products-list',
+			'woocommerce',
+			function () {
+				return array( 'products' => array() );
+			},
+			'Products',
+			'List products',
+			array( 'mcp' => array( 'public' => true ) )
+		);
+		$this->register_gateway();
+		$listed = blu_get_ability( 'blu/list-abilities' )->execute( array() );
+		$this->assertContains( 'woocommerce-products-list', array_column( $listed['message'], 'name' ) );
+		$called = blu_get_ability( 'blu/call-ability' )->execute(
+			array(
+				'ability_name' => 'woocommerce-products-list',
+				'parameters'   => array(),
+			)
+		);
+		$this->assertSame( array( 'products' => array() ), $called );
+	}
+
+	/** An explicitly private WooCommerce ability must stay hidden. */
+	public function test_private_woocommerce_ability_is_not_listed() {
+		$this->register_test_ability(
+			'woocommerce/private-tool',
+			'woocommerce',
+			function () {
+				return true;
+			},
+			'Private',
+			'Private tool',
+			array( 'mcp' => array( 'public' => false ) )
+		);
+		$this->register_test_ability(
+			'woocommerce/unmarked-tool',
+			'woocommerce',
+			function () {
+				return true;
+			}
+		);
+		$this->register_gateway();
+		$listed = blu_get_ability( 'blu/list-abilities' )->execute( array() );
+		$this->assertNotContains( 'woocommerce-private-tool', array_column( $listed['message'], 'name' ) );
+		$this->assertNotContains( 'woocommerce-unmarked-tool', array_column( $listed['message'], 'name' ) );
+	}
+
+	/** The gateway must allow an authenticated reader to reach an ability's own permission check. */
+	public function test_subscriber_can_call_permitted_ability() {
+		$this->register_test_ability(
+			'blu/public-read',
+			'blu-mcp',
+			function () {
+				return array( 'ok' => true );
+			}
+		);
+		$this->register_gateway();
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'subscriber' ) ) );
+		$called = blu_get_ability( 'blu/call-ability' )->execute(
+			array(
+				'ability_name' => 'blu-public-read',
+				'parameters'   => array(),
+			)
+		);
+		$this->assertSame( array( 'ok' => true ), $called );
 	}
 
 	/**

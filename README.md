@@ -36,6 +36,8 @@ You do **not** need to re-initialize for each tool call — reuse the session ID
 
 Once a session is established, call `tools/list` to get the 3 gateway tools and identify them by schema shape. Then interact in 3 steps:
 
+For a WordPress REST API request, use the **List** tool to find `blu-list-api-functions`, `blu-get-function-details`, or `blu-run-api-function` among the available abilities. Retrieve the selected ability's schema with the **Schema** tool, then invoke it through the **Call** tool. The REST catalog reflects routes registered by currently active plugins; these abilities do not add top-level MCP tools.
+
 **1. Discover** — call the **List** tool to see what's available:
 ```json
 {

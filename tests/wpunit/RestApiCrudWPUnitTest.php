@@ -256,7 +256,7 @@ class RestApiCrudWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 
 		$this->assertArrayHasKey( 'methods', $schema['properties'] );
 		$this->assertSame( 'array', $schema['properties']['methods']['type'] );
-		$this->assertSame( array( 'GET', 'POST', 'PATCH', 'DELETE' ), $schema['properties']['methods']['items']['enum'] );
+		$this->assertSame( array( 'GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS' ), $schema['properties']['methods']['items']['enum'] );
 		$this->assertTrue( $schema['properties']['methods']['uniqueItems'] );
 
 		$this->assertArrayHasKey( 'search', $schema['properties'] );
@@ -572,22 +572,148 @@ class RestApiCrudWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$this->assertSame( 404, $result['statusCode'] );
 	}
 
+	/** A REST route registered during discovery must also be available to details and dispatch. */
+	public function test_lazy_rest_route_is_available_across_the_gateway(): void {
+		$register = function ( $result, $server, $request ) {
+			if ( '/' === $request->get_route() ) {
+				$server->register_route(
+					'blu-lazy/v1',
+					'/blu-lazy/v1/items',
+					array(
+						array(
+							'methods'             => 'GET',
+							'callback'            => function () {
+														return array( 'found' => true ); },
+							'permission_callback' => '__return_true',
+						),
+					),
+					true
+				);
+			}
+			return $result;
+		};
+		add_filter( 'rest_pre_dispatch', $register, 10, 3 );
+		try {
+			$details = blu_get_ability( 'blu/get-function-details' )->execute(
+				array(
+					'route'  => '/blu-lazy/v1/items',
+					'method' => 'GET',
+				)
+			);
+			$this->assertSame( 200, $details['statusCode'] );
+			$items = $this->execute_list( array( 'namespace' => 'blu-lazy/v1' ) );
+			$this->assertContains( '/blu-lazy/v1/items', array_column( $items, 'route' ) );
+			$called = blu_get_ability( 'blu/run-api-function' )->execute(
+				array(
+					'route'  => '/blu-lazy/v1/items',
+					'method' => 'GET',
+				)
+			);
+			$this->assertSame( 200, $called['statusCode'] );
+		} finally {
+			remove_filter( 'rest_pre_dispatch', $register, 10 );
+		}
+	}
+
+	/** Registered plugin routes must not disappear because of their names. */
+	public function test_registered_routes_are_not_hidden_by_keyword(): void {
+		$server = rest_get_server();
+		$server->register_route(
+			'blu-extra/v1',
+			'/blu-extra/v1/autosaves',
+			array(
+				array(
+					'methods'             => 'GET',
+					'callback'            => '__return_true',
+					'permission_callback' => '__return_true',
+				),
+			),
+			true
+		);
+		$items = $this->execute_list( array( 'namespace' => 'blu-extra/v1' ) );
+		$this->assertContains( '/blu-extra/v1/autosaves', array_column( $items, 'route' ) );
+	}
+
+	/** The endpoint's REST permission callback determines whether a caller may use it. */
+	public function test_rest_permissions_apply_for_subscriber(): void {
+		$server = rest_get_server();
+		$server->register_route(
+			'blu-auth/v1',
+			'/blu-auth/v1/items',
+			array(
+				array(
+					'methods'             => 'GET',
+					'callback'            => function () {
+																return array( 'ok' => true ); },
+					'permission_callback' => '__return_true',
+				),
+				array(
+					'methods'             => 'POST',
+					'callback'            => '__return_true',
+					'permission_callback' => function () {
+						return current_user_can( 'edit_posts' ); },
+				),
+			),
+			true
+		);
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'subscriber' ) ) );
+		$this->assertContains( '/blu-auth/v1/items', array_column( $this->execute_list( array( 'namespace' => 'blu-auth/v1' ) ), 'route' ) );
+		$read = blu_get_ability( 'blu/run-api-function' )->execute(
+			array(
+				'route'  => '/blu-auth/v1/items',
+				'method' => 'GET',
+			)
+		);
+		$this->assertSame( 200, $read['statusCode'] );
+		$write = blu_get_ability( 'blu/run-api-function' )->execute(
+			array(
+				'route'  => '/blu-auth/v1/items',
+				'method' => 'POST',
+			)
+		);
+		$this->assertSame( 403, $write['statusCode'] );
+	}
+
+	/** The schema must permit every method a registered REST endpoint can advertise. */
+	public function test_put_method_is_supported(): void {
+		$server = rest_get_server();
+		$server->register_route(
+			'blu-put/v1',
+			'/blu-put/v1/items',
+			array(
+				array(
+					'methods'             => 'PUT',
+					'callback'            => '__return_true',
+					'permission_callback' => '__return_true',
+				),
+			),
+			true
+		);
+		$list_schema = blu_get_ability( 'blu/list-api-functions' )->get_input_schema();
+		$this->assertContains( 'PUT', $list_schema['properties']['methods']['items']['enum'] );
+		$details_schema = blu_get_ability( 'blu/get-function-details' )->get_input_schema();
+		$this->assertContains( 'PUT', $details_schema['properties']['method']['enum'] );
+		$run_schema = blu_get_ability( 'blu/run-api-function' )->get_input_schema();
+		$this->assertContains( 'PUT', $run_schema['properties']['method']['enum'] );
+		$called = blu_get_ability( 'blu/run-api-function' )->execute(
+			array(
+				'route'  => '/blu-put/v1/items',
+				'method' => 'PUT',
+			)
+		);
+		$this->assertSame( 200, $called['statusCode'] );
+	}
+
 	/**
-	 * Verifies the hardcoded ignore lists still apply even with permissive filters.
+	 * Verifies every registered route except the MCP transport is discoverable.
 	 *
 	 * @return void
 	 */
-	public function test_ignored_routes_still_excluded(): void {
+	public function test_registered_core_routes_are_discoverable(): void {
 		$items  = $this->execute_list( array() );
 		$routes = array_column( $items, 'route' );
 
-		$this->assertNotContains( '/', $routes );
-		$this->assertNotContains( '/batch/v1', $routes );
-		foreach ( $routes as $route ) {
-			$this->assertStringNotContainsString( 'oembed', $route );
-			$this->assertStringNotContainsString( 'autosaves', $route );
-			$this->assertStringNotContainsString( 'revisions', $route );
-			$this->assertStringNotContainsString( 'jwt-auth', $route );
-		}
+		$this->assertContains( '/', $routes );
+		$this->assertNotContains( '/blu/mcp', $routes );
 	}
 }
