@@ -207,6 +207,113 @@ class FunctionsHelpersWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase
 	}
 
 	/**
+	 * A filtered list must still serialize as a JSON array.
+	 *
+	 * array_filter() keeps the original keys, so matching only the third term
+	 * leaves `array( 2 => ... )`, and a gappy integer-keyed array encodes as the
+	 * JSON object `{"2":{...}}` rather than `[{...}]`. The same tool then answers
+	 * in one shape when a pattern is supplied and another when it is not, which
+	 * an LLM caller cannot read consistently.
+	 *
+	 * The other tests here call array_values() themselves before asserting, so
+	 * none of them can see this.
+	 *
+	 * @return void
+	 */
+	public function test_filter_terms_by_patterns_returns_a_list_not_an_object() {
+		$terms = array(
+			array(
+				'id'   => 1,
+				'name' => 'Accessories',
+			),
+			array(
+				'id'   => 2,
+				'name' => 'Audio',
+			),
+			array(
+				'id'   => 3,
+				'name' => 'Devices',
+			),
+		);
+		blu_filter_terms_by_patterns( array( 'Devices' ), $terms );
+
+		$this->assertSame( array( 0 ), array_keys( $terms ), 'Keys must be re-indexed from zero.' );
+		$this->assertSame( '[{"id":3,"name":"Devices"}]', wp_json_encode( $terms ), 'A filtered list must encode as a JSON array.' );
+	}
+
+	/**
+	 * The same holds when several non-leading terms match.
+	 *
+	 * @return void
+	 */
+	public function test_filter_terms_by_patterns_reindexes_multiple_matches() {
+		$terms = array(
+			array(
+				'id'   => 1,
+				'name' => 'Hats',
+			),
+			array(
+				'id'   => 2,
+				'name' => 'Running Shoes',
+			),
+			array(
+				'id'   => 3,
+				'name' => 'Walking Shoes',
+			),
+		);
+		blu_filter_terms_by_patterns( array( 'shoes' ), $terms );
+
+		$this->assertSame( array( 0, 1 ), array_keys( $terms ) );
+		$this->assertStringStartsWith( '[', (string) wp_json_encode( $terms ) );
+	}
+
+	/**
+	 * An unfiltered call already returned a list, and must keep doing so, since
+	 * the two shapes have to agree.
+	 *
+	 * @return void
+	 */
+	public function test_filter_terms_by_patterns_leaves_an_unfiltered_list_as_a_list() {
+		$terms = array(
+			array(
+				'id'   => 1,
+				'name' => 'Hats',
+			),
+			array(
+				'id'   => 2,
+				'name' => 'Audio',
+			),
+		);
+		blu_filter_terms_by_patterns( array(), $terms );
+
+		$this->assertSame( array( 0, 1 ), array_keys( $terms ) );
+		$this->assertStringStartsWith( '[', (string) wp_json_encode( $terms ) );
+	}
+
+	/**
+	 * When nothing matches the function deliberately leaves the set untouched,
+	 * so that path must stay a list too.
+	 *
+	 * @return void
+	 */
+	public function test_filter_terms_by_patterns_keeps_a_list_when_nothing_matches() {
+		$terms = array(
+			array(
+				'id'   => 1,
+				'name' => 'Hats',
+			),
+			array(
+				'id'   => 2,
+				'name' => 'Audio',
+			),
+		);
+		blu_filter_terms_by_patterns( array( 'no-such-term' ), $terms );
+
+		$this->assertSame( array( 0, 1 ), array_keys( $terms ) );
+		$this->assertCount( 2, $terms );
+	}
+
+	/**
 	 * Regex pattern with trailing /i applies case-insensitive matching.
 	 *
 	 * @return void
