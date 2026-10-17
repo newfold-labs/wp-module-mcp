@@ -35,7 +35,7 @@ class Pages {
 						),
 						'status'   => array(
 							'type'        => 'string',
-							'description' => 'Page status(es): publish, draft, pending, future, private. Comma-separated for multiple. Omit to search all statuses.',
+							'description' => 'Page status(es): publish, draft, pending, future, private, trash. Comma-separated for multiple. Omit to search every status except trash. A search term matching nothing outside the trash then retries inside it, so a just-deleted page is still found and comes back with status "trash".',
 						),
 						'page'     => array(
 							'type'        => 'integer',
@@ -48,19 +48,35 @@ class Pages {
 					),
 				),
 				'execute_callback'    => function ( $input = null ) {
-					$request = new \WP_REST_Request( 'GET', '/wp/v2/pages' );
 					$all_statuses = 'publish,future,draft,pending,private';
-					if ( $input ) {
-						// Default to all statuses when not specified or empty (WP defaults to publish only).
-						if ( ! isset( $input['status'] ) || '' === $input['status'] ) {
-							$input['status'] = $all_statuses;
-						}
-						$request->set_query_params( $input );
-					} else {
-						$request->set_param( 'status', $all_statuses );
+					$input        = is_array( $input ) ? $input : array();
+
+					// Default to all statuses when not specified or empty (WP defaults to publish only).
+					$params = $input;
+					if ( ! isset( $params['status'] ) || '' === $params['status'] ) {
+						$params['status'] = $all_statuses;
 					}
-					$response = rest_do_request( $request );
-					return blu_standardize_rest_response( $response );
+
+					$request = new \WP_REST_Request( 'GET', '/wp/v2/pages' );
+					$request->set_query_params( $params );
+					$response = blu_standardize_rest_response( rest_do_request( $request ) );
+
+					// Trashing keeps the title but drops the page out of $all_statuses,
+					// so a lookup by name right after a delete finds nothing. Retry in
+					// the trash and return the match with its "trash" status.
+					if ( blu_should_retry_in_trash( $input, $response['message'] ?? null ) ) {
+						$retry = new \WP_REST_Request( 'GET', '/wp/v2/pages' );
+						$retry->set_query_params( array_merge( $params, array( 'status' => 'trash' ) ) );
+						$trashed = blu_standardize_rest_response( rest_do_request( $retry ) );
+						// Only swap in a retry that succeeded. A failed retry is still an
+						// array, so without this an unrelated error would replace a
+						// perfectly good "nothing matched" with a 4xx the caller never caused.
+						if ( 200 === $trashed['statusCode'] && is_array( $trashed['message'] ) && count( $trashed['message'] ) > 0 ) {
+							return $trashed;
+						}
+					}
+
+					return $response;
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_pages' ),
 				'meta'                => array(

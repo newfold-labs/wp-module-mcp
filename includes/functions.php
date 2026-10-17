@@ -413,6 +413,42 @@ function blu_project_post_full( WP_Post $post ): array {
 	);
 }
 
+/**
+ * Whether a search ability should re-run its query against the trash.
+ *
+ * Trashing keeps a post's title but moves it out of every status the search
+ * abilities query by default, so looking an item up by name straight after a
+ * delete returns nothing and the caller concludes it never existed. That is
+ * the only lookup path available for a delete, because callers resolve targets
+ * by search and not by raw ID, so the "already in the trash" recovery is
+ * unreachable without this retry.
+ *
+ * Only a *targeted* lookup retries: a plain listing must not surface trashed
+ * items, and a caller that named its own statuses gets exactly those.
+ *
+ * @param array|null $input        The ability input.
+ * @param mixed      $live_results Results the non-trash query returned.
+ * @param string     $status_key   Input key holding the caller's status filter.
+ *
+ * @return bool True when the caller searched by term, asked for no particular
+ *              status, and got nothing back.
+ */
+function blu_should_retry_in_trash( $input, $live_results, string $status_key = 'status' ): bool {
+	if ( ! is_array( $input ) ) {
+		return false;
+	}
+
+	if ( '' === trim( (string) ( $input['search'] ?? '' ) ) ) {
+		return false;
+	}
+
+	if ( '' !== trim( (string) ( $input[ $status_key ] ?? '' ) ) ) {
+		return false;
+	}
+
+	return is_array( $live_results ) && 0 === count( $live_results );
+}
+
 if ( ! function_exists( 'blu_is_valid_list' ) ) {
 	/**
 	 * Check if the list is a simple array
