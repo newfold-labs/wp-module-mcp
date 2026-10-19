@@ -33,6 +33,10 @@ Ability tests register their fixtures (post types, REST routes) in `set_up` and 
 
 This repo does **not** define Playwright specs under `tests/playwright/`. **Build and Test Module Updates in Brand Plugins (Playwright tests)** runs the **Bluehost** plugin’s Playwright suite against a branch of this module (see [workflows.md](workflows.md)). Helpers and fixtures live primarily in the **brand plugin**.
 
+## MCP gateway smoke test
+
+`evals/smoke.mjs` connects to a running Bluehost WordPress instance with `WP_EVAL_USER`, `WP_APP_PASSWORD`, and `MCP_EVAL_SERVER_URL`. Run `node evals/smoke.mjs` after installing dependencies in `evals/`. It checks the three top-level MCP tools and uses the gateway to discover REST abilities, inspect the posts endpoint, and dispatch a read request. The `ai-evals.yml` workflow runs this deterministic test as a merge gate. Model tool-selection evals still run and report their results, but their variable scores are advisory.
+
 ## CI
 
 | Workflow | Role |
@@ -40,6 +44,7 @@ This repo does **not** define Playwright specs under `tests/playwright/`. **Buil
 | **Codecoverage-Main** | Reusable codecoverage across PHP 7.4–8.4; minimum coverage threshold |
 | **Lint** | PHPCS on PHP file changes |
 | **brand-plugin-test-playwright** | Bluehost + module branch E2E |
+| **MCP AI Evals** | Required live MCP gateway smoke test; advisory model-selection report |
 
 ## Pull request expectations
 

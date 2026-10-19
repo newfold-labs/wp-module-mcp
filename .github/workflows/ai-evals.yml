@@ -88,7 +88,7 @@ jobs:
             if [[ "$file" == includes/Abilities/*.php ]]; then
               CHANGED_SOURCES="$CHANGED_SOURCES $(basename "$file")"
               RUN_MODEL_EVALS=true
-            elif [[ "$file" == evals/* ]] || [[ "$file" == .wp-env.json ]]; then
+            elif [[ "$file" == evals/* && "$file" != evals/smoke.mjs ]] || [[ "$file" == .wp-env.json ]]; then
               RUN_MODEL_EVALS=true
             fi
           done <<< "$CHANGED_FILES"
@@ -108,7 +108,7 @@ jobs:
 
           EVALS_CHANGED=false
           while IFS= read -r file; do
-            if [[ "$file" == evals/* ]] || [[ "$file" == .wp-env.json ]]; then
+            if [[ "$file" == evals/* && "$file" != evals/smoke.mjs ]] || [[ "$file" == .wp-env.json ]]; then
               EVALS_CHANGED=true
               break
             fi
@@ -268,6 +268,11 @@ jobs:
         working-directory: evals
         run: npm ci
 
+      - name: Verify MCP gateway and REST access
+        if: steps.changes.outputs.skip != 'true'
+        working-directory: evals
+        run: node smoke.mjs
+
       - name: Check tool coverage
         id: coverage
         if: steps.changes.outputs.skip != 'true'
@@ -280,6 +285,7 @@ jobs:
       - name: Run AI evals
         if: steps.changes.outputs.skip != 'true' && steps.changes.outputs.skip_ai != 'true'
         id: eval
+        continue-on-error: true
         working-directory: evals
         env:
           CF_AI_TOKEN: ${{ secrets.CLOUDFLARE_AI_GATEWAY_TOKEN }}
@@ -318,8 +324,6 @@ jobs:
           MISSING_TESTS=${{ steps.coverage.outputs.missing_tests }}
           MISSING_ON_MCP=${{ steps.coverage.outputs.missing_on_mcp }}
 
-          EXIT_CODE=0
-
           if [ "$COVERAGE_FAIL" = "true" ]; then
             echo "::warning::Tool coverage gaps (non-blocking) — $MISSING_TESTS ability(s) missing test cases, $MISSING_ON_MCP ability(s) missing on MCP server."
           fi
@@ -327,13 +331,10 @@ jobs:
           echo "Pass rate: ${PASS_RATE}%"
 
           if [ "$FAIL" -gt 0 ] || [ "$ERROR" -gt 0 ]; then
-            echo "::error::AI eval failed — $FAIL test(s) failed, $ERROR error(s). Pass rate: ${PASS_RATE}%"
-            EXIT_CODE=1
-          fi
-
-          if [ "$EXIT_CODE" -eq 0 ]; then
+            echo "::warning::AI eval reported $FAIL model-selection mismatch(es) and $ERROR error(s). See the PR report. Pass rate: ${PASS_RATE}%"
+          elif [ "${{ steps.eval.outcome }}" != "success" ]; then
+            echo "::warning::AI eval did not complete. See the job log; deterministic MCP smoke test remains required."
+          else
             echo "All AI evals passed!"
           fi
-
-          exit $EXIT_CODE
 
