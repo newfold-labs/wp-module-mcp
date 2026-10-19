@@ -69,7 +69,7 @@ class RestApiCrud {
 			'blu/list-api-functions',
 			array(
 				'label'               => 'List API Functions',
-				'description'         => 'List WordPress REST API endpoints registered on this site. Each item includes `route` (e.g. "/wp/v2/posts"), `method` (GET/POST/PATCH/DELETE), and `namespace` (the namespace WordPress registered the route under, e.g. "wp/v2" or "wc-analytics"). Use the optional `namespace`, `methods`, and `search` filters to narrow.',
+				'description'         => 'List WordPress REST API endpoints registered on this site. Each item includes `route` (e.g. "/wp/v2/posts"), `method` (GET/HEAD/POST/PUT/PATCH/DELETE/OPTIONS), and `namespace` (the namespace WordPress registered the route under, e.g. "wp/v2" or "wc-analytics"). Use the optional `namespace`, `methods`, and `search` filters to narrow.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'                 => 'object',
@@ -222,7 +222,9 @@ class RestApiCrud {
 					}
 
 					foreach ( $routes[ $route ] as $endpoint ) {
-						if ( isset( $endpoint['methods'][ $method ] ) ) {
+						// WordPress dispatches HEAD through GET when no HEAD handler exists.
+						$lookup_method = 'HEAD' === $method && empty( $endpoint['methods']['HEAD'] ) ? 'GET' : $method;
+						if ( isset( $endpoint['methods'][ $lookup_method ] ) ) {
 							// Strip callable references — they JSON-encode as null (closures)
 							// or as a bare class-name pair, neither of which is useful to the
 							// caller and the latter leaks internal class names. The LLM only
@@ -266,7 +268,7 @@ class RestApiCrud {
 						),
 						'data'   => array(
 							'type'        => 'object',
-							'description' => 'Request parameters matching the endpoint\'s args schema (see blu-get-function-details). Sent as query params for GET/DELETE, body for POST/PATCH.',
+							'description' => 'Request parameters matching the endpoint\'s args schema (see blu-get-function-details). Sent as query params for GET/HEAD/DELETE/OPTIONS, body for POST/PUT/PATCH.',
 						),
 					),
 					'required'   => array( 'route', 'method' ),

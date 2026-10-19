@@ -521,6 +521,26 @@ class RestApiCrudWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$this->assertSame( 400, $result_nested['statusCode'] );
 	}
 
+	/** HEAD metadata must use the GET handler when WordPress would dispatch it that way. */
+	public function test_head_details_fall_back_to_get_only_route(): void {
+		$details = blu_get_ability( 'blu/get-function-details' )->execute(
+			array(
+				'route'  => '/blu-test/v1/sprockets',
+				'method' => 'HEAD',
+			)
+		);
+		$this->assertSame( 200, $details['statusCode'] );
+		$this->assertArrayHasKey( 'GET', $details['message']['methods'] );
+
+		$called = blu_get_ability( 'blu/run-api-function' )->execute(
+			array(
+				'route'  => '/blu-test/v1/sprockets',
+				'method' => 'HEAD',
+			)
+		);
+		$this->assertSame( 200, $called['statusCode'] );
+	}
+
 	/**
 	 * Verifies get-function-details returns the endpoint metadata but strips callback
 	 * and permission_callback (which leak internal class names and JSON-encode poorly).
