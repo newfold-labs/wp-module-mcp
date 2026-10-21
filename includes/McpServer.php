@@ -4,6 +4,7 @@ declare( strict_types=1 );
 
 namespace BLU;
 
+use BLU\Abilities\BlockEditor;
 use BLU\Abilities\AbilityGateway;
 use BLU\Abilities\CustomPostTypes;
 use BLU\Abilities\GlobalStyles;
@@ -19,6 +20,11 @@ use BLU\Abilities\Users;
 use BLU\Abilities\WooOrders;
 use BLU\Abilities\WooProducts;
 use BLU\Abilities\Themes;
+use BLU\Abilities\ImageGen;
+use BLU\Abilities\LogoGen;
+use BLU\Abilities\ImageEdit;
+use BLU\Abilities\DocumentRead;
+use BLU\Abilities\ColorGen;
 
 use BLU\Integrations\WooCommerceAbilities;
 use BLU\Validation\McpValidation;
@@ -32,6 +38,15 @@ use Bluehost\Plugin\WP\MCP\Transport\HttpTransport;
  * MCP Server registration for Bluehost abilities.
  */
 class McpServer {
+	/**
+	 * Names advertised through MCP tools/list.
+	 *
+	 * @param bool $use_gateway Whether gateway mode is enabled.
+	 * @return string[] Ability names.
+	 */
+	private function get_tool_names( bool $use_gateway ): array {
+		return $use_gateway ? AbilityGateway::GATEWAY_ABILITIES : blu_get_ability_by_type( 'tool' );
+	}
 
 	/**
 	 * Initializes the class by setting up actions to register the server and abilities
@@ -63,6 +78,7 @@ class McpServer {
 	 * Strauss-prefixed McpAdapter class.
 	 *
 	 * @param McpAdapter|null $adapter Adapter instance that fired the action.
+	 *
 	 * @return void If the server creation is successful
 	 * @throws \Exception If the server creation fails.
 	 */
@@ -74,18 +90,10 @@ class McpServer {
 
 		$use_gateway = apply_filters( 'blu_mcp_use_gateway', true );
 
-		if ( $use_gateway ) {
-			$abilities = AbilityGateway::GATEWAY_ABILITIES;
-		} else {
-			// Legacy: expose all individual tools directly.
-			$abilities = array_map(
-				function ( $ability ) {
-					return $ability->get_name();
-				},
-				blu_get_abilities_by_category( 'blu-mcp' )
-			);
-		}
+		$abilities = $this->get_tool_names( (bool) $use_gateway );
 
+		$prompts   = blu_get_ability_by_type( 'prompt' );
+		$resources = blu_get_ability_by_type( 'resource' );
 		$adapter->create_server(
 			'blu-mcp', // server_id
 			'blu', // server_route_namespace
@@ -97,8 +105,8 @@ class McpServer {
 			ErrorLogMcpErrorHandler::class, // error_handler
 			NullMcpObservabilityHandler::class, // observability_handler
 			$abilities, // tools,
-			array(), // resources
-			array(), // prompts
+			$resources, // resources
+			$prompts, // prompts
 			function ( \WP_REST_Request $request ) {
 				// transport_permission_callback
 				return ( new McpValidation( $request ) )->is_authenticated();
@@ -113,6 +121,7 @@ class McpServer {
 	 * duplicate_server_id _doing_it_wrong attributed to our prefixed namespace.
 	 *
 	 * @param McpAdapter|null $adapter Adapter instance that fired the action.
+	 *
 	 * @return void
 	 */
 	public function suppress_sibling_default_server_refire( $adapter = null ): void {
@@ -149,6 +158,12 @@ class McpServer {
 		new WooProducts();
 		new WooOrders();
 		new Themes();
+		new BlockEditor();
+		new ImageGen();
+		new LogoGen();
+		new ImageEdit();
+		new DocumentRead();
+		new ColorGen();
 	}
 
 	/**

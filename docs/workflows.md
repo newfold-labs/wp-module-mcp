@@ -2,7 +2,7 @@
 name: wp-module-mcp
 title: GitHub workflows
 description: CI, translations, Playwright, release prep, and Satis.
-updated: 2026-05-04
+updated: 2026-05-22
 ---
 
 # GitHub workflows
@@ -18,8 +18,15 @@ Files live under **`.github/workflows/`**.
 | **auto-translate.yml** | **reusable-translations** with **`text_domain: wp-module-mcp`** |
 | **satis-webhook.yml** | On **release created**, dispatches to **newfold-labs/satis** to refresh Composer packages |
 | **dependabot-auto-merge.yml** | On completion of `Lint`, `Codecoverage-Main`, or `Build and Test … (Playwright tests)`, calls reusable **dependabot-auto-merge** — verifies every check run on the head SHA is green, then approves and merges Dependabot PRs. Gates on its own check-run aggregation, so it works without branch-protection required status checks |
+| **ai-evals.yml** | PR / manual **MCP checks**: spins up **wp-env** with **wp-plugin-bluehost** (PR branch mapped into vendor), installs/activates **WooCommerce**, and creates a WP **application password** via WP-CLI. The required deterministic smoke test connects through MCP, checks that `tools/list` exposes exactly three gateway tools, and verifies REST ability discovery, schemas, endpoint metadata, and GET dispatch. Multi-turn tool-selection evals run via **Cloudflare AI Gateway** + **MCP SDK** and post an advisory PR report; model-selection mismatches and provider errors do not fail the workflow. Cases with the same **`series_id`** run in order with **shared chat history**. Coverage vs **`evals/test-cases.json`** is also non-blocking. |
 
 ## Secrets
 
 - **Satis / webhook:** `WEBHOOK_TOKEN` (for Satis dispatch)
 - **Translations:** `TRANSLATOR_API_KEY` (for auto-translate)
+- **AI evals (`ai-evals.yml`):** `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_AI_GATEWAY_TOKEN` (org secrets). No MCP URL or auth secrets — CI uses local wp-env + application password.
+
+## Variables (repository / org)
+
+- **AI evals:** `CLOUDFLARE_AI_GATEWAY_ID`. Optional `MCP_EVAL_NAMESPACE` (default `blu`) if set on the job env.
+

@@ -245,6 +245,9 @@ class Users {
 				),
 				'execute_callback'    => function ( $input ) {
 					$user_id = (int) $input['id'];
+					if ( get_current_user_id() === $user_id ) {
+						return blu_prepare_ability_response( 400, 'You cannot delete the currently logged-in user.' );
+					}
 					$request = new \WP_REST_Request( 'DELETE', '/wp/v2/users/' . $user_id );
 					$reassign = array_key_exists( 'reassign', $input ) ? $input['reassign'] : false;
 					$request->set_param( 'reassign', $reassign );

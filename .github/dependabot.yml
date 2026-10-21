@@ -8,7 +8,7 @@ updates:
     allow:
       - dependency-type: direct
     schedule:
-      interval: "daily"
+      interval: "weekly"
     commit-message:
       prefix: "GitHub Actions"
       include: "scope"
@@ -22,7 +22,7 @@ updates:
     allow:
       - dependency-type: direct
     schedule:
-      interval: "daily"
+      interval: "weekly"
     versioning-strategy: increase
     commit-message:
       prefix: "NPM"
@@ -37,7 +37,7 @@ updates:
     directory: "/"
     target-branch: "main"
     schedule:
-      interval: "daily"
+      interval: "weekly"
     allow:
       - dependency-type: direct
     versioning-strategy: increase

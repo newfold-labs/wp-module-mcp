@@ -1,0 +1,1344 @@
+[
+  {
+    "id": "site-info-1",
+    "description": "Get site overview",
+    "prompt": "What is my site name, URL, and what plugins do I have installed?",
+    "expected_tool": "blu_get-site-info",
+    "source": "SiteInfo.php"
+  },
+  {
+    "id": "site-info-2",
+    "description": "WordPress version check",
+    "prompt": "What version of WordPress am I running and how many users does my site have?",
+    "expected_tool": "blu_get-site-info",
+    "source": "SiteInfo.php"
+  },
+  {
+    "id": "theme-1",
+    "description": "Active theme query",
+    "prompt": "Which theme is currently active on my WordPress site?",
+    "expected_tool": "blu_get-active-theme",
+    "source": "Themes.php"
+  },
+  {
+    "id": "settings-get-1",
+    "description": "Get site settings",
+    "prompt": "Show me the current site settings like timezone and date format",
+    "expected_tool": "blu_get-general-settings",
+    "source": "Settings.php"
+  },
+  {
+    "id": "settings-update-1",
+    "description": "Update site title",
+    "prompt": "Change my site title to 'My Awesome Blog' and the tagline to 'A blog about tech'",
+    "expected_tool": "blu_update-general-settings",
+    "source": "Settings.php"
+  },
+  {
+    "id": "posts-search-1",
+    "description": "Search blog posts",
+    "prompt": "Find all blog posts about JavaScript tutorials",
+    "expected_tool": "blu_posts-search",
+    "source": "Posts.php"
+  },
+  {
+    "id": "posts-search-2",
+    "description": "List draft posts",
+    "prompt": "Show me all my draft posts",
+    "expected_tool": "blu_posts-search",
+    "source": "Posts.php"
+  },
+  {
+    "id": "post-get-1",
+    "description": "Get specific post",
+    "prompt": "Show me the content of post with ID 42",
+    "expected_tool": "blu_get-post",
+    "source": "Posts.php"
+  },
+  {
+    "id": "post-add-1",
+    "description": "Create new blog post",
+    "prompt": "Create a new blog post titled 'Getting Started with React' with some introductory content about React",
+    "expected_tool": "blu_add-post",
+    "source": "Posts.php"
+  },
+  {
+    "id": "post-update-1",
+    "description": "Update existing post",
+    "prompt": "Update the title of post 15 to 'Updated: Best Practices for WordPress Development'",
+    "expected_tool": "blu_update-post",
+    "source": "Posts.php"
+  },
+  {
+    "id": "post-delete-1",
+    "description": "Delete a post",
+    "prompt": "Delete the blog post with ID 99",
+    "expected_tool": "blu_delete-post",
+    "source": "Posts.php"
+  },
+  {
+    "id": "categories-list-1",
+    "description": "List post categories",
+    "prompt": "Show me all the blog post categories on my site",
+    "expected_tool": "blu_list-categories",
+    "source": "Posts.php"
+  },
+  {
+    "id": "category-add-1",
+    "description": "Add post category",
+    "prompt": "Create a new post category called 'Tutorials'",
+    "expected_tool": "blu_add-category",
+    "source": "Posts.php"
+  },
+  {
+    "id": "tags-list-1",
+    "description": "List post tags",
+    "prompt": "List all the tags I've used on my blog posts",
+    "expected_tool": "blu_list-tags",
+    "source": "Posts.php"
+  },
+  {
+    "id": "pages-search-1",
+    "description": "Search pages",
+    "prompt": "Find all published pages on my WordPress site",
+    "expected_tool": "blu_pages-search",
+    "source": "Pages.php"
+  },
+  {
+    "id": "page-add-1",
+    "description": "Create a page",
+    "prompt": "Create a new About Us page with a description of our company",
+    "expected_tool": "blu_add-page",
+    "source": "Pages.php"
+  },
+  {
+    "id": "page-delete-1",
+    "description": "Delete a page",
+    "prompt": "Delete the page with ID 23",
+    "expected_tool": "blu_delete-page",
+    "source": "Pages.php"
+  },
+  {
+    "id": "media-list-1",
+    "description": "List media items",
+    "prompt": "Show me all the images and files in my media library",
+    "expected_tool": "blu_list-media",
+    "source": "Media.php"
+  },
+  {
+    "id": "media-search-1",
+    "description": "Search media by keyword",
+    "prompt": "Search for logo images in my media library",
+    "expected_tool": "blu_search-media",
+    "source": "Media.php"
+  },
+  {
+    "id": "media-upload-1",
+    "description": "Upload media file",
+    "prompt": "Upload this image file to my WordPress media library with the title 'Company Logo'",
+    "expected_tool": "blu_upload-media",
+    "source": "Media.php"
+  },
+  {
+    "id": "media-delete-1",
+    "description": "Delete media item",
+    "prompt": "Remove the media item with ID 88 from my library",
+    "expected_tool": "blu_delete-media",
+    "source": "Media.php"
+  },
+  {
+    "id": "users-search-1",
+    "description": "List all users",
+    "prompt": "Show me all registered users on this WordPress site",
+    "expected_tool": "blu_users-search",
+    "source": "Users.php"
+  },
+  {
+    "id": "user-add-1",
+    "description": "Create new user",
+    "prompt": "Create a new editor user with username 'jdoe', email 'jdoe@example.com' and password 'SecurePass123'",
+    "expected_tool": "blu_add-user",
+    "source": "Users.php"
+  },
+  {
+    "id": "user-current-1",
+    "description": "Get current user",
+    "prompt": "Who am I? Show me my currently logged-in user profile",
+    "expected_tool": "blu_get-current-user",
+    "source": "Users.php"
+  },
+  {
+    "id": "user-delete-1",
+    "description": "Delete a user",
+    "prompt": "Delete user with ID 5 and reassign their posts to user 1",
+    "expected_tool": "blu_delete-user",
+    "source": "Users.php"
+  },
+  {
+    "id": "api-list-1",
+    "description": "List REST API endpoints",
+    "prompt": "What REST API endpoints are available on this WordPress site?",
+    "expected_tool": "blu_list-api-functions",
+    "source": "RestApiCrud.php"
+  },
+  {
+    "id": "api-details-1",
+    "description": "Get API endpoint details",
+    "prompt": "Show me the details and parameters for the GET /wp/v2/posts endpoint",
+    "expected_tool": "blu_get-function-details",
+    "source": "RestApiCrud.php"
+  },
+  {
+    "id": "post-types-1",
+    "description": "List post types",
+    "prompt": "What custom post types are registered on my WordPress site?",
+    "expected_tool": "blu_list-post-types",
+    "source": "CustomPostTypes.php"
+  },
+  {
+    "id": "cpt-search-1",
+    "description": "Search custom post type items",
+    "prompt": "Search for items in the 'portfolio' custom post type",
+    "expected_tool": "blu_cpt-search",
+    "source": "CustomPostTypes.php"
+  },
+  {
+    "id": "global-styles-active-1",
+    "description": "Get active global styles",
+    "prompt": "Show me the current theme's active global styles and design configuration",
+    "expected_tool": "blu_get-active-global-styles",
+    "source": "GlobalStyles.php"
+  },
+  {
+    "id": "wc-products-search-1",
+    "description": "Search WooCommerce products",
+    "prompt": "Find all WooCommerce products containing 'shoe' in the name",
+    "expected_tool": "blu_wc-products-search",
+    "source": "WooProducts.php"
+  },
+  {
+    "id": "wc-product-add-1",
+    "description": "Add WooCommerce product",
+    "prompt": "Add a new product called 'Premium Cotton T-Shirt' priced at $29.99 to my store",
+    "expected_tool": "blu_wc-add-product",
+    "source": "WooProducts.php"
+  },
+  {
+    "id": "wc-product-delete-1",
+    "description": "Delete WooCommerce product",
+    "prompt": "Delete the product with ID 150 from my WooCommerce store",
+    "expected_tool": "blu_wc-delete-product",
+    "source": "WooProducts.php"
+  },
+  {
+    "id": "wc-categories-1",
+    "description": "List product categories",
+    "prompt": "Show me all the product categories in my WooCommerce store",
+    "expected_tool": "blu_wc-list-product-categories",
+    "source": "WooProducts.php"
+  },
+  {
+    "id": "wc-tags-1",
+    "description": "List product tags",
+    "prompt": "List all the product tags in my WooCommerce store",
+    "expected_tool": "blu_wc-list-product-tags",
+    "source": "WooProducts.php"
+  },
+  {
+    "id": "wc-brands-1",
+    "description": "List product brands",
+    "prompt": "What brands are available in my WooCommerce store?",
+    "expected_tool": "blu_wc-list-product-brands",
+    "source": "WooProducts.php"
+  },
+  {
+    "id": "wc-orders-1",
+    "description": "Search WooCommerce orders",
+    "prompt": "Show me all pending WooCommerce orders",
+    "expected_tool": "blu_wc-orders-search",
+    "source": "WooOrders.php"
+  },
+  {
+    "id": "wc-sales-report-1",
+    "description": "Get sales report",
+    "prompt": "What are my total sales this month?",
+    "expected_tool": "blu_wc-reports-sales",
+    "source": "WooOrders.php"
+  },
+  {
+    "id": "wc-customers-report-1",
+    "description": "Get customers report",
+    "prompt": "How many customers do I have? Show me the customer totals report",
+    "expected_tool": "blu_wc-reports-customers-totals",
+    "source": "WooOrders.php"
+  },
+  {
+    "id": "wc-orders-report-1",
+    "description": "Get orders report",
+    "prompt": "Show me the WooCommerce orders totals report with status breakdown",
+    "expected_tool": "blu_wc-reports-orders-totals",
+    "source": "WooOrders.php"
+  },
+  {
+    "id": "prompt-suggest-desc-1",
+    "description": "Suggest product description",
+    "prompt": "Generate a product description for my new product 'Organic Coffee Beans'",
+    "expected_tool": "blu_suggest-product-description",
+    "source": "Prompts.php"
+  },
+  {
+    "id": "prompt-suggest-cat-1",
+    "description": "Suggest product categories",
+    "prompt": "What categories would you suggest for my product 'Wireless Bluetooth Headphones'?",
+    "expected_tool": "blu_suggest-product-categories",
+    "source": "Prompts.php"
+  },
+  {
+    "id": "prompt-suggest-tag-1",
+    "description": "Suggest product tags",
+    "prompt": "Suggest relevant tags for my product 'Running Shoes' in the sports category",
+    "expected_tool": "blu_suggest-product-tag",
+    "source": "Prompts.php"
+  },
+  {
+    "id": "prompt-smart-details-1",
+    "description": "Smart product details",
+    "prompt": "Generate complete listing content for product ID 72 including materials, size chart, and care instructions",
+    "expected_tool": "blu_smart-product-details",
+    "source": "Prompts.php"
+  },
+  {
+    "id": "prompt-variation-attrs-1",
+    "description": "Guided product creation for variations",
+    "prompt": "Start guided product creation for 'Men's Casual Shirt' and help me choose variation attributes like size and color.",
+    "expected_tool": "blu_guided-product-creation-prompt",
+    "source": "Prompts.php"
+  },
+  {
+    "id": "category-update-1",
+    "description": "Update post category",
+    "prompt": "Rename the category with ID 8 to 'Web Development'",
+    "expected_tool": "blu_update-category",
+    "source": "Posts.php"
+  },
+  {
+    "id": "category-delete-1",
+    "description": "Delete post category",
+    "prompt": "Delete the post category with ID 12",
+    "expected_tool": "blu_delete-category",
+    "source": "Posts.php"
+  },
+  {
+    "id": "tag-add-1",
+    "description": "Add post tag",
+    "prompt": "Create a new post tag called 'JavaScript'",
+    "expected_tool": "blu_add-tag",
+    "source": "Posts.php"
+  },
+  {
+    "id": "tag-update-1",
+    "description": "Update post tag",
+    "prompt": "Rename the tag with ID 5 to 'TypeScript'",
+    "expected_tool": "blu_update-tag",
+    "source": "Posts.php"
+  },
+  {
+    "id": "tag-delete-1",
+    "description": "Delete post tag",
+    "prompt": "Delete the post tag with ID 9",
+    "expected_tool": "blu_delete-tag",
+    "source": "Posts.php"
+  },
+  {
+    "id": "page-get-1",
+    "description": "Get specific page",
+    "prompt": "Show me the content of the page with ID 10",
+    "expected_tool": "blu_get-page",
+    "source": "Pages.php"
+  },
+  {
+    "id": "page-update-1",
+    "description": "Update a page",
+    "prompt": "Update the title of page 7 to 'Contact Us - Get in Touch'",
+    "expected_tool": "blu_update-page",
+    "source": "Pages.php"
+  },
+  {
+    "id": "media-get-1",
+    "description": "Get media item details",
+    "prompt": "Show me the details of media item with ID 34",
+    "expected_tool": "blu_get-media",
+    "source": "Media.php"
+  },
+  {
+    "id": "media-file-1",
+    "description": "Get media file content",
+    "prompt": "Download the actual image file for media ID 34 in thumbnail size",
+    "expected_tool": "blu_get-media-file",
+    "source": "Media.php"
+  },
+  {
+    "id": "media-update-1",
+    "description": "Update media item",
+    "prompt": "Update the title of media item 55 to 'Hero Banner' and set alt text to 'Homepage hero image'",
+    "expected_tool": "blu_update-media",
+    "source": "Media.php"
+  },
+  {
+    "id": "user-get-1",
+    "description": "Get specific user",
+    "prompt": "Show me the profile details of user with ID 3",
+    "expected_tool": "blu_get-user",
+    "source": "Users.php"
+  },
+  {
+    "id": "user-update-1",
+    "description": "Update a user",
+    "prompt": "Change the email of user ID 4 to 'newemail@example.com' and set their role to editor",
+    "expected_tool": "blu_update-user",
+    "source": "Users.php"
+  },
+  {
+    "id": "user-update-current-1",
+    "description": "Update current user profile",
+    "prompt": "Update my profile — change my first name to 'John' and last name to 'Smith'",
+    "expected_tool": "blu_update-current-user",
+    "source": "Users.php"
+  },
+  {
+    "id": "api-run-1",
+    "description": "Run REST API function",
+    "prompt": "Execute a GET request to the /wp/v2/comments endpoint to fetch all comments",
+    "expected_tool": "blu_run-api-function",
+    "source": "RestApiCrud.php"
+  },
+  {
+    "id": "cpt-get-1",
+    "description": "Get custom post type item",
+    "prompt": "Show me the details of the portfolio custom post type item with ID 25",
+    "expected_tool": "blu_get-cpt",
+    "source": "CustomPostTypes.php"
+  },
+  {
+    "id": "cpt-add-1",
+    "description": "Add custom post type item",
+    "prompt": "Create a new 'event' custom post type item titled 'Annual Tech Conference 2026'",
+    "expected_tool": "blu_add-cpt",
+    "source": "CustomPostTypes.php"
+  },
+  {
+    "id": "cpt-update-1",
+    "description": "Update custom post type item",
+    "prompt": "Update the title of the portfolio custom post type item ID 25 to 'Redesigned Company Website'",
+    "expected_tool": "blu_update-cpt",
+    "source": "CustomPostTypes.php"
+  },
+  {
+    "id": "cpt-delete-1",
+    "description": "Delete custom post type item",
+    "prompt": "Delete the testimonial custom post type item with ID 30",
+    "expected_tool": "blu_delete-cpt",
+    "source": "CustomPostTypes.php"
+  },
+  {
+    "id": "global-styles-get-1",
+    "description": "Get global styles by ID",
+    "prompt": "Show me the global styles configuration with ID 128",
+    "expected_tool": "blu_get-global-styles",
+    "source": "GlobalStyles.php"
+  },
+  {
+    "id": "global-styles-update-1",
+    "description": "Update global styles",
+    "prompt": "Update the global styles ID 128 to change the primary color to blue and heading font to Inter",
+    "expected_tool": "blu_update-global-styles",
+    "source": "GlobalStyles.php"
+  },
+  {
+    "id": "global-styles-active-id-1",
+    "description": "Get active global styles ID",
+    "prompt": "What is the global styles post ID for the current active theme?",
+    "expected_tool": "blu_get-active-global-styles-id",
+    "source": "GlobalStyles.php"
+  },
+  {
+    "id": "wc-product-get-1",
+    "description": "Get WooCommerce product",
+    "prompt": "Show me the details of WooCommerce product with ID 42",
+    "expected_tool": "blu_wc-get-product",
+    "source": "WooProducts.php"
+  },
+  {
+    "id": "wc-product-update-1",
+    "description": "Update WooCommerce product",
+    "prompt": "Update the price of product ID 42 to $39.99 and change its description",
+    "expected_tool": "blu_wc-update-product",
+    "source": "WooProducts.php"
+  },
+  {
+    "id": "wc-category-add-1",
+    "description": "Add WooCommerce product category",
+    "prompt": "Add new product categories 'Electronics' and 'Accessories' to my WooCommerce store",
+    "expected_tool": "blu_wc-add-product-category",
+    "source": "WooProducts.php"
+  },
+  {
+    "id": "wc-category-update-1",
+    "description": "Update WooCommerce product category",
+    "prompt": "Rename WooCommerce product category ID 15 to 'Smart Devices'",
+    "expected_tool": "blu_wc-update-product-category",
+    "source": "WooProducts.php"
+  },
+  {
+    "id": "wc-category-delete-1",
+    "description": "Delete WooCommerce product category",
+    "prompt": "Delete the WooCommerce product category with ID 20",
+    "expected_tool": "blu_wc-delete-product-category",
+    "source": "WooProducts.php"
+  },
+  {
+    "id": "wc-tag-add-1",
+    "description": "Add WooCommerce product tag",
+    "prompt": "Add new product tags 'bestseller' and 'new-arrival' to my WooCommerce store",
+    "expected_tool": "blu_wc-add-product-tag",
+    "source": "WooProducts.php"
+  },
+  {
+    "id": "wc-tag-update-1",
+    "description": "Update WooCommerce product tag",
+    "prompt": "Rename WooCommerce product tag ID 7 to 'premium-quality'",
+    "expected_tool": "blu_wc-update-product-tag",
+    "source": "WooProducts.php"
+  },
+  {
+    "id": "wc-tag-delete-1",
+    "description": "Delete WooCommerce product tag",
+    "prompt": "Delete the WooCommerce product tag with ID 11",
+    "expected_tool": "blu_wc-delete-product-tag",
+    "source": "WooProducts.php"
+  },
+  {
+    "id": "wc-brand-add-1",
+    "description": "Add WooCommerce product brand",
+    "prompt": "Add new product brands 'Nike' and 'Adidas' to my WooCommerce store",
+    "expected_tool": "blu_wc-add-product-brand",
+    "source": "WooProducts.php"
+  },
+  {
+    "id": "wc-brand-update-1",
+    "description": "Update WooCommerce product brand",
+    "prompt": "Rename WooCommerce product brand ID 3 to 'Puma Sports'",
+    "expected_tool": "blu_wc-update-product-brand",
+    "source": "WooProducts.php"
+  },
+  {
+    "id": "wc-brand-delete-1",
+    "description": "Delete WooCommerce product brand",
+    "prompt": "Delete the WooCommerce product brand with ID 6",
+    "expected_tool": "blu_wc-delete-product-brand",
+    "source": "WooProducts.php"
+  },
+  {
+    "id": "wc-coupons-report-1",
+    "description": "Get coupons report",
+    "prompt": "Show me the WooCommerce coupons totals report",
+    "expected_tool": "blu_wc-reports-coupons-totals",
+    "source": "WooOrders.php"
+  },
+  {
+    "id": "wc-products-report-1",
+    "description": "Get products report",
+    "prompt": "Show me the WooCommerce products totals report with status breakdown",
+    "expected_tool": "blu_wc-reports-products-totals",
+    "source": "WooOrders.php"
+  },
+  {
+    "id": "wc-reviews-report-1",
+    "description": "Get reviews report",
+    "prompt": "How many product reviews do I have? Show the reviews totals report",
+    "expected_tool": "blu_wc-reports-reviews-totals",
+    "source": "WooOrders.php"
+  },
+  {
+    "id": "google-taxonomy-1",
+    "description": "Search Google product taxonomy",
+    "prompt": "Find Google product taxonomy categories related to 'running shoes'",
+    "expected_tool": "blu_google-product-taxonomy",
+    "source": "Resources.php"
+  },
+  {
+    "id": "prompt-suggest-brand-1",
+    "description": "Suggest product brands",
+    "prompt": "What brands would you suggest for my product 'Yoga Mat Premium'?",
+    "expected_tool": "blu_suggest-product-brand",
+    "source": "Prompts.php"
+  },
+  {
+    "id": "creating-a-category-1",
+    "description": "Creating a category",
+    "prompt": "Create a new category named 'AI Testing'.",
+    "expected_tool": "blu_add-category",
+    "source": "Posts.php",
+    "series_id": "posts-ai-workflow"
+  },
+  {
+    "id": "creating-a-tag-2",
+    "description": "Creating a tag",
+    "prompt": "Create a new tag named 'Automation'.",
+    "expected_tool": "blu_add-tag",
+    "source": "Posts.php",
+    "series_id": "posts-ai-workflow"
+  },
+  {
+    "id": "creating-a-new-post-3",
+    "description": "Creating a new post",
+    "prompt": "Create a new post titled 'AI Workflow Post'.",
+    "expected_tool": "blu_add-post",
+    "source": "Posts.php",
+    "series_id": "posts-ai-workflow"
+  },
+  {
+    "id": "adding-content-to-the-post-4",
+    "description": "Adding content to the post",
+    "prompt": "Add content of around 200 words explaining AI in testing.",
+    "expected_tool": "blu_update-post",
+    "source": "Posts.php",
+    "series_id": "posts-ai-workflow"
+  },
+  {
+    "id": "assigning-category-and-tag-5",
+    "description": "Assigning category and tag",
+    "prompt": "Assign the category 'AI Testing' and tag 'Automation'.",
+    "expected_tool": "blu_update-post",
+    "source": "Posts.php",
+    "series_id": "posts-ai-workflow"
+  },
+  {
+    "id": "saving-the-post-as-draft-6",
+    "description": "Saving the post as draft",
+    "prompt": "Save the post as draft.",
+    "expected_tool": "blu_update-post",
+    "source": "Posts.php",
+    "series_id": "posts-ai-workflow"
+  },
+  {
+    "id": "publishing-the-post-7",
+    "description": "Publishing the post",
+    "prompt": "Publish the post.",
+    "expected_tool": "blu_update-post",
+    "source": "Posts.php",
+    "series_id": "posts-ai-workflow"
+  },
+  {
+    "id": "unpublishing-the-post-8",
+    "description": "Unpublishing the post",
+    "prompt": "Unpublish the post back to draft.",
+    "expected_tool": "blu_update-post",
+    "source": "Posts.php",
+    "series_id": "posts-ai-workflow"
+  },
+  {
+    "id": "scheduling-the-post-9",
+    "description": "Scheduling the post",
+    "prompt": "Schedule the post for future date.",
+    "expected_tool": "blu_update-post",
+    "source": "Posts.php",
+    "series_id": "posts-ai-workflow"
+  },
+  {
+    "id": "searching-for-the-post-10",
+    "description": "Searching for the post",
+    "prompt": "Search for the post using keyword 'AI Workflow'.",
+    "expected_tool": "blu_posts-search",
+    "source": "Posts.php",
+    "series_id": "posts-ai-workflow"
+  },
+  {
+    "id": "opening-and-verifying-the-post-11",
+    "description": "Opening and verifying the post",
+    "prompt": "Get the post titled 'AI Workflow Post' and show its full details.",
+    "expected_tool": "blu_get-post",
+    "source": "Posts.php",
+    "series_id": "posts-ai-workflow"
+  },
+  {
+    "id": "updating-post-content-12",
+    "description": "Updating post content",
+    "prompt": "Update the post by adding 100 more words.",
+    "expected_tool": "blu_update-post",
+    "source": "Posts.php",
+    "series_id": "posts-ai-workflow"
+  },
+  {
+    "id": "renaming-the-post-13",
+    "description": "Renaming the post",
+    "prompt": "Rename the post to 'AI Workflow Updated'.",
+    "expected_tool": "blu_update-post",
+    "source": "Posts.php",
+    "series_id": "posts-ai-workflow"
+  },
+  {
+    "id": "deleting-the-post-14",
+    "description": "Deleting the post",
+    "prompt": "Delete the post.",
+    "expected_tool": "blu_delete-post",
+    "source": "Posts.php",
+    "series_id": "posts-ai-workflow"
+  },
+  {
+    "id": "verifying-post-deletion-15",
+    "description": "Verifying post deletion",
+    "prompt": "Search posts for 'AI Workflow Updated' and confirm no matches are found.",
+    "expected_tool": "blu_posts-search",
+    "source": "Posts.php",
+    "series_id": "posts-ai-workflow"
+  },
+  {
+    "id": "attempting-duplicate-deletion-16",
+    "description": "Attempting duplicate deletion",
+    "prompt": "Attempt to delete the same post again.",
+    "expected_tool": "blu_delete-post",
+    "source": "Posts.php",
+    "series_id": "posts-ai-workflow"
+  },
+  {
+    "id": "creating-a-new-page-17",
+    "description": "Creating a new page",
+    "prompt": "Create a new page titled 'AI Landing Page'.",
+    "expected_tool": "blu_add-page",
+    "source": "Pages.php",
+    "series_id": "pages-ai-landing"
+  },
+  {
+    "id": "adding-page-content-18",
+    "description": "Adding page content",
+    "prompt": "Add content of around 200 words.",
+    "expected_tool": "blu_update-page",
+    "source": "Pages.php",
+    "series_id": "pages-ai-landing"
+  },
+  {
+    "id": "uploading-image-19",
+    "description": "Uploading image",
+    "prompt": "Upload an image 'test.jpg'.",
+    "expected_tool": "blu_upload-media",
+    "source": "Media.php",
+    "series_id": "pages-ai-landing"
+  },
+  {
+    "id": "inserting-image-into-page-20",
+    "description": "Inserting image into page",
+    "prompt": "Insert the image into the page.",
+    "expected_tool": "blu_add-section",
+    "source": "BlockEditor.php",
+    "series_id": "pages-ai-landing"
+  },
+  {
+    "id": "publishing-the-page-21",
+    "description": "Publishing the page",
+    "prompt": "Save and publish the page.",
+    "expected_tool": "blu_update-page",
+    "source": "Pages.php",
+    "series_id": "pages-ai-landing"
+  },
+  {
+    "id": "searching-for-the-page-22",
+    "description": "Searching for the page",
+    "prompt": "Search for the page.",
+    "expected_tool": "blu_pages-search",
+    "source": "Pages.php",
+    "series_id": "pages-ai-landing"
+  },
+  {
+    "id": "opening-and-verifying-page-details-23",
+    "description": "Opening and verifying page details",
+    "prompt": "Get the 'AI Landing Page' page and show its content and embedded media.",
+    "expected_tool": "blu_get-page",
+    "source": "Pages.php",
+    "series_id": "pages-ai-landing"
+  },
+  {
+    "id": "updating-page-content-24",
+    "description": "Updating page content",
+    "prompt": "Update the page content.",
+    "expected_tool": "blu_update-page",
+    "source": "Pages.php",
+    "series_id": "pages-ai-landing"
+  },
+  {
+    "id": "replacing-existing-image-25",
+    "description": "Replacing existing image",
+    "prompt": "Replace the existing image with another image.",
+    "expected_tool": "blu_edit-block",
+    "source": "BlockEditor.php",
+    "series_id": "pages-ai-landing"
+  },
+  {
+    "id": "deleting-the-page-26",
+    "description": "Deleting the page",
+    "prompt": "Delete the page.",
+    "expected_tool": "blu_delete-page",
+    "source": "Pages.php",
+    "series_id": "pages-ai-landing"
+  },
+  {
+    "id": "verifying-page-removal-27",
+    "description": "Verifying page removal",
+    "prompt": "Search pages for 'AI Landing Page' and confirm it is not found.",
+    "expected_tool": "blu_pages-search",
+    "source": "Pages.php",
+    "series_id": "pages-ai-landing"
+  },
+  {
+    "id": "uploading-media-file-28",
+    "description": "Uploading media file",
+    "prompt": "Upload a media file named 'test.jpg'.",
+    "expected_tool": "blu_upload-media",
+    "source": "Media.php",
+    "series_id": "media-workflow"
+  },
+  {
+    "id": "verifying-media-upload-29",
+    "description": "Verifying media upload",
+    "prompt": "List media in the library and confirm test.jpg is present.",
+    "expected_tool": "blu_list-media",
+    "source": "Media.php",
+    "series_id": "media-workflow"
+  },
+  {
+    "id": "searching-uploaded-media-30",
+    "description": "Searching uploaded media",
+    "prompt": "Search for the uploaded media.",
+    "expected_tool": "blu_search-media",
+    "source": "Media.php",
+    "series_id": "media-workflow"
+  },
+  {
+    "id": "opening-media-details-31",
+    "description": "Opening media details",
+    "prompt": "Get the test.jpg media item and show its metadata.",
+    "expected_tool": "blu_get-media",
+    "source": "Media.php",
+    "series_id": "media-workflow"
+  },
+  {
+    "id": "inserting-media-into-existing-page-32",
+    "description": "Inserting media into existing page",
+    "prompt": "Insert the media into an existing page.",
+    "expected_tool": "blu_add-section",
+    "source": "BlockEditor.php",
+    "series_id": "media-workflow"
+  },
+  {
+    "id": "replacing-media-inside-page-33",
+    "description": "Replacing media inside page",
+    "prompt": "Replace media inside the page.",
+    "expected_tool": "blu_edit-block",
+    "source": "BlockEditor.php",
+    "series_id": "media-workflow"
+  },
+  {
+    "id": "deleting-media-file-34",
+    "description": "Deleting media file",
+    "prompt": "Delete the media file.",
+    "expected_tool": "blu_delete-media",
+    "source": "Media.php",
+    "series_id": "media-workflow"
+  },
+  {
+    "id": "verifying-media-removal-35",
+    "description": "Verifying media removal",
+    "prompt": "Search the media library for test.jpg and confirm it is not found.",
+    "expected_tool": "blu_search-media",
+    "source": "Media.php",
+    "series_id": "media-workflow"
+  },
+  {
+    "id": "uploading-unsupported-file-36",
+    "description": "Uploading unsupported file",
+    "prompt": "Attempt to upload unsupported file 'test.exe'.",
+    "expected_tool": "blu_upload-media",
+    "source": "Media.php",
+    "series_id": "media-workflow"
+  },
+  {
+    "id": "verifying-invalid-file-rejection-37",
+    "description": "Verifying invalid file rejection",
+    "prompt": "Attempt to upload test.exe again; the upload should be rejected with an error.",
+    "expected_tool": "blu_upload-media",
+    "source": "Media.php",
+    "series_id": "media-workflow"
+  },
+  {
+    "id": "adding-page-to-menu-38",
+    "description": "Adding page to menu",
+    "prompt": "Add page 'AI Landing Page' to the menu.",
+    "expected_tool": "blu_add-cpt",
+    "source": "CustomPostTypes.php",
+    "series_id": "menu-primary"
+  },
+  {
+    "id": "removing-page-from-menu-39",
+    "description": "Removing page from menu",
+    "prompt": "Remove the page from the menu.",
+    "expected_tool": "blu_delete-cpt",
+    "source": "CustomPostTypes.php",
+    "series_id": "menu-primary"
+  },
+  {
+    "id": "creating-product-category-40",
+    "description": "Creating product category",
+    "prompt": "Create a new product category 'AI Tools'.",
+    "expected_tool": "blu_wc-add-product-category",
+    "source": "WooProducts.php",
+    "series_id": "wc-product-ai-tool"
+  },
+  {
+    "id": "creating-product-tag-41",
+    "description": "Creating product tag",
+    "prompt": "Create a new product tag 'Automation'.",
+    "expected_tool": "blu_wc-add-product-tag",
+    "source": "WooProducts.php",
+    "series_id": "wc-product-ai-tool"
+  },
+  {
+    "id": "creating-new-product-42",
+    "description": "Creating new product",
+    "prompt": "Create a new product titled 'AI Tool'.",
+    "expected_tool": "blu_wc-add-product",
+    "source": "WooProducts.php",
+    "series_id": "wc-product-ai-tool"
+  },
+  {
+    "id": "adding-product-price-and-description-43",
+    "description": "Adding product price and description",
+    "prompt": "Add price and description.",
+    "expected_tool": "blu_wc-update-product",
+    "source": "WooProducts.php",
+    "series_id": "wc-product-ai-tool"
+  },
+  {
+    "id": "assigning-category-and-tag-44",
+    "description": "Assigning category and tag",
+    "prompt": "Assign category and tag.",
+    "expected_tool": "blu_wc-update-product",
+    "source": "WooProducts.php",
+    "series_id": "wc-product-ai-tool"
+  },
+  {
+    "id": "adding-product-image-45",
+    "description": "Adding product image",
+    "prompt": "Add product image.",
+    "expected_tool": "blu_wc-update-product",
+    "source": "WooProducts.php",
+    "series_id": "wc-product-ai-tool"
+  },
+  {
+    "id": "setting-stock-quantity-46",
+    "description": "Setting stock quantity",
+    "prompt": "Set stock quantity to 10.",
+    "expected_tool": "blu_wc-update-product",
+    "source": "WooProducts.php",
+    "series_id": "wc-product-ai-tool"
+  },
+  {
+    "id": "publishing-the-product-47",
+    "description": "Publishing the product",
+    "prompt": "Publish the product.",
+    "expected_tool": "blu_wc-update-product",
+    "source": "WooProducts.php",
+    "series_id": "wc-product-ai-tool"
+  },
+  {
+    "id": "searching-for-the-product-48",
+    "description": "Searching for the product",
+    "prompt": "Search for the product.",
+    "expected_tool": "blu_wc-products-search",
+    "source": "WooProducts.php",
+    "series_id": "wc-product-ai-tool"
+  },
+  {
+    "id": "opening-and-verifying-product-details-49",
+    "description": "Opening and verifying product details",
+    "prompt": "Get the 'AI Tool' product from this flow and show its full details.",
+    "expected_tool": "blu_wc-get-product",
+    "source": "WooProducts.php",
+    "series_id": "wc-product-ai-tool"
+  },
+  {
+    "id": "updating-product-price-50",
+    "description": "Updating product price",
+    "prompt": "Update the product price.",
+    "expected_tool": "blu_wc-update-product",
+    "source": "WooProducts.php",
+    "series_id": "wc-product-ai-tool"
+  },
+  {
+    "id": "creating-variable-product-51",
+    "description": "Creating variable product",
+    "prompt": "Create a variable product with sizes S, M, L and different prices.",
+    "expected_tool": "blu_wc-add-product",
+    "source": "WooProducts.php",
+    "series_id": "wc-product-ai-tool"
+  },
+  {
+    "id": "verifying-product-variations-52",
+    "description": "Verifying product variations",
+    "prompt": "Get the variable product with sizes S, M, L from this flow and show its variation data.",
+    "expected_tool": "blu_wc-get-product",
+    "source": "WooProducts.php",
+    "series_id": "wc-product-ai-tool"
+  },
+  {
+    "id": "deleting-the-product-53",
+    "description": "Deleting the product",
+    "prompt": "Delete the product.",
+    "expected_tool": "blu_wc-delete-product",
+    "source": "WooProducts.php",
+    "series_id": "wc-product-ai-tool"
+  },
+  {
+    "id": "deleting-category-and-tag-54",
+    "description": "Deleting category and tag",
+    "prompt": "Delete category and tag.",
+    "expected_tool": "blu_wc-delete-product-category",
+    "source": "WooProducts.php",
+    "series_id": "wc-product-ai-tool"
+  },
+  {
+    "id": "verifying-all-product-entities-are-removed-55",
+    "description": "Verifying all product entities are removed",
+    "prompt": "Search WooCommerce products for 'AI Tool' and confirm no matching products remain.",
+    "expected_tool": "blu_wc-products-search",
+    "source": "WooProducts.php",
+    "series_id": "wc-product-ai-tool"
+  },
+  {
+    "id": "searching-existing-users-56",
+    "description": "Searching existing users",
+    "prompt": "Search for existing users.",
+    "expected_tool": "blu_users-search",
+    "source": "Users.php",
+    "series_id": "users-test-user"
+  },
+  {
+    "id": "creating-new-user-57",
+    "description": "Creating new user",
+    "prompt": "Create a new user 'test_user' with role 'Author'.",
+    "expected_tool": "blu_add-user",
+    "source": "Users.php",
+    "series_id": "users-test-user"
+  },
+  {
+    "id": "verifying-user-appears-in-list-58",
+    "description": "Verifying user appears in list",
+    "prompt": "Search users for 'test_user' and confirm the new user appears in the results.",
+    "expected_tool": "blu_users-search",
+    "source": "Users.php",
+    "series_id": "users-test-user"
+  },
+  {
+    "id": "updating-user-role-59",
+    "description": "Updating user role",
+    "prompt": "Update role to 'Editor'.",
+    "expected_tool": "blu_update-user",
+    "source": "Users.php",
+    "series_id": "users-test-user"
+  },
+  {
+    "id": "verifying-updated-user-role-60",
+    "description": "Verifying updated user role",
+    "prompt": "Search users for 'test_user' and confirm the role is Editor.",
+    "expected_tool": "blu_users-search",
+    "source": "Users.php",
+    "series_id": "users-test-user"
+  },
+  {
+    "id": "creating-duplicate-user-61",
+    "description": "Creating duplicate user",
+    "prompt": "Attempt to create duplicate user 'test_user'.",
+    "expected_tool": "blu_add-user",
+    "source": "Users.php",
+    "series_id": "users-test-user"
+  },
+  {
+    "id": "deleting-the-user-62",
+    "description": "Deleting the user",
+    "prompt": "Delete the user.",
+    "expected_tool": "blu_delete-user",
+    "source": "Users.php",
+    "series_id": "users-test-user"
+  },
+  {
+    "id": "deleting-logged-in-user-attempt-63",
+    "description": "Deleting logged-in user attempt",
+    "prompt": "Attempt to delete currently logged-in user.",
+    "expected_tool": "blu_delete-user",
+    "source": "Users.php",
+    "series_id": "users-test-user"
+  },
+  {
+    "id": "opening-general-site-settings-64",
+    "description": "Opening general site settings",
+    "prompt": "Open general site settings.",
+    "expected_tool": "blu_get-general-settings",
+    "source": "Settings.php",
+    "series_id": "settings-ai-test"
+  },
+  {
+    "id": "updating-site-title-65",
+    "description": "Updating site title",
+    "prompt": "Update site title to 'AI Test Website'.",
+    "expected_tool": "blu_update-general-settings",
+    "source": "Settings.php",
+    "series_id": "settings-ai-test"
+  },
+  {
+    "id": "updating-site-tagline-66",
+    "description": "Updating site tagline",
+    "prompt": "Update tagline to 'AI Powered Site'.",
+    "expected_tool": "blu_update-general-settings",
+    "source": "Settings.php",
+    "series_id": "settings-ai-test"
+  },
+  {
+    "id": "changing-timezone-67",
+    "description": "Changing timezone",
+    "prompt": "Change timezone to 'Asia/Kolkata'.",
+    "expected_tool": "blu_update-general-settings",
+    "source": "Settings.php",
+    "series_id": "settings-ai-test"
+  },
+  {
+    "id": "setting-homepage-68",
+    "description": "Setting homepage",
+    "prompt": "Set homepage to 'AI Landing Page'.",
+    "expected_tool": "blu_update-general-settings",
+    "source": "Settings.php",
+    "series_id": "settings-ai-test"
+  },
+  {
+    "id": "setting-posts-page-69",
+    "description": "Setting posts page",
+    "prompt": "Set posts page to a blog page.",
+    "expected_tool": "blu_update-general-settings",
+    "source": "Settings.php",
+    "series_id": "settings-ai-test"
+  },
+  {
+    "id": "verifying-settings-updates-70",
+    "description": "Verifying settings updates",
+    "prompt": "Get general settings and confirm the site title is 'AI Test Website', tagline is 'AI Powered Site', and timezone is Asia/Kolkata.",
+    "expected_tool": "blu_get-general-settings",
+    "source": "Settings.php",
+    "series_id": "settings-ai-test"
+  },
+  {
+    "id": "checking-active-theme-71",
+    "description": "Checking active theme",
+    "prompt": "Check currently active theme.",
+    "expected_tool": "blu_get-active-theme",
+    "source": "Themes.php",
+    "series_id": "theme-global-styles"
+  },
+  {
+    "id": "retrieving-global-styles-configuration-72",
+    "description": "Retrieving global styles configuration",
+    "prompt": "Retrieve global styles configuration.",
+    "expected_tool": "blu_get-active-global-styles",
+    "source": "GlobalStyles.php",
+    "series_id": "theme-global-styles"
+  },
+  {
+    "id": "fetching-active-styles-73",
+    "description": "Fetching active styles",
+    "prompt": "Fetch active styles.",
+    "expected_tool": "blu_get-active-global-styles",
+    "source": "GlobalStyles.php",
+    "series_id": "theme-global-styles"
+  },
+  {
+    "id": "updating-color-settings-74",
+    "description": "Updating color settings",
+    "prompt": "Update color settings.",
+    "expected_tool": "blu_update-global-styles",
+    "source": "GlobalStyles.php",
+    "series_id": "theme-global-styles"
+  },
+  {
+    "id": "verifying-updated-styles-75",
+    "description": "Verifying updated styles",
+    "prompt": "Fetch active global styles and confirm the site color palette changes from this session are present.",
+    "expected_tool": "blu_get-active-global-styles",
+    "source": "GlobalStyles.php",
+    "series_id": "theme-global-styles"
+  },
+  {
+    "id": "fetching-active-fonts-76",
+    "description": "Fetching active fonts",
+    "prompt": "Fetch the active fonts on site.",
+    "expected_tool": "blu_get-active-global-styles",
+    "source": "GlobalStyles.php",
+    "series_id": "site-fonts"
+  },
+  {
+    "id": "changing-site-fonts-77",
+    "description": "Changing site fonts",
+    "prompt": "Ask the agent to change the available fonts.",
+    "expected_tool": "blu_update-global-styles",
+    "source": "GlobalStyles.php",
+    "series_id": "site-fonts"
+  },
+  {
+    "id": "retrieving-list-of-orders-78",
+    "description": "Retrieving list of orders",
+    "prompt": "Retrieve list of orders.",
+    "expected_tool": "blu_wc-orders-search",
+    "source": "WooOrders.php",
+    "series_id": "wc-reports"
+  },
+  {
+    "id": "fetching-orders-totals-report-79",
+    "description": "Fetching orders totals report",
+    "prompt": "Fetch orders totals report.",
+    "expected_tool": "blu_wc-reports-orders-totals",
+    "source": "WooOrders.php",
+    "series_id": "wc-reports"
+  },
+  {
+    "id": "fetching-products-totals-report-80",
+    "description": "Fetching products totals report",
+    "prompt": "Fetch products totals report.",
+    "expected_tool": "blu_wc-reports-products-totals",
+    "source": "WooOrders.php",
+    "series_id": "wc-reports"
+  },
+  {
+    "id": "fetching-customers-totals-report-81",
+    "description": "Fetching customers totals report",
+    "prompt": "Fetch customers totals report.",
+    "expected_tool": "blu_wc-reports-customers-totals",
+    "source": "WooOrders.php",
+    "series_id": "wc-reports"
+  },
+  {
+    "id": "fetching-coupons-totals-report-82",
+    "description": "Fetching coupons totals report",
+    "prompt": "Fetch coupons totals report.",
+    "expected_tool": "blu_wc-reports-coupons-totals",
+    "source": "WooOrders.php",
+    "series_id": "wc-reports"
+  },
+  {
+    "id": "fetching-reviews-totals-report-83",
+    "description": "Fetching reviews totals report",
+    "prompt": "Fetch reviews totals report.",
+    "expected_tool": "blu_wc-reports-reviews-totals",
+    "source": "WooOrders.php",
+    "series_id": "wc-reports"
+  },
+  {
+    "id": "fetching-sales-report-84",
+    "description": "Fetching sales report",
+    "prompt": "Fetch sales report.",
+    "expected_tool": "blu_wc-reports-sales",
+    "source": "WooOrders.php",
+    "series_id": "wc-reports"
+  },
+  {
+    "id": "comparing-report-values-85",
+    "description": "Comparing report values",
+    "prompt": "Fetch the orders totals report again to compare with the products totals report from earlier in this session.",
+    "expected_tool": "blu_wc-reports-orders-totals",
+    "source": "WooOrders.php",
+    "series_id": "wc-reports"
+  },
+  {
+    "id": "listing-available-post-types-86",
+    "description": "Listing available post types",
+    "prompt": "List all available post types.",
+    "expected_tool": "blu_list-post-types",
+    "source": "CustomPostTypes.php",
+    "series_id": "cpt-books-llm"
+  },
+  {
+    "id": "creating-and-publishing-books-custom-post-type-ite-87",
+    "description": "Creating and publishing Books custom post type item",
+    "prompt": "Using the Books custom post type, create and publish a new item titled 'LLM Project' with about 150 words of content describing a side project that builds agentic workflows on top of an LLM.",
+    "expected_tool": "blu_add-cpt",
+    "source": "CustomPostTypes.php",
+    "series_id": "cpt-books-llm"
+  },
+  {
+    "id": "searching-books-custom-post-type-item-88",
+    "description": "Searching Books custom post type item",
+    "prompt": "Search Books for 'LLM Project'.",
+    "expected_tool": "blu_cpt-search",
+    "source": "CustomPostTypes.php",
+    "series_id": "cpt-books-llm"
+  },
+  {
+    "id": "fetching-books-item-details-89",
+    "description": "Fetching Books item details",
+    "prompt": "Get the full details of the LLM Project item in the Books custom post type.",
+    "expected_tool": "blu_get-cpt",
+    "source": "CustomPostTypes.php",
+    "series_id": "cpt-books-llm"
+  },
+  {
+    "id": "updating-books-item-content-90",
+    "description": "Updating Books item content",
+    "prompt": "In the Books custom post type, update the content of the LLM Project item to: 'Updated: this LLM Project now.'",
+    "expected_tool": "blu_update-cpt",
+    "source": "CustomPostTypes.php",
+    "series_id": "cpt-books-llm"
+  },
+  {
+    "id": "deleting-books-item-91",
+    "description": "Deleting Books item",
+    "prompt": "Delete the LLM Project item from the Books custom post type.",
+    "expected_tool": "blu_delete-cpt",
+    "source": "CustomPostTypes.php",
+    "series_id": "cpt-books-llm"
+  },
+  {
+    "id": "verifying-books-item-deletion-92",
+    "description": "Verifying Books item deletion",
+    "prompt": "Confirm it no longer exists by searching Books for 'LLM Project' (expect zero results).",
+    "expected_tool": "blu_cpt-search",
+    "source": "CustomPostTypes.php",
+    "series_id": "cpt-books-llm"
+  },
+  {
+    "id": "creating-first-post-93",
+    "description": "Creating first post",
+    "prompt": "Create a post titled 'Edge Test'.",
+    "expected_tool": "blu_add-post",
+    "source": "Posts.php",
+    "series_id": "edge-posts"
+  },
+  {
+    "id": "creating-another-post-94",
+    "description": "Creating another post",
+    "prompt": "Create another post.",
+    "expected_tool": "blu_add-post",
+    "source": "Posts.php",
+    "series_id": "edge-posts"
+  },
+  {
+    "id": "updating-latest-post-95",
+    "description": "Updating latest post",
+    "prompt": "Update the latest post.",
+    "expected_tool": "blu_update-post",
+    "source": "Posts.php",
+    "series_id": "edge-posts"
+  },
+  {
+    "id": "deleting-first-post-96",
+    "description": "Deleting first post",
+    "prompt": "Delete the first post.",
+    "expected_tool": "blu_delete-post",
+    "source": "Posts.php",
+    "series_id": "edge-posts"
+  }
+]

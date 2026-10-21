@@ -20,6 +20,13 @@ class HiiveProductVerifier {
 	 */
 	private const NFD_BLU_JWT_HIIVE_VERIFY_ENDPOINT = 'sites/v2/customer/products/verify';
 	/**
+	 * Auth-flow version this client advertises to Hiive on product verification, so Hiive can
+	 * apply the current verification policy for this client.
+	 *
+	 * @var int
+	 */
+	private const AUTH_FLOW_VERSION = 2;
+	/**
 	 * Cache key for storing verified tokens.
 	 *
 	 * @var string
@@ -61,7 +68,8 @@ class HiiveProductVerifier {
 		$response   = $connection->hiive_request(
 			self::NFD_BLU_JWT_HIIVE_VERIFY_ENDPOINT,
 			array(
-				'userId' => $user_id,
+				'userId'          => $user_id,
+				'authFlowVersion' => self::AUTH_FLOW_VERSION,
 			)
 		);
 

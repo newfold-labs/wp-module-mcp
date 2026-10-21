@@ -109,11 +109,10 @@ class WooProducts {
 			'blu/wc-add-product',
 			array(
 				'label'               => 'Add WooCommerce Product',
-				'description'         => 'Create a WooCommerce product, or start the guided add-product flow. If ready is false or omitted, no product is created—the response returns assistant-only steps (A/B options, suggestions). Set ready to true to persist the product via the REST API (after user confirmation when using the guided flow, or immediately when the user asked to add the product with sufficient detail).',
+				'description'         => 'Create a WooCommerce product, or start the guided add-product flow. If ready is false or omitted, no product is created—the response returns assistant-only steps (A/B options, suggestions).',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'        => 'object',
-					'description' => 'Pass product fields as for POST /wc/v3/products. The ready flag controls whether the product is actually created.',
 					'properties'  => array(
 						'name'                 => array(
 							'type'        => 'string',
@@ -196,101 +195,87 @@ class WooProducts {
 								),
 							),
 						),
-						'ready'                => array(
-							'type'        => 'boolean',
-							'description' => 'Must be true to create the product in WooCommerce. If false or omitted (default), the ability does not call the API—it only returns guided assistant instructions; no product is saved.',
-							'default'     => false,
+						'status'               => array(
+							'description' => 'Product status (post status).',
+							'type'        => 'string',
+							'default'     => 'draft',
+							'enum'        => array_merge(
+								array_keys( get_post_statuses() ),
+								array(
+									'future',
+									'auto-draft',
+									'trash',
+								)
+							),
 						),
-						'required'             => array( 'name' ),
 					),
+					'required'    => array( 'name' ),
 				),
 				'execute_callback'    => function ( $input ) {
-					$ready = $input['ready'] ?? false;
-					if ( $ready ) {
-						unset( $input['ready'] );
-						$request = new \WP_REST_Request( 'POST', '/wc/v3/products' );
 
-						$variation_attributes = $input['variation_attributes'] ?? array();
-						if ( $variation_attributes ) {
-							$input['type'] = 'variable';
-						}
+					$request = new \WP_REST_Request( 'POST', '/wc/v3/products' );
 
-						if ( isset( $input['variation_attributes'] ) ) {
-							unset( $input['variation_attributes'] );
-						}
-
-						$request->set_body_params( $input );
-						$response = rest_do_request( $request );
-
-						if ( ! $response->is_error() && (bool) $variation_attributes ) {
-							$data       = $response->get_data();
-							$product_id = absint( $data['id'] ?? 0 );
-
-							if ( $product_id ) {
-								$product            = wc_get_product( $product_id );
-								$position           = 0;
-								$product_attributes = array();
-
-								foreach ( $variation_attributes as $attribute ) {
-									$attribute_id   = 0;
-									$attribute_name = wc_clean( esc_html( $attribute['name'] ) );
-
-									$terms = wc_get_text_attributes( implode( WC_DELIMITER, $attribute['terms'] ) );
-
-									$product_attribute = new \WC_Product_Attribute();
-									$product_attribute->set_id( $attribute_id );
-									$product_attribute->set_name( $attribute_name );
-									$product_attribute->set_options( $terms );
-									$product_attribute->set_position( $position );
-									$product_attribute->set_visible( true );
-									$product_attribute->set_variation( true );
-
-									$product_attributes[] = $product_attribute;
-
-									$position++;
-								}
-
-								$product->set_attributes( $product_attributes );
-								$product->save();
-
-								/**
-								 * The variable product
-								 *
-								 * @var $variation \WC_Product_Variation
-								 */
-								$variation = wc_get_product_object( 'variation' );
-								if ( isset( $input['regular_price'] ) ) {
-									$variation->set_regular_price( $input['regular_price'] );
-								}
-								$variation->set_parent_id( $product->get_id() );
-								$variation->save();
-
-								$request  = new \WP_REST_Request( 'GET', '/wc/v3/products/' . $product_id );
-								$response = rest_do_request( $request );
-							}
-						}
-
-						return blu_standardize_rest_response( $response );
-					} else {
-						$name        = $input['name'] ?? '';
-						$instruction = include_once __DIR__ . '/../instructions/product-full-flow.php';
-
-						return array(
-							'messages' => array(
-								array(
-									'role'    => 'user',
-									'content' => array(
-										'type'        => 'text',
-										'text'        => $instruction,
-										'annotations' => array(
-											'audience' => array( 'assistant' ),
-											'priority' => 0.9,
-										),
-									),
-								),
-							),
-						);
+					$variation_attributes = $input['variation_attributes'] ?? array();
+					if ( $variation_attributes ) {
+						$input['type'] = 'variable';
 					}
+
+					if ( isset( $input['variation_attributes'] ) ) {
+						unset( $input['variation_attributes'] );
+					}
+
+					$request->set_body_params( $input );
+					$response = rest_do_request( $request );
+
+					if ( ! $response->is_error() && (bool) $variation_attributes ) {
+						$data       = $response->get_data();
+						$product_id = absint( $data['id'] ?? 0 );
+
+						if ( $product_id ) {
+							$product            = wc_get_product( $product_id );
+							$position           = 0;
+							$product_attributes = array();
+
+							foreach ( $variation_attributes as $attribute ) {
+								$attribute_id   = 0;
+								$attribute_name = wc_clean( esc_html( $attribute['name'] ) );
+
+								$terms = wc_get_text_attributes( implode( WC_DELIMITER, $attribute['terms'] ) );
+
+								$product_attribute = new \WC_Product_Attribute();
+								$product_attribute->set_id( $attribute_id );
+								$product_attribute->set_name( $attribute_name );
+								$product_attribute->set_options( $terms );
+								$product_attribute->set_position( $position );
+								$product_attribute->set_visible( true );
+								$product_attribute->set_variation( true );
+
+								$product_attributes[] = $product_attribute;
+
+								$position++;
+							}
+
+							$product->set_attributes( $product_attributes );
+							$product->save();
+
+							/**
+							 * The variable product
+							 *
+							 * @var $variation \WC_Product_Variation
+							 */
+							$variation = wc_get_product_object( 'variation' );
+							if ( isset( $input['regular_price'] ) ) {
+								$variation->set_regular_price( $input['regular_price'] );
+							}
+							$variation->set_parent_id( $product->get_id() );
+							$variation->save();
+
+							$request  = new \WP_REST_Request( 'GET', '/wc/v3/products/' . $product_id );
+							$response = rest_do_request( $request );
+						}
+					}
+
+					return blu_standardize_rest_response( $response );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_products' ),
 				'meta'                => array(
@@ -376,6 +361,19 @@ class WooProducts {
 								),
 							),
 						),
+						'status'            => array(
+							'description' => 'Product status (post status).',
+							'type'        => 'string',
+							'default'     => 'draft',
+							'enum'        => array_merge(
+								array_keys( get_post_statuses() ),
+								array(
+									'future',
+									'auto-draft',
+									'trash',
+								)
+							),
+						),
 					),
 					'required'   => array( 'id' ),
 				),
@@ -456,6 +454,7 @@ class WooProducts {
 	 */
 	private function register_category_abilities(): void {
 		// List categories
+
 		blu_register_ability(
 			'blu/wc-list-product-categories',
 			array(
@@ -468,6 +467,7 @@ class WooProducts {
 						'patterns' => array(
 							'type'        => 'array',
 							'description' => 'List of relevant categories and regex based on product name',
+							'items'       => array( 'type' => 'string' ),
 							'maxItems'    => 5,
 						),
 					),
@@ -494,42 +494,16 @@ class WooProducts {
 						$page++;
 					} while ( $total > 0 );
 
-					if ( isset( $input['patterns'] ) && is_array( $input['patterns'] ) ) {
-						$patterns     = $input['patterns'];
-						$filtered_ids = array();
-						foreach ( $categories as $category ) {
-							$cat_name = trim( $category['name'] );
+					$patterns = $input['patterns'] ?? array();
 
-							foreach ( $patterns as $pattern ) {
-
-								if ( @preg_match( $pattern, '' ) !== false ) {
-									$regex = $pattern;
-									if ( substr( $regex, -1 ) !== 'i' ) {
-										// Ensure case-insensitive
-										$regex = rtrim( $regex, '/' ) . '/i';
-									}
-									if ( preg_match( $regex, $cat_name ) ) {
-										$filtered_ids[] = $category['id'];
-										break;
-									}
-								} elseif ( false !== stripos( $cat_name, $pattern ) ) {
-										$filtered_ids[] = $category['id'];
-										break;
-								}
-							}
-						}
-
-						if ( count( $filtered_ids ) > 0 ) {
-							$categories = array_filter(
-								$categories,
-								function ( $category ) use ( $filtered_ids ) {
-									return in_array( $category['id'], $filtered_ids );
-								}
-							);
-						}
+					$is_valid = blu_is_valid_input_array( $patterns, 'patterns', 0, 5 );
+					if ( is_wp_error( $is_valid ) ) {
+						return blu_standardize_rest_response( $is_valid );
 					}
 
-					return blu_prepare_ability_response( '200', $categories );
+					blu_filter_terms_by_patterns( $patterns, $categories );
+
+					return blu_prepare_ability_response( 200, $categories );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_products' ),
 				'meta'                => array(
@@ -554,7 +528,9 @@ class WooProducts {
 					'properties' => array(
 						'categories'    => array(
 							'type'        => 'array',
-							'description' => 'Product Categories List',
+							'description' => 'List of product categories name',
+							'items'       => array( 'type' => 'string' ),
+							'minItems'    => 1,
 						),
 						'hierarchical'  => array(
 							'type'        => 'boolean',
@@ -572,29 +548,40 @@ class WooProducts {
 				'execute_callback'    => function ( $input ) {
 
 					$all_categories = $input['categories'] ?? array();
+					$is_google_tax  = $input['is_google_tax'] ?? false;
+					$hierarchical   = $input['hierarchical'] ?? false;
 
-					$results = array();
+					$is_valid = blu_is_valid_input_array( $all_categories, 'categories', 1 );
 
-					if ( $input['is_google_tax'] ) {
-
+					if ( is_wp_error( $is_valid ) ) {
+						return blu_standardize_rest_response( $is_valid );
+					}
+					if ( $is_google_tax ) {
+						$created  = array();
+						$existing = array();
 						foreach ( $all_categories as $category_path ) {
 							$categories = explode( '>', $category_path );
 
-							$resp = $this->add_product_taxonomies( $categories, 'categories', $input['hierarchical'] );
-							if ( 201 !== $resp['statusCode'] ) {
+							$resp = $this->add_product_taxonomies( $categories, 'categories', true );
+							if ( ! in_array( $resp['statusCode'], array( 200, 201 ) ) ) {
 								return $resp;
 							}
 
-							$results[] = $resp;
+							$created  = array_merge( $created, $resp['message']['created'] );
+							$existing = array_merge( $existing, $resp['message']['existing'] );
 						}
 
 						return array(
-							'statusCode' => 201,
+							'statusCode' => count( $created ) > 0 ? 201 : 200,
 							'status'     => 'success',
-							'message'    => $results,
+							'message'    => array(
+								'created'  => $created,
+								'existing' => $existing,
+								'total'    => count( $created ) + count( $existing ),
+							),
 						);
 					} else {
-						return $this->add_product_taxonomies( $all_categories, 'categories', $input['hierarchical'] );
+						return $this->add_product_taxonomies( $all_categories, 'categories', $hierarchical );
 					}
 				},
 				'permission_callback' => fn() => current_user_can( 'manage_product_terms' ),
@@ -702,6 +689,7 @@ class WooProducts {
 						'patterns' => array(
 							'type'        => 'array',
 							'description' => 'List of relevant tags based on product name, product description and product category',
+							'items'       => array( 'type' => 'string' ),
 							'maxItems'    => 5,
 						),
 					),
@@ -727,42 +715,16 @@ class WooProducts {
 						$page++;
 					} while ( $total > 0 );
 
-					if ( isset( $input['patterns'] ) && is_array( $input['patterns'] ) ) {
-						$patterns     = $input['patterns'];
-						$filtered_ids = array();
-						foreach ( $tags as $tag ) {
-							$cat_name = trim( $tag['name'] );
+					$patterns = $input['patterns'] ?? array();
 
-							foreach ( $patterns as $pattern ) {
-
-								if ( @preg_match( $pattern, '' ) !== false ) {
-									$regex = $pattern;
-									if ( substr( $regex, -1 ) !== 'i' ) {
-										// Ensure case-insensitive
-										$regex = rtrim( $regex, '/' ) . '/i';
-									}
-									if ( preg_match( $regex, $cat_name ) ) {
-										$filtered_ids[] = $tag['id'];
-										break;
-									}
-								} elseif ( false !== stripos( $cat_name, $pattern ) ) {
-										$filtered_ids[] = $tag['id'];
-										break;
-								}
-							}
-						}
-
-						if ( count( $filtered_ids ) > 0 ) {
-							$tags = array_filter(
-								$tags,
-								function ( $tag ) use ( $filtered_ids ) {
-									return in_array( $tag['id'], $filtered_ids );
-								}
-							);
-						}
+					$is_valid = blu_is_valid_input_array( $patterns, 'patterns', 0, 5 );
+					if ( is_wp_error( $is_valid ) ) {
+						return blu_standardize_rest_response( $is_valid );
 					}
 
-					return blu_prepare_ability_response( '200', $tags );
+					blu_filter_terms_by_patterns( $patterns, $tags );
+
+					return blu_prepare_ability_response( 200, $tags );
 				},
 
 				'permission_callback' => fn() => current_user_can( 'edit_products' ),
@@ -788,14 +750,22 @@ class WooProducts {
 					'properties' => array(
 						'tags' => array(
 							'type'        => 'array',
-							'description' => 'The Tag name list',
+							'description' => 'The list of product tag name',
+							'items'       => array( 'type' => 'string' ),
+							'minItems'    => 1,
 						),
 					),
 					'required'   => array( 'tags' ),
 				),
 				'execute_callback'    => function ( $input ) {
+					$all_tag  = $input['tags'] ?? array();
+					$is_valid = blu_is_valid_input_array( $all_tag, 'tags', 1 );
 
-					return $this->add_product_taxonomies( $input['tags'], 'tags' );
+					if ( is_wp_error( $is_valid ) ) {
+						return blu_standardize_rest_response( $is_valid );
+					}
+
+					return $this->add_product_taxonomies( $all_tag, 'tags' );
 				},
 				'permission_callback' => fn() => current_user_can( 'manage_product_terms' ),
 				'meta'                => array(
@@ -897,13 +867,47 @@ class WooProducts {
 				'description'         => 'List all WooCommerce product brands',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
-					'type' => 'object',
+					'type'       => 'object',
+					'properties' => array(
+						'patterns' => array(
+							'type'        => 'array',
+							'description' => 'List of relevant brands based on product name, product description and product category',
+							'items'       => array( 'type' => 'string' ),
+							'maxItems'    => 5,
+						),
+					),
 				),
-				'execute_callback'    => function () {
-					$request  = new \WP_REST_Request( 'GET', '/wc/v3/products/brands' );
-					$response = rest_do_request( $request );
+				'execute_callback'    => function ( $input ) {
+					$request = new \WP_REST_Request( 'GET', '/wc/v3/products/brands' );
+					$brands  = array();
+					$page    = 1;
+					do {
+						$request->set_query_params( array( 'page' => $page ) );
+						$response = rest_do_request( $request );
+						if ( is_wp_error( $response ) ) {
+							return blu_standardize_rest_response( $response );
+						}
+						$data  = $response->get_data();
+						$total = count( $data );
+						foreach ( $data as $brand ) {
+							$brands[] = array(
+								'id'   => $brand['id'],
+								'name' => $brand['name'],
+							);
+						}
+						$page++;
+					} while ( $total > 0 );
 
-					return blu_standardize_rest_response( $response );
+					$patterns = $input['patterns'] ?? array();
+
+					$is_valid = blu_is_valid_input_array( $patterns, 'patterns', 0, 5 );
+					if ( is_wp_error( $is_valid ) ) {
+						return blu_standardize_rest_response( $is_valid );
+					}
+
+					blu_filter_terms_by_patterns( $patterns, $brands );
+
+					return blu_prepare_ability_response( 200, $brands );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_products' ),
 				'meta'                => array(
@@ -929,12 +933,22 @@ class WooProducts {
 						'brands' => array(
 							'type'        => 'array',
 							'description' => 'The list of Brand name',
+							'items'       => array( 'type' => 'string' ),
+							'minItems'    => 1,
 						),
 					),
 					'required'   => array( 'brands' ),
 				),
 				'execute_callback'    => function ( $input ) {
-					return $this->add_product_taxonomies( $input['brands'], 'brands' );
+					$all_brand = $input['brands'] ?? array();
+
+					$is_valid = blu_is_valid_input_array( $all_brand, 'brands', 1 );
+
+					if ( is_wp_error( $is_valid ) ) {
+						return blu_standardize_rest_response( $is_valid );
+					}
+
+					return $this->add_product_taxonomies( $all_brand, 'brands' );
 				},
 				'permission_callback' => fn() => current_user_can( 'manage_product_terms' ),
 				'meta'                => array(
@@ -1031,8 +1045,8 @@ class WooProducts {
 	/**
 	 * Add the product taxonomy with REST API
 	 *
-	 * @param array   $taxonomies   The taxonomy to add.
-	 * @param string  $type         The REST API type : categories|tags|brands.
+	 * @param array   $taxonomies The taxonomy to add.
+	 * @param string  $type The REST API type : categories|tags|brands.
 	 * @param boolean $hierarchical If add the item with hierarchical structure.
 	 *
 	 * @return array
@@ -1041,7 +1055,8 @@ class WooProducts {
 		$hierarchical = 'categories' === $type ? $hierarchical : false;
 		$parent       = 0;
 		$request      = new \WP_REST_Request( 'POST', '/wc/v3/products/' . $type );
-		$results      = array();
+		$created      = array();
+		$existing     = array();
 		foreach ( $taxonomies as $taxonomy ) {
 			$args = array(
 				'name' => trim( $taxonomy ),
@@ -1053,19 +1068,31 @@ class WooProducts {
 			$response = rest_do_request( $request );
 			$response = blu_standardize_rest_response( $response );
 			if ( 400 == $response ['statusCode'] && 'term_exists' === $response['message']['code'] ) {
-				$parent = $response['message']['data']['resource_id'];
+				$parent        = $response['message']['data']['resource_id'];
+				$term_response = $this->get_taxonomy( $parent, $type );
+				if ( 200 == $term_response['statusCode'] ) {
+					$existing[] = $term_response['message'];
+				} else {
+					return $term_response;
+				}
 			} elseif ( 201 == $response ['statusCode'] ) {
 				$parent    = $response['message']['id'];
-				$results[] = $response['message'];
+				$created[] = $response['message'];
 			} else {
 				return $response;
 			}
 		}
 
+		$total = count( $existing ) + count( $created );
+
 		return array(
-			'statusCode' => 201,
+			'statusCode' => count( $created ) > 0 ? 201 : 200,
 			'status'     => 'success',
-			'message'    => $results,
+			'message'    => array(
+				'total'    => $total,
+				'created'  => $created,
+				'existing' => $existing,
+			),
 		);
 	}
 
@@ -1073,7 +1100,7 @@ class WooProducts {
 	 * Get the taxonomy set to product
 	 *
 	 * @param int    $product_id The product id.
-	 * @param string $taxonomy   The taxonomy to return.
+	 * @param string $taxonomy The taxonomy to return.
 	 *
 	 * @return array|array[]
 	 */
@@ -1084,12 +1111,11 @@ class WooProducts {
 		if ( is_wp_error( $response ) ) {
 			return $ids;
 		} else {
-			$data             = $response->get_data();
-			$uncategorized_id = get_option( 'default_product_cat' );
+			$data = $response->get_data();
 			if ( isset( $data[ $taxonomy ] ) && count( $data[ $taxonomy ] ) > 0 ) {
 
 				foreach ( $data[ $taxonomy ] as $tax ) {
-					if ( isset( $tax['id'] ) && $uncategorized_id != $tax['id'] ) {
+					if ( isset( $tax['id'] ) ) {
 						$ids[] = array( 'id' => $tax['id'] );
 					}
 				}
@@ -1097,5 +1123,21 @@ class WooProducts {
 		}
 
 		return $ids;
+	}
+
+	/**
+	 * Get the term by id
+	 *
+	 * @param int    $term_id The term id.
+	 * @param string $taxonomy The taxonomy type.
+	 *
+	 * @return array
+	 */
+	private function get_taxonomy( $term_id, $taxonomy = 'categories' ) {
+		$request = new \WP_REST_Request( 'GET', '/wc/v3/products/' . $taxonomy . '/' . $term_id );
+
+		$response = rest_do_request( $request );
+
+		return blu_standardize_rest_response( $response );
 	}
 }
