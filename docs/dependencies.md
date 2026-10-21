@@ -11,7 +11,8 @@ updated: 2026-03-26
 
 | Package | Role |
 |---------|------|
-| **wordpress/mcp-adapter** (^0.4.1) | MCP server/transport integration with WordPress REST. |
+| **wordpress/mcp-adapter** (^0.7.1) | MCP server/transport integration with WordPress REST. |
+| **automattic/jetpack-autoloader** (transitive) | Adapter dependency. Its Composer plugin is disabled for this module because this root package does not use the Jetpack autoloader. |
 | **wordpress/abilities-api** (^0.4.0) | Abilities registration API (`wp_register_ability`, categories, etc.). |
 | **firebase/php-jwt** (^6.10) | JWT parsing/verification in **`McpValidation`**. |
 
