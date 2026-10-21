@@ -75,7 +75,7 @@ class CustomPostTypes {
 						),
 						'status'    => array(
 							'type'        => 'string',
-							'description' => 'Defaults to any, which includes published and unpublished items but excludes trash. Use trash to find deleted items, or a specific status such as publish or draft.',
+							'description' => 'Defaults to publish. Use any to include other non-trash statuses such as draft, or trash to find deleted items. Each result includes its actual status.',
 						),
 						'page'      => array(
 							'type'        => 'integer',
@@ -103,7 +103,7 @@ class CustomPostTypes {
 						'post_type'      => $resolved,
 						'posts_per_page' => $per_page,
 						'paged'          => $page,
-						'post_status'    => 'any',
+						'post_status'    => 'publish',
 					);
 
 					if ( ! empty( $input['search'] ) ) {

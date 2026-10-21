@@ -21,7 +21,7 @@ Implementations live under **`includes/Abilities/`** (e.g. `Posts`, `Pages`, `Me
 
 ### Searching by status
 
-Post, page, custom post type, and WooCommerce product searches default to `status=any`, which includes published and unpublished items but excludes the trash. Each result includes its actual `status`. To locate a deleted item, search explicitly with `status=trash`; a normal search never retries in the trash. Custom post type searches check visibility before returning unpublished items because they query posts directly rather than through a REST controller.
+Post, page, custom post type, and WooCommerce product searches default to `status=publish`. Pass `status=any` to include other non-trash statuses, or `status=trash` to locate a deleted item. Each result includes its actual `status`; a normal search never retries in the trash. Custom post type searches check visibility before returning unpublished items because they query posts directly rather than through a REST controller.
 
 ## Discovery tools
 

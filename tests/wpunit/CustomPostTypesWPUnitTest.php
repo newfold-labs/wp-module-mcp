@@ -363,11 +363,11 @@ class CustomPostTypesWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase 
 	}
 
 	/**
-	 * Drafts are included by default and can be filtered out with status=publish.
+	 * Drafts are excluded by default and included with status=any.
 	 *
 	 * @return void
 	 */
-	public function test_cpt_search_defaults_to_any_status(): void {
+	public function test_cpt_search_defaults_to_published_items(): void {
 		$this->create_book( 'Published Book' );
 		self::factory()->post->create(
 			array(
@@ -378,7 +378,7 @@ class CustomPostTypesWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase 
 		);
 
 		$default = $this->execute( 'blu/cpt-search', array( 'post_type' => 'Books' ) );
-		$this->assertSame( 2, $default['message']['total'] );
+		$this->assertSame( 1, $default['message']['total'] );
 
 		$any = $this->execute(
 			'blu/cpt-search',

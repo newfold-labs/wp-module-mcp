@@ -37,7 +37,7 @@ class Posts {
 						),
 						'status'   => array(
 							'type'        => 'string',
-							'description' => 'Defaults to any, which includes published and unpublished posts but excludes trash. Use trash to find deleted posts, or a specific status such as publish or draft.',
+							'description' => 'Defaults to publish. Use any to include other non-trash statuses such as draft, or trash to find deleted posts. Each result includes its actual status.',
 						),
 						'page'     => array(
 							'type'        => 'integer',
@@ -54,11 +54,11 @@ class Posts {
 					if ( $input ) {
 						// WordPress REST defaults to publish when status is omitted.
 						if ( ! isset( $input['status'] ) || '' === $input['status'] ) {
-							$input['status'] = 'any';
+							$input['status'] = 'publish';
 						}
 						$request->set_query_params( $input );
 					} else {
-						$request->set_param( 'status', 'any' );
+						$request->set_param( 'status', 'publish' );
 					}
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );

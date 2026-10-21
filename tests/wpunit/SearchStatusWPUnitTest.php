@@ -103,13 +103,13 @@ class SearchStatusWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	}
 
 	/**
-	 * Verify default searches, explicit trash searches, and result statuses.
+	 * Verify published default, explicit any and trash searches, and result statuses.
 	 *
 	 * @dataProvider core_search_cases
 	 * @param string $post_type Fixture post type.
 	 * @param string $ability   Search ability name.
 	 */
-	public function test_core_search_defaults_to_any_and_returns_status( string $post_type, string $ability ): void {
+	public function test_core_search_defaults_to_publish_and_returns_status( string $post_type, string $ability ): void {
 		$this->register_search_abilities();
 		$published = self::factory()->post->create(
 			array(
@@ -139,10 +139,12 @@ class SearchStatusWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$rows    = 'blu/cpt-search' === $ability ? $default['message']['results'] : $default['message'];
 		$by_id   = array_column( $rows, null, 'id' );
 		$this->assertArrayHasKey( $published, $by_id );
-		$this->assertArrayHasKey( $draft, $by_id, 'The any default must include drafts.' );
 		$this->assertSame( 'publish', $by_id[ $published ]['status'] );
-		$this->assertSame( 'draft', $by_id[ $draft ]['status'] );
+		$this->assertArrayNotHasKey( $draft, $by_id );
 		$this->assertArrayNotHasKey( $trashed, $by_id );
+		$any  = blu_get_ability( $ability )->execute( array_merge( $input, array( 'status' => 'any' ) ) );
+		$rows = 'blu/cpt-search' === $ability ? $any['message']['results'] : $any['message'];
+		$this->assertSame( 'draft', array_column( $rows, null, 'id' )[ $draft ]['status'] );
 
 		$explicit = blu_get_ability( $ability )->execute(
 			array_merge(
@@ -167,7 +169,7 @@ class SearchStatusWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	}
 
 	/** Ensure the broader CPT default does not reveal another user's draft. */
-	public function test_cpt_any_default_does_not_expose_another_users_draft(): void {
+	public function test_cpt_explicit_any_does_not_expose_another_users_draft(): void {
 		$this->register_search_abilities();
 		$admin_id  = get_current_user_id();
 		$draft_id  = self::factory()->post->create(
@@ -197,7 +199,12 @@ class SearchStatusWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		);
 		wp_set_current_user( $author_id );
 
-		$result = blu_get_ability( 'blu/cpt-search' )->execute( array( 'post_type' => self::CPT_SLUG ) );
+		$result = blu_get_ability( 'blu/cpt-search' )->execute(
+			array(
+				'post_type' => self::CPT_SLUG,
+				'status'    => 'any',
+			)
+		);
 		$by_id  = array_column( $result['message']['results'], null, 'id' );
 		$this->assertArrayNotHasKey( $draft_id, $by_id );
 		$this->assertArrayHasKey( $public_id, $by_id );
@@ -205,7 +212,7 @@ class SearchStatusWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	}
 
 	/** Administrators retain access to custom types whose capabilities were never granted. */
-	public function test_cpt_any_default_keeps_administrator_access_to_custom_capability_types(): void {
+	public function test_cpt_explicit_any_keeps_administrator_access_to_custom_capability_types(): void {
 		$this->register_search_abilities();
 		$slug = 'bmcp_status_ledger';
 		register_post_type(
@@ -222,7 +229,12 @@ class SearchStatusWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 				'post_status' => 'draft',
 			)
 		);
-		$result  = blu_get_ability( 'blu/cpt-search' )->execute( array( 'post_type' => $slug ) );
+		$result  = blu_get_ability( 'blu/cpt-search' )->execute(
+			array(
+				'post_type' => $slug,
+				'status'    => 'any',
+			)
+		);
 		unregister_post_type( $slug );
 		$this->assertArrayHasKey( $item_id, array_column( $result['message']['results'], null, 'id' ) );
 	}
@@ -237,7 +249,7 @@ class SearchStatusWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	}
 
 	/** Verify WooCommerce request status and response status passthrough. */
-	public function test_woo_search_passes_any_or_trash_and_preserves_result_status(): void {
+	public function test_woo_search_passes_publish_any_or_trash_and_preserves_result_status(): void {
 		$register = static function () {
 			$method = new \ReflectionMethod( WooProducts::class, 'register_product_abilities' );
 			$method->setAccessible( true );
@@ -261,7 +273,7 @@ class SearchStatusWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 				array(
 					array(
 						'id'     => 42,
-						'status' => 'trash' === $status ? 'trash' : 'draft',
+						'status' => 'any' === $status ? 'draft' : $status,
 					),
 				),
 				200
@@ -269,6 +281,7 @@ class SearchStatusWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		};
 		add_filter( 'rest_pre_dispatch', $fake_woo, 10, 3 );
 		$default = blu_get_ability( 'blu/wc-products-search' )->execute( array() );
+		$any     = blu_get_ability( 'blu/wc-products-search' )->execute( array( 'status' => 'any' ) );
 		$trash   = blu_get_ability( 'blu/wc-products-search' )->execute(
 			array(
 				'search' => 'Deleted Product',
@@ -277,8 +290,9 @@ class SearchStatusWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		);
 		remove_filter( 'rest_pre_dispatch', $fake_woo, 10 );
 
-		$this->assertSame( array( 'any', 'trash' ), $statuses );
-		$this->assertSame( 'draft', $default['message'][0]['status'] );
+		$this->assertSame( array( 'publish', 'any', 'trash' ), $statuses );
+		$this->assertSame( 'publish', $default['message'][0]['status'] );
+		$this->assertSame( 'draft', $any['message'][0]['status'] );
 		$this->assertSame( 'trash', $trash['message'][0]['status'] );
 		$description = blu_get_ability( 'blu/wc-products-search' )->get_input_schema()['properties']['status']['description'];
 		$this->assertStringContainsString( 'any', $description );

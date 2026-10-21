@@ -42,7 +42,7 @@ class WooProducts {
 						),
 						'status'   => array(
 							'type'        => 'string',
-							'description' => 'Defaults to any, which includes published and unpublished products but excludes trash. Use trash to find deleted products, or a specific status such as publish or draft.',
+							'description' => 'Defaults to publish. Use any to include other non-trash statuses such as draft, or trash to find deleted products. Each result includes its actual status.',
 						),
 						'page'     => array(
 							'type'        => 'integer',
@@ -58,7 +58,7 @@ class WooProducts {
 					$request = new \WP_REST_Request( 'GET', '/wc/v3/products' );
 					$params = is_array( $input ) ? $input : array();
 					if ( ! isset( $params['status'] ) || '' === $params['status'] ) {
-						$params['status'] = 'any';
+						$params['status'] = 'publish';
 					}
 					$request->set_query_params( $params );
 					$response = rest_do_request( $request );
