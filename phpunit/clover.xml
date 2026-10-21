@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1792586463">
-  <project timestamp="1792586463">
+<coverage generated="1792589914">
+  <project timestamp="1792589914">
     <file name="/home/runner/work/wp-module-mcp/wp-module-mcp/bootstrap.php">
       <line num="9" type="stmt" count="0"/>
       <line num="10" type="stmt" count="0"/>
@@ -13,81 +13,81 @@
     </file>
     <file name="/home/runner/work/wp-module-mcp/wp-module-mcp/includes/Abilities/AbilityGateway.php">
       <class name="BLU\Abilities\AbilityGateway" namespace="global">
-        <metrics complexity="74" methods="10" coveredmethods="6" conditionals="0" coveredconditionals="0" statements="266" coveredstatements="256" elements="276" coveredelements="262"/>
+        <metrics complexity="76" methods="10" coveredmethods="6" conditionals="0" coveredconditionals="0" statements="273" coveredstatements="263" elements="283" coveredelements="269"/>
       </class>
-      <line num="31" type="method" name="__construct" visibility="public" complexity="1" crap="1" count="52"/>
-      <line num="32" type="stmt" count="52"/>
-      <line num="33" type="stmt" count="52"/>
-      <line num="34" type="stmt" count="52"/>
-      <line num="44" type="method" name="get_whitelisted_abilities" visibility="private" complexity="18" crap="18.08" count="40"/>
-      <line num="45" type="stmt" count="40"/>
-      <line num="46" type="stmt" count="40"/>
-      <line num="47" type="stmt" count="40"/>
-      <line num="48" type="stmt" count="40"/>
-      <line num="49" type="stmt" count="40"/>
-      <line num="50" type="stmt" count="40"/>
-      <line num="51" type="stmt" count="40"/>
-      <line num="55" type="stmt" count="40"/>
-      <line num="56" type="stmt" count="40"/>
-      <line num="57" type="stmt" count="40"/>
-      <line num="58" type="stmt" count="40"/>
-      <line num="59" type="stmt" count="40"/>
-      <line num="60" type="stmt" count="40"/>
-      <line num="61" type="stmt" count="40"/>
-      <line num="62" type="stmt" count="40"/>
-      <line num="64" type="stmt" count="40"/>
-      <line num="66" type="stmt" count="40"/>
-      <line num="67" type="stmt" count="40"/>
-      <line num="68" type="stmt" count="40"/>
-      <line num="69" type="stmt" count="40"/>
-      <line num="70" type="stmt" count="40"/>
-      <line num="71" type="stmt" count="40"/>
-      <line num="72" type="stmt" count="40"/>
+      <line num="31" type="method" name="__construct" visibility="public" complexity="1" crap="1" count="55"/>
+      <line num="32" type="stmt" count="55"/>
+      <line num="33" type="stmt" count="55"/>
+      <line num="34" type="stmt" count="55"/>
+      <line num="44" type="method" name="get_whitelisted_abilities" visibility="private" complexity="18" crap="18.08" count="43"/>
+      <line num="45" type="stmt" count="43"/>
+      <line num="46" type="stmt" count="43"/>
+      <line num="47" type="stmt" count="43"/>
+      <line num="48" type="stmt" count="43"/>
+      <line num="49" type="stmt" count="43"/>
+      <line num="50" type="stmt" count="43"/>
+      <line num="51" type="stmt" count="43"/>
+      <line num="55" type="stmt" count="43"/>
+      <line num="56" type="stmt" count="43"/>
+      <line num="57" type="stmt" count="43"/>
+      <line num="58" type="stmt" count="43"/>
+      <line num="59" type="stmt" count="43"/>
+      <line num="60" type="stmt" count="43"/>
+      <line num="61" type="stmt" count="43"/>
+      <line num="62" type="stmt" count="43"/>
+      <line num="64" type="stmt" count="43"/>
+      <line num="66" type="stmt" count="43"/>
+      <line num="67" type="stmt" count="43"/>
+      <line num="68" type="stmt" count="43"/>
+      <line num="69" type="stmt" count="43"/>
+      <line num="70" type="stmt" count="43"/>
+      <line num="71" type="stmt" count="43"/>
+      <line num="72" type="stmt" count="43"/>
       <line num="73" type="stmt" count="0"/>
-      <line num="75" type="stmt" count="40"/>
+      <line num="75" type="stmt" count="43"/>
       <line num="76" type="stmt" count="0"/>
-      <line num="78" type="stmt" count="40"/>
+      <line num="78" type="stmt" count="43"/>
       <line num="79" type="stmt" count="1"/>
-      <line num="81" type="stmt" count="40"/>
+      <line num="81" type="stmt" count="43"/>
       <line num="82" type="stmt" count="1"/>
-      <line num="89" type="stmt" count="40"/>
-      <line num="90" type="stmt" count="40"/>
-      <line num="91" type="stmt" count="40"/>
-      <line num="92" type="stmt" count="40"/>
-      <line num="93" type="stmt" count="40"/>
-      <line num="94" type="stmt" count="40"/>
-      <line num="95" type="stmt" count="40"/>
-      <line num="98" type="stmt" count="40"/>
+      <line num="89" type="stmt" count="43"/>
+      <line num="90" type="stmt" count="43"/>
+      <line num="91" type="stmt" count="43"/>
+      <line num="92" type="stmt" count="43"/>
+      <line num="93" type="stmt" count="43"/>
+      <line num="94" type="stmt" count="43"/>
+      <line num="95" type="stmt" count="43"/>
+      <line num="98" type="stmt" count="43"/>
       <line num="99" type="stmt" count="4"/>
-      <line num="103" type="stmt" count="40"/>
-      <line num="106" type="stmt" count="40"/>
+      <line num="103" type="stmt" count="43"/>
+      <line num="106" type="stmt" count="43"/>
       <line num="107" type="stmt" count="1"/>
-      <line num="109" type="stmt" count="40"/>
-      <line num="110" type="stmt" count="40"/>
+      <line num="109" type="stmt" count="43"/>
+      <line num="110" type="stmt" count="43"/>
       <line num="114" type="stmt" count="0"/>
-      <line num="115" type="stmt" count="40"/>
-      <line num="116" type="stmt" count="40"/>
-      <line num="130" type="method" name="get_whitelisted_ability" visibility="private" complexity="4" crap="4" count="26"/>
-      <line num="131" type="stmt" count="26"/>
-      <line num="132" type="stmt" count="26"/>
-      <line num="134" type="stmt" count="26"/>
-      <line num="135" type="stmt" count="26"/>
-      <line num="136" type="stmt" count="26"/>
-      <line num="137" type="stmt" count="22"/>
+      <line num="115" type="stmt" count="43"/>
+      <line num="116" type="stmt" count="43"/>
+      <line num="130" type="method" name="get_whitelisted_ability" visibility="private" complexity="4" crap="4" count="29"/>
+      <line num="131" type="stmt" count="29"/>
+      <line num="132" type="stmt" count="29"/>
+      <line num="134" type="stmt" count="29"/>
+      <line num="135" type="stmt" count="29"/>
+      <line num="136" type="stmt" count="29"/>
+      <line num="137" type="stmt" count="25"/>
       <line num="141" type="stmt" count="4"/>
-      <line num="156" type="method" name="to_mcp_name" visibility="private" complexity="1" crap="1" count="41"/>
-      <line num="157" type="stmt" count="41"/>
-      <line num="167" type="method" name="is_gateway_ability" visibility="private" complexity="4" crap="4" count="36"/>
-      <line num="168" type="stmt" count="36"/>
-      <line num="169" type="stmt" count="36"/>
-      <line num="170" type="stmt" count="36"/>
+      <line num="156" type="method" name="to_mcp_name" visibility="private" complexity="1" crap="1" count="44"/>
+      <line num="157" type="stmt" count="44"/>
+      <line num="167" type="method" name="is_gateway_ability" visibility="private" complexity="4" crap="4" count="39"/>
+      <line num="168" type="stmt" count="39"/>
+      <line num="169" type="stmt" count="39"/>
+      <line num="170" type="stmt" count="39"/>
       <line num="171" type="stmt" count="16"/>
-      <line num="175" type="stmt" count="28"/>
-      <line num="190" type="method" name="normalize_parameters" visibility="private" complexity="5" crap="9.29" count="19"/>
-      <line num="191" type="stmt" count="19"/>
+      <line num="175" type="stmt" count="31"/>
+      <line num="190" type="method" name="normalize_parameters" visibility="private" complexity="5" crap="9.29" count="22"/>
+      <line num="191" type="stmt" count="22"/>
       <line num="192" type="stmt" count="11"/>
-      <line num="194" type="stmt" count="8"/>
-      <line num="195" type="stmt" count="8"/>
+      <line num="194" type="stmt" count="11"/>
+      <line num="195" type="stmt" count="11"/>
       <line num="197" type="stmt" count="0"/>
       <line num="198" type="stmt" count="0"/>
       <line num="199" type="stmt" count="0"/>
@@ -107,33 +107,33 @@
       <line num="232" type="stmt" count="2"/>
       <line num="234" type="stmt" count="2"/>
       <line num="237" type="stmt" count="2"/>
-      <line num="248" type="method" name="register_list_abilities" visibility="private" complexity="14" crap="14" count="52"/>
-      <line num="249" type="stmt" count="52"/>
-      <line num="250" type="stmt" count="52"/>
-      <line num="251" type="stmt" count="52"/>
-      <line num="252" type="stmt" count="52"/>
-      <line num="253" type="stmt" count="52"/>
-      <line num="254" type="stmt" count="52"/>
-      <line num="255" type="stmt" count="52"/>
-      <line num="256" type="stmt" count="52"/>
-      <line num="257" type="stmt" count="52"/>
-      <line num="258" type="stmt" count="52"/>
-      <line num="259" type="stmt" count="52"/>
-      <line num="260" type="stmt" count="52"/>
-      <line num="261" type="stmt" count="52"/>
-      <line num="262" type="stmt" count="52"/>
-      <line num="263" type="stmt" count="52"/>
-      <line num="264" type="stmt" count="52"/>
-      <line num="265" type="stmt" count="52"/>
-      <line num="266" type="stmt" count="52"/>
-      <line num="267" type="stmt" count="52"/>
-      <line num="268" type="stmt" count="52"/>
-      <line num="269" type="stmt" count="52"/>
-      <line num="270" type="stmt" count="52"/>
-      <line num="271" type="stmt" count="52"/>
-      <line num="272" type="stmt" count="52"/>
-      <line num="273" type="stmt" count="52"/>
-      <line num="274" type="stmt" count="52"/>
+      <line num="248" type="method" name="register_list_abilities" visibility="private" complexity="14" crap="14" count="55"/>
+      <line num="249" type="stmt" count="55"/>
+      <line num="250" type="stmt" count="55"/>
+      <line num="251" type="stmt" count="55"/>
+      <line num="252" type="stmt" count="55"/>
+      <line num="253" type="stmt" count="55"/>
+      <line num="254" type="stmt" count="55"/>
+      <line num="255" type="stmt" count="55"/>
+      <line num="256" type="stmt" count="55"/>
+      <line num="257" type="stmt" count="55"/>
+      <line num="258" type="stmt" count="55"/>
+      <line num="259" type="stmt" count="55"/>
+      <line num="260" type="stmt" count="55"/>
+      <line num="261" type="stmt" count="55"/>
+      <line num="262" type="stmt" count="55"/>
+      <line num="263" type="stmt" count="55"/>
+      <line num="264" type="stmt" count="55"/>
+      <line num="265" type="stmt" count="55"/>
+      <line num="266" type="stmt" count="55"/>
+      <line num="267" type="stmt" count="55"/>
+      <line num="268" type="stmt" count="55"/>
+      <line num="269" type="stmt" count="55"/>
+      <line num="270" type="stmt" count="55"/>
+      <line num="271" type="stmt" count="55"/>
+      <line num="272" type="stmt" count="55"/>
+      <line num="273" type="stmt" count="55"/>
+      <line num="274" type="stmt" count="55"/>
       <line num="275" type="stmt" count="15"/>
       <line num="280" type="stmt" count="15"/>
       <line num="281" type="stmt" count="15"/>
@@ -175,35 +175,35 @@
       <line num="337" type="stmt" count="8"/>
       <line num="338" type="stmt" count="8"/>
       <line num="341" type="stmt" count="15"/>
-      <line num="342" type="stmt" count="52"/>
-      <line num="343" type="stmt" count="52"/>
-      <line num="344" type="stmt" count="52"/>
-      <line num="345" type="stmt" count="52"/>
-      <line num="346" type="stmt" count="52"/>
-      <line num="347" type="stmt" count="52"/>
-      <line num="348" type="stmt" count="52"/>
-      <line num="349" type="stmt" count="52"/>
-      <line num="350" type="stmt" count="52"/>
-      <line num="351" type="stmt" count="52"/>
-      <line num="352" type="stmt" count="52"/>
-      <line num="361" type="method" name="register_get_ability_schema" visibility="private" complexity="4" crap="4" count="52"/>
-      <line num="362" type="stmt" count="52"/>
-      <line num="363" type="stmt" count="52"/>
-      <line num="364" type="stmt" count="52"/>
-      <line num="365" type="stmt" count="52"/>
-      <line num="366" type="stmt" count="52"/>
-      <line num="367" type="stmt" count="52"/>
-      <line num="368" type="stmt" count="52"/>
-      <line num="369" type="stmt" count="52"/>
-      <line num="370" type="stmt" count="52"/>
-      <line num="371" type="stmt" count="52"/>
-      <line num="372" type="stmt" count="52"/>
-      <line num="373" type="stmt" count="52"/>
-      <line num="374" type="stmt" count="52"/>
-      <line num="375" type="stmt" count="52"/>
-      <line num="376" type="stmt" count="52"/>
-      <line num="377" type="stmt" count="52"/>
-      <line num="378" type="stmt" count="52"/>
+      <line num="342" type="stmt" count="55"/>
+      <line num="343" type="stmt" count="55"/>
+      <line num="344" type="stmt" count="55"/>
+      <line num="345" type="stmt" count="55"/>
+      <line num="346" type="stmt" count="55"/>
+      <line num="347" type="stmt" count="55"/>
+      <line num="348" type="stmt" count="55"/>
+      <line num="349" type="stmt" count="55"/>
+      <line num="350" type="stmt" count="55"/>
+      <line num="351" type="stmt" count="55"/>
+      <line num="352" type="stmt" count="55"/>
+      <line num="361" type="method" name="register_get_ability_schema" visibility="private" complexity="4" crap="4" count="55"/>
+      <line num="362" type="stmt" count="55"/>
+      <line num="363" type="stmt" count="55"/>
+      <line num="364" type="stmt" count="55"/>
+      <line num="365" type="stmt" count="55"/>
+      <line num="366" type="stmt" count="55"/>
+      <line num="367" type="stmt" count="55"/>
+      <line num="368" type="stmt" count="55"/>
+      <line num="369" type="stmt" count="55"/>
+      <line num="370" type="stmt" count="55"/>
+      <line num="371" type="stmt" count="55"/>
+      <line num="372" type="stmt" count="55"/>
+      <line num="373" type="stmt" count="55"/>
+      <line num="374" type="stmt" count="55"/>
+      <line num="375" type="stmt" count="55"/>
+      <line num="376" type="stmt" count="55"/>
+      <line num="377" type="stmt" count="55"/>
+      <line num="378" type="stmt" count="55"/>
       <line num="379" type="stmt" count="5"/>
       <line num="380" type="stmt" count="0"/>
       <line num="383" type="stmt" count="5"/>
@@ -221,77 +221,84 @@
       <line num="399" type="stmt" count="3"/>
       <line num="400" type="stmt" count="3"/>
       <line num="401" type="stmt" count="3"/>
-      <line num="402" type="stmt" count="52"/>
-      <line num="403" type="stmt" count="52"/>
-      <line num="404" type="stmt" count="52"/>
-      <line num="405" type="stmt" count="52"/>
-      <line num="406" type="stmt" count="52"/>
-      <line num="407" type="stmt" count="52"/>
-      <line num="408" type="stmt" count="52"/>
-      <line num="409" type="stmt" count="52"/>
-      <line num="410" type="stmt" count="52"/>
-      <line num="411" type="stmt" count="52"/>
-      <line num="412" type="stmt" count="52"/>
-      <line num="421" type="method" name="register_call_ability" visibility="private" complexity="13" crap="13" count="52"/>
-      <line num="422" type="stmt" count="52"/>
-      <line num="423" type="stmt" count="52"/>
-      <line num="424" type="stmt" count="52"/>
-      <line num="425" type="stmt" count="52"/>
-      <line num="426" type="stmt" count="52"/>
-      <line num="427" type="stmt" count="52"/>
-      <line num="428" type="stmt" count="52"/>
-      <line num="429" type="stmt" count="52"/>
-      <line num="430" type="stmt" count="52"/>
-      <line num="431" type="stmt" count="52"/>
-      <line num="432" type="stmt" count="52"/>
-      <line num="433" type="stmt" count="52"/>
-      <line num="434" type="stmt" count="52"/>
-      <line num="435" type="stmt" count="52"/>
-      <line num="436" type="stmt" count="52"/>
-      <line num="437" type="stmt" count="52"/>
-      <line num="438" type="stmt" count="52"/>
-      <line num="439" type="stmt" count="52"/>
-      <line num="440" type="stmt" count="52"/>
-      <line num="441" type="stmt" count="52"/>
-      <line num="442" type="stmt" count="52"/>
-      <line num="443" type="stmt" count="22"/>
+      <line num="402" type="stmt" count="55"/>
+      <line num="403" type="stmt" count="55"/>
+      <line num="404" type="stmt" count="55"/>
+      <line num="405" type="stmt" count="55"/>
+      <line num="406" type="stmt" count="55"/>
+      <line num="407" type="stmt" count="55"/>
+      <line num="408" type="stmt" count="55"/>
+      <line num="409" type="stmt" count="55"/>
+      <line num="410" type="stmt" count="55"/>
+      <line num="411" type="stmt" count="55"/>
+      <line num="412" type="stmt" count="55"/>
+      <line num="421" type="method" name="register_call_ability" visibility="private" complexity="15" crap="15" count="55"/>
+      <line num="422" type="stmt" count="55"/>
+      <line num="423" type="stmt" count="55"/>
+      <line num="424" type="stmt" count="55"/>
+      <line num="425" type="stmt" count="55"/>
+      <line num="426" type="stmt" count="55"/>
+      <line num="427" type="stmt" count="55"/>
+      <line num="428" type="stmt" count="55"/>
+      <line num="429" type="stmt" count="55"/>
+      <line num="430" type="stmt" count="55"/>
+      <line num="431" type="stmt" count="55"/>
+      <line num="432" type="stmt" count="55"/>
+      <line num="433" type="stmt" count="55"/>
+      <line num="434" type="stmt" count="55"/>
+      <line num="435" type="stmt" count="55"/>
+      <line num="436" type="stmt" count="55"/>
+      <line num="437" type="stmt" count="55"/>
+      <line num="438" type="stmt" count="55"/>
+      <line num="439" type="stmt" count="55"/>
+      <line num="440" type="stmt" count="55"/>
+      <line num="441" type="stmt" count="55"/>
+      <line num="442" type="stmt" count="55"/>
+      <line num="443" type="stmt" count="25"/>
       <line num="444" type="stmt" count="0"/>
-      <line num="447" type="stmt" count="22"/>
+      <line num="447" type="stmt" count="25"/>
       <line num="448" type="stmt" count="1"/>
       <line num="449" type="stmt" count="1"/>
       <line num="450" type="stmt" count="1"/>
       <line num="451" type="stmt" count="1"/>
-      <line num="454" type="stmt" count="21"/>
-      <line num="456" type="stmt" count="21"/>
+      <line num="454" type="stmt" count="24"/>
+      <line num="456" type="stmt" count="24"/>
       <line num="457" type="stmt" count="2"/>
-      <line num="460" type="stmt" count="19"/>
-      <line num="461" type="stmt" count="19"/>
-      <line num="462" type="stmt" count="19"/>
-      <line num="464" type="stmt" count="19"/>
-      <line num="466" type="stmt" count="19"/>
-      <line num="471" type="stmt" count="4"/>
-      <line num="472" type="stmt" count="4"/>
-      <line num="473" type="stmt" count="3"/>
-      <line num="474" type="stmt" count="4"/>
-      <line num="476" type="stmt" count="4"/>
-      <line num="477" type="stmt" count="1"/>
-      <line num="485" type="stmt" count="4"/>
-      <line num="486" type="stmt" count="2"/>
-      <line num="487" type="stmt" count="4"/>
-      <line num="489" type="stmt" count="4"/>
-      <line num="492" type="stmt" count="15"/>
-      <line num="493" type="stmt" count="52"/>
-      <line num="494" type="stmt" count="52"/>
-      <line num="495" type="stmt" count="52"/>
-      <line num="496" type="stmt" count="52"/>
-      <line num="497" type="stmt" count="52"/>
-      <line num="498" type="stmt" count="52"/>
-      <line num="499" type="stmt" count="52"/>
-      <line num="500" type="stmt" count="52"/>
-      <line num="501" type="stmt" count="52"/>
-      <line num="502" type="stmt" count="52"/>
-      <line num="503" type="stmt" count="52"/>
-      <metrics loc="506" ncloc="389" classes="1" methods="10" coveredmethods="6" conditionals="0" coveredconditionals="0" statements="266" coveredstatements="256" elements="276" coveredelements="262"/>
+      <line num="460" type="stmt" count="22"/>
+      <line num="461" type="stmt" count="22"/>
+      <line num="462" type="stmt" count="22"/>
+      <line num="464" type="stmt" count="22"/>
+      <line num="466" type="stmt" count="22"/>
+      <line num="471" type="stmt" count="7"/>
+      <line num="472" type="stmt" count="7"/>
+      <line num="473" type="stmt" count="4"/>
+      <line num="474" type="stmt" count="7"/>
+      <line num="484" type="stmt" count="7"/>
+      <line num="485" type="stmt" count="3"/>
+      <line num="486" type="stmt" count="3"/>
+      <line num="487" type="stmt" count="3"/>
+      <line num="488" type="stmt" count="3"/>
+      <line num="489" type="stmt" count="3"/>
+      <line num="490" type="stmt" count="2"/>
+      <line num="494" type="stmt" count="7"/>
+      <line num="495" type="stmt" count="1"/>
+      <line num="503" type="stmt" count="7"/>
+      <line num="504" type="stmt" count="3"/>
+      <line num="505" type="stmt" count="7"/>
+      <line num="507" type="stmt" count="7"/>
+      <line num="510" type="stmt" count="15"/>
+      <line num="511" type="stmt" count="55"/>
+      <line num="512" type="stmt" count="55"/>
+      <line num="513" type="stmt" count="55"/>
+      <line num="514" type="stmt" count="55"/>
+      <line num="515" type="stmt" count="55"/>
+      <line num="516" type="stmt" count="55"/>
+      <line num="517" type="stmt" count="55"/>
+      <line num="518" type="stmt" count="55"/>
+      <line num="519" type="stmt" count="55"/>
+      <line num="520" type="stmt" count="55"/>
+      <line num="521" type="stmt" count="55"/>
+      <metrics loc="524" ncloc="399" classes="1" methods="10" coveredmethods="6" conditionals="0" coveredconditionals="0" statements="273" coveredstatements="263" elements="283" coveredelements="269"/>
     </file>
     <file name="/home/runner/work/wp-module-mcp/wp-module-mcp/includes/Abilities/BlockEditor.php">
       <class name="BLU\Abilities\BlockEditor" namespace="global">
@@ -6803,6 +6810,6 @@
       <line num="219" type="stmt" count="0"/>
       <metrics loc="220" ncloc="207" classes="0" methods="0" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="15" coveredstatements="0" elements="15" coveredelements="0"/>
     </file>
-    <metrics files="33" loc="11023" ncloc="9348" classes="25" methods="133" coveredmethods="42" conditionals="0" coveredconditionals="0" statements="6495" coveredstatements="2649" elements="6628" coveredelements="2691"/>
+    <metrics files="33" loc="11041" ncloc="9358" classes="25" methods="133" coveredmethods="42" conditionals="0" coveredconditionals="0" statements="6502" coveredstatements="2656" elements="6635" coveredelements="2698"/>
   </project>
 </coverage>
