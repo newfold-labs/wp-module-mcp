@@ -295,10 +295,10 @@ function blu_compact_post_search_response( array $response ): array {
 	$response['message'] = array_map(
 		static function ( array $post ): array {
 			return array(
-				'id'     => $post['id'],
-				'title'  => $post['title']['rendered'],
-				'status' => $post['status'],
-				'slug'   => $post['slug'],
+				'id'     => $post['id'] ?? 0,
+				'title'  => $post['title']['rendered'] ?? '',
+				'status' => $post['status'] ?? '',
+				'slug'   => $post['slug'] ?? '',
 			);
 		},
 		$response['message']

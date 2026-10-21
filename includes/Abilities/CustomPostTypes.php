@@ -98,11 +98,14 @@ class CustomPostTypes {
 
 					$page     = $input['page'] ?? 1;
 					$per_page = $input['per_page'] ?? 10;
+					$can_read_all = current_user_can( 'manage_options' );
 
 					$args = array(
 						'post_type'      => $resolved,
-						'posts_per_page' => $per_page,
-						'paged'          => $page,
+						// Per-item permissions must be applied before slicing visible pages.
+						'posts_per_page' => $can_read_all ? $per_page : -1,
+						'paged'          => $can_read_all ? $page : 1,
+						'no_found_rows'  => ! $can_read_all,
 						'post_status'    => 'publish',
 					);
 
@@ -122,21 +125,22 @@ class CustomPostTypes {
 					$visible = array_values(
 						array_filter(
 							$query->posts,
-							static function ( $post ) {
-								return is_post_publicly_viewable( $post ) || current_user_can( 'edit_post', $post->ID ) || current_user_can( 'manage_options' );
+							static function ( $post ) use ( $can_read_all ) {
+								return $can_read_all || is_post_publicly_viewable( $post ) || current_user_can( 'edit_post', $post->ID );
 							}
 						)
 					);
-					$filtered = count( $visible ) !== count( $query->posts );
-					$results  = array_map( 'blu_project_post_summary', $visible );
+					$total   = $can_read_all ? (int) $query->found_posts : count( $visible );
+					$pages   = $can_read_all ? (int) $query->max_num_pages : (int) ceil( $total / $per_page );
+					$results = array_map( 'blu_project_post_summary', $can_read_all ? $visible : array_slice( $visible, ( $page - 1 ) * $per_page, $per_page ) );
 
 					return blu_prepare_ability_response(
 						200,
 						array(
 							'post_type' => $resolved,
 							'results'   => $results,
-							'total'     => $filtered ? count( $results ) : (int) $query->found_posts,
-							'pages'     => $filtered ? 1 : (int) $query->max_num_pages,
+							'total'     => $total,
+							'pages'     => $pages,
 							'page'      => (int) $page,
 							'per_page'  => (int) $per_page,
 						)

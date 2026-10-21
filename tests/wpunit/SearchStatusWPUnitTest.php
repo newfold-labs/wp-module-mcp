@@ -225,6 +225,103 @@ class SearchStatusWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$this->assertArrayHasKey( $own_id, $by_id );
 	}
 
+	/** Inaccessible matches must not consume a page or truncate the visible total. */
+	public function test_cpt_search_paginates_visible_items(): void {
+		$this->register_search_abilities();
+		$admin_id        = get_current_user_id();
+		$public_id       = self::factory()->post->create(
+			array(
+				'post_type'   => self::CPT_SLUG,
+				'post_status' => 'publish',
+				'post_date'   => '2026-01-01 12:00:00',
+			)
+		);
+		$older_public_id = self::factory()->post->create(
+			array(
+				'post_type'   => self::CPT_SLUG,
+				'post_status' => 'publish',
+				'post_date'   => '2025-12-31 12:00:00',
+			)
+		);
+		self::factory()->post->create(
+			array(
+				'post_type'   => self::CPT_SLUG,
+				'post_status' => 'draft',
+				'post_author' => $admin_id,
+				'post_date'   => '2026-01-02 12:00:00',
+			)
+		);
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'author' ) ) );
+
+		$result = blu_get_ability( 'blu/cpt-search' )->execute(
+			array(
+				'post_type' => self::CPT_SLUG,
+				'status'    => 'any',
+				'per_page'  => 1,
+				'page'      => 1,
+			)
+		);
+		$this->assertSame( array( $public_id ), array_column( $result['message']['results'], 'id' ) );
+		$this->assertSame( 2, $result['message']['total'] );
+		$this->assertSame( 2, $result['message']['pages'] );
+		$second_page = blu_get_ability( 'blu/cpt-search' )->execute(
+			array(
+				'post_type' => self::CPT_SLUG,
+				'status'    => 'any',
+				'per_page'  => 1,
+				'page'      => 2,
+			)
+		);
+		$this->assertSame( array( $older_public_id ), array_column( $second_page['message']['results'], 'id' ) );
+	}
+
+	/** Scheduled posts use the future status slug and appear on explicit request. */
+	public function test_posts_search_finds_scheduled_items(): void {
+		$this->register_search_abilities();
+		$scheduled_id = self::factory()->post->create(
+			array(
+				'post_type'   => 'post',
+				'post_title'  => 'Scheduled Search Item',
+				'post_status' => 'future',
+				'post_date'   => '2030-01-01 12:00:00',
+			)
+		);
+		$result = blu_get_ability( 'blu/posts-search' )->execute( array( 'status' => 'future' ) );
+		$by_id  = array_column( $result['message'], null, 'id' );
+		$this->assertSame( 'future', $by_id[ $scheduled_id ]['status'] );
+		$this->assertSame( 'Scheduled Search Item', $by_id[ $scheduled_id ]['title'] );
+	}
+
+	/** Missing optional REST fields must not raise notices in compact results. */
+	public function test_compact_post_search_handles_missing_fields(): void {
+		$result = blu_compact_post_search_response(
+			array(
+				'statusCode' => 200,
+				'status'     => 'success',
+				'message'    => array( array( 'id' => 42 ) ),
+			)
+		);
+		$this->assertSame( '', $result['message'][0]['title'] );
+		$this->assertSame( '', $result['message'][0]['status'] );
+		$this->assertSame( '', $result['message'][0]['slug'] );
+	}
+
+	/** Search requests should avoid preparing REST fields discarded from results. */
+	public function test_posts_search_requests_only_summary_fields(): void {
+		$this->register_search_abilities();
+		$fields  = null;
+		$capture = static function ( $result, $server, $request ) use ( &$fields ) {
+			if ( '/wp/v2/posts' === $request->get_route() ) {
+				$fields = $request->get_param( '_fields' );
+			}
+			return $result;
+		};
+		add_filter( 'rest_pre_dispatch', $capture, 10, 3 );
+		blu_get_ability( 'blu/posts-search' )->execute( array() );
+		remove_filter( 'rest_pre_dispatch', $capture, 10 );
+		$this->assertSame( 'id,title,slug,status', $fields );
+	}
+
 	/** Administrators retain access to custom types whose capabilities were never granted. */
 	public function test_cpt_explicit_any_keeps_administrator_access_to_custom_capability_types(): void {
 		$this->register_search_abilities();

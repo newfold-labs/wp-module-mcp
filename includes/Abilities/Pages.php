@@ -58,6 +58,7 @@ class Pages {
 					} else {
 						$request->set_param( 'status', 'publish' );
 					}
+					$request->set_param( '_fields', 'id,title,slug,status' );
 					$response = rest_do_request( $request );
 					return blu_compact_post_search_response( blu_standardize_rest_response( $response ) );
 				},
