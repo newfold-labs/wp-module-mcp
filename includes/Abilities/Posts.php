@@ -26,7 +26,7 @@ class Posts {
 			'blu/posts-search',
 			array(
 				'label'               => 'Search Posts',
-				'description'         => 'Search and filter WordPress posts with pagination',
+				'description'         => 'Search WordPress posts. Results include each post status. To find a deleted post, search again with status=trash; an omitted status does not search the trash.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
@@ -37,7 +37,7 @@ class Posts {
 						),
 						'status'   => array(
 							'type'        => 'string',
-							'description' => 'Post status(es): publish, draft, pending, future, private. Comma-separated for multiple. Omit to search all statuses.',
+							'description' => 'Defaults to any, which includes published and unpublished posts but excludes trash. Use trash to find deleted posts, or a specific status such as publish or draft.',
 						),
 						'page'     => array(
 							'type'        => 'integer',
@@ -51,15 +51,14 @@ class Posts {
 				),
 				'execute_callback'    => function ( $input = null ) {
 					$request = new \WP_REST_Request( 'GET', '/wp/v2/posts' );
-					$all_statuses = 'publish,future,draft,pending,private';
 					if ( $input ) {
-						// Default to all statuses when not specified or empty (WP defaults to publish only).
+						// WordPress REST defaults to publish when status is omitted.
 						if ( ! isset( $input['status'] ) || '' === $input['status'] ) {
-							$input['status'] = $all_statuses;
+							$input['status'] = 'any';
 						}
 						$request->set_query_params( $input );
 					} else {
-						$request->set_param( 'status', $all_statuses );
+						$request->set_param( 'status', 'any' );
 					}
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );

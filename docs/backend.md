@@ -19,6 +19,10 @@ updated: 2026-03-26
 
 Implementations live under **`includes/Abilities/`** (e.g. `Posts`, `Pages`, `Media`, `Users`, `SiteInfo`, `Settings`, `CustomPostTypes`, `RestApiCrud`, `GlobalStyles`, `Themes`, `WooProducts`, `WooOrders`, `Prompts`, `Resources`). Each class registers its abilities on construction.
 
+### Searching by status
+
+Post, page, custom post type, and WooCommerce product searches default to `status=any`, which includes published and unpublished items but excludes the trash. Each result includes its actual `status`. To locate a deleted item, search explicitly with `status=trash`; a normal search never retries in the trash. Custom post type searches check visibility before returning unpublished items because they query posts directly rather than through a REST controller.
+
 ## Discovery tools
 
 `AbilityGateway` registers three meta-tools (`blu-list-abilities`, `blu-get-ability-schema`, `blu-call-ability`). `RestApiCrud` registers `blu-list-api-functions`, `blu-get-function-details`, and `blu-run-api-function` for raw REST access.

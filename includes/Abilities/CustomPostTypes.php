@@ -56,7 +56,7 @@ class CustomPostTypes {
 			'blu/cpt-search',
 			array(
 				'label'               => 'Search Custom Post Type Items',
-				'description'         => 'Search and filter content items within a custom post type with pagination. Accepts friendly post_type identifiers (slug, REST base, or label). Results are slim projections — note the `id` of each result to use with blu/get-cpt, blu/update-cpt, or blu/delete-cpt.',
+				'description'         => 'Search custom post type items with pagination. Results include each item status. To find a deleted item, search again with status=trash; an omitted status does not search the trash. Accepts post type slug, REST base, or label. Note each result ID for get, update, or delete.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
@@ -75,7 +75,7 @@ class CustomPostTypes {
 						),
 						'status'    => array(
 							'type'        => 'string',
-							'description' => 'Filter by post status. Defaults to "publish". Pass "any" to include drafts and other statuses.',
+							'description' => 'Defaults to any, which includes published and unpublished items but excludes trash. Use trash to find deleted items, or a specific status such as publish or draft.',
 						),
 						'page'      => array(
 							'type'        => 'integer',
@@ -103,7 +103,7 @@ class CustomPostTypes {
 						'post_type'      => $resolved,
 						'posts_per_page' => $per_page,
 						'paged'          => $page,
-						'post_status'    => 'publish',
+						'post_status'    => 'any',
 					);
 
 					if ( ! empty( $input['search'] ) ) {
@@ -119,15 +119,24 @@ class CustomPostTypes {
 					}
 
 					$query   = new \WP_Query( $args );
-					$results = array_map( 'blu_project_post_summary', $query->posts );
+					$visible = array_values(
+						array_filter(
+							$query->posts,
+							static function ( $post ) {
+								return is_post_publicly_viewable( $post ) || current_user_can( 'edit_post', $post->ID ) || current_user_can( 'manage_options' );
+							}
+						)
+					);
+					$filtered = count( $visible ) !== count( $query->posts );
+					$results  = array_map( 'blu_project_post_summary', $visible );
 
 					return blu_prepare_ability_response(
 						200,
 						array(
 							'post_type' => $resolved,
 							'results'   => $results,
-							'total'     => (int) $query->found_posts,
-							'pages'     => (int) $query->max_num_pages,
+							'total'     => $filtered ? count( $results ) : (int) $query->found_posts,
+							'pages'     => $filtered ? 1 : (int) $query->max_num_pages,
 							'page'      => (int) $page,
 							'per_page'  => (int) $per_page,
 						)
