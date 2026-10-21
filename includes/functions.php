@@ -508,11 +508,18 @@ if ( ! function_exists( 'blu_filter_terms_by_patterns' ) ) {
 			}
 
 			if ( count( $filtered_ids ) > 0 ) {
-				$terms = array_filter(
-					$terms,
-					function ( $term ) use ( $filtered_ids ) {
-						return in_array( $term['id'], $filtered_ids );
-					}
+				// array_values, because array_filter keeps the original keys and a
+				// gappy integer-keyed array serializes as a JSON object, not a list.
+				// Filtering to the term at index 2 would hand the caller
+				// `{"2":{...}}` where an unfiltered call returns `[{...}]`, so the
+				// same tool answers in two different shapes depending on its input.
+				$terms = array_values(
+					array_filter(
+						$terms,
+						function ( $term ) use ( $filtered_ids ) {
+							return in_array( $term['id'], $filtered_ids );
+						}
+					)
 				);
 			}
 		}
