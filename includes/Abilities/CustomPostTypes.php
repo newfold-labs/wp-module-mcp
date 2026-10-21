@@ -56,7 +56,7 @@ class CustomPostTypes {
 			'blu/cpt-search',
 			array(
 				'label'               => 'Search Custom Post Type Items',
-				'description'         => 'Search and filter content items within a custom post type with pagination. Accepts friendly post_type identifiers (slug, REST base, or label). Results are slim projections — note the `id` of each result to use with blu/get-cpt, blu/update-cpt, or blu/delete-cpt.',
+				'description'         => 'Search custom post type items with pagination. Results include each item status. To find a deleted item, search again with status=trash; an omitted status does not search the trash. Accepts post type slug, REST base, or label. Note each result ID for get, update, or delete.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
@@ -75,7 +75,7 @@ class CustomPostTypes {
 						),
 						'status'    => array(
 							'type'        => 'string',
-							'description' => 'Filter by post status. Defaults to "publish". Pass "any" to include drafts and other statuses.',
+							'description' => 'Defaults to publish. Use any to include other non-trash statuses, future (scheduled) to find scheduled items, or trash to find deleted items. Other status slugs may be registered on this site; discover current values with GET /wp/v2/statuses. Each result includes its actual status.',
 						),
 						'page'      => array(
 							'type'        => 'integer',
@@ -98,11 +98,14 @@ class CustomPostTypes {
 
 					$page     = $input['page'] ?? 1;
 					$per_page = $input['per_page'] ?? 10;
+					$can_read_all = current_user_can( 'manage_options' );
 
 					$args = array(
 						'post_type'      => $resolved,
-						'posts_per_page' => $per_page,
-						'paged'          => $page,
+						// Per-item permissions must be applied before slicing visible pages.
+						'posts_per_page' => $can_read_all ? $per_page : -1,
+						'paged'          => $can_read_all ? $page : 1,
+						'no_found_rows'  => ! $can_read_all,
 						'post_status'    => 'publish',
 					);
 
@@ -119,15 +122,25 @@ class CustomPostTypes {
 					}
 
 					$query   = new \WP_Query( $args );
-					$results = array_map( 'blu_project_post_summary', $query->posts );
+					$visible = array_values(
+						array_filter(
+							$query->posts,
+							static function ( $post ) use ( $can_read_all ) {
+								return $can_read_all || is_post_publicly_viewable( $post ) || current_user_can( 'edit_post', $post->ID );
+							}
+						)
+					);
+					$total   = $can_read_all ? (int) $query->found_posts : count( $visible );
+					$pages   = $can_read_all ? (int) $query->max_num_pages : (int) ceil( $total / $per_page );
+					$results = array_map( 'blu_project_post_summary', $can_read_all ? $visible : array_slice( $visible, ( $page - 1 ) * $per_page, $per_page ) );
 
 					return blu_prepare_ability_response(
 						200,
 						array(
 							'post_type' => $resolved,
 							'results'   => $results,
-							'total'     => (int) $query->found_posts,
-							'pages'     => (int) $query->max_num_pages,
+							'total'     => $total,
+							'pages'     => $pages,
 							'page'      => (int) $page,
 							'per_page'  => (int) $per_page,
 						)

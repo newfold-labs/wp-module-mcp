@@ -278,6 +278,36 @@ function blu_standardize_rest_response( $response ) {
 }
 
 /**
+ * Keep only the fields needed to identify a post or page search match.
+ *
+ * Single-item abilities provide the full REST resource when more detail is
+ * needed. Error responses keep their original status and message.
+ *
+ * @param array $response Standardized REST response.
+ *
+ * @return array Compact search response.
+ */
+function blu_compact_post_search_response( array $response ): array {
+	if ( 200 !== $response['statusCode'] || ! is_array( $response['message'] ) ) {
+		return $response;
+	}
+
+	$response['message'] = array_map(
+		static function ( array $post ): array {
+			return array(
+				'id'     => $post['id'] ?? 0,
+				'title'  => $post['title']['rendered'] ?? '',
+				'status' => $post['status'] ?? '',
+				'slug'   => $post['slug'] ?? '',
+			);
+		},
+		$response['message']
+	);
+
+	return $response;
+}
+
+/**
  * Maps an HTTP status code to a simplified status type.
  *
  * @param int $status_code The HTTP status code to evaluate.

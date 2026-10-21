@@ -363,7 +363,7 @@ class CustomPostTypesWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase 
 	}
 
 	/**
-	 * Drafts are excluded by default and included when status is "any".
+	 * Drafts are excluded by default and included with status=any.
 	 *
 	 * @return void
 	 */
@@ -388,6 +388,15 @@ class CustomPostTypesWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase 
 			)
 		);
 		$this->assertSame( 2, $any['message']['total'] );
+
+		$published = $this->execute(
+			'blu/cpt-search',
+			array(
+				'post_type' => 'Books',
+				'status'    => 'publish',
+			)
+		);
+		$this->assertSame( 1, $published['message']['total'] );
 	}
 
 	/**

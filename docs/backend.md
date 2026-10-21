@@ -19,6 +19,12 @@ updated: 2026-03-26
 
 Implementations live under **`includes/Abilities/`** (e.g. `Posts`, `Pages`, `Media`, `Users`, `SiteInfo`, `Settings`, `CustomPostTypes`, `RestApiCrud`, `GlobalStyles`, `Themes`, `WooProducts`, `WooOrders`, `Prompts`, `Resources`). Each class registers its abilities on construction.
 
+### Searching by status
+
+Post, page, custom post type, and WooCommerce product searches default to `status=publish`. Pass `status=any` to include other non-trash statuses, or `status=trash` to locate a deleted item. Each result includes its actual `status`; a normal search never retries in the trash. Post and page searches return compact `id`, plain `title`, `status`, and `slug` entries; their get abilities provide full details. Custom post type searches check visibility before pagination and return counts of accessible items because they query posts directly rather than through a REST controller.
+
+WordPress uses `future` for scheduled content. Its current, visible status slugs, including eligible custom statuses, are available from `GET /wp/v2/statuses` through the REST gateway. The search abilities accept status strings rather than a fixed enum so plugin-registered statuses are not frozen into the tool schema. WooCommerce validates product status against its own REST endpoint's accepted values, which may differ from the WordPress status catalog.
+
 ## Discovery tools
 
 `AbilityGateway` registers three meta-tools (`blu-list-abilities`, `blu-get-ability-schema`, `blu-call-ability`). `RestApiCrud` registers `blu-list-api-functions`, `blu-get-function-details`, and `blu-run-api-function` for raw REST access.

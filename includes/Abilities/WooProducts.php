@@ -31,7 +31,7 @@ class WooProducts {
 			'blu/wc-products-search',
 			array(
 				'label'               => 'Search WooCommerce Products',
-				'description'         => 'Search and filter WooCommerce products with pagination',
+				'description'         => 'Search WooCommerce products. Results include each product status. To find a deleted product, search again with status=trash; an omitted status does not search the trash.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
@@ -39,6 +39,10 @@ class WooProducts {
 						'search'   => array(
 							'type'        => 'string',
 							'description' => 'Search term',
+						),
+						'status'   => array(
+							'type'        => 'string',
+							'description' => 'Defaults to publish. Use any to include other non-trash statuses, future (scheduled) to find scheduled products, or trash to find deleted products. WooCommerce validates product statuses using its own REST API rules. Each result includes its actual status.',
 						),
 						'page'     => array(
 							'type'        => 'integer',
@@ -52,9 +56,11 @@ class WooProducts {
 				),
 				'execute_callback'    => function ( $input = null ) {
 					$request = new \WP_REST_Request( 'GET', '/wc/v3/products' );
-					if ( $input ) {
-						$request->set_query_params( $input );
+					$params = is_array( $input ) ? $input : array();
+					if ( ! isset( $params['status'] ) || '' === $params['status'] ) {
+						$params['status'] = 'publish';
 					}
+					$request->set_query_params( $params );
 					$response = rest_do_request( $request );
 
 					return blu_standardize_rest_response( $response );
