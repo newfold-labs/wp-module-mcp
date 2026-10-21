@@ -49,11 +49,11 @@ Response items: `{ name, label, description, annotations }`. The previously-retu
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `namespace` | string | Exact match on the REST namespace (first two path segments, e.g. `"wp/v2"`). Leading/trailing slashes tolerated. |
-| `methods` | array of `"GET" \| "POST" \| "PATCH" \| "DELETE"` | HTTP methods to include (uppercase, validated by the schema enum). Empty/omitted means all methods. |
+| `namespace` | string | Exact match on the REST namespace registered by WordPress (e.g. `"wp/v2"` or `"wc-analytics"`). Leading/trailing slashes tolerated. |
+| `methods` | array of `"GET" \| "HEAD" \| "POST" \| "PUT" \| "PATCH" \| "DELETE" \| "OPTIONS"` | HTTP methods to include (uppercase, validated by the schema enum). Empty/omitted means all methods. |
 | `search` | string | Case-insensitive substring match on the route string. |
 
-Response items: `{ route, method, namespace }`. `namespace` is derived from the route's first two path segments (empty string for malformed routes).
+Response items: `{ route, method, namespace }`. `namespace` is matched against the namespaces WordPress registered (empty string if none match). Routes registered lazily during REST index discovery are included by default.
 
 Both tools set `additionalProperties: false` on their input schemas so unknown fields are rejected at validation time. Output schemas are intentionally omitted to keep `tools/list` payload small — response shapes are documented above and stable.
 

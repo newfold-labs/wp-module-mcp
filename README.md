@@ -36,6 +36,8 @@ You do **not** need to re-initialize for each tool call — reuse the session ID
 
 Once a session is established, call `tools/list` to get the 3 gateway tools and identify them by schema shape. Then interact in 3 steps:
 
+For a WordPress REST API request, use the **List** tool to find `blu-list-api-functions`, `blu-get-function-details`, or `blu-run-api-function` among the available abilities. Retrieve the selected ability's schema with the **Schema** tool, then invoke it through the **Call** tool. The REST catalog reflects routes registered by currently active plugins; these abilities do not add top-level MCP tools.
+
 **1. Discover** — call the **List** tool to see what's available:
 ```json
 {
@@ -161,7 +163,7 @@ Both gateway list tools (`blu-list-abilities`) and the REST catalog tool (`blu-l
 | Filter | Type | Behavior |
 |--------|------|----------|
 | `namespace` | string | Exact match on the REST namespace as WordPress registered it. Multi-segment (`"wp/v2"`, `"wc/v3"`, `"wc-admin/marketing"`) and single-segment (`"wc-analytics"`) namespaces are both supported. Leading and trailing slashes are tolerated. |
-| `methods` | array of `"GET" \| "POST" \| "PATCH" \| "DELETE"` | Restrict to listed HTTP methods (uppercase, validated by the schema enum). Omit or pass an empty array to allow all methods. |
+| `methods` | array of `"GET" \| "HEAD" \| "POST" \| "PUT" \| "PATCH" \| "DELETE" \| "OPTIONS"` | Restrict to listed HTTP methods (uppercase, validated by the schema enum). Omit or pass an empty array to allow all methods. |
 | `search` | string | Case-insensitive substring match on the route string. |
 
 ```json
@@ -191,7 +193,7 @@ The schemas above are the *what*; this section is the *how*. Every list call has
 **`blu-list-api-functions` — `namespace`, `methods`, and `search` keep REST discovery cheap.**
 
 - `namespace` is an exact match on the namespace WordPress registered the route under — `"wp/v2"`, `"wc/v3"`, `"wc-analytics"`, `"wc-admin/marketing"`. Single- and multi-segment both work; leading/trailing slashes are forgiven. If you already know which namespace you want, scoping to that one alone cuts the response dramatically.
-- `methods` accepts an array of `"GET"`, `"POST"`, `"PATCH"`, `"DELETE"` (uppercase, validated by the schema enum, max 4 unique). Passing `["GET"]` when you're exploring read-only routes is one of the highest-leverage filters available — on a typical WordPress install you're often dropping more than half the rows in one go.
+- `methods` accepts an array of `"GET"`, `"HEAD"`, `"POST"`, `"PUT"`, `"PATCH"`, `"DELETE"`, `"OPTIONS"` (uppercase, validated by the schema enum, max 7 unique). Passing `["GET"]` when you're exploring read-only routes is one of the highest-leverage filters available — on a typical WordPress install you're often dropping more than half the rows in one go.
 - `search` here is a case-insensitive substring match on the **route path only**, not the description. So `search: "posts"` matches `/wp/v2/posts` and `/wp/v2/posts/(?P<id>[\d]+)`, but won't find a route whose description happens to mention posts.
 
 **The rule of thumb:** the model's first call into either list tool should almost always carry at least one filter. An unfiltered call is a fine debug move; in production flow, it's a tax you don't need to pay.
