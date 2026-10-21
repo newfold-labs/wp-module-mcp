@@ -24,7 +24,7 @@ class Pages {
 			'blu/pages-search',
 			array(
 				'label'               => 'Search Pages',
-				'description'         => 'Search WordPress pages. Results include each page status. To find a deleted page, search again with status=trash; an omitted status does not search the trash.',
+				'description'         => 'Search WordPress pages. Compact results include ID, plain title, status, and slug; use get-page for full details. To find a deleted page, search again with status=trash; an omitted status does not search the trash.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
@@ -59,7 +59,7 @@ class Pages {
 						$request->set_param( 'status', 'publish' );
 					}
 					$response = rest_do_request( $request );
-					return blu_standardize_rest_response( $response );
+					return blu_compact_post_search_response( blu_standardize_rest_response( $response ) );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_pages' ),
 				'meta'                => array(

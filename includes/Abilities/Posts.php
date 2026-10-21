@@ -26,7 +26,7 @@ class Posts {
 			'blu/posts-search',
 			array(
 				'label'               => 'Search Posts',
-				'description'         => 'Search WordPress posts. Results include each post status. To find a deleted post, search again with status=trash; an omitted status does not search the trash.',
+				'description'         => 'Search WordPress posts. Compact results include ID, plain title, status, and slug; use get-post for full details. To find a deleted post, search again with status=trash; an omitted status does not search the trash.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
@@ -61,7 +61,7 @@ class Posts {
 						$request->set_param( 'status', 'publish' );
 					}
 					$response = rest_do_request( $request );
-					return blu_standardize_rest_response( $response );
+					return blu_compact_post_search_response( blu_standardize_rest_response( $response ) );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 				'meta'                => array(

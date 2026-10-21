@@ -140,6 +140,18 @@ class SearchStatusWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$by_id   = array_column( $rows, null, 'id' );
 		$this->assertArrayHasKey( $published, $by_id );
 		$this->assertSame( 'publish', $by_id[ $published ]['status'] );
+		if ( 'blu/cpt-search' !== $ability ) {
+			$this->assertSame(
+				array(
+					'id'     => $published,
+					'title'  => 'Status Search Published',
+					'status' => 'publish',
+					'slug'   => 'status-search-published',
+				),
+				$by_id[ $published ],
+				'Post and page searches should return compact results with plain titles.'
+			);
+		}
 		$this->assertArrayNotHasKey( $draft, $by_id );
 		$this->assertArrayNotHasKey( $trashed, $by_id );
 		$any  = blu_get_ability( $ability )->execute( array_merge( $input, array( 'status' => 'any' ) ) );
