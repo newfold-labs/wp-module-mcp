@@ -42,7 +42,7 @@ class WooProducts {
 						),
 						'status'   => array(
 							'type'        => 'string',
-							'description' => 'Defaults to publish. Use any to include other non-trash statuses such as draft, or trash to find deleted products. Each result includes its actual status.',
+							'description' => 'Defaults to publish. Use any to include other non-trash statuses, future (scheduled) to find scheduled products, or trash to find deleted products. WooCommerce validates product statuses using its own REST API rules. Each result includes its actual status.',
 						),
 						'page'     => array(
 							'type'        => 'integer',

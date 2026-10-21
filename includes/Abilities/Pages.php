@@ -35,7 +35,7 @@ class Pages {
 						),
 						'status'   => array(
 							'type'        => 'string',
-							'description' => 'Defaults to publish. Use any to include other non-trash statuses such as draft, or trash to find deleted pages. Each result includes its actual status.',
+							'description' => 'Defaults to publish. Use any to include other non-trash statuses, future (scheduled) to find scheduled pages, or trash to find deleted pages. Other status slugs may be registered on this site; discover current values with GET /wp/v2/statuses. Each result includes its actual status.',
 						),
 						'page'     => array(
 							'type'        => 'integer',

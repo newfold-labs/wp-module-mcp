@@ -166,6 +166,8 @@ class SearchStatusWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$description = blu_get_ability( $ability )->get_input_schema()['properties']['status']['description'];
 		$this->assertStringContainsString( 'any', $description );
 		$this->assertStringContainsString( 'trash', $description );
+		$this->assertStringContainsString( 'future (scheduled)', $description );
+		$this->assertStringContainsString( '/wp/v2/statuses', $description );
 	}
 
 	/** Ensure the broader CPT default does not reveal another user's draft. */
@@ -297,5 +299,6 @@ class SearchStatusWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$description = blu_get_ability( 'blu/wc-products-search' )->get_input_schema()['properties']['status']['description'];
 		$this->assertStringContainsString( 'any', $description );
 		$this->assertStringContainsString( 'trash', $description );
+		$this->assertStringContainsString( 'future (scheduled)', $description );
 	}
 }
