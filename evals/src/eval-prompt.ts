@@ -19,6 +19,7 @@ const STANDALONE_IDS: Record<string, [string, number]> = {
   'tag-update-1': ['tag_update', 5],
   'tag-delete-1': ['tag_delete', 9],
   'wc-product-delete-1': ['wc_product_delete', 150],
+  'wc-category-delete-1': ['wc_category_delete', 20],
   'wc-tag-update-1': ['wc_tag_update', 7],
   'wc-tag-delete-1': ['wc_tag_delete', 11],
   'wc-brand-update-1': ['wc_brand_update', 3],
@@ -42,7 +43,12 @@ export function resolveEvalPrompt(id: string, prompt: string, fixtures: { produc
     return `${prompt.replace(/test\.jpg/g, filename)} The attached test image is a 1-pixel PNG. Its file data is data:image/png;base64,${TINY_PNG}.`;
   }
   if (id === 'adding-product-image-45') {
-    return `Add a product image to the product from this flow. The image is a 1-pixel PNG with file data data:image/png;base64,${TINY_PNG}.`;
+    return `Upload this 1-pixel PNG as product-image.png, then add the uploaded media attachment to the product from this flow using its attachment ID. File data: data:image/png;base64,${TINY_PNG}.`;
+  }
+  if (id === 'setting-homepage-68') {
+    const homepageId = fixtures.ids?.settings_homepage;
+    if (!homepageId) throw new Error('Settings homepage fixture ID is required for this eval');
+    return `Set homepage to page ID ${homepageId} (AI Eval Settings Home).`;
   }
   if (['inserting-media-into-existing-page-32', 'replacing-media-inside-page-33'].includes(id)) {
     if (!fixtures.pageId) throw new Error('Page fixture ID is required for this eval');

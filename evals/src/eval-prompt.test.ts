@@ -18,3 +18,8 @@ test('replaces a standalone placeholder ID with its seeded object ID', () => {
   assert.equal(resolveEvalPrompt('post-get-1', 'Show me post with ID 42', { ids: { post_get: 317 } }), 'Show me post with ID 317');
   assert.throws(() => resolveEvalPrompt('post-get-1', 'Show me post with ID 42', {}), /fixture/i);
 });
+
+test('uses seeded category and independent homepage fixtures', () => {
+  assert.equal(resolveEvalPrompt('wc-category-delete-1', 'Delete category ID 20', { ids: { wc_category_delete: 87 } }), 'Delete category ID 87');
+  assert.equal(resolveEvalPrompt('setting-homepage-68', "Set homepage to 'AI Eval Settings Home'.", { ids: { settings_homepage: 88 } }), 'Set homepage to page ID 88 (AI Eval Settings Home).');
+});

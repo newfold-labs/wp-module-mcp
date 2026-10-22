@@ -29,7 +29,7 @@ class WooOrders {
 			'blu/wc-orders-search',
 			array(
 				'label'               => 'Search WooCommerce Orders',
-				'description'         => 'Get a list of WooCommerce orders',
+				'description'         => 'List and search orders on this connected WooCommerce store, including pending orders. Use status to filter results.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',

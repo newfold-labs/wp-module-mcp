@@ -36,7 +36,7 @@ export class WordPressOutcomes {
   async pageContent(pageId?: number): Promise<string> {
     let id = pageId;
     if (!id) {
-      const pages = await this.get<Array<{ id: number }>>('/wp/v2/pages', { slug: 'ai-landing-page', context: 'edit' });
+      const pages = await this.get<Array<{ id: number }>>('/wp/v2/pages', { slug: 'ai-landing-page', status: 'any', context: 'edit' });
       id = pages[0]?.id;
     }
     if (!id) return '';

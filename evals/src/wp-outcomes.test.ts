@@ -1,6 +1,23 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { pageHasImage, productHasTerms } from './wp-outcomes.js';
+import { pageHasImage, productHasTerms, WordPressOutcomes } from './wp-outcomes.js';
+
+test('page outcome lookup includes draft pages', async () => {
+  const originalFetch = globalThis.fetch;
+  const urls: URL[] = [];
+  globalThis.fetch = async (input) => {
+    const url = new URL(String(input));
+    urls.push(url);
+    return new Response(JSON.stringify(url.searchParams.get('rest_route') === '/wp/v2/pages'
+      ? [{ id: 42 }] : { content: { raw: '<!-- wp:image -->' } }), { status: 200 });
+  };
+  try {
+    assert.match(await new WordPressOutcomes('http://localhost:8888/index.php?rest_route=/blu/mcp', 'user', 'pass').pageContent(), /wp:image/);
+    assert.equal(urls[0].searchParams.get('status'), 'any');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
 
 test('page image outcome requires an image block or tag', () => {
   assert.equal(pageHasImage('<!-- wp:paragraph --><p>Hello</p>'), false);

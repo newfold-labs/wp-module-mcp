@@ -37,13 +37,13 @@ class Resources {
 					'properties' => array(
 						'patterns' => array(
 							'type'        => 'array',
-							'description' => 'List of relevant categories or relevant regex keywords based on product name',
+							'description' => 'One to five category search terms, e.g. ["running shoes"]. Each item is a string; regular expressions are optional.',
 							'items'       => array( 'type' => 'string' ),
 							'minItems'    => 1,
 							'maxItems'    => 5,
 						),
-						'required' => array( 'patterns' ),
 					),
+					'required'   => array( 'patterns' ),
 				),
 				'execute_callback'    => function ( $input ) {
 					$patterns = $input['patterns'] ?? array();

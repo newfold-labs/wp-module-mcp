@@ -26,6 +26,9 @@ export function safeTrace(messages: Message[]): Array<Record<string, unknown>> {
             name: call.function.name,
             discoveryKey,
             ability: typeof args.ability_name === 'string' ? args.ability_name : undefined,
+            parameterTypes: call.function.name === 'blu-call-ability'
+              ? Object.fromEntries(Object.entries(params).map(([key, value]) => [key, Array.isArray(value) ? 'array' : value === null ? 'null' : typeof value]))
+              : undefined,
             route: typeof params.route === 'string' ? params.route : undefined,
             method: typeof params.method === 'string' ? params.method : undefined,
           };

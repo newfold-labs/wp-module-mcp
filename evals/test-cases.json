@@ -186,7 +186,7 @@
   {
     "id": "api-details-1",
     "description": "Get API endpoint details",
-    "prompt": "Which query parameters does my site's currently registered posts API support? Check the route details on this site.",
+    "prompt": "Inspect the site's registered GET /wp/v2/posts REST endpoint and tell me which query parameters it accepts.",
     "expected_tool": "blu_get-function-details",
     "source": "RestApiCrud.php"
   },
@@ -403,7 +403,7 @@
   {
     "id": "cpt-delete-1",
     "description": "Delete custom post type item",
-    "prompt": "Delete the testimonial custom post type item with ID 30",
+    "prompt": "Permanently delete the testimonial custom post type item with ID 30.",
     "expected_tool": "blu_delete-cpt",
     "source": "CustomPostTypes.php"
   },
@@ -1122,7 +1122,7 @@
   {
     "id": "setting-homepage-68",
     "description": "Setting homepage",
-    "prompt": "Set homepage to 'AI Landing Page'.",
+    "prompt": "Set the site's homepage to 'AI Eval Settings Home'.",
     "expected_tool": "blu_update-general-settings",
     "source": "Settings.php",
     "series_id": "settings-ai-test"

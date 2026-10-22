@@ -24,11 +24,12 @@
 
 	foreach (
 	array(
-		'post_get'    => array( 'post', 'AI Eval Read Post' ),
-		'post_delete' => array( 'post', 'AI Eval Delete Post' ),
-		'page_get'    => array( 'page', 'AI Eval Read Page' ),
-		'page_update' => array( 'page', 'AI Eval Update Page' ),
-		'page_delete' => array( 'page', 'AI Eval Delete Page' ),
+		'post_get'          => array( 'post', 'AI Eval Read Post' ),
+		'post_delete'       => array( 'post', 'AI Eval Delete Post' ),
+		'page_get'          => array( 'page', 'AI Eval Read Page' ),
+		'page_update'       => array( 'page', 'AI Eval Update Page' ),
+		'page_delete'       => array( 'page', 'AI Eval Delete Page' ),
+		'settings_homepage' => array( 'page', 'AI Eval Settings Home' ),
 	) as $key => $spec
 	) {
 		$ids[ $key ] = $create_post( $spec[0], $spec[1] );
@@ -56,14 +57,15 @@
 
 	foreach (
 	array(
-		'category_update' => array( 'category', 'AI Eval Update Category' ),
-		'category_delete' => array( 'category', 'AI Eval Delete Category' ),
-		'tag_update'      => array( 'post_tag', 'AI Eval Update Tag' ),
-		'tag_delete'      => array( 'post_tag', 'AI Eval Delete Tag' ),
-		'wc_tag_update'   => array( 'product_tag', 'AI Eval Update Product Tag' ),
-		'wc_tag_delete'   => array( 'product_tag', 'AI Eval Delete Product Tag' ),
-		'wc_brand_update' => array( 'product_brand', 'AI Eval Update Brand' ),
-		'wc_brand_delete' => array( 'product_brand', 'AI Eval Delete Brand' ),
+		'category_update'    => array( 'category', 'AI Eval Update Category' ),
+		'category_delete'    => array( 'category', 'AI Eval Delete Category' ),
+		'tag_update'         => array( 'post_tag', 'AI Eval Update Tag' ),
+		'tag_delete'         => array( 'post_tag', 'AI Eval Delete Tag' ),
+		'wc_tag_update'      => array( 'product_tag', 'AI Eval Update Product Tag' ),
+		'wc_category_delete' => array( 'product_cat', 'AI Eval Delete Product Category' ),
+		'wc_tag_delete'      => array( 'product_tag', 'AI Eval Delete Product Tag' ),
+		'wc_brand_update'    => array( 'product_brand', 'AI Eval Update Brand' ),
+		'wc_brand_delete'    => array( 'product_brand', 'AI Eval Delete Brand' ),
 	) as $key => $spec
 	) {
 		$created_term = wp_insert_term( $spec[1], $spec[0] );

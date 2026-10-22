@@ -44,3 +44,13 @@ test('identifies a repeated discovery query without printing its terms', () => {
   }));
   assert.equal(summarizeFailure(messages), 'Repeated discovery query');
 });
+
+test('records parameter names and types without sensitive values', () => {
+  const trace = JSON.stringify(safeTrace([{ role: 'assistant', tool_calls: [{ id: '1', function: {
+    name: 'blu-call-ability', arguments: JSON.stringify({ ability_name: 'blu-google-product-taxonomy', parameters: { patterns: 'private running shoes', api_key: 'secret123' } }),
+  } }] }]));
+  assert.match(trace, /patterns/);
+  assert.match(trace, /string/);
+  assert.ok(!trace.includes('private running shoes'));
+  assert.ok(!trace.includes('secret123'));
+});
