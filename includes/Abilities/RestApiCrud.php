@@ -52,6 +52,14 @@ class RestApiCrud {
 		return $matched;
 	}
 
+	/** Load routes that plugins register only during REST index discovery. */
+	private function discover_lazy_routes(): void {
+		if ( apply_filters( 'blu_mcp_list_api_eager_load', true ) ) {
+			$root_request = new \WP_REST_Request( 'GET', '/' );
+			apply_filters( 'rest_pre_dispatch', null, rest_get_server(), $root_request );
+		}
+	}
+
 	/**
 	 * Register REST API CRUD abilities.
 	 */
@@ -61,7 +69,7 @@ class RestApiCrud {
 			'blu/list-api-functions',
 			array(
 				'label'               => 'List API Functions',
-				'description'         => 'List WordPress REST API endpoints registered on this site. Each item includes `route` (e.g. "/wp/v2/posts"), `method` (GET/POST/PATCH/DELETE), and `namespace` (the namespace WordPress registered the route under, e.g. "wp/v2" or "wc-analytics"). Use the optional `namespace`, `methods`, and `search` filters to narrow.',
+				'description'         => 'List WordPress REST API endpoints registered on this site. Each item includes `route` (e.g. "/wp/v2/posts"), `method` (GET/HEAD/POST/PUT/PATCH/DELETE/OPTIONS), and `namespace` (the namespace WordPress registered the route under, e.g. "wp/v2" or "wc-analytics"). Use the optional `namespace`, `methods`, and `search` filters to narrow.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'                 => 'object',
@@ -78,10 +86,10 @@ class RestApiCrud {
 							'description' => 'HTTP methods to include (uppercase). Omit or pass `[]` for all methods.',
 							'items'       => array(
 								'type' => 'string',
-								'enum' => array( 'GET', 'POST', 'PATCH', 'DELETE' ),
+								'enum' => array( 'GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS' ),
 							),
 							'uniqueItems' => true,
-							'maxItems'    => 4,
+							'maxItems'    => 7,
 						),
 						'search'    => array(
 							'type'        => 'string',
@@ -93,8 +101,7 @@ class RestApiCrud {
 					'additionalProperties' => false,
 				),
 				'execute_callback'    => function ( $input = null ) {
-					$ignore_routes  = array( '/', '/batch/v1', '/blu/mcp' );
-					$ignore_strings = array( 'oembed', 'autosaves', 'revisions', 'jwt-auth' );
+					$ignore_routes = array( '/blu/mcp' );
 
 					$ns_filter = isset( $input['namespace'] ) && is_string( $input['namespace'] ) ? trim( $input['namespace'], " \t\n\r\0\x0B/" ) : '';
 
@@ -119,10 +126,7 @@ class RestApiCrud {
 					// with a synthetic root request triggers the same discovery path WC uses for
 					// `/wp-json/` calls. Skippable via the `blu_mcp_list_api_eager_load` filter
 					// for sites that prefer the perf saving.
-					if ( apply_filters( 'blu_mcp_list_api_eager_load', true ) ) {
-						$root_request = new \WP_REST_Request( 'GET', '/' );
-						apply_filters( 'rest_pre_dispatch', null, rest_get_server(), $root_request );
-					}
+					$this->discover_lazy_routes();
 
 					$server     = rest_get_server();
 					$routes     = $server->get_routes();
@@ -131,17 +135,6 @@ class RestApiCrud {
 
 					foreach ( $routes as $route => $endpoints ) {
 						if ( in_array( $route, $ignore_routes, true ) ) {
-							continue;
-						}
-
-						$skip = false;
-						foreach ( $ignore_strings as $ignore_string ) {
-							if ( strpos( $route, $ignore_string ) !== false ) {
-								$skip = true;
-								break;
-							}
-						}
-						if ( $skip ) {
 							continue;
 						}
 
@@ -184,7 +177,7 @@ class RestApiCrud {
 
 					return blu_prepare_ability_response( 200, $result );
 				},
-				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
+				'permission_callback' => fn() => is_user_logged_in(),
 				'meta'                => array(
 					'annotations' => array(
 						'readonly'    => true,
@@ -211,7 +204,7 @@ class RestApiCrud {
 						),
 						'method' => array(
 							'type'        => 'string',
-							'enum'        => array( 'GET', 'POST', 'PATCH', 'DELETE' ),
+							'enum'        => array( 'GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS' ),
 							'description' => 'HTTP method (uppercase).',
 						),
 					),
@@ -220,6 +213,7 @@ class RestApiCrud {
 				'execute_callback'    => function ( $input ) {
 					$route  = $input['route'];
 					$method = $input['method'];
+					$this->discover_lazy_routes();
 
 					$routes = rest_get_server()->get_routes();
 
@@ -228,7 +222,9 @@ class RestApiCrud {
 					}
 
 					foreach ( $routes[ $route ] as $endpoint ) {
-						if ( isset( $endpoint['methods'][ $method ] ) ) {
+						// WordPress dispatches HEAD through GET when no HEAD handler exists.
+						$lookup_method = 'HEAD' === $method && empty( $endpoint['methods']['HEAD'] ) ? 'GET' : $method;
+						if ( isset( $endpoint['methods'][ $lookup_method ] ) ) {
 							// Strip callable references — they JSON-encode as null (closures)
 							// or as a bare class-name pair, neither of which is useful to the
 							// caller and the latter leaks internal class names. The LLM only
@@ -240,7 +236,7 @@ class RestApiCrud {
 
 					return blu_prepare_ability_response( 404, 'Method not found for this route' );
 				},
-				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
+				'permission_callback' => fn() => is_user_logged_in(),
 				'meta'                => array(
 					'annotations' => array(
 						'readonly'    => true,
@@ -267,12 +263,12 @@ class RestApiCrud {
 						),
 						'method' => array(
 							'type'        => 'string',
-							'enum'        => array( 'GET', 'POST', 'PATCH', 'DELETE' ),
+							'enum'        => array( 'GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS' ),
 							'description' => 'HTTP method (uppercase).',
 						),
 						'data'   => array(
 							'type'        => 'object',
-							'description' => 'Request parameters matching the endpoint\'s args schema (see blu-get-function-details). Sent as query params for GET/DELETE, body for POST/PATCH.',
+							'description' => 'Request parameters matching the endpoint\'s args schema (see blu-get-function-details). Sent as query params for GET/HEAD/DELETE/OPTIONS, body for POST/PUT/PATCH.',
 						),
 					),
 					'required'   => array( 'route', 'method' ),
@@ -302,7 +298,7 @@ class RestApiCrud {
 					$request = new \WP_REST_Request( $method, $route );
 
 					// Set parameters based on method
-					if ( in_array( $method, array( 'GET', 'DELETE' ), true ) ) {
+					if ( in_array( $method, array( 'GET', 'HEAD', 'DELETE', 'OPTIONS' ), true ) ) {
 						if ( ! empty( $data ) ) {
 							$query_params = array_merge( $query_params, $data );
 						}
@@ -316,7 +312,7 @@ class RestApiCrud {
 					$response = rest_do_request( $request );
 					return blu_standardize_rest_response( $response );
 				},
-				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
+				'permission_callback' => fn() => is_user_logged_in(),
 				'meta'                => array(
 					'annotations' => array(
 						'readonly'    => false,

@@ -1,0 +1,23 @@
+{
+  "name": "@newfold/wp-module-mcp-evals",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Multi-turn AI tool-selection evals against a BLU MCP server (wp-env in CI)",
+  "scripts": {
+    "coverage": "tsx src/cli.ts coverage",
+    "run-evals": "tsx src/cli.ts run-evals"
+  },
+  "engines": {
+    "node": ">=22.11.0"
+  },
+  "dependencies": {
+    "@actions/core": "^1.11.1",
+    "@modelcontextprotocol/sdk": "^1.29.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  }
+}

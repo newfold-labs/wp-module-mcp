@@ -25,11 +25,17 @@ composer run test-coverage   # coverage + phpcov HTML under tests/_output/
 
 ### What exists today
 
-Example test classes: **`ModuleLoadingWPUnitTest`**, **`McpServerWPUnitTest`**, **`McpValidationWPUnitTest`**, **`FunctionsWPUnitTest`**. Expand coverage when adding abilities or auth changes.
+Example test classes: **`ModuleLoadingWPUnitTest`**, **`McpServerWPUnitTest`**, **`McpValidationWPUnitTest`**, **`FunctionsWPUnitTest`**, **`CustomPostTypesWPUnitTest`**. Expand coverage when adding abilities or auth changes.
+
+Ability tests register their fixtures (post types, REST routes) in `set_up` and unregister them in `tear_down` so state does not leak between tests. `CustomPostTypesWPUnitTest` is the reference for testing an ability end to end: register the `blu-mcp` category, fire `wp_abilities_api_init`, then call `blu_get_ability( 'blu/...' )->execute( $input )` and assert on the `statusCode` / `status` / `message` response shape.
 
 ## End-to-end (Playwright)
 
 This repo does **not** define Playwright specs under `tests/playwright/`. **Build and Test Module Updates in Brand Plugins (Playwright tests)** runs the **Bluehost** plugin’s Playwright suite against a branch of this module (see [workflows.md](workflows.md)). Helpers and fixtures live primarily in the **brand plugin**.
+
+## MCP gateway smoke test
+
+`evals/smoke.mjs` connects to a running Bluehost WordPress instance with `WP_EVAL_USER`, `WP_APP_PASSWORD`, and `MCP_EVAL_SERVER_URL`. Run `node evals/smoke.mjs` after installing dependencies in `evals/`. It checks the three top-level MCP tools and uses the gateway to discover REST abilities, inspect the posts endpoint, and dispatch a read request. The `ai-evals.yml` workflow runs this deterministic test as a merge gate. Model tool-selection evals still run and report their results, but their variable scores are advisory.
 
 ## CI
 
@@ -38,6 +44,7 @@ This repo does **not** define Playwright specs under `tests/playwright/`. **Buil
 | **Codecoverage-Main** | Reusable codecoverage across PHP 7.4–8.4; minimum coverage threshold |
 | **Lint** | PHPCS on PHP file changes |
 | **brand-plugin-test-playwright** | Bluehost + module branch E2E |
+| **MCP AI Evals** | Required live MCP gateway smoke test; advisory model-selection report |
 
 ## Pull request expectations
 

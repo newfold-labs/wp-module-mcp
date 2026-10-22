@@ -23,6 +23,7 @@ The gateway exposes tool abilities only when both their namespace and category a
 | Namespace | Category | Source |
 |-----------|----------|--------|
 | `blu/` | `blu-mcp` | Bluehost (this module, registered in `McpServer::register_ability_categories`) |
+| `woocommerce/` | `woocommerce`, `woocommerce-rest` | WooCommerce native abilities with public MCP metadata |
 | `yoast-seo/` | `yoast-seo` | Yoast SEO abilities, when Yoast registers them |
 
 The namespace and category lists are independent filters, so adding a third-party integration requires an entry in each. Yoast ability permission callbacks still control execution, including the ability to update post SEO data.
@@ -58,7 +59,9 @@ Schema sets `additionalProperties: false` so unknown fields are rejected by `mcp
 | Property | Type | Constraints | Description |
 |----------|------|-------------|-------------|
 | `namespace` | string | 1–100 chars, `^/?[A-Za-z0-9_-]+(/[A-Za-z0-9_-]+)*/?$` | REST namespace as registered with WordPress, e.g. `wp/v2`, `wc/v3`, `wc-analytics`, `wc-admin/marketing`. Both single-segment (unversioned) and multi-segment namespaces are supported. |
-| `methods` | array of string | items `enum: ["GET","POST","PATCH","DELETE"]`, `uniqueItems`, `maxItems: 4` | HTTP methods (must be uppercase to satisfy the enum). |
+| `methods` | array of string | items `enum: ["GET","HEAD","POST","PUT","PATCH","DELETE","OPTIONS"]`, `uniqueItems`, `maxItems: 7` | HTTP methods (must be uppercase to satisfy the enum). |
 | `search` | string | 1–200 chars | Case-insensitive substring on the route. |
 
 Schema sets `additionalProperties: false`.
+
+Routes registered during REST index discovery are loaded by default before the catalog or details are read. Site owners can disable this extra discovery with the `blu_mcp_list_api_eager_load` filter to reduce work per lookup; routes registered only during discovery will then be absent from those lookups. For a GET-only route, `blu-get-function-details` also accepts `HEAD` and returns the GET handler metadata, matching WordPress dispatch behavior.

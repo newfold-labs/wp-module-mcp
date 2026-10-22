@@ -9,6 +9,18 @@ namespace BLU;
  */
 class McpServerWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 
+	/** Gateway mode keeps REST abilities behind the three advertised tools. */
+	public function test_gateway_mode_advertises_only_gateway_tools(): void {
+		$server = new McpServer();
+		$method = new \ReflectionMethod( McpServer::class, 'get_tool_names' );
+		$method->setAccessible( true );
+		$names = $method->invoke( $server, true );
+		$this->assertContains( 'blu/list-abilities', $names );
+		$this->assertContains( 'blu/call-ability', $names );
+		$this->assertSame( \BLU\Abilities\AbilityGateway::GATEWAY_ABILITIES, $names );
+		$this->assertCount( 3, $names );
+	}
+
 	/**
 	 * Ability names introduced by tests that exercise register_abilities. Tracked so
 	 * tear_down can unregister them, otherwise downstream tests like RestApiCrudWPUnitTest

@@ -107,6 +107,21 @@ function blu_get_ability_category( string $slug ): ?WP_Ability_Category {
 }
 
 /**
+ * Subdirectory under wp_upload_dir() for editor chat temp uploads.
+ *
+ * Uses ChatEditor::TEMP_UPLOAD_SUBDIR when wp-module-editor-chat is loaded.
+ *
+ * @return string
+ */
+function blu_mcp_chat_temp_subdir(): string {
+	if ( class_exists( '\NewfoldLabs\WP\Module\EditorChat\ChatEditor' ) ) {
+		return \NewfoldLabs\WP\Module\EditorChat\ChatEditor::TEMP_UPLOAD_SUBDIR;
+	}
+
+	return 'nfd-chat-temp';
+}
+
+/**
  * Retrieves a list of available ability categories.
  *
  * @return string[] An array of ability categories. If the function `wp_get_ability_categories` is not available, it returns an empty array.
@@ -210,6 +225,19 @@ function blu_get_abilities_by_namespace( string $namespace ): array {
 }
 
 /**
+ * Whether to verify TLS certificates on ai-platform requests.
+ *
+ * Defaults to true, so production is unaffected. Locally the ai-platform is
+ * served over a self-signed certificate, which PHP validates against
+ * WordPress's own CA bundle, so every call fails with cURL error 60.
+ *
+ * @return bool Whether wp_remote_* should verify the peer certificate.
+ */
+function blu_ai_platform_sslverify() {
+	return defined( 'NFD_AI_PLATFORM_SSL_VERIFY' ) ? (bool) NFD_AI_PLATFORM_SSL_VERIFY : true;
+}
+
+/**
  * Prepares a standardized ability response.
  *
  * @param int   $status  The HTTP status code of the response.
@@ -247,6 +275,36 @@ function blu_standardize_rest_response( $response ) {
 	} else {
 		return blu_prepare_ability_response( 500, 'Unexpected response format.' );
 	}
+}
+
+/**
+ * Keep only the fields needed to identify a post or page search match.
+ *
+ * Single-item abilities provide the full REST resource when more detail is
+ * needed. Error responses keep their original status and message.
+ *
+ * @param array $response Standardized REST response.
+ *
+ * @return array Compact search response.
+ */
+function blu_compact_post_search_response( array $response ): array {
+	if ( 200 !== $response['statusCode'] || ! is_array( $response['message'] ) ) {
+		return $response;
+	}
+
+	$response['message'] = array_map(
+		static function ( array $post ): array {
+			return array(
+				'id'     => $post['id'] ?? 0,
+				'title'  => $post['title']['rendered'] ?? '',
+				'status' => $post['status'] ?? '',
+				'slug'   => $post['slug'] ?? '',
+			);
+		},
+		$response['message']
+	);
+
+	return $response;
 }
 
 /**
@@ -385,6 +443,105 @@ function blu_project_post_full( WP_Post $post ): array {
 	);
 }
 
+/**
+ * Resolve the capability a post type actually uses for an action.
+ *
+ * A post type registered with its own `capability_type` does not use the
+ * generic post capabilities: WooCommerce `product` maps `edit_posts` to
+ * `edit_products`, for instance. Checking the generic name against such a type
+ * asks the wrong question, and an Author holding `edit_posts` sails through a
+ * gate meant to stop them.
+ *
+ * @param string|null $post_type Resolved post type slug, or null when unknown.
+ * @param string      $cap       Capability key on the post type's cap object,
+ *                               e.g. `edit_posts`, `edit_post`, `delete_post`.
+ *
+ * @return string The capability to test. Falls back to $cap itself when the
+ *                post type is unknown or declares no such capability.
+ */
+function blu_post_type_capability( ?string $post_type, string $cap ): string {
+	$object = $post_type ? get_post_type_object( $post_type ) : null;
+
+	return ( $object && isset( $object->cap->$cap ) ) ? (string) $object->cap->$cap : $cap;
+}
+
+/**
+ * Permission callback body for the post-type abilities.
+ *
+ * Resolves the requested post type from the ability input so the check runs
+ * against that type's own capability. An unresolvable post type falls back to
+ * the generic capability, which leaves the execute callback free to answer
+ * with the friendlier "unknown post type" response.
+ *
+ * This is the coarse gate only. It says the caller may work with this post
+ * type at all; it says nothing about the specific item they named, which is
+ * what blu_current_user_can_act_on_post() is for.
+ *
+ * @param mixed  $input The ability input.
+ * @param string $cap   Capability key, e.g. `edit_posts` or `delete_posts`.
+ *
+ * @return bool
+ */
+function blu_can_use_post_type( $input, string $cap ): bool {
+	$requested = is_array( $input ) ? ( $input['post_type'] ?? '' ) : '';
+	$resolved  = '' === (string) $requested ? null : blu_resolve_post_type( (string) $requested );
+
+	return blu_user_can_capability( blu_post_type_capability( $resolved, $cap ) );
+}
+
+/**
+ * Capability check using WordPress's decision for the current user.
+ *
+ * The transport may authenticate as an administrator, but plugins can
+ * still deny an administrator a post or a custom post type. Honor the
+ * capability result exactly as WordPress reports it.
+ *
+ * @param string $capability The capability to test.
+ * @param int    $object_id  Optional. Object id for a meta capability.
+ *
+ * @return bool
+ */
+function blu_user_can_capability( string $capability, int $object_id = 0 ): bool {
+	return $object_id > 0 ? current_user_can( $capability, $object_id ) : current_user_can( $capability );
+}
+
+/**
+ * Whether the current user may act on one specific post.
+ *
+ * The REST-backed abilities inherit this check from WordPress. The post-type
+ * abilities reach for posts directly, so they have to ask it themselves, or a
+ * caller who may edit their own items can read, rewrite and destroy anyone
+ * else's simply by naming an ID.
+ *
+ * @param WP_Post $post The target post.
+ * @param string  $cap  Meta capability key, e.g. `edit_post` or `delete_post`.
+ *
+ * @return bool
+ */
+function blu_current_user_can_act_on_post( WP_Post $post, string $cap ): bool {
+	return blu_user_can_capability( blu_post_type_capability( $post->post_type, $cap ), (int) $post->ID );
+}
+
+/**
+ * Standard refusal for an item the caller may not touch.
+ *
+ * Deliberately the same shape and wording for "cannot" as the 404 is for
+ * "does not exist" would be a mistake: the caller is an assistant relaying to
+ * a user, and telling them an item is missing when it is merely someone
+ * else's sends them hunting for the wrong problem.
+ *
+ * @param int    $post_id The item the caller named.
+ * @param string $action  Human-readable action, e.g. "read" or "delete".
+ *
+ * @return array Standardized 403 ability response.
+ */
+function blu_post_permission_denied_response( int $post_id, string $action ): array {
+	return blu_prepare_ability_response(
+		403,
+		sprintf( 'You do not have permission to %1$s item %2$d.', $action, $post_id )
+	);
+}
+
 if ( ! function_exists( 'blu_is_valid_list' ) ) {
 	/**
 	 * Check if the list is a simple array
@@ -480,11 +637,18 @@ if ( ! function_exists( 'blu_filter_terms_by_patterns' ) ) {
 			}
 
 			if ( count( $filtered_ids ) > 0 ) {
-				$terms = array_filter(
-					$terms,
-					function ( $term ) use ( $filtered_ids ) {
-						return in_array( $term['id'], $filtered_ids );
-					}
+				// array_values, because array_filter keeps the original keys and a
+				// gappy integer-keyed array serializes as a JSON object, not a list.
+				// Filtering to the term at index 2 would hand the caller
+				// `{"2":{...}}` where an unfiltered call returns `[{...}]`, so the
+				// same tool answers in two different shapes depending on its input.
+				$terms = array_values(
+					array_filter(
+						$terms,
+						function ( $term ) use ( $filtered_ids ) {
+							return in_array( $term['id'], $filtered_ids );
+						}
+					)
 				);
 			}
 		}

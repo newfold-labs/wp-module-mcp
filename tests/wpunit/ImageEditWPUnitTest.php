@@ -19,7 +19,7 @@ class ImageEditWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	 *
 	 * @var string[]
 	 */
-	private $registered_abilities = array( 'blu/edit-image' );
+	private $registered_abilities = array( 'blu/edit-image', 'blu/extract-image-colors' );
 
 	/**
 	 * Whether the ability has been registered in this test instance.
@@ -57,6 +57,13 @@ class ImageEditWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	private $png_body;
 
 	/**
+	 * Local filesystem fixtures created during a test, removed in tear_down.
+	 *
+	 * @var string[]
+	 */
+	private $local_fixture_paths = array();
+
+	/**
 	 * Skip if Abilities API is unavailable, set up admin user, ensure blu-mcp category,
 	 * and reset the HiiveConnection stub token between tests.
 	 *
@@ -86,6 +93,7 @@ class ImageEditWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		HiiveConnection::$token       = 'test-hiive-token';
 		$this->last_request_args      = null;
 		$this->last_edit_request_args = null;
+		$this->local_fixture_paths    = array();
 		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- test fixture bytes only.
 		$this->png_body = base64_decode( 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==' );
 	}
@@ -100,6 +108,13 @@ class ImageEditWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 			remove_filter( 'pre_http_request', $this->pre_http_request_filter, 10 );
 			$this->pre_http_request_filter = null;
 		}
+
+		foreach ( $this->local_fixture_paths as $path ) {
+			if ( is_file( $path ) ) {
+				unlink( $path );
+			}
+		}
+		$this->local_fixture_paths = array();
 
 		$registry = \WP_Abilities_Registry::get_instance();
 		if ( $registry ) {
@@ -197,6 +212,25 @@ class ImageEditWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		};
 
 		add_filter( 'pre_http_request', $this->pre_http_request_filter, 10, 3 );
+	}
+
+	/**
+	 * Write a PNG under the WordPress root and return its public site URL.
+	 *
+	 * Local source URLs are read from disk (not HTTP), so tests need a real file.
+	 *
+	 * @param string $relative_path Path relative to ABSPATH, e.g. wp-content/uploads/2024/test.png.
+	 * @return string
+	 */
+	private function create_local_source_fixture( string $relative_path ): string {
+		$relative_path = ltrim( $relative_path, '/' );
+		$abs_path      = ABSPATH . $relative_path;
+
+		wp_mkdir_p( dirname( $abs_path ) );
+		file_put_contents( $abs_path, $this->png_body );
+		$this->local_fixture_paths[] = $abs_path;
+
+		return home_url( '/' . $relative_path );
 	}
 
 	/**
@@ -326,7 +360,7 @@ class ImageEditWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$result = $this->execute_edit(
 			array(
 				'prompt'     => 'Brighten the image',
-				'source_url' => home_url( '/wp-content/uploads/2024/test.png' ),
+				'source_url' => $this->create_local_source_fixture( 'wp-content/uploads/2024/test.png' ),
 			)
 		);
 

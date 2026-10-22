@@ -80,6 +80,10 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 				'label'       => 'Yoast SEO',
 				'description' => 'Yoast SEO abilities',
 			),
+			'woocommerce'    => array(
+				'label'       => 'WooCommerce',
+				'description' => 'WooCommerce abilities',
+			),
 		);
 
 		foreach ( $categories as $slug => $args ) {
@@ -144,25 +148,29 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	/**
 	 * Register a test ability and track it for cleanup.
 	 *
-	 * @param string   $name        Ability name.
-	 * @param string   $category    Ability category.
-	 * @param callable $execute     Execute callback.
-	 * @param string   $label       Optional label, defaults to 'Test Ability'.
-	 * @param string   $description Optional description, defaults to 'A test ability'.
+	 * @param string        $name        Ability name.
+	 * @param string        $category    Ability category.
+	 * @param callable      $execute     Execute callback.
+	 * @param string        $label        Optional label, defaults to 'Test Ability'.
+	 * @param string        $description  Optional description, defaults to 'A test ability'.
+	 * @param array         $meta         Optional ability metadata.
+	 * @param array|null    $input_schema Optional input schema, defaults to a bare object.
+	 * @param callable|null $permission   Optional permission callback, defaults to allow.
 	 *
 	 * @return void
 	 */
-	private function register_test_ability( string $name, string $category, callable $execute, string $label = 'Test Ability', string $description = 'A test ability' ): void {
-		$cb = function () use ( $name, $category, $execute, $label, $description ) {
+	private function register_test_ability( string $name, string $category, callable $execute, string $label = 'Test Ability', string $description = 'A test ability', array $meta = array(), ?array $input_schema = null, ?callable $permission = null ): void {
+		$cb = function () use ( $name, $category, $execute, $label, $description, $meta, $input_schema, $permission ) {
 			blu_register_ability(
 				$name,
 				array(
 					'label'               => $label,
 					'description'         => $description,
 					'category'            => $category,
-					'input_schema'        => array( 'type' => 'object' ),
+					'input_schema'        => $input_schema ?? array( 'type' => 'object' ),
 					'execute_callback'    => $execute,
-					'permission_callback' => fn() => true,
+					'permission_callback' => $permission ?? fn() => true,
+					'meta'                => $meta,
 				)
 			);
 		};
@@ -391,6 +399,231 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	}
 
 	/**
+
+	 * Gateway results must be JSON objects for MCP structuredContent.
+	 *
+	 * @return void
+	 */
+	public function test_call_ability_wraps_list_result_for_mcp() {
+		$this->register_test_ability( 'blu/list-result', 'blu-mcp', fn() => array( array( 'id' => 1 ) ) );
+		$this->register_gateway();
+
+		$result = blu_get_ability( 'blu/call-ability' )->execute( array( 'ability_name' => 'blu-list-result' ) );
+		$this->assertSame( array( 'result' => array( array( 'id' => 1 ) ) ), $result );
+	}
+
+	/**
+	 * Scalars and empty lists also need an object-shaped MCP result.
+	 *
+	 * @return void
+	 */
+	public function test_call_ability_wraps_scalar_and_empty_list_results_for_mcp() {
+		$this->register_test_ability( 'blu/scalar-result', 'blu-mcp', fn() => true );
+		$this->register_test_ability( 'blu/empty-result', 'blu-mcp', fn() => array() );
+		$this->register_gateway();
+
+		$gateway = blu_get_ability( 'blu/call-ability' );
+		$this->assertSame( array( 'result' => true ), $gateway->execute( array( 'ability_name' => 'blu-scalar-result' ) ) );
+		$this->assertSame( array( 'result' => array() ), $gateway->execute( array( 'ability_name' => 'blu-empty-result' ) ) );
+	}
+
+	/**
+	 * Existing object-shaped ability results retain their contract.
+	 *
+	 * @return void
+	 */
+	public function test_call_ability_preserves_object_result_for_mcp() {
+		$this->register_test_ability( 'blu/object-result', 'blu-mcp', fn() => array( 'id' => 1 ) );
+		$this->register_gateway();
+
+		$result = blu_get_ability( 'blu/call-ability' )->execute( array( 'ability_name' => 'blu-object-result' ) );
+		$this->assertSame( array( 'id' => 1 ), $result );
+	}
+
+	/** Sparse numeric keys serialize as a JSON object and retain their keys. */
+	public function test_call_ability_preserves_sparse_numeric_keyed_object() {
+		$expected = array( 42 => array( 'id' => 42 ) );
+		$this->register_test_ability( 'blu/id-keyed-result', 'blu-mcp', fn() => $expected );
+		$this->register_gateway();
+
+		$result = blu_get_ability( 'blu/call-ability' )->execute( array( 'ability_name' => 'blu-id-keyed-result' ) );
+		$this->assertSame( $expected, $result );
+		$this->assertSame( '{"42":{"id":42}}', wp_json_encode( $result ) );
+	}
+
+	/** Null has no object shape and needs the same envelope as other scalars. */
+	public function test_call_ability_wraps_null_result_for_mcp() {
+		$this->register_test_ability( 'blu/null-result', 'blu-mcp', fn() => null );
+		$this->register_gateway();
+
+		$result = blu_get_ability( 'blu/call-ability' )->execute( array( 'ability_name' => 'blu-null-result' ) );
+		$this->assertSame( array( 'result' => null ), $result );
+	}
+
+	/** A PHP object must become an adapter-compatible array with the same JSON shape. */
+	public function test_call_ability_converts_object_result_for_mcp_adapter() {
+		$this->register_test_ability( 'blu/php-object-result', 'blu-mcp', fn() => (object) array( 'id' => 42 ) );
+		$this->register_gateway();
+
+		$result = blu_get_ability( 'blu/call-ability' )->execute( array( 'ability_name' => 'blu-php-object-result' ) );
+		$this->assertSame( array( 'id' => 42 ), $result );
+		$this->assertSame( '{"id":42}', wp_json_encode( $result ) );
+	}
+
+	/** JsonSerializable can produce a scalar even though the PHP value is an object. */
+	public function test_call_ability_wraps_json_serializable_scalar_result() {
+		$serializable = new class() implements \JsonSerializable {
+			/** Return a scalar JSON value. */
+			public function jsonSerialize() {
+				return 'value';
+			}
+		};
+		$this->register_test_ability( 'blu/serializable-scalar', 'blu-mcp', fn() => $serializable );
+		$this->register_gateway();
+
+		$result = blu_get_ability( 'blu/call-ability' )->execute( array( 'ability_name' => 'blu-serializable-scalar' ) );
+		$this->assertSame( array( 'result' => 'value' ), $result );
+	}
+
+	/** JsonSerializable object output keeps its existing JSON object contract. */
+	public function test_call_ability_preserves_json_serializable_object_result() {
+		$serializable = new class() implements \JsonSerializable {
+			/** Return an object-shaped JSON value. */
+			public function jsonSerialize() {
+				return (object) array( 'id' => 42 );
+			}
+		};
+		$this->register_test_ability( 'blu/serializable-object', 'blu-mcp', fn() => $serializable );
+		$this->register_gateway();
+
+		$result = blu_get_ability( 'blu/call-ability' )->execute( array( 'ability_name' => 'blu-serializable-object' ) );
+		$this->assertSame( array( 'id' => 42 ), $result );
+		$this->assertSame( '{"id":42}', wp_json_encode( $result ) );
+	}
+
+	/** Empty PHP objects cannot be represented as nonempty adapter arrays. */
+	public function test_call_ability_wraps_empty_object_result() {
+		$this->register_test_ability( 'blu/empty-object', 'blu-mcp', fn() => new \stdClass() );
+		$this->register_gateway();
+
+		$result = blu_get_ability( 'blu/call-ability' )->execute( array( 'ability_name' => 'blu-empty-object' ) );
+		$this->assertSame( array( 'result' => array() ), $result );
+	}
+
+	/** An unserializable result yields a safe error object instead of breaking MCP. */
+	public function test_call_ability_handles_unserializable_object_result() {
+		$recursive       = new \stdClass();
+		$recursive->self = $recursive;
+		$this->register_test_ability( 'blu/recursive-object', 'blu-mcp', fn() => $recursive );
+		$this->register_gateway();
+
+		$result = blu_get_ability( 'blu/call-ability' )->execute( array( 'ability_name' => 'blu-recursive-object' ) );
+		$this->assertSame( 500, $result['statusCode'] );
+		$this->assertSame( 'Ability execution failed.', $result['message'] );
+	}
+
+	/**
+	 * A schema violation is the caller's fault and the message says how to fix
+	 * it, so it must arrive as a 400 with that reason intact.
+	 *
+	 * The Abilities API reports it as the slug `ability_invalid_input` with no
+	 * status attached. A slug is not an int, so without an explicit mapping it
+	 * falls through to 500 and the 5xx redaction replaces the reason with
+	 * "Ability execution failed." The caller is then told only that something
+	 * broke, which is the one thing it cannot act on.
+	 *
+	 * @return void
+	 */
+	public function test_call_ability_surfaces_invalid_input_as_400_with_reason() {
+		$this->register_test_ability(
+			'blu/test-requires-widget',
+			'blu-mcp',
+			fn() => blu_prepare_ability_response( 200, 'never reached' ),
+			'Test Ability',
+			'A test ability',
+			array(),
+			array(
+				'type'       => 'object',
+				'properties' => array( 'widget' => array( 'type' => 'string' ) ),
+				'required'   => array( 'widget' ),
+			)
+		);
+		$this->register_gateway();
+
+		$result = blu_get_ability( 'blu/call-ability' )->execute(
+			array(
+				'ability_name' => 'blu-test-requires-widget',
+				'parameters'   => array(),
+			)
+		);
+
+		$this->assertSame( 400, $result['statusCode'], 'A schema violation must not be reported as a server error.' );
+		$this->assertSame( 'error', $result['status'] );
+		$this->assertStringContainsString( 'widget', $result['message'], 'The reason must survive so the caller can correct the call.' );
+	}
+
+	/**
+	 * A permission denial is likewise actionable and must not be flattened into
+	 * an opaque 500.
+	 *
+	 * @return void
+	 */
+	public function test_call_ability_surfaces_permission_denial_as_403() {
+		$this->register_test_ability(
+			'blu/test-denied',
+			'blu-mcp',
+			fn() => blu_prepare_ability_response( 200, 'never reached' ),
+			'Test Ability',
+			'A test ability',
+			array(),
+			null,
+			fn() => false
+		);
+		$this->register_gateway();
+
+		$result = blu_get_ability( 'blu/call-ability' )->execute(
+			array(
+				'ability_name' => 'blu-test-denied',
+				'parameters'   => array(),
+			)
+		);
+
+		$this->assertSame( 403, $result['statusCode'], 'A denial must not be reported as a server error.' );
+		$this->assertSame( 'error', $result['status'] );
+	}
+
+	/**
+	 * The redaction this change works around still has to hold: a genuine
+	 * server-side failure may carry paths, SQL or credentials in its message,
+	 * and none of that may reach the caller.
+	 *
+	 * @return void
+	 */
+	public function test_call_ability_still_redacts_genuine_server_errors() {
+		$this->register_test_ability(
+			'blu/test-explodes',
+			'blu-mcp',
+			fn() => new \WP_Error(
+				'some_internal_explosion',
+				'/var/www/secret/config.php line 42: credentials hunter2',
+				array( 'status' => 500 )
+			)
+		);
+		$this->register_gateway();
+
+		$result = blu_get_ability( 'blu/call-ability' )->execute(
+			array(
+				'ability_name' => 'blu-test-explodes',
+				'parameters'   => array(),
+			)
+		);
+
+		$this->assertSame( 500, $result['statusCode'] );
+		$this->assertSame( 'Ability execution failed.', $result['message'], 'A 5xx message must stay redacted.' );
+		$this->assertStringNotContainsString( 'hunter2', $result['message'] );
+	}
+
+	/**
 	 * Verifies list-abilities returns success response.
 	 *
 	 * @return void
@@ -402,6 +635,17 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$this->assertSame( 200, $result['statusCode'] );
 		$this->assertSame( 'success', $result['status'] );
 		$this->assertIsArray( $result['message'] );
+	}
+
+	/** The advertised gateway description must explain how to find REST abilities. */
+	public function test_gateway_descriptions_explain_rest_discovery() {
+		$this->register_gateway();
+		$list_description = blu_get_ability( 'blu/list-abilities' )->get_description();
+		$call_description = blu_get_ability( 'blu/call-ability' )->get_description();
+		$this->assertStringContainsString( 'REST API', $list_description );
+		$this->assertStringContainsString( 'blu-list-api-functions', $list_description );
+		$this->assertStringContainsString( 'blu-call-ability', $call_description );
+		$this->assertStringContainsString( 'blu-run-api-function', $call_description );
 	}
 
 	/**
@@ -817,6 +1061,75 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$result  = $ability->execute( array() );
 		$names   = array_column( $result['message'], 'name' );
 		$this->assertNotContains( 'secret-hidden-tool', $names );
+	}
+
+	/** WooCommerce's public native abilities should be reachable through the Bluehost gateway. */
+	public function test_public_woocommerce_ability_is_listed_and_callable() {
+		$this->register_test_ability(
+			'woocommerce/products-list',
+			'woocommerce',
+			function () {
+				return array( 'products' => array() );
+			},
+			'Products',
+			'List products',
+			array( 'mcp' => array( 'public' => true ) )
+		);
+		$this->register_gateway();
+		$listed = blu_get_ability( 'blu/list-abilities' )->execute( array() );
+		$this->assertContains( 'woocommerce-products-list', array_column( $listed['message'], 'name' ) );
+		$called = blu_get_ability( 'blu/call-ability' )->execute(
+			array(
+				'ability_name' => 'woocommerce-products-list',
+				'parameters'   => array(),
+			)
+		);
+		$this->assertSame( array( 'products' => array() ), $called );
+	}
+
+	/** An explicitly private WooCommerce ability must stay hidden. */
+	public function test_private_woocommerce_ability_is_not_listed() {
+		$this->register_test_ability(
+			'woocommerce/private-tool',
+			'woocommerce',
+			function () {
+				return true;
+			},
+			'Private',
+			'Private tool',
+			array( 'mcp' => array( 'public' => false ) )
+		);
+		$this->register_test_ability(
+			'woocommerce/unmarked-tool',
+			'woocommerce',
+			function () {
+				return true;
+			}
+		);
+		$this->register_gateway();
+		$listed = blu_get_ability( 'blu/list-abilities' )->execute( array() );
+		$this->assertNotContains( 'woocommerce-private-tool', array_column( $listed['message'], 'name' ) );
+		$this->assertNotContains( 'woocommerce-unmarked-tool', array_column( $listed['message'], 'name' ) );
+	}
+
+	/** The gateway must allow an authenticated reader to reach an ability's own permission check. */
+	public function test_subscriber_can_call_permitted_ability() {
+		$this->register_test_ability(
+			'blu/public-read',
+			'blu-mcp',
+			function () {
+				return array( 'ok' => true );
+			}
+		);
+		$this->register_gateway();
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'subscriber' ) ) );
+		$called = blu_get_ability( 'blu/call-ability' )->execute(
+			array(
+				'ability_name' => 'blu-public-read',
+				'parameters'   => array(),
+			)
+		);
+		$this->assertSame( array( 'ok' => true ), $called );
 	}
 
 	/**

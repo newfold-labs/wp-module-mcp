@@ -51,13 +51,14 @@ class AbilityGateway {
 			)
 		);
 
-		// Category gate — restricts the whitelist to abilities registered under
-		// these categories. Defaults to the BLU MCP and Yoast SEO categories;
-		// integrators can broaden via the filter.
+		// Allow curated categories. WooCommerce abilities also require public
+		// metadata below; integrators can broaden this list via the filter.
 		$allowed_categories = apply_filters(
 			'blu_mcp_allowed_categories',
 			array(
 				'blu-mcp',
+				'woocommerce',
+				'woocommerce-rest',
 				'yoast-seo',
 			)
 		);
@@ -74,6 +75,12 @@ class AbilityGateway {
 					$ability_type = $meta['mcp']['type'];
 				}
 				if ( 'tool' !== $ability_type ) {
+					return false;
+				}
+				if ( isset( $meta['mcp']['public'] ) && ! $meta['mcp']['public'] ) {
+					return false;
+				}
+				if ( str_starts_with( $name, 'woocommerce/' ) && ( $meta['mcp']['public'] ?? false ) !== true ) {
 					return false;
 				}
 
@@ -199,6 +206,39 @@ class AbilityGateway {
 		return array();
 	}
 
+	/**
+	 * Return an adapter-compatible array whose JSON shape is an MCP object.
+	 *
+	 * @param mixed $result Result returned by a delegated ability.
+	 * @return array Object-shaped result or a result envelope.
+	 */
+	private function normalize_result_for_mcp( $result ): array {
+		if ( is_array( $result ) ) {
+			// PHP serializes only consecutive zero-based keys as a JSON list.
+			// Sparse numeric keys serialize as an object and must retain their keys.
+			if ( ! empty( $result ) && array_keys( $result ) !== range( 0, count( $result ) - 1 ) ) {
+				return $result;
+			}
+			return array( 'result' => $result );
+		}
+
+		if ( is_object( $result ) ) {
+			// The adapter's structuredContent DTO accepts arrays, not PHP objects.
+			// Inspect the serialized shape because JsonSerializable may emit any type.
+			$json = wp_json_encode( $result );
+			if ( false === $json ) {
+				return blu_prepare_ability_response( 500, 'Ability execution failed.' );
+			}
+			$decoded = json_decode( $json, true );
+			if ( '{' === $json[0] && is_array( $decoded ) && ! empty( $decoded ) && array_keys( $decoded ) !== range( 0, count( $decoded ) - 1 ) ) {
+				return $decoded;
+			}
+			return array( 'result' => $decoded );
+		}
+
+		return array( 'result' => $result );
+	}
+
 	/* Gateway ability registration */
 
 	/**
@@ -212,7 +252,7 @@ class AbilityGateway {
 			'blu/list-abilities',
 			array(
 				'label'               => 'List Abilities',
-				'description'         => 'List the abilities available on this site. Each entry includes `name` (hyphen form), `label`, `description`, and `annotations`. Use the optional `search` and `name_prefix` filters to narrow the catalog.',
+				'description'         => 'Discover abilities available on this site, including WordPress REST API access. For any REST endpoint, find blu-list-api-functions, blu-get-function-details, and blu-run-api-function here; they appear only when available. Each entry includes name, label, description, and annotations. Filter with search or name_prefix, then use blu-get-ability-schema and blu-call-ability.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'                 => 'object',
@@ -263,15 +303,18 @@ class AbilityGateway {
 							}
 
 							if ( '' !== $search ) {
-								$haystacks = array(
-									$mcp_name,
-									(string) $ability->get_label(),
-									(string) $ability->get_description(),
-								);
-								$matched   = false;
-								foreach ( $haystacks as $haystack ) {
-									if ( false !== mb_stripos( $haystack, $search ) ) {
-										$matched = true;
+								// Match each whitespace-separated search term independently
+								// against the combined name/label/description (AND, any
+								// order) rather than requiring the whole phrase to appear
+								// verbatim. Callers (LLMs) phrase queries loosely — e.g.
+								// "image edit" — that won't literally appear in text
+								// written as "Edit Image" / "edit an existing image".
+								$haystack = $mcp_name . ' ' . $ability->get_label() . ' ' . $ability->get_description();
+								$terms    = preg_split( '/\s+/', $search, -1, PREG_SPLIT_NO_EMPTY );
+								$matched  = true;
+								foreach ( $terms as $term ) {
+									if ( false === mb_stripos( $haystack, $term ) ) {
+										$matched = false;
 										break;
 									}
 								}
@@ -299,7 +342,7 @@ class AbilityGateway {
 
 					return blu_prepare_ability_response( 200, $result );
 				},
-				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
+				'permission_callback' => fn() => is_user_logged_in(),
 				'meta'                => array(
 					'annotations' => array(
 						'readonly'    => true,
@@ -322,7 +365,7 @@ class AbilityGateway {
 			'blu/get-ability-schema',
 			array(
 				'label'               => 'Get Ability Schema',
-				'description'         => 'Get the full input schema for a specific ability, so the caller knows what parameters to pass when invoking it via blu-call-ability.',
+				'description'         => 'Get the full input schema for a discovered ability, including REST abilities such as blu-list-api-functions, blu-get-function-details, and blu-run-api-function, before invoking it via blu-call-ability.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
@@ -359,7 +402,7 @@ class AbilityGateway {
 						)
 					);
 				},
-				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
+				'permission_callback' => fn() => is_user_logged_in(),
 				'meta'                => array(
 					'annotations' => array(
 						'readonly'    => true,
@@ -382,7 +425,7 @@ class AbilityGateway {
 			'blu/call-ability',
 			array(
 				'label'               => 'Call Ability',
-				'description'         => 'Execute an ability by name with its parameters. The gateway tools (blu-list-abilities, blu-get-ability-schema, blu-call-ability) cannot be invoked through this tool.',
+				'description'         => 'Execute a discovered ability by name with its parameters using blu-call-ability. For WordPress REST API endpoints, use ability_name blu-list-api-functions to find registered routes, blu-get-function-details for a route schema, or blu-run-api-function to dispatch a request. Get each ability input schema with blu-get-ability-schema. Gateway tools cannot be invoked through this tool.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
@@ -432,6 +475,24 @@ class AbilityGateway {
 							? $error_data['status']
 							: $result->get_error_code();
 
+						// The Abilities API rejects a bad call with a slug and no status:
+						// `ability_invalid_input` for a schema violation,
+						// `ability_invalid_permissions` for a denial. Both are the caller's
+						// fault and both describe the fix, but a slug is not an int, so
+						// without this map they fall to 500 and the redaction below throws
+						// the reason away. The caller is then told only that something
+						// failed, which is the one thing it cannot act on: it retries the
+						// same malformed call, or abandons that part of the request.
+						if ( ! is_int( $status_code ) ) {
+							$slug_statuses = array(
+								'ability_invalid_input' => 400,
+								'ability_invalid_permissions' => 403,
+							);
+							if ( isset( $slug_statuses[ $status_code ] ) ) {
+								$status_code = $slug_statuses[ $status_code ];
+							}
+						}
+
 						if ( ! is_int( $status_code ) || $status_code < 400 || $status_code > 599 ) {
 							$status_code = 500;
 						}
@@ -448,9 +509,9 @@ class AbilityGateway {
 						return blu_prepare_ability_response( $status_code, $message );
 					}
 
-					return $result;
+					return $this->normalize_result_for_mcp( $result );
 				},
-				'permission_callback' => fn() => current_user_can( 'edit_posts' ),
+				'permission_callback' => fn() => is_user_logged_in(),
 				'meta'                => array(
 					'annotations' => array(
 						'readonly'    => false,

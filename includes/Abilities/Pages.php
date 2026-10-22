@@ -24,7 +24,7 @@ class Pages {
 			'blu/pages-search',
 			array(
 				'label'               => 'Search Pages',
-				'description'         => 'Search and filter WordPress pages with pagination',
+				'description'         => 'Search WordPress pages. Compact results include ID, plain title, status, and slug; use get-page for full details. To find a deleted page, search again with status=trash; an omitted status does not search the trash.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
@@ -35,7 +35,7 @@ class Pages {
 						),
 						'status'   => array(
 							'type'        => 'string',
-							'description' => 'Page status(es): publish, draft, pending, future, private. Comma-separated for multiple. Omit to search all statuses.',
+							'description' => 'Defaults to publish. Use any to include other non-trash statuses, future (scheduled) to find scheduled pages, or trash to find deleted pages. Other status slugs may be registered on this site; discover current values with GET /wp/v2/statuses. Each result includes its actual status.',
 						),
 						'page'     => array(
 							'type'        => 'integer',
@@ -49,18 +49,18 @@ class Pages {
 				),
 				'execute_callback'    => function ( $input = null ) {
 					$request = new \WP_REST_Request( 'GET', '/wp/v2/pages' );
-					$all_statuses = 'publish,future,draft,pending,private';
 					if ( $input ) {
-						// Default to all statuses when not specified or empty (WP defaults to publish only).
+						// WordPress REST defaults to publish when status is omitted.
 						if ( ! isset( $input['status'] ) || '' === $input['status'] ) {
-							$input['status'] = $all_statuses;
+							$input['status'] = 'publish';
 						}
 						$request->set_query_params( $input );
 					} else {
-						$request->set_param( 'status', $all_statuses );
+						$request->set_param( 'status', 'publish' );
 					}
+					$request->set_param( '_fields', 'id,title,slug,status' );
 					$response = rest_do_request( $request );
-					return blu_standardize_rest_response( $response );
+					return blu_compact_post_search_response( blu_standardize_rest_response( $response ) );
 				},
 				'permission_callback' => fn() => current_user_can( 'edit_pages' ),
 				'meta'                => array(

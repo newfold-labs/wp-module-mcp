@@ -16,9 +16,8 @@ namespace BLU\Integrations;
  *
  * Because the Bluehost MCP transport is mounted at `/blu/mcp`, WC's check fails and
  * none of its native abilities (`woocommerce/products-list`, `woocommerce/orders-get`,
- * etc.) get registered. The gateway then cannot see or invoke any of them — even
- * though both the `woocommerce/` namespace and the `woocommerce-rest` category are
- * whitelisted in {@see \BLU\Abilities\AbilityGateway::get_whitelisted_abilities()}.
+ * etc.) get registered. The gateway then cannot see or invoke any of them even
+ * when its namespace and category allowlists include WooCommerce.
  *
  * This class force-registers WC's abilities during `wp_abilities_api_init` by briefly
  * spoofing `$_SERVER['REQUEST_URI']` so WC's gate passes. The original URI is restored

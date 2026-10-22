@@ -112,6 +112,21 @@ class Settings {
 				'execute_callback'    => function ( $input = null ) {
 					$request = new \WP_REST_Request( 'POST', '/wp/v2/settings' );
 					if ( $input ) {
+						// LLMs occasionally pass the WP option names
+						// (`blogname`/`blogdescription`) instead of the
+						// REST endpoint's param names (`title`/`description`).
+						// The call is otherwise valid so the REST API returns
+						// 200 with no fields updated — a silent no-op the LLM
+						// then reports as success. Alias them here so the
+						// call lands either way.
+						if ( isset( $input['blogname'] ) && ! isset( $input['title'] ) ) {
+							$input['title'] = $input['blogname'];
+							unset( $input['blogname'] );
+						}
+						if ( isset( $input['blogdescription'] ) && ! isset( $input['description'] ) ) {
+							$input['description'] = $input['blogdescription'];
+							unset( $input['blogdescription'] );
+						}
 						$request->set_body_params( $input );
 					}
 					$response = rest_do_request( $request );
