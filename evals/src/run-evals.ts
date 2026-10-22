@@ -9,6 +9,7 @@ import { safeTrace, summarizeFailure } from './diagnostics.js';
 import { MenuOutcomeFixture } from './menu-outcome.js';
 import { resolveEvalPrompt } from './eval-prompt.js';
 import { blockingPrerequisite } from './eval-dependencies.js';
+import { pageHasImage, productHasTerms, WordPressOutcomes } from './wp-outcomes.js';
 import type { TestCase } from './coverage.js';
 
 const EVAL_DELAY_MS = 500;
@@ -46,6 +47,11 @@ export async function runEvals(options: EvalRunOptions): Promise<EvalRunResult> 
   let toolCount = 0;
   try {
     const tools = await fetchOpenAiToolsFromList(client);
+    const standaloneIds = process.env.WP_EVAL_IDS ? JSON.parse(process.env.WP_EVAL_IDS) as Record<string, number> : {};
+    const wpOutcomes = new WordPressOutcomes(
+      process.env.MCP_EVAL_SERVER_URL ?? 'http://localhost:8888/index.php?rest_route=/blu/mcp',
+      process.env.WP_EVAL_USER ?? '', process.env.WP_APP_PASSWORD ?? ''
+    );
     toolCount = tools.length;
     console.log(`Using ${toolCount} MCP tool(s) from tools/list`);
 
@@ -125,10 +131,28 @@ export async function runEvals(options: EvalRunOptions): Promise<EvalRunResult> 
                 portfolioId: Number(process.env.WP_EVAL_PORTFOLIO_ID) || undefined,
                 testimonialId: Number(process.env.WP_EVAL_TESTIMONIAL_ID) || undefined,
                 pageId: Number(process.env.WP_EVAL_PAGE_ID) || undefined,
+                ids: standaloneIds,
               });
+          const pageId = ['inserting-media-into-existing-page-32', 'replacing-media-inside-page-33'].includes(test.id)
+            ? Number(process.env.WP_EVAL_PAGE_ID) || undefined : undefined;
+          const priorPageContent = test.expected_outcome === 'page_image_changed'
+            ? await wpOutcomes.pageContent(pageId) : undefined;
           const outcomeCheck = menuFixture
             ? async () => (await menuFixture.containsPage()) === (test.expected_outcome === 'menu_page_present')
-            : undefined;
+            : test.expected_outcome === 'page_image_present'
+              ? async () => pageHasImage(await wpOutcomes.pageContent(pageId))
+              : test.expected_outcome === 'page_image_changed'
+                ? async () => {
+                    const content = await wpOutcomes.pageContent(pageId);
+                    return content !== priorPageContent && pageHasImage(content);
+                  }
+                : test.expected_outcome === 'product_terms'
+                  ? async () => productHasTerms(await wpOutcomes.product() ?? {}, 'AI Tools', 'Automation')
+                  : test.expected_outcome === 'product_published'
+                    ? async () => (await wpOutcomes.product())?.status === 'publish'
+                    : test.expected_outcome === 'product_absent'
+                      ? async () => !(await wpOutcomes.product())
+                      : undefined;
 
           let result: AgentEvalResult;
           const previousMessageCount = inSeries ? conversationMessages.length : 0;
@@ -177,7 +201,9 @@ export async function runEvals(options: EvalRunOptions): Promise<EvalRunResult> 
           const currentMessages = result.conversationMessages.slice(previousMessageCount);
           const reason = result.error ? 'Eval error' : summarizeFailure(currentMessages);
           const actual = compactTool(result.actualTool);
-          const expected = test.expected_outcome === 'menu_page_present' ? 'page linked to menu' : test.expected_outcome === 'menu_page_absent' ? 'page removed from menu' : `\`${test.expected_tool}\``;
+          const expected = test.expected_outcome
+            ? test.expected_outcome.replaceAll('_', ' ')
+            : `\`${test.expected_tool}\``;
           diagnostics.push({ id: test.id, status, selectionMatched: result.matched, executionFailed: result.executionFailed ?? false, reason: status === 'pass' ? undefined : reason, error: result.error, turns: result.turns, trace: safeTrace(currentMessages) });
           if (status === 'error') {
             rows.push(

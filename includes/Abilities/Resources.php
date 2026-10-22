@@ -30,7 +30,7 @@ class Resources {
 			'blu/google-product-taxonomy',
 			array(
 				'label'               => 'Google Product Taxonomy',
-				'description'         => 'The official Google Product Taxonomy resource',
+				'description'         => 'Search the current Google Product Taxonomy for matching Shopping category IDs and paths. This ability fetches the taxonomy for the site; the assistant does not need separate web access.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',

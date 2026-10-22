@@ -186,7 +186,7 @@
   {
     "id": "api-details-1",
     "description": "Get API endpoint details",
-    "prompt": "Show me the details and parameters for the GET /wp/v2/posts endpoint",
+    "prompt": "Which query parameters does my site's currently registered posts API support? Check the route details on this site.",
     "expected_tool": "blu_get-function-details",
     "source": "RestApiCrud.php"
   },
@@ -200,7 +200,7 @@
   {
     "id": "cpt-search-1",
     "description": "Search custom post type items",
-    "prompt": "Search for items in the 'portfolio' custom post type",
+    "prompt": "Search my Portfolio items for 'AI Eval' and show the matching entries.",
     "expected_tool": "blu_cpt-search",
     "source": "CustomPostTypes.php"
   },
@@ -515,7 +515,7 @@
   {
     "id": "wc-products-report-1",
     "description": "Get products report",
-    "prompt": "Show me the WooCommerce products totals report with status breakdown",
+    "prompt": "How many products are in each status in my store right now?",
     "expected_tool": "blu_wc-reports-products-totals",
     "source": "WooOrders.php"
   },
@@ -529,7 +529,7 @@
   {
     "id": "google-taxonomy-1",
     "description": "Search Google product taxonomy",
-    "prompt": "Which Google product category IDs match running shoes? Please look up the current taxonomy and give me the IDs and category paths.",
+    "prompt": "For my connected store, which Google Shopping category IDs fit running shoes? Give me the category paths too.",
     "expected_tool": "blu_google-product-taxonomy",
     "source": "Resources.php"
   },
@@ -659,7 +659,8 @@
     "prompt": "Attempt to delete the same post again.",
     "expected_tool": "blu_delete-post",
     "source": "Posts.php",
-    "series_id": "posts-ai-workflow"
+    "series_id": "posts-ai-workflow",
+    "expect_tool_error": true
   },
   {
     "id": "creating-a-new-page-17",
@@ -690,6 +691,7 @@
     "description": "Inserting image into page",
     "prompt": "Insert the image into the page.",
     "expected_tool": "blu_add-section",
+    "expected_outcome": "page_image_present",
     "source": "BlockEditor.php",
     "series_id": "pages-ai-landing",
     "requires_success_of": [
@@ -733,6 +735,7 @@
     "description": "Replacing existing image",
     "prompt": "Replace the existing image with another image.",
     "expected_tool": "blu_edit-block",
+    "expected_outcome": "page_image_changed",
     "source": "BlockEditor.php",
     "series_id": "pages-ai-landing",
     "requires_success_of": [
@@ -802,6 +805,7 @@
     "description": "Inserting media into existing page",
     "prompt": "Insert the media into an existing page.",
     "expected_tool": "blu_add-section",
+    "expected_outcome": "page_image_present",
     "source": "BlockEditor.php",
     "series_id": "media-workflow",
     "requires_success_of": [
@@ -813,6 +817,7 @@
     "description": "Replacing media inside page",
     "prompt": "Replace media inside the page.",
     "expected_tool": "blu_edit-block",
+    "expected_outcome": "page_image_changed",
     "source": "BlockEditor.php",
     "series_id": "media-workflow",
     "requires_success_of": [
@@ -823,7 +828,7 @@
   {
     "id": "deleting-media-file-34",
     "description": "Deleting media file",
-    "prompt": "Delete the media file.",
+    "prompt": "Delete the media-flow.png image uploaded earlier in this media workflow.",
     "expected_tool": "blu_delete-media",
     "source": "Media.php",
     "series_id": "media-workflow",
@@ -865,18 +870,18 @@
     "id": "adding-page-to-menu-38",
     "description": "Adding page to menu",
     "prompt": "Add the 'AI Eval Landing Page' page to the 'AI Eval Primary' navigation menu.",
-    "expected_tool": "blu_add-cpt",
+    "expected_tool": "blu_add-page-to-menu",
     "expected_outcome": "menu_page_present",
-    "source": "CustomPostTypes.php",
+    "source": "NavMenus.php",
     "series_id": "menu-primary"
   },
   {
     "id": "removing-page-from-menu-39",
     "description": "Removing page from menu",
     "prompt": "Remove the 'AI Eval Landing Page' page link from the 'AI Eval Primary' navigation menu.",
-    "expected_tool": "blu_delete-cpt",
+    "expected_tool": "blu_remove-page-from-menu",
     "expected_outcome": "menu_page_absent",
-    "source": "CustomPostTypes.php",
+    "source": "NavMenus.php",
     "series_id": "menu-primary"
   },
   {
@@ -916,8 +921,10 @@
     "description": "Assigning category and tag",
     "prompt": "Put the 'AI Tool' product in the 'AI Tools' category and add the 'Automation' tag.",
     "expected_tool": "blu_wc-update-product",
+    "expected_outcome": "product_terms",
     "source": "WooProducts.php",
-    "series_id": "wc-product-ai-tool"
+    "series_id": "wc-product-ai-tool",
+    "requires_success_of": ["creating-new-product-42"]
   },
   {
     "id": "adding-product-image-45",
@@ -940,8 +947,10 @@
     "description": "Publishing the product",
     "prompt": "Publish the product.",
     "expected_tool": "blu_wc-update-product",
+    "expected_outcome": "product_published",
     "source": "WooProducts.php",
-    "series_id": "wc-product-ai-tool"
+    "series_id": "wc-product-ai-tool",
+    "requires_success_of": ["creating-new-product-42"]
   },
   {
     "id": "searching-for-the-product-48",
@@ -989,10 +998,12 @@
   {
     "id": "deleting-the-product-53",
     "description": "Deleting the product",
-    "prompt": "Delete the product.",
+    "prompt": "Delete the 'AI Tool' product created earlier in this flow. Leave the 'AI Eval Size Shirt' product alone.",
     "expected_tool": "blu_wc-delete-product",
+    "expected_outcome": "product_absent",
     "source": "WooProducts.php",
-    "series_id": "wc-product-ai-tool"
+    "series_id": "wc-product-ai-tool",
+    "requires_success_of": ["creating-new-product-42"]
   },
   {
     "id": "deleting-category-and-tag-54",
@@ -1056,7 +1067,8 @@
     "prompt": "Attempt to create duplicate user 'test_user'.",
     "expected_tool": "blu_add-user",
     "source": "Users.php",
-    "series_id": "users-test-user"
+    "series_id": "users-test-user",
+    "expect_tool_error": true
   },
   {
     "id": "deleting-the-user-62",
@@ -1072,7 +1084,8 @@
     "prompt": "Attempt to delete currently logged-in user.",
     "expected_tool": "blu_delete-user",
     "source": "Users.php",
-    "series_id": "users-test-user"
+    "series_id": "users-test-user",
+    "expect_tool_error": true
   },
   {
     "id": "opening-general-site-settings-64",
@@ -1142,14 +1155,6 @@
     "id": "retrieving-global-styles-configuration-72",
     "description": "Retrieving global styles configuration",
     "prompt": "Retrieve global styles configuration.",
-    "expected_tool": "blu_get-active-global-styles",
-    "source": "GlobalStyles.php",
-    "series_id": "theme-global-styles"
-  },
-  {
-    "id": "fetching-active-styles-73",
-    "description": "Fetching active styles",
-    "prompt": "Fetch active styles.",
     "expected_tool": "blu_get-active-global-styles",
     "source": "GlobalStyles.php",
     "series_id": "theme-global-styles"

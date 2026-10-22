@@ -294,6 +294,18 @@ jobs:
           fi
           echo "WP_EVAL_PAGE_ID=$PAGE_ID" >> "$GITHUB_ENV"
 
+      - name: Seed standalone eval objects
+        if: steps.changes.outputs.skip != 'true'
+        run: |
+          PLUGIN_DIR_NAME="$(basename "${{ env.BRAND_PLUGIN_DIR }}")"
+          SEED_OUTPUT=$(npx wp-env run cli wp eval-file "wp-content/plugins/${PLUGIN_DIR_NAME}/vendor/newfold-labs/wp-module-mcp/evals/fixtures/seed.php")
+          FIXTURES=$(printf '%s\n' "$SEED_OUTPUT" | sed -n 's/^MCP_EVAL_FIXTURES=//p' | tail -1)
+          if ! printf '%s' "$FIXTURES" | jq -e 'type == "object" and all(.[]; type == "number" and . > 0)' >/dev/null; then
+            echo "::error::Could not seed standalone eval objects."
+            exit 1
+          fi
+          echo "WP_EVAL_IDS=$FIXTURES" >> "$GITHUB_ENV"
+
       - name: Create application password
         if: steps.changes.outputs.skip != 'true'
         id: wp_auth

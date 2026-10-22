@@ -7,6 +7,30 @@ namespace BLU\Abilities;
  * Media abilities for WordPress media library.
  */
 class Media {
+	/**
+	 * Resolve a disk filename without treating a human media title as a file extension.
+	 *
+	 * @param array  $input     Upload parameters.
+	 * @param string $mime_type Detected MIME type.
+	 * @return string Sanitized filename.
+	 * @throws \InvalidArgumentException When the MIME type is not allowed.
+	 */
+	public static function resolve_upload_filename( array $input, string $mime_type ): string {
+		$filename = sanitize_file_name( (string) ( $input['filename'] ?? $input['title'] ?? 'upload' ) );
+		if ( '' === $filename ) {
+			$filename = 'upload';
+		}
+		if ( '' !== pathinfo( $filename, PATHINFO_EXTENSION ) ) {
+			return $filename;
+		}
+		foreach ( get_allowed_mime_types() as $extensions => $allowed_type ) {
+			if ( $allowed_type === $mime_type ) {
+				$extension = explode( '|', $extensions )[0];
+				return $filename . '.' . $extension;
+			}
+		}
+		throw new \InvalidArgumentException( 'Unsupported media type' );
+	}
 
 	/**
 	 * Constructor - registers all media-related abilities.
@@ -138,11 +162,14 @@ class Media {
 					$mime_type = get_post_mime_type( $id );
 					$file_data = file_get_contents( $file_path );
 
-					return blu_prepare_ability_response( 200, array(
-						'results'  => $file_data,
-						'type'     => 'image',
-						'mimeType' => $mime_type,
-					));
+					return blu_prepare_ability_response(
+						200,
+						array(
+							'results'  => $file_data,
+							'type'     => 'image',
+							'mimeType' => $mime_type,
+						)
+					);
 				},
 				'permission_callback' => fn() => current_user_can( 'upload_files' ),
 				'meta'                => array(
@@ -168,6 +195,10 @@ class Media {
 						'file'        => array(
 							'type'        => 'string',
 							'description' => 'Base64 encoded file data',
+						),
+						'filename'    => array(
+							'type'        => 'string',
+							'description' => 'Original filename including extension, e.g. "company-logo.png". Separate from the display title.',
 						),
 						'title'       => array(
 							'type'        => 'string',
@@ -201,12 +232,18 @@ class Media {
 					}
 
 					// Detect mime type
-					$finfo     = finfo_open( FILEINFO_MIME_TYPE );
-					$mime_type = finfo_buffer( $finfo, $file_data );
-					finfo_close( $finfo );
+					$finfo     = new \finfo( FILEINFO_MIME_TYPE );
+					$mime_type = $finfo->buffer( $file_data );
+					if ( ! is_string( $mime_type ) || '' === $mime_type ) {
+						return blu_prepare_ability_response( 400, 'Unsupported media type' );
+					}
 
 					// Create temp file
-					$filename = isset( $input['title'] ) ? sanitize_file_name( $input['title'] ) : 'upload';
+					try {
+						$filename = self::resolve_upload_filename( $input, $mime_type );
+					} catch ( \InvalidArgumentException $e ) {
+						return blu_prepare_ability_response( 400, $e->getMessage() );
+					}
 					$upload   = wp_upload_bits( $filename, null, $file_data );
 
 					if ( $upload['error'] ) {
@@ -231,7 +268,7 @@ class Media {
 					if ( ! empty( $input['alt_text'] ) ) {
 						update_post_meta( $attach_id, '_wp_attachment_image_alt', $input['alt_text'] );
 					}
-					
+
 					return blu_prepare_ability_response( 201, get_post( $attach_id ) );
 				},
 				'permission_callback' => fn() => current_user_can( 'upload_files' ),
