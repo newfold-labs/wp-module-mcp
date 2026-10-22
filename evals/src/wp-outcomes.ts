@@ -33,15 +33,23 @@ export class WordPressOutcomes {
     return await response.json() as T;
   }
 
+  private async landingPageId(): Promise<number | undefined> {
+    const pages = await this.get<Array<{ id: number }>>('/wp/v2/pages', { slug: 'ai-landing-page', status: 'any', context: 'edit' });
+    return pages[0]?.id;
+  }
+
   async pageContent(pageId?: number): Promise<string> {
-    let id = pageId;
-    if (!id) {
-      const pages = await this.get<Array<{ id: number }>>('/wp/v2/pages', { slug: 'ai-landing-page', status: 'any', context: 'edit' });
-      id = pages[0]?.id;
-    }
+    const id = pageId ?? await this.landingPageId();
     if (!id) return '';
     const page = await this.get<{ content?: { raw?: string; rendered?: string } }>(`/wp/v2/pages/${id}`, { context: 'edit' });
     return page.content?.raw ?? page.content?.rendered ?? '';
+  }
+
+  async pageStatus(pageId?: number): Promise<string | undefined> {
+    const id = pageId ?? await this.landingPageId();
+    if (!id) return undefined;
+    const page = await this.get<{ status?: string }>(`/wp/v2/pages/${id}`, { context: 'edit' });
+    return page.status;
   }
 
   async product(name = 'AI Tool'): Promise<Product | undefined> {

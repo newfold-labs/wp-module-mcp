@@ -24,6 +24,19 @@ test('page image outcome requires an image block or tag', () => {
   assert.equal(pageHasImage('<!-- wp:image {"id":5} --><figure><img src="logo.png"></figure>'), true);
 });
 
+test('publishing outcome accepts a page already published by an earlier step', async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (input) => {
+    const route = new URL(String(input)).searchParams.get('rest_route');
+    return new Response(JSON.stringify(route === '/wp/v2/pages' ? [{ id: 39 }] : { status: 'publish' }), { status: 200 });
+  };
+  try {
+    assert.equal(await new WordPressOutcomes('http://localhost:8888/index.php?rest_route=/blu/mcp', 'user', 'pass').pageStatus(), 'publish');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test('product term outcome requires both requested terms', () => {
   const product = { categories: [{ name: 'AI Tools' }], tags: [{ name: 'Automation' }] };
   assert.equal(productHasTerms(product, 'AI Tools', 'Automation'), true);

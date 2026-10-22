@@ -78,7 +78,7 @@ class Pages {
 			'blu/get-page',
 			array(
 				'label'               => 'Get Page',
-				'description'         => 'Get a WordPress page by ID. Pages are distinct from blog posts; use blu-get-post only for a blog post.',
+				'description'         => 'Read a WordPress page by ID. For changes to page content, use blu-update-page. Pages are distinct from blog posts; use blu-get-post only for a blog post.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
@@ -165,7 +165,7 @@ class Pages {
 			'blu/update-page',
 			array(
 				'label'               => 'Update Page',
-				'description'         => 'Update a WordPress page by ID',
+				'description'         => 'Update a WordPress page by ID. Use content to insert or replace media images and blocks in page content; status can publish the page. Use this for pages, not blog posts or custom post types.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',

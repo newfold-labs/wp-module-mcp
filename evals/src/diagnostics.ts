@@ -37,14 +37,23 @@ export function safeTrace(messages: Message[]): Array<Record<string, unknown>> {
       };
     }
     let statusCode: number | undefined;
+    let errorCode: string | undefined;
+    let invalidParams: string[] | undefined;
     const toolError = typeof message.content === 'string' && message.content.startsWith('MCP error:');
     if (typeof message.content === 'string') {
       try {
         const payload = JSON.parse(message.content) as Record<string, unknown>;
         if (typeof payload.statusCode === 'number') statusCode = payload.statusCode;
+        if (statusCode && statusCode >= 400 && payload.message && typeof payload.message === 'object') {
+          const detail = payload.message as Record<string, unknown>;
+          if (typeof detail.code === 'string' && /^[a-z][a-z0-9_]{1,80}$/.test(detail.code)) errorCode = detail.code;
+          const data = detail.data && typeof detail.data === 'object' ? detail.data as Record<string, unknown> : {};
+          const params = data.params && typeof data.params === 'object' ? data.params as Record<string, unknown> : {};
+          invalidParams = Object.keys(params).filter((key) => /^[a-z][a-z0-9_]{0,80}$/.test(key)).slice(0, 10);
+        }
       } catch { /* do not include raw tool output */ }
     }
-    return { role: 'tool', statusCode, toolError };
+    return { role: 'tool', statusCode, errorCode, invalidParams, toolError };
   });
 }
 

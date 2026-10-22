@@ -146,6 +146,8 @@ export async function runEvals(options: EvalRunOptions): Promise<EvalRunResult> 
                     const content = await wpOutcomes.pageContent(pageId);
                     return content !== priorPageContent && pageHasImage(content);
                   }
+                : test.expected_outcome === 'page_published'
+                  ? async () => (await wpOutcomes.pageStatus(pageId)) === 'publish'
                 : test.expected_outcome === 'product_terms'
                   ? async () => productHasTerms(await wpOutcomes.product() ?? {}, 'AI Tools', 'Automation')
                   : test.expected_outcome === 'product_published'

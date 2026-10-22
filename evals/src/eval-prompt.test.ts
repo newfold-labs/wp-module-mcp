@@ -23,3 +23,10 @@ test('uses seeded category and independent homepage fixtures', () => {
   assert.equal(resolveEvalPrompt('wc-category-delete-1', 'Delete category ID 20', { ids: { wc_category_delete: 87 } }), 'Delete category ID 87');
   assert.equal(resolveEvalPrompt('setting-homepage-68', "Set homepage to 'AI Eval Settings Home'.", { ids: { settings_homepage: 88 } }), 'Set homepage to page ID 88 (AI Eval Settings Home).');
 });
+
+test('media workflow names the existing page and uploaded image', () => {
+  const prompt = resolveEvalPrompt('inserting-media-into-existing-page-32', 'Insert the media into an existing page.', { pageId: 52 });
+  assert.match(prompt, /page.*52/);
+  assert.match(prompt, /media-flow\.png/);
+  assert.match(prompt, /content/);
+});

@@ -73,7 +73,7 @@
   {
     "id": "post-delete-1",
     "description": "Delete a post",
-    "prompt": "Delete the blog post with ID 99",
+    "prompt": "Move the blog post with ID 99 to Trash.",
     "expected_tool": "blu_delete-post",
     "source": "Posts.php"
   },
@@ -214,7 +214,7 @@
   {
     "id": "wc-products-search-1",
     "description": "Search WooCommerce products",
-    "prompt": "Find all WooCommerce products containing 'shoe' in the name",
+    "prompt": "Find WooCommerce products with 'shoe' in the name.",
     "expected_tool": "blu_wc-products-search",
     "source": "WooProducts.php"
   },
@@ -703,6 +703,7 @@
     "description": "Publishing the page",
     "prompt": "Save and publish the page.",
     "expected_tool": "blu_update-page",
+    "expected_outcome": "page_published",
     "source": "Pages.php",
     "series_id": "pages-ai-landing"
   },

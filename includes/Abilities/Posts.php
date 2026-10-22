@@ -211,7 +211,7 @@ class Posts {
 			'blu/delete-post',
 			array(
 				'label'               => 'Delete Post',
-				'description'         => 'Delete a WordPress post by ID',
+				'description'         => 'Move a WordPress blog post to Trash by ID. This ability does not permanently delete it.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',

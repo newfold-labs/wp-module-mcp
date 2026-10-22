@@ -54,3 +54,11 @@ test('records parameter names and types without sensitive values', () => {
   assert.ok(!trace.includes('private running shoes'));
   assert.ok(!trace.includes('secret123'));
 });
+
+test('records only a safe REST error code for failed calls', () => {
+  const trace = JSON.stringify(safeTrace([{ role: 'tool', content: JSON.stringify({
+    statusCode: 400, message: { code: 'rest_invalid_param', message: 'Invalid per_page secret123', data: { params: { per_page: 'secret123' } } },
+  }) }]));
+  assert.match(trace, /rest_invalid_param/);
+  assert.ok(!trace.includes('secret123'));
+});

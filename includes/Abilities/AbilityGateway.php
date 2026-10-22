@@ -365,7 +365,7 @@ class AbilityGateway {
 			'blu/get-ability-schema',
 			array(
 				'label'               => 'Get Ability Schema',
-				'description'         => 'Get the full description and input schema for an ability returned by blu-list-abilities. Read the required parameters and detailed instructions before calling blu-call-ability.',
+				'description'         => 'Get the full description and input schema for an ability returned by blu-list-abilities. Read it once per ability, then use blu-call-ability with the required parameters; do not repeatedly request the same schema.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',

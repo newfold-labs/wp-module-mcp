@@ -55,7 +55,7 @@ export function resolveEvalPrompt(id: string, prompt: string, fixtures: { produc
     if (id === 'replacing-media-inside-page-33') {
       return `On page ID ${fixtures.pageId}, replace the existing media-flow.png image with media-replacement.png. The replacement file data is data:image/png;base64,${TINY_PNG}.`;
     }
-    return `${prompt} Use media-flow.png and the published eval page with ID ${fixtures.pageId}.`;
+    return `Add the uploaded media-flow.png image to the content of the published page with ID ${fixtures.pageId}.`;
   }
   if (['uploading-unsupported-file-36', 'verifying-invalid-file-rejection-37'].includes(id)) {
     return `${prompt} The file data is base64: TVoAAAEAAAA=.`;
