@@ -50,9 +50,9 @@ class Media {
 				'permission_callback' => fn() => current_user_can( 'upload_files' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => true,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -83,9 +83,9 @@ class Media {
 				'permission_callback' => fn() => current_user_can( 'upload_files' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => true,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -113,8 +113,15 @@ class Media {
 					'required'   => array( 'id' ),
 				),
 				'execute_callback'    => function ( $input ) {
-					$id        = $input['id'];
+					$id        = (int) $input['id'];
 					$size      = $input['size'] ?? 'full';
+					$attachment = get_post( $id );
+					if ( ! $attachment || 'attachment' !== $attachment->post_type ) {
+						return blu_prepare_ability_response( 404, 'Media item not found' );
+					}
+					if ( ! current_user_can( 'read_post', $id ) ) {
+						return blu_prepare_ability_response( 403, 'You do not have permission to read this media item.' );
+					}
 					$file_path = get_attached_file( $id );
 
 					if ( ! file_exists( $file_path ) ) {
@@ -138,18 +145,21 @@ class Media {
 					$mime_type = get_post_mime_type( $id );
 					$file_data = file_get_contents( $file_path );
 
-					return blu_prepare_ability_response( 200, array(
-						'results'  => $file_data,
-						'type'     => 'image',
-						'mimeType' => $mime_type,
-					));
+					return blu_prepare_ability_response(
+						200,
+						array(
+							'results'  => $file_data,
+							'type'     => 'image',
+							'mimeType' => $mime_type,
+						)
+					);
 				},
 				'permission_callback' => fn() => current_user_can( 'upload_files' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => true,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -200,11 +210,6 @@ class Media {
 						return blu_prepare_ability_response( 400, 'Invalid base64 data' );
 					}
 
-					// Detect mime type
-					$finfo     = finfo_open( FILEINFO_MIME_TYPE );
-					$mime_type = finfo_buffer( $finfo, $file_data );
-					finfo_close( $finfo );
-
 					// Create temp file
 					$filename = isset( $input['title'] ) ? sanitize_file_name( $input['title'] ) : 'upload';
 					$upload   = wp_upload_bits( $filename, null, $file_data );
@@ -213,6 +218,16 @@ class Media {
 
 						return blu_prepare_ability_response( 500, 'File upload error: ' . $upload['error'] );
 					}
+
+					// wp_upload_bits() checks the extension but does not verify the
+					// file bytes against it. Reject a disguised payload before creating
+					// an attachment record.
+					$checked_type = wp_check_filetype_and_ext( $upload['file'], $filename );
+					if ( empty( $checked_type['ext'] ) || empty( $checked_type['type'] ) ) {
+						wp_delete_file( $upload['file'] );
+						return blu_prepare_ability_response( 400, 'Uploaded file type is not allowed.' );
+					}
+					$mime_type = $checked_type['type'];
 
 					// Create attachment
 					$attachment = array(
@@ -231,15 +246,15 @@ class Media {
 					if ( ! empty( $input['alt_text'] ) ) {
 						update_post_meta( $attach_id, '_wp_attachment_image_alt', $input['alt_text'] );
 					}
-					
+
 					return blu_prepare_ability_response( 201, get_post( $attach_id ) );
 				},
 				'permission_callback' => fn() => current_user_can( 'upload_files' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => false,
-						'idempotent'   => false,
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => false,
 					),
 				),
 			)
@@ -289,9 +304,9 @@ class Media {
 				'permission_callback' => fn() => current_user_can( 'upload_files' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -323,9 +338,9 @@ class Media {
 				'permission_callback' => fn() => current_user_can( 'delete_posts' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => true,
-						'idempotent'   => true,
+						'readonly'    => false,
+						'destructive' => true,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -366,9 +381,9 @@ class Media {
 				'permission_callback' => fn() => current_user_can( 'upload_files' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => true,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
