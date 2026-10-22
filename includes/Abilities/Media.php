@@ -223,7 +223,7 @@ class Media {
 					// file bytes against it. Reject a disguised payload before creating
 					// an attachment record.
 					$checked_type = wp_check_filetype_and_ext( $upload['file'], $filename );
-					if ( empty( $checked_type['ext'] ) || empty( $checked_type['type'] ) ) {
+					if ( empty( $checked_type['ext'] ) || empty( $checked_type['type'] ) || ! empty( $checked_type['proper_filename'] ) ) {
 						wp_delete_file( $upload['file'] );
 						return blu_prepare_ability_response( 400, 'Uploaded file type is not allowed.' );
 					}
