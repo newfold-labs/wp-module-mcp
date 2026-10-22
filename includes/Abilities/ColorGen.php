@@ -46,6 +46,9 @@ class ColorGen {
 						'destructive' => false,
 						'idempotent'  => false,
 					),
+					'mcp'         => array(
+						'summary' => 'Suggest color palettes from a brand or mood description. Apply a chosen palette later with blu-update-global-styles.',
+					),
 				),
 			)
 		);

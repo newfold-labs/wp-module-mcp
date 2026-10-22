@@ -297,9 +297,18 @@ jobs:
         env:
           CF_AI_TOKEN: ${{ secrets.CLOUDFLARE_AI_GATEWAY_TOKEN }}
           EVAL_REPORT: ${{ github.workspace }}/eval-report.md
+          EVAL_TRACE: ${{ github.workspace }}/eval-trace.json
           EVAL_RUN_ALL: ${{ steps.changes.outputs.run_all }}
           EVAL_CHANGED_SOURCES: ${{ steps.changes.outputs.changed_sources }}
         run: npm run run-evals
+
+      - name: Upload AI eval trace
+        if: always() && steps.changes.outputs.skip != 'true' && steps.changes.outputs.skip_ai != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: mcp-ai-eval-trace
+          path: eval-trace.json
+          if-no-files-found: ignore
 
       - name: Combine reports
         if: always() && steps.changes.outputs.skip != 'true'

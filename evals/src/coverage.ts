@@ -10,6 +10,8 @@ export interface TestCase {
   description: string;
   prompt: string;
   expected_tool: string;
+  /** State assertion used by outcome-based cases; tool name remains for coverage. */
+  expected_outcome?: 'menu_page_present' | 'menu_page_absent';
   source: string;
   /** When set, consecutive cases with the same id share chat history (post id, etc.). */
   series_id?: string;

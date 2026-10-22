@@ -5,6 +5,8 @@ import { runAgentEval, type AgentEvalResult } from './agent-loop.js';
 import { connectMcpClient } from './mcp-client.js';
 import { fetchOpenAiToolsFromList } from './mcp-tools.js';
 import { classifyEvalResult } from './eval-status.js';
+import { safeTrace, summarizeFailure } from './diagnostics.js';
+import { MenuOutcomeFixture } from './menu-outcome.js';
 import type { TestCase } from './coverage.js';
 
 const EVAL_DELAY_MS = 500;
@@ -31,6 +33,7 @@ export interface EvalRunResult {
   passRate: number;
   toolCount: number;
   reportMarkdown: string;
+  diagnostics: Array<Record<string, unknown>>;
 }
 
 export async function runEvals(options: EvalRunOptions): Promise<EvalRunResult> {
@@ -49,6 +52,7 @@ export async function runEvals(options: EvalRunOptions): Promise<EvalRunResult> 
     let error = 0;
     let skip = 0;
     const rows: string[] = [];
+    const diagnostics: Array<Record<string, unknown>> = [];
 
     const units = groupTestCases(testCases);
     let firstEvalLogged = false;
@@ -80,84 +84,113 @@ export async function runEvals(options: EvalRunOptions): Promise<EvalRunResult> 
       }
 
       let conversationMessages: AgentEvalResult['conversationMessages'] = [];
+      const menuFixture = unit.kind === 'series' && unit.seriesId === 'menu-primary'
+        ? await MenuOutcomeFixture.create(
+            process.env.MCP_EVAL_SERVER_URL ?? 'http://localhost:8888/index.php?rest_route=/blu/mcp',
+            process.env.WP_EVAL_USER ?? '', process.env.WP_APP_PASSWORD ?? ''
+          )
+        : undefined;
 
-      for (let stepIndex = 0; stepIndex < runnable.length; stepIndex++) {
-        const test = runnable[stepIndex];
-        const inSeries = unit.kind === 'series';
-        const stepLabel = inSeries
-          ? `[${unit.seriesId} ${stepIndex + 1}/${runnable.length}] `
-          : '';
+      try {
+        for (let stepIndex = 0; stepIndex < runnable.length; stepIndex++) {
+          const test = runnable[stepIndex];
+          const inSeries = unit.kind === 'series';
+          const stepLabel = inSeries
+            ? `[${unit.seriesId} ${stepIndex + 1}/${runnable.length}] `
+            : '';
 
-        let result: AgentEvalResult;
-        try {
-          result = await runAgentEval({
-            client,
-            prompt: test.prompt,
-            expectedTool: test.expected_tool,
-            restAlternatives: test.rest_alternatives,
-            model: options.model,
-            gatewayUrl: options.gatewayUrl,
-            gatewayToken: options.gatewayToken,
-            conversationMessages: inSeries ? conversationMessages : undefined,
-          });
-        } catch (err) {
-          const msg = err instanceof Error ? err.message : String(err);
-          result = {
-            matched: false,
-            actualTool: '(none)',
-            error: `Unhandled eval error: ${msg}`,
-            turns: 1,
-            conversationMessages: inSeries ? conversationMessages : [],
-          };
-        }
-
-        conversationMessages = result.conversationMessages;
-
-        if (!firstEvalLogged) {
-          firstEvalLogged = true;
-          console.log('::group::Debug: First eval');
-          console.log(
-            `Turns: ${result.turns}, matched: ${result.matched}, actual: ${result.actualTool}`
-          );
-          if (result.error) {
-            console.log(`Error: ${result.error}`);
+          if (menuFixture && test.expected_outcome === 'menu_page_absent') {
+            await menuFixture.ensurePageItem();
           }
-          console.log('::endgroup::');
-        }
+          const prompt = menuFixture
+            ? test.expected_outcome === 'menu_page_present'
+              ? `Add the published page "AI Eval Landing Page" to the "AI Eval Primary ${menuFixture.pageId}" navigation menu.`
+              : `Remove the "AI Eval Landing Page" page link from the "AI Eval Primary ${menuFixture.pageId}" navigation menu.`
+            : test.prompt;
+          const outcomeCheck = menuFixture
+            ? async () => (await menuFixture.containsPage()) === (test.expected_outcome === 'menu_page_present')
+            : undefined;
 
-        const description = stepLabel + test.description;
-        const status = classifyEvalResult(result);
-        if (status === 'error') {
-          rows.push(
-            `| :boom: | ${escapeCell(description)} | \`${test.expected_tool}\` | ${escapeCell(result.error ?? 'Unknown eval error')} |`
-          );
-          error++;
-        } else if (status === 'pass') {
-          rows.push(
-            `| :white_check_mark: | ${escapeCell(description)} | \`${test.expected_tool}\` | \`${result.actualTool}\` (${result.turns} turns) |`
-          );
-          pass++;
-        } else if (status === 'warning') {
-          rows.push(
-            `| :warning: | ${escapeCell(description)} | \`${test.expected_tool}\` | REST alternative: \`${result.actualTool}\` (${result.turns} turns) |`
-          );
-          warning++;
-        } else {
-          rows.push(
-            `| :x: | ${escapeCell(description)} | \`${test.expected_tool}\` | \`${result.actualTool}\` (${result.turns} turns) |`
-          );
-          fail++;
-        }
+          let result: AgentEvalResult;
+          const previousMessageCount = inSeries ? conversationMessages.length : 0;
+          try {
+            result = await runAgentEval({
+              client,
+              prompt,
+              outcomeCheck,
+              expectedTool: test.expected_tool,
+              restAlternatives: test.rest_alternatives,
+              model: options.model,
+              gatewayUrl: options.gatewayUrl,
+              gatewayToken: options.gatewayToken,
+              conversationMessages: inSeries ? conversationMessages : undefined,
+            });
+          } catch (err) {
+            const msg = err instanceof Error ? err.message : String(err);
+            result = {
+              matched: false,
+              actualTool: '(none)',
+              error: `Unhandled eval error: ${msg}`,
+              turns: 1,
+              conversationMessages: inSeries ? conversationMessages : [],
+            };
+          }
 
-        if (inSeries) {
-          console.log(
-            `  step ${stepIndex + 1}/${runnable.length}: ${test.description} → ${
-              status
-            } (${result.actualTool})`
-          );
-        }
+          conversationMessages = result.conversationMessages;
 
-        await sleep(EVAL_DELAY_MS);
+          if (!firstEvalLogged) {
+            firstEvalLogged = true;
+            console.log('::group::Debug: First eval');
+            console.log(
+              `Turns: ${result.turns}, matched: ${result.matched}, actual: ${compactTool(result.actualTool)}`
+            );
+            if (result.error) {
+              console.log(`Error: ${result.error}`);
+            }
+            console.log('::endgroup::');
+          }
+
+          const description = stepLabel + test.description;
+          const status = classifyEvalResult(result);
+          const currentMessages = result.conversationMessages.slice(previousMessageCount);
+          const reason = result.error ? 'Eval error' : summarizeFailure(currentMessages);
+          const actual = compactTool(result.actualTool);
+          const expected = test.expected_outcome === 'menu_page_present' ? 'page linked to menu' : test.expected_outcome === 'menu_page_absent' ? 'page removed from menu' : `\`${test.expected_tool}\``;
+          diagnostics.push({ id: test.id, status, reason: status === 'pass' ? undefined : reason, error: result.error, turns: result.turns, trace: safeTrace(currentMessages) });
+          if (status === 'error') {
+            rows.push(
+              `| :boom: | ${escapeCell(description)} | ${expected} | Eval error (details in trace artifact) |`
+            );
+            error++;
+          } else if (status === 'pass') {
+            rows.push(
+              `| :white_check_mark: | ${escapeCell(description)} | ${expected} | \`${actual}\` (${result.turns} turns) |`
+            );
+            pass++;
+          } else if (status === 'warning') {
+            rows.push(
+              `| :warning: | ${escapeCell(description)} | ${expected} | REST alternative: \`${actual}\` (${result.turns} turns) |`
+            );
+            warning++;
+          } else {
+            rows.push(
+              `| :x: | ${escapeCell(description)} | ${expected} | ${escapeCell(reason)}; \`${actual}\` (${result.turns} turns) |`
+            );
+            fail++;
+          }
+
+          if (inSeries) {
+            console.log(
+              `  step ${stepIndex + 1}/${runnable.length}: ${test.description} → ${
+                status
+              } (${actual})`
+            );
+          }
+
+          await sleep(EVAL_DELAY_MS);
+        }
+      } finally {
+        if (menuFixture) await menuFixture.cleanup();
       }
 
       if (unit.kind === 'series') {
@@ -172,9 +205,10 @@ export async function runEvals(options: EvalRunOptions): Promise<EvalRunResult> 
     const lines = [
       `## ${statusEmoji} MCP AI Eval Results`,
       '',
-      `**Model:** \`${options.model}\` | **MCP tools (tools/list):** ${toolCount} | **Passed:** ${pass} | **REST warnings:** ${warning} | **Failed:** ${fail} | **Errors:** ${error} | **Skipped:** ${skip} | **Expected-tool Pass Rate:** ${passRate}%`,
+      `**Model:** \`${options.model}\` | **MCP tools (tools/list):** ${toolCount} | **Passed:** ${pass} | **REST warnings:** ${warning} | **Failed:** ${fail} | **Errors:** ${error} | **Skipped:** ${skip} | **Pass Rate:** ${passRate}%`,
+      'Detailed traces: `mcp-ai-eval-trace` artifact on this workflow run.',
       '',
-      '| Status | Test | Expected Tool | Actual / Notes |',
+      '| Status | Test | Expected Tool / Outcome | Actual / Notes |',
       '|--------|------|---------------|----------------|',
       ...rows,
     ];
@@ -200,7 +234,7 @@ export async function runEvals(options: EvalRunOptions): Promise<EvalRunResult> 
       core.setOutput('tool_count', String(toolCount));
     }
 
-    return { pass, fail, warning, error, skip, passRate, toolCount, reportMarkdown };
+    return { pass, fail, warning, error, skip, passRate, toolCount, reportMarkdown, diagnostics };
   } finally {
     await client.close();
   }
@@ -246,6 +280,12 @@ async function loadTestCases(repoRoot: string): Promise<TestCase[]> {
 
 function escapeCell(value: string): string {
   return value.replace(/\|/g, '\\|').replace(/\n/g, ' ');
+}
+
+function compactTool(value: string): string {
+  const name = value.split('(')[0];
+  const ability = value.match(/"ability_name"\s*:\s*"([a-zA-Z0-9_/-]+)"/);
+  return ability ? `${name} → ${ability[1]}` : name;
 }
 
 function sleep(ms: number): Promise<void> {

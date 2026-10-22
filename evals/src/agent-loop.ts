@@ -39,6 +39,8 @@ export interface AgentEvalOptions {
   gatewayUrl: string;
   gatewayToken: string;
   maxTurns?: number;
+  /** For stateful cases, score the verified WordPress outcome instead of a selected call. */
+  outcomeCheck?: () => Promise<boolean>;
   /** Prior turns from a series; the current prompt is appended as a new user message. */
   conversationMessages?: ChatMessage[];
 }
@@ -189,9 +191,12 @@ export async function runAgentEval(options: AgentEvalOptions): Promise<AgentEval
     const toolCalls = assistantMessage?.tool_calls;
 
     if (!toolCalls?.length) {
+      if (assistantMessage) {
+        messages.push({ role: 'assistant', content: assistantMessage.content ?? null });
+      }
       return {
-        matched,
-        restAlternative,
+        matched: options.outcomeCheck ? await options.outcomeCheck() : matched,
+        restAlternative: options.outcomeCheck ? false : restAlternative,
         actualTool: !matched && restAlternative ? restAlternativeTool : lastRelevant || '(none)',
         turns: turn + 1,
         conversationMessages: messages,
@@ -249,7 +254,16 @@ export async function runAgentEval(options: AgentEvalOptions): Promise<AgentEval
       }
     }
 
-    if (matched) {
+    if (options.outcomeCheck && await options.outcomeCheck()) {
+      return {
+        matched: true,
+        actualTool: lastRelevant || toolCalls[toolCalls.length - 1]?.function.name || '(none)',
+        turns: turn + 1,
+        conversationMessages: messages,
+      };
+    }
+
+    if (matched && !options.outcomeCheck) {
       return {
         matched: true,
         actualTool: lastRelevant,
@@ -274,8 +288,8 @@ export async function runAgentEval(options: AgentEvalOptions): Promise<AgentEval
   }
 
   return {
-    matched: false,
-    restAlternative,
+    matched: options.outcomeCheck ? await options.outcomeCheck() : false,
+    restAlternative: options.outcomeCheck ? false : restAlternative,
     actualTool: restAlternative ? restAlternativeTool : lastRelevant || '(none)',
     error: restAlternative ? undefined : `Exceeded max turns (${maxTurns}) without expected tool`,
     turns: maxTurns,

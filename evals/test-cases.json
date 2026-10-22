@@ -109,7 +109,7 @@
   {
     "id": "page-add-1",
     "description": "Create a page",
-    "prompt": "Create a new About Us page with a description of our company",
+    "prompt": "Create an About Us page with this text: 'We help small businesses build fast, accessible WordPress websites and provide ongoing support.' Save it as a draft.",
     "expected_tool": "blu_add-page",
     "source": "Pages.php"
   },
@@ -282,41 +282,6 @@
     "source": "WooOrders.php"
   },
   {
-    "id": "prompt-suggest-desc-1",
-    "description": "Suggest product description",
-    "prompt": "Generate a product description for my new product 'Organic Coffee Beans'",
-    "expected_tool": "blu_suggest-product-description",
-    "source": "Prompts.php"
-  },
-  {
-    "id": "prompt-suggest-cat-1",
-    "description": "Suggest product categories",
-    "prompt": "What categories would you suggest for my product 'Wireless Bluetooth Headphones'?",
-    "expected_tool": "blu_suggest-product-categories",
-    "source": "Prompts.php"
-  },
-  {
-    "id": "prompt-suggest-tag-1",
-    "description": "Suggest product tags",
-    "prompt": "Suggest relevant tags for my product 'Running Shoes' in the sports category",
-    "expected_tool": "blu_suggest-product-tag",
-    "source": "Prompts.php"
-  },
-  {
-    "id": "prompt-smart-details-1",
-    "description": "Smart product details",
-    "prompt": "Generate complete listing content for product ID 72 including materials, size chart, and care instructions",
-    "expected_tool": "blu_smart-product-details",
-    "source": "Prompts.php"
-  },
-  {
-    "id": "prompt-variation-attrs-1",
-    "description": "Guided product creation for variations",
-    "prompt": "Start guided product creation for 'Men's Casual Shirt' and help me choose variation attributes like size and color.",
-    "expected_tool": "blu_guided-product-creation-prompt",
-    "source": "Prompts.php"
-  },
-  {
     "id": "category-update-1",
     "description": "Update post category",
     "prompt": "Rename the category with ID 8 to 'Web Development'",
@@ -452,7 +417,7 @@
   {
     "id": "global-styles-update-1",
     "description": "Update global styles",
-    "prompt": "Update the global styles ID 128 to change the primary color to blue and heading font to Inter",
+    "prompt": "Set the site's primary accent color to #2563EB and use Inter for headings across the site.",
     "expected_tool": "blu_update-global-styles",
     "source": "GlobalStyles.php"
   },
@@ -569,13 +534,6 @@
     "source": "Resources.php"
   },
   {
-    "id": "prompt-suggest-brand-1",
-    "description": "Suggest product brands",
-    "prompt": "What brands would you suggest for my product 'Yoga Mat Premium'?",
-    "expected_tool": "blu_suggest-product-brand",
-    "source": "Prompts.php"
-  },
-  {
     "id": "creating-a-category-1",
     "description": "Creating a category",
     "prompt": "Create a new category named 'AI Testing'.",
@@ -642,7 +600,7 @@
   {
     "id": "scheduling-the-post-9",
     "description": "Scheduling the post",
-    "prompt": "Schedule the post for future date.",
+    "prompt": "Schedule the 'AI Workflow Post' to publish on January 15, 2036 at 9:00 AM in the site's timezone.",
     "expected_tool": "blu_update-post",
     "source": "Posts.php",
     "series_id": "posts-ai-workflow"
@@ -714,7 +672,7 @@
   {
     "id": "adding-page-content-18",
     "description": "Adding page content",
-    "prompt": "Add content of around 200 words.",
+    "prompt": "Add about 200 words to the 'AI Landing Page' explaining how our AI tools help small teams save time.",
     "expected_tool": "blu_update-page",
     "source": "Pages.php",
     "series_id": "pages-ai-landing"
@@ -746,7 +704,7 @@
   {
     "id": "searching-for-the-page-22",
     "description": "Searching for the page",
-    "prompt": "Search for the page.",
+    "prompt": "Find the 'AI Landing Page' in my pages.",
     "expected_tool": "blu_pages-search",
     "source": "Pages.php",
     "series_id": "pages-ai-landing"
@@ -762,7 +720,7 @@
   {
     "id": "updating-page-content-24",
     "description": "Updating page content",
-    "prompt": "Update the page content.",
+    "prompt": "Add a short 'How it works' section to the 'AI Landing Page' explaining that customers can sign up, connect their tools, and review automated results.",
     "expected_tool": "blu_update-page",
     "source": "Pages.php",
     "series_id": "pages-ai-landing"
@@ -778,7 +736,7 @@
   {
     "id": "deleting-the-page-26",
     "description": "Deleting the page",
-    "prompt": "Delete the page.",
+    "prompt": "Delete the 'AI Landing Page' we created earlier.",
     "expected_tool": "blu_delete-page",
     "source": "Pages.php",
     "series_id": "pages-ai-landing"
@@ -874,16 +832,18 @@
   {
     "id": "adding-page-to-menu-38",
     "description": "Adding page to menu",
-    "prompt": "Add page 'AI Landing Page' to the menu.",
+    "prompt": "Add the 'AI Eval Landing Page' page to the 'AI Eval Primary' navigation menu.",
     "expected_tool": "blu_add-cpt",
+    "expected_outcome": "menu_page_present",
     "source": "CustomPostTypes.php",
     "series_id": "menu-primary"
   },
   {
     "id": "removing-page-from-menu-39",
     "description": "Removing page from menu",
-    "prompt": "Remove the page from the menu.",
+    "prompt": "Remove the 'AI Eval Landing Page' page link from the 'AI Eval Primary' navigation menu.",
     "expected_tool": "blu_delete-cpt",
+    "expected_outcome": "menu_page_absent",
     "source": "CustomPostTypes.php",
     "series_id": "menu-primary"
   },
@@ -914,7 +874,7 @@
   {
     "id": "adding-product-price-and-description-43",
     "description": "Adding product price and description",
-    "prompt": "Add price and description.",
+    "prompt": "Set the 'AI Tool' product's price to $39.99 and describe it as a simple way for small teams to automate repetitive work.",
     "expected_tool": "blu_wc-update-product",
     "source": "WooProducts.php",
     "series_id": "wc-product-ai-tool"
@@ -922,7 +882,7 @@
   {
     "id": "assigning-category-and-tag-44",
     "description": "Assigning category and tag",
-    "prompt": "Assign category and tag.",
+    "prompt": "Put the 'AI Tool' product in the 'AI Tools' category and add the 'Automation' tag.",
     "expected_tool": "blu_wc-update-product",
     "source": "WooProducts.php",
     "series_id": "wc-product-ai-tool"
@@ -970,7 +930,7 @@
   {
     "id": "updating-product-price-50",
     "description": "Updating product price",
-    "prompt": "Update the product price.",
+    "prompt": "Change the 'AI Tool' product's price to $44.99.",
     "expected_tool": "blu_wc-update-product",
     "source": "WooProducts.php",
     "series_id": "wc-product-ai-tool"
@@ -1018,7 +978,7 @@
   {
     "id": "searching-existing-users-56",
     "description": "Searching existing users",
-    "prompt": "Search for existing users.",
+    "prompt": "Check whether a user named 'test_user' already exists.",
     "expected_tool": "blu_users-search",
     "source": "Users.php",
     "series_id": "users-test-user"
@@ -1026,7 +986,7 @@
   {
     "id": "creating-new-user-57",
     "description": "Creating new user",
-    "prompt": "Create a new user 'test_user' with role 'Author'.",
+    "prompt": "Create an Author account for test_user with email test_user@example.com and password 'EvalPass-2027-Strong!'.",
     "expected_tool": "blu_add-user",
     "source": "Users.php",
     "series_id": "users-test-user"
@@ -1042,7 +1002,7 @@
   {
     "id": "updating-user-role-59",
     "description": "Updating user role",
-    "prompt": "Update role to 'Editor'.",
+    "prompt": "Change test_user's role from Author to Editor.",
     "expected_tool": "blu_update-user",
     "source": "Users.php",
     "series_id": "users-test-user"
@@ -1122,7 +1082,7 @@
   {
     "id": "setting-posts-page-69",
     "description": "Setting posts page",
-    "prompt": "Set posts page to a blog page.",
+    "prompt": "Create a page titled 'Blog' if needed, then use it as the site's posts page.",
     "expected_tool": "blu_update-general-settings",
     "source": "Settings.php",
     "series_id": "settings-ai-test"
@@ -1162,7 +1122,7 @@
   {
     "id": "updating-color-settings-74",
     "description": "Updating color settings",
-    "prompt": "Update color settings.",
+    "prompt": "Change the site's background to #F8FAFC and its main text color to #1F2937.",
     "expected_tool": "blu_update-global-styles",
     "source": "GlobalStyles.php",
     "series_id": "theme-global-styles"
@@ -1186,7 +1146,7 @@
   {
     "id": "changing-site-fonts-77",
     "description": "Changing site fonts",
-    "prompt": "Ask the agent to change the available fonts.",
+    "prompt": "Use Inter for headings throughout the site, while keeping the body font as it is.",
     "expected_tool": "blu_update-global-styles",
     "source": "GlobalStyles.php",
     "series_id": "site-fonts"
@@ -1322,7 +1282,7 @@
   {
     "id": "creating-another-post-94",
     "description": "Creating another post",
-    "prompt": "Create another post.",
+    "prompt": "Create another post titled 'Edge Follow-up' with a short paragraph about lessons learned from the first test.",
     "expected_tool": "blu_add-post",
     "source": "Posts.php",
     "series_id": "edge-posts"
@@ -1330,7 +1290,7 @@
   {
     "id": "updating-latest-post-95",
     "description": "Updating latest post",
-    "prompt": "Update the latest post.",
+    "prompt": "Change the title of 'Edge Follow-up' to 'Edge Follow-up Updated'.",
     "expected_tool": "blu_update-post",
     "source": "Posts.php",
     "series_id": "edge-posts"
@@ -1338,7 +1298,7 @@
   {
     "id": "deleting-first-post-96",
     "description": "Deleting first post",
-    "prompt": "Delete the first post.",
+    "prompt": "Delete 'Edge Test', the first post we created in this conversation.",
     "expected_tool": "blu_delete-post",
     "source": "Posts.php",
     "series_id": "edge-posts"

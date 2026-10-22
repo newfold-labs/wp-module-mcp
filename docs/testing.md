@@ -35,7 +35,7 @@ This repo does **not** define Playwright specs under `tests/playwright/`. **Buil
 
 ## MCP gateway smoke test
 
-`evals/smoke.mjs` connects to a running Bluehost WordPress instance with `WP_EVAL_USER`, `WP_APP_PASSWORD`, and `MCP_EVAL_SERVER_URL`. Run `node evals/smoke.mjs` after installing dependencies in `evals/`. It checks the three top-level MCP tools and uses the gateway to discover REST abilities, inspect the posts endpoint, and dispatch a read request. The `ai-evals.yml` workflow runs this deterministic test as a merge gate. Model tool-selection evals still run and report their results, but their variable scores are advisory.
+`evals/smoke.mjs` connects to a running Bluehost WordPress instance with `WP_EVAL_USER`, `WP_APP_PASSWORD`, and `MCP_EVAL_SERVER_URL`. Run `node evals/smoke.mjs` after installing dependencies in `evals/`. It checks the three top-level MCP tools, lists WooCommerce MCP prompts and retrieves a guided prompt, then uses the gateway to discover REST abilities, inspect the posts endpoint, and dispatch a read request. The `ai-evals.yml` workflow runs this deterministic test as a merge gate. MCP prompts are tested through the prompt interface rather than tool-selection evals. Model tool-selection evals still run and report their results, but their variable scores are advisory. The menu cases create a page and navigation menu, then verify the saved menu item points to that page and is assigned to that menu. Each run saves a limited, argument-free AI trace as a workflow artifact; the PR table stays compact.
 
 ## CI
 

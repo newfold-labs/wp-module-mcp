@@ -162,8 +162,9 @@ class BlockEditor {
 						'idempotent'  => false,
 					),
 					'mcp'         => array(
-						'public' => true,
-						'type'   => 'tool',
+						'public'  => true,
+						'type'    => 'tool',
+						'summary' => 'Replace an existing block and its inner content when smaller block operations cannot make the requested change. Requires complete valid block markup.',
 					),
 				),
 			)
@@ -306,8 +307,9 @@ class BlockEditor {
 						'idempotent'  => false,
 					),
 					'mcp'         => array(
-						'public' => true,
-						'type'   => 'tool',
+						'public'  => true,
+						'type'    => 'tool',
+						'summary' => 'Add a new top-level section to a page or template part. Use blu-insert-inner-block to add a child within an existing container.',
 					),
 				),
 			)
@@ -495,8 +497,9 @@ class BlockEditor {
 						'idempotent'  => false,
 					),
 					'mcp'         => array(
-						'public' => true,
-						'type'   => 'tool',
+						'public'  => true,
+						'type'    => 'tool',
+						'summary' => 'Copy an existing block or sibling to reuse its design. Patch the new block with blu-update-block-attrs when its content or styling must change.',
 					),
 				),
 			)
@@ -614,8 +617,9 @@ class BlockEditor {
 						'idempotent'  => false,
 					),
 					'mcp'         => array(
-						'public' => true,
-						'type'   => 'tool',
+						'public'  => true,
+						'type'    => 'tool',
+						'summary' => 'Add a new child inside an existing container. Use blu-duplicate-block when an existing sibling should be copied.',
 					),
 				),
 			)
@@ -705,8 +709,9 @@ class BlockEditor {
 						'idempotent'  => false,
 					),
 					'mcp'         => array(
-						'public' => true,
-						'type'   => 'tool',
+						'public'  => true,
+						'type'    => 'tool',
+						'summary' => 'Move a block before or after a sibling, or into a container. Preserves all inner blocks.',
 					),
 				),
 			)
@@ -769,8 +774,9 @@ class BlockEditor {
 						'idempotent'  => true,
 					),
 					'mcp'         => array(
-						'public' => true,
-						'type'   => 'tool',
+						'public'  => true,
+						'type'    => 'tool',
+						'summary' => 'Highlight a block in the editor by its client ID so the user can locate it.',
 					),
 				),
 			)
@@ -842,8 +848,9 @@ class BlockEditor {
 						'idempotent'  => true,
 					),
 					'mcp'         => array(
-						'public' => true,
-						'type'   => 'tool',
+						'public'  => true,
+						'type'    => 'tool',
+						'summary' => 'Patch an existing block’s attributes, including text, color, spacing, typography, or media. Use the leaf block client ID.',
 					),
 				),
 			)
@@ -897,8 +904,9 @@ class BlockEditor {
 						'idempotent'  => true,
 					),
 					'mcp'         => array(
-						'public' => true,
-						'type'   => 'tool',
+						'public'  => true,
+						'type'    => 'tool',
+						'summary' => 'Read complete markup for a block before replacing it with blu-edit-block; the selected block already has markup in context.',
 					),
 				),
 			)

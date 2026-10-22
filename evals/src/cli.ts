@@ -62,6 +62,7 @@ async function cmdRunEvals(): Promise<void> {
   });
 
   await writeEvalReport(reportPath, result.reportMarkdown);
+  await writeFile(process.env.EVAL_TRACE ?? join(REPO_ROOT, 'eval-trace.json'), JSON.stringify(result.diagnostics, null, 2) + '\n', 'utf8');
   console.log(result.reportMarkdown);
 
   if (process.env.GITHUB_OUTPUT) {
