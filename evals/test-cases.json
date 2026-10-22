@@ -60,6 +60,7 @@
     "description": "Create new blog post",
     "prompt": "Create a new blog post titled 'Getting Started with React' with some introductory content about React",
     "expected_tool": "blu_add-post",
+    "rest_alternatives": [{ "route": "/wp/v2/posts", "method": "POST" }],
     "source": "Posts.php"
   },
   {
@@ -102,6 +103,7 @@
     "description": "Search pages",
     "prompt": "Find all published pages on my WordPress site",
     "expected_tool": "blu_pages-search",
+    "rest_alternatives": [{ "route": "/wp/v2/pages", "method": "GET" }],
     "source": "Pages.php"
   },
   {

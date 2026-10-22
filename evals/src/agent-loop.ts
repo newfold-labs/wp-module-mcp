@@ -7,6 +7,7 @@ import {
   type OpenAiFunctionTool,
 } from './mcp-tools.js';
 import { normalizeToolName } from './tool-names.js';
+import { matchesRestAlternative, type RestAlternative } from './rest-alternative.js';
 
 const DEFAULT_MAX_TURNS = 20;
 
@@ -33,6 +34,7 @@ export interface AgentEvalOptions {
   client: Client;
   prompt: string;
   expectedTool: string;
+  restAlternatives?: RestAlternative[];
   model: string;
   gatewayUrl: string;
   gatewayToken: string;
@@ -43,6 +45,7 @@ export interface AgentEvalOptions {
 
 export interface AgentEvalResult {
   matched: boolean;
+  restAlternative?: boolean;
   actualTool: string;
   error?: string;
   turns: number;
@@ -104,6 +107,8 @@ export async function runAgentEval(options: AgentEvalOptions): Promise<AgentEval
       : [{ role: 'user', content: options.prompt }];
   let lastRelevant = '';
   let matched = false;
+  let restAlternative = false;
+  let restAlternativeTool = '';
   let tools: OpenAiFunctionTool[];
   try {
     tools = await fetchOpenAiToolsFromList(options.client);
@@ -186,7 +191,8 @@ export async function runAgentEval(options: AgentEvalOptions): Promise<AgentEval
     if (!toolCalls?.length) {
       return {
         matched,
-        actualTool: lastRelevant || '(none)',
+        restAlternative,
+        actualTool: !matched && restAlternative ? restAlternativeTool : lastRelevant || '(none)',
         turns: turn + 1,
         conversationMessages: messages,
       };
@@ -237,6 +243,10 @@ export async function runAgentEval(options: AgentEvalOptions): Promise<AgentEval
         tool_call_id: call.id,
         content: formatToolResultForModel(result),
       });
+      if (matchesRestAlternative(toolName, call.function?.arguments, options.restAlternatives ?? [], result)) {
+        restAlternative = true;
+        restAlternativeTool = `${toolName}(${(call.function?.arguments ?? '').slice(0, 220)})`;
+      }
     }
 
     if (matched) {
@@ -265,8 +275,9 @@ export async function runAgentEval(options: AgentEvalOptions): Promise<AgentEval
 
   return {
     matched: false,
-    actualTool: lastRelevant || '(none)',
-    error: `Exceeded max turns (${maxTurns}) without expected tool`,
+    restAlternative,
+    actualTool: restAlternative ? restAlternativeTool : lastRelevant || '(none)',
+    error: restAlternative ? undefined : `Exceeded max turns (${maxTurns}) without expected tool`,
     turns: maxTurns,
     conversationMessages: messages,
   };

@@ -252,7 +252,7 @@ class RestApiCrud {
 			'blu/run-api-function',
 			array(
 				'label'               => 'Run API Function',
-				'description'         => 'Execute a WordPress REST API endpoint by route, method, and data. For routes with path parameters (e.g. "/wp/v2/posts/(?P<id>[\\d]+)"), substitute concrete values into the route (e.g. "/wp/v2/posts/42").',
+				'description'         => 'Execute an available WordPress REST API endpoint by route, method, and data when no purpose-built ability covers the requested operation. For routes with path parameters (e.g. "/wp/v2/posts/(?P<id>[\\d]+)"), substitute concrete values into the route (e.g. "/wp/v2/posts/42").',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',

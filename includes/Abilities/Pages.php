@@ -78,7 +78,7 @@ class Pages {
 			'blu/get-page',
 			array(
 				'label'               => 'Get Page',
-				'description'         => 'Get a WordPress page by ID',
+				'description'         => 'Get a WordPress page by ID. Pages are distinct from blog posts; use blu-get-post only for a blog post.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
@@ -111,7 +111,7 @@ class Pages {
 			'blu/add-page',
 			array(
 				'label'               => 'Add Page',
-				'description'         => 'Add a new WordPress page',
+				'description'         => 'Create a new WordPress page, including its title, content, and status. Use blu-add-post for a blog post.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',

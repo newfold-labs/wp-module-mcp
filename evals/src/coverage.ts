@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import * as core from '@actions/core';
 import { loadPhpAbilityNames } from './php-abilities.js';
 import { normalizeToolName } from './tool-names.js';
+import type { RestAlternative } from './rest-alternative.js';
 
 export interface TestCase {
   id: string;
@@ -12,6 +13,8 @@ export interface TestCase {
   source: string;
   /** When set, consecutive cases with the same id share chat history (post id, etc.). */
   series_id?: string;
+  /** Explicitly equivalent REST dispatches; successful calls earn a warning, not a pass. */
+  rest_alternatives?: RestAlternative[];
 }
 
 export interface CoverageResult {

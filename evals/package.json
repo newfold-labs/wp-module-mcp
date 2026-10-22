@@ -5,6 +5,8 @@
   "type": "module",
   "description": "Multi-turn AI tool-selection evals against a BLU MCP server (wp-env in CI)",
   "scripts": {
+    "test": "node --import tsx --test src/*.test.ts",
+    "typecheck": "tsc --noEmit",
     "coverage": "tsx src/cli.ts coverage",
     "run-evals": "tsx src/cli.ts run-evals"
   },

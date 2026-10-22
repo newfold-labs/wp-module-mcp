@@ -4,6 +4,7 @@ import * as core from '@actions/core';
 import { runAgentEval, type AgentEvalResult } from './agent-loop.js';
 import { connectMcpClient } from './mcp-client.js';
 import { fetchOpenAiToolsFromList } from './mcp-tools.js';
+import { classifyEvalResult } from './eval-status.js';
 import type { TestCase } from './coverage.js';
 
 const EVAL_DELAY_MS = 500;
@@ -24,6 +25,7 @@ export interface EvalRunOptions {
 export interface EvalRunResult {
   pass: number;
   fail: number;
+  warning: number;
   error: number;
   skip: number;
   passRate: number;
@@ -43,6 +45,7 @@ export async function runEvals(options: EvalRunOptions): Promise<EvalRunResult> 
 
     let pass = 0;
     let fail = 0;
+    let warning = 0;
     let error = 0;
     let skip = 0;
     const rows: string[] = [];
@@ -91,6 +94,7 @@ export async function runEvals(options: EvalRunOptions): Promise<EvalRunResult> 
             client,
             prompt: test.prompt,
             expectedTool: test.expected_tool,
+            restAlternatives: test.rest_alternatives,
             model: options.model,
             gatewayUrl: options.gatewayUrl,
             gatewayToken: options.gatewayToken,
@@ -122,16 +126,22 @@ export async function runEvals(options: EvalRunOptions): Promise<EvalRunResult> 
         }
 
         const description = stepLabel + test.description;
-        if (result.error && !result.matched) {
+        const status = classifyEvalResult(result);
+        if (status === 'error') {
           rows.push(
-            `| :warning: | ${escapeCell(description)} | \`${test.expected_tool}\` | ${escapeCell(result.error)} |`
+            `| :boom: | ${escapeCell(description)} | \`${test.expected_tool}\` | ${escapeCell(result.error ?? 'Unknown eval error')} |`
           );
           error++;
-        } else if (result.matched) {
+        } else if (status === 'pass') {
           rows.push(
             `| :white_check_mark: | ${escapeCell(description)} | \`${test.expected_tool}\` | \`${result.actualTool}\` (${result.turns} turns) |`
           );
           pass++;
+        } else if (status === 'warning') {
+          rows.push(
+            `| :warning: | ${escapeCell(description)} | \`${test.expected_tool}\` | REST alternative: \`${result.actualTool}\` (${result.turns} turns) |`
+          );
+          warning++;
         } else {
           rows.push(
             `| :x: | ${escapeCell(description)} | \`${test.expected_tool}\` | \`${result.actualTool}\` (${result.turns} turns) |`
@@ -142,7 +152,7 @@ export async function runEvals(options: EvalRunOptions): Promise<EvalRunResult> 
         if (inSeries) {
           console.log(
             `  step ${stepIndex + 1}/${runnable.length}: ${test.description} → ${
-              result.matched ? 'pass' : result.error ? 'error' : 'fail'
+              status
             } (${result.actualTool})`
           );
         }
@@ -155,14 +165,14 @@ export async function runEvals(options: EvalRunOptions): Promise<EvalRunResult> 
       }
     }
 
-    const totalRun = pass + fail + error;
+    const totalRun = pass + warning + fail + error;
     const passRate = totalRun > 0 ? Math.floor((pass * 100) / totalRun) : 0;
-    const statusEmoji = fail > 0 || error > 0 ? ':red_circle:' : ':green_circle:';
+    const statusEmoji = fail > 0 || error > 0 ? ':red_circle:' : warning > 0 ? ':yellow_circle:' : ':green_circle:';
 
     const lines = [
       `## ${statusEmoji} MCP AI Eval Results`,
       '',
-      `**Model:** \`${options.model}\` | **MCP tools (tools/list):** ${toolCount} | **Passed:** ${pass} | **Failed:** ${fail} | **Errors:** ${error} | **Skipped:** ${skip} | **Pass Rate:** ${passRate}%`,
+      `**Model:** \`${options.model}\` | **MCP tools (tools/list):** ${toolCount} | **Passed:** ${pass} | **REST warnings:** ${warning} | **Failed:** ${fail} | **Errors:** ${error} | **Skipped:** ${skip} | **Expected-tool Pass Rate:** ${passRate}%`,
       '',
       '| Status | Test | Expected Tool | Actual / Notes |',
       '|--------|------|---------------|----------------|',
@@ -184,12 +194,13 @@ export async function runEvals(options: EvalRunOptions): Promise<EvalRunResult> 
     if (process.env.GITHUB_OUTPUT) {
       core.setOutput('pass', String(pass));
       core.setOutput('fail', String(fail));
+      core.setOutput('warning', String(warning));
       core.setOutput('error', String(error));
       core.setOutput('pass_rate', String(passRate));
       core.setOutput('tool_count', String(toolCount));
     }
 
-    return { pass, fail, error, skip, passRate, toolCount, reportMarkdown };
+    return { pass, fail, warning, error, skip, passRate, toolCount, reportMarkdown };
   } finally {
     await client.close();
   }

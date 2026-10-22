@@ -46,6 +46,8 @@ This repo does **not** define Playwright specs under `tests/playwright/`. **Buil
 | **brand-plugin-test-playwright** | Bluehost + module branch E2E |
 | **MCP AI Evals** | Required live MCP gateway smoke test; advisory model-selection report |
 
+The AI selection report distinguishes exact ability selections (pass), successful REST dispatches explicitly listed as equivalent for that test (warning), other selections (fail), and eval errors. The expected-tool pass rate includes warnings in its denominator. Tool coverage compares `tools/list` with tool abilities; MCP prompts are outside that count. See [the 2026-10-21 recent-run analysis](../evals/reports/2026-10-21-recent-runs.md) for per-case historical rates and the remaining fixture-dependent coverage gaps.
+
 ## Pull request expectations
 
 - **Lint** and **codecoverage** should pass for PHP changes.
