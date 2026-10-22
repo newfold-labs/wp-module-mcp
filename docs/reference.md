@@ -18,12 +18,14 @@ updated: 2026-03-26
 
 ## Ability categories
 
-The gateway whitelists abilities matching either an allowed namespace or an allowed category. Defaults:
+The gateway exposes tool abilities only when both their namespace and category are allowed. Defaults:
 
 | Namespace | Category | Source |
 |-----------|----------|--------|
 | `blu/` | `blu-mcp` | Bluehost (this module, registered in `McpServer::register_ability_categories`) |
-| `woocommerce/` | `woocommerce-rest` | WooCommerce 10.3+ native abilities (registered by `woocommerce/src/Internal/Abilities/AbilitiesCategories.php`) |
+| `yoast-seo/` | `yoast-seo` | Yoast SEO abilities, when Yoast registers them |
+
+The namespace and category lists are independent filters, so adding a third-party integration requires an entry in each. Yoast ability permission callbacks still control execution, including the ability to update post SEO data.
 
 Both lists are filterable via `blu_mcp_allowed_namespaces` and `blu_mcp_allowed_categories`.
 

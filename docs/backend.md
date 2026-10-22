@@ -23,6 +23,8 @@ Implementations live under **`includes/Abilities/`** (e.g. `Posts`, `Pages`, `Me
 
 `AbilityGateway` registers three meta-tools (`blu-list-abilities`, `blu-get-ability-schema`, `blu-call-ability`). `RestApiCrud` registers `blu-list-api-functions`, `blu-get-function-details`, and `blu-run-api-function` for raw REST access.
 
+The gateway includes Yoast SEO abilities when Yoast registers them. Its whitelist requires both the `yoast-seo/` namespace and `yoast-seo` category; the abilities remain behind the three gateway tools and retain Yoast's own permission checks. Yoast may withhold its abilities when its indexables are disabled, including on local environments.
+
 The two list tools accept optional filter arguments documented in **[api.md](api.md)** and **[reference.md](reference.md)**. `blu-list-abilities` filters by `search` and `name_prefix`; `blu-list-api-functions` filters by `namespace`, `methods`, and `search`. Both set `additionalProperties: false` on input schemas to reject unknown fields. Output schemas are omitted, matching the module's existing convention; response shapes are documented in `api.md`.
 
 ## Assets

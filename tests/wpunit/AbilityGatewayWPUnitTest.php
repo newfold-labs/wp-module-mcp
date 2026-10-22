@@ -76,6 +76,10 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 				'label'       => 'Other',
 				'description' => 'Test category',
 			),
+			'yoast-seo'      => array(
+				'label'       => 'Yoast SEO',
+				'description' => 'Yoast SEO abilities',
+			),
 		);
 
 		foreach ( $categories as $slug => $args ) {
@@ -813,6 +817,39 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$result  = $ability->execute( array() );
 		$names   = array_column( $result['message'], 'name' );
 		$this->assertNotContains( 'secret-hidden-tool', $names );
+	}
+
+	/**
+	 * Yoast abilities are discoverable and executable through the gateway.
+	 *
+	 * @return void
+	 */
+	public function test_yoast_ability_is_available_through_gateway() {
+		$this->register_test_ability(
+			'yoast-seo/get-post-seo-data',
+			'yoast-seo',
+			function () {
+				return array( 'seo_title' => 'Test title' );
+			}
+		);
+		$this->register_gateway();
+
+		$list  = blu_get_ability( 'blu/list-abilities' )->execute( array() );
+		$names = array_column( $list['message'], 'name' );
+		$this->assertContains( 'yoast-seo-get-post-seo-data', $names );
+
+		$schema = blu_get_ability( 'blu/get-ability-schema' )->execute(
+			array( 'ability_name' => 'yoast-seo-get-post-seo-data' )
+		);
+		$this->assertSame( 200, $schema['statusCode'] );
+
+		$result = blu_get_ability( 'blu/call-ability' )->execute(
+			array(
+				'ability_name' => 'yoast-seo-get-post-seo-data',
+				'parameters'   => array(),
+			)
+		);
+		$this->assertSame( 'Test title', $result['seo_title'] );
 	}
 
 	/**

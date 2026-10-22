@@ -47,16 +47,18 @@ class AbilityGateway {
 			array(
 				'blu/',
 				'woocommerce/',
+				'yoast-seo/',
 			)
 		);
 
 		// Category gate — restricts the whitelist to abilities registered under
-		// these categories. Defaults to the BLU MCP category so the gateway
-		// only exposes the curated set; integrators can broaden via the filter.
+		// these categories. Defaults to the BLU MCP and Yoast SEO categories;
+		// integrators can broaden via the filter.
 		$allowed_categories = apply_filters(
 			'blu_mcp_allowed_categories',
 			array(
 				'blu-mcp',
+				'yoast-seo',
 			)
 		);
 
