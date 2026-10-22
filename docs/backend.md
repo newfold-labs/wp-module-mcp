@@ -29,6 +29,10 @@ Post, page, custom post type, and WooCommerce product searches default to `statu
 
 WordPress uses `future` for scheduled content. Its current, visible status slugs, including eligible custom statuses, are available from `GET /wp/v2/statuses` through the REST gateway. The search abilities accept status strings rather than a fixed enum so plugin-registered statuses are not frozen into the tool schema. WooCommerce validates product status against its own REST endpoint's accepted values, which may differ from the WordPress status catalog.
 
+### Direct media access
+
+`blu/get-media-file` reads attachment bytes directly, so it verifies the target is an attachment and checks `read_post` for that ID before opening the file. `blu/upload-media` uses `wp_check_filetype_and_ext` after writing upload bits; it deletes files whose contents do not match an allowed extension before registering the attachment.
+
 ## Discovery tools
 
 `AbilityGateway` registers three meta-tools (`blu-list-abilities`, `blu-get-ability-schema`, `blu-call-ability`). `RestApiCrud` registers `blu-list-api-functions`, `blu-get-function-details`, and `blu-run-api-function` for raw REST access.
