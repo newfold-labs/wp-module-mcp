@@ -98,14 +98,13 @@ class CustomPostTypes {
 
 					$page     = $input['page'] ?? 1;
 					$per_page = $input['per_page'] ?? 10;
-					$can_read_all = current_user_can( 'manage_options' );
 
 					$args = array(
 						'post_type'      => $resolved,
 						// Per-item permissions must be applied before slicing visible pages.
-						'posts_per_page' => $can_read_all ? $per_page : -1,
-						'paged'          => $can_read_all ? $page : 1,
-						'no_found_rows'  => ! $can_read_all,
+						'posts_per_page' => -1,
+						'paged'          => 1,
+						'no_found_rows'  => true,
 						'post_status'    => 'publish',
 					);
 
@@ -125,14 +124,14 @@ class CustomPostTypes {
 					$visible = array_values(
 						array_filter(
 							$query->posts,
-							static function ( $post ) use ( $can_read_all ) {
-								return $can_read_all || is_post_publicly_viewable( $post ) || current_user_can( 'edit_post', $post->ID );
+							static function ( $post ) {
+								return current_user_can( 'read_post', $post->ID );
 							}
 						)
 					);
-					$total   = $can_read_all ? (int) $query->found_posts : count( $visible );
-					$pages   = $can_read_all ? (int) $query->max_num_pages : (int) ceil( $total / $per_page );
-					$results = array_map( 'blu_project_post_summary', $can_read_all ? $visible : array_slice( $visible, ( $page - 1 ) * $per_page, $per_page ) );
+					$total   = count( $visible );
+					$pages   = (int) ceil( $total / $per_page );
+					$results = array_map( 'blu_project_post_summary', array_slice( $visible, ( $page - 1 ) * $per_page, $per_page ) );
 
 					return blu_prepare_ability_response(
 						200,
@@ -248,6 +247,13 @@ class CustomPostTypes {
 						return blu_post_type_not_found_response( (string) $input['post_type'] );
 					}
 
+					if ( ! blu_user_can_capability( blu_post_type_capability( $resolved, 'create_posts' ) ) ) {
+						return blu_prepare_ability_response( 403, 'You do not have permission to create this content type.' );
+					}
+					if ( ! empty( $input['status'] ) && in_array( $input['status'], array( 'publish', 'future', 'private' ), true ) && ! blu_user_can_capability( blu_post_type_capability( $resolved, 'publish_posts' ) ) ) {
+						return blu_prepare_ability_response( 403, 'You do not have permission to publish this content type.' );
+					}
+
 					$post_data = array(
 						'post_type'    => $resolved,
 						'post_title'   => sanitize_text_field( $input['title'] ),
@@ -334,6 +340,9 @@ class CustomPostTypes {
 
 					if ( ! blu_current_user_can_act_on_post( $post, 'edit_post' ) ) {
 						return blu_post_permission_denied_response( (int) $post->ID, 'edit' );
+					}
+					if ( ! empty( $input['status'] ) && in_array( $input['status'], array( 'publish', 'future', 'private' ), true ) && ! blu_user_can_capability( blu_post_type_capability( $resolved, 'publish_posts' ) ) ) {
+						return blu_prepare_ability_response( 403, 'You do not have permission to publish this content type.' );
 					}
 
 					$post_data = array( 'ID' => $post->ID );

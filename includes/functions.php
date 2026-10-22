@@ -490,21 +490,11 @@ function blu_can_use_post_type( $input, string $cap ): bool {
 }
 
 /**
- * Capability check with an administrator fallback.
+ * Capability check using WordPress's decision for the current user.
  *
- * Registering a post type with its own `capability_type` does not grant those
- * capabilities to anybody: WordPress leaves that to the plugin, and plenty of
- * them forget. WooCommerce hands `edit_products` to administrators, but a type
- * declared as `capability_type => 'ledger'` with no role work leaves
- * `edit_ledgers` held by nobody at all, administrators included.
- *
- * Testing the type capability alone would therefore make such a type
- * unmanageable through MCP, where it is managed today. Since the transport
- * authenticates as an administrator anyway (see McpValidation), that would be
- * a regression for every caller and a protection for none.
- *
- * Administrators are the intended operators here, so they pass. Everyone else
- * is held to the real capability, which is what keeps an author out.
+ * The transport may authenticate as an administrator, but plugins can
+ * still deny an administrator a post or a custom post type. Honor the
+ * capability result exactly as WordPress reports it.
  *
  * @param string $capability The capability to test.
  * @param int    $object_id  Optional. Object id for a meta capability.
@@ -512,11 +502,7 @@ function blu_can_use_post_type( $input, string $cap ): bool {
  * @return bool
  */
 function blu_user_can_capability( string $capability, int $object_id = 0 ): bool {
-	if ( $object_id > 0 ? current_user_can( $capability, $object_id ) : current_user_can( $capability ) ) {
-		return true;
-	}
-
-	return current_user_can( 'manage_options' );
+	return $object_id > 0 ? current_user_can( $capability, $object_id ) : current_user_can( $capability );
 }
 
 /**
@@ -554,73 +540,6 @@ function blu_post_permission_denied_response( int $post_id, string $action ): ar
 		403,
 		sprintf( 'You do not have permission to %1$s item %2$d.', $action, $post_id )
 	);
-}
-
-/**
- * Drop posts the current user has no business seeing.
- *
- * Mirrors what the REST-backed searches get from WordPress for free: another
- * user's *published* work is fair game, their drafts, private items and trash
- * are not. A bare WP_Query offers no equivalent. WP_Query's `perm => editable`
- * is the obvious lever and the wrong one, because it also hides other people's
- * published posts, and it does nothing at all for `post_status => any`.
- *
- * @param WP_Post[] $posts Posts straight from the query.
- *
- * @return WP_Post[] The subset the caller may see, re-indexed from zero.
- */
-function blu_filter_posts_by_read_permission( array $posts ): array {
-	return array_values(
-		array_filter(
-			$posts,
-			function ( $post ) {
-				if ( ! $post instanceof WP_Post ) {
-					return false;
-				}
-				if ( is_post_publicly_viewable( $post ) ) {
-					return true;
-				}
-
-				return blu_current_user_can_act_on_post( $post, 'edit_post' );
-			}
-		)
-	);
-}
-
-/**
- * Whether a search ability should re-run its query against the trash.
- *
- * Trashing keeps a post's title but moves it out of every status the search
- * abilities query by default, so looking an item up by name straight after a
- * delete returns nothing and the caller concludes it never existed. That is
- * the only lookup path available for a delete, because callers resolve targets
- * by search and not by raw ID, so the "already in the trash" recovery is
- * unreachable without this retry.
- *
- * Only a *targeted* lookup retries: a plain listing must not surface trashed
- * items, and a caller that named its own statuses gets exactly those.
- *
- * @param array|null $input        The ability input.
- * @param mixed      $live_results Results the non-trash query returned.
- * @param string     $status_key   Input key holding the caller's status filter.
- *
- * @return bool True when the caller searched by term, asked for no particular
- *              status, and got nothing back.
- */
-function blu_should_retry_in_trash( $input, $live_results, string $status_key = 'status' ): bool {
-	if ( ! is_array( $input ) ) {
-		return false;
-	}
-
-	if ( '' === trim( (string) ( $input['search'] ?? '' ) ) ) {
-		return false;
-	}
-
-	if ( '' !== trim( (string) ( $input[ $status_key ] ?? '' ) ) ) {
-		return false;
-	}
-
-	return is_array( $live_results ) && 0 === count( $live_results );
 }
 
 if ( ! function_exists( 'blu_is_valid_list' ) ) {

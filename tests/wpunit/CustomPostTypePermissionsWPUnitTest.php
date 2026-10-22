@@ -22,7 +22,6 @@ use BLU\Abilities\CustomPostTypes;
  * @covers \BLU\Abilities\CustomPostTypes
  * @covers ::blu_can_use_post_type
  * @covers ::blu_current_user_can_act_on_post
- * @covers ::blu_filter_posts_by_read_permission
  */
 class CustomPostTypePermissionsWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 
@@ -355,8 +354,102 @@ class CustomPostTypePermissionsWPUnitTest extends \lucatume\WPBrowser\TestCase\W
 	}
 
 	/**
+	 * A plugin may explicitly deny even an administrator access to an item.
+	 * The MCP ability must honor that WordPress capability decision.
+	 */
+	public function test_explicit_item_denial_is_not_bypassed_by_administrator(): void {
+		$post_id = $this->make_post( 'Restricted Post', 'publish', $this->owner_id );
+		wp_set_current_user( $this->owner_id );
+		$deny = static function ( $caps, $cap, $user_id, $args ) use ( $post_id ) {
+			if ( in_array( $cap, array( 'read_post', 'edit_post', 'delete_post' ), true ) && isset( $args[0] ) && (int) $args[0] === $post_id ) {
+				return array( 'do_not_allow' );
+			}
+			return $caps;
+		};
+		add_filter( 'map_meta_cap', $deny, 10, 4 );
+		try {
+			$this->assertFalse(
+				$this->search_sees(
+					array(
+						'post_type' => 'post',
+						'search'    => 'Restricted Post',
+					),
+					$post_id
+				)
+			);
+			$this->assertSame(
+				'403',
+				$this->outcome(
+					'blu/update-cpt',
+					array(
+						'post_type' => 'post',
+						'id'        => $post_id,
+						'title'     => 'Changed',
+					)
+				)
+			);
+			$this->assertSame(
+				'403',
+				$this->outcome(
+					'blu/delete-cpt',
+					array(
+						'post_type' => 'post',
+						'id'        => $post_id,
+					)
+				)
+			);
+		} finally {
+			remove_filter( 'map_meta_cap', $deny, 10 );
+		}
+		$this->assertSame( 'Restricted Post', get_post_field( 'post_title', $post_id ) );
+	}
+
+	/**
+	 * Creating and publishing require their own capabilities, even when the
+	 * caller passes the broad edit_posts gate.
+	 */
+	public function test_create_and_publish_require_their_specific_capabilities(): void {
+		$type                    = get_post_type_object( 'post' );
+		$original_create_cap     = $type->cap->create_posts;
+		$type->cap->create_posts = 'do_not_allow';
+		wp_set_current_user( $this->owner_id );
+		try {
+			$this->assertSame(
+				'403',
+				$this->outcome(
+					'blu/add-cpt',
+					array(
+						'post_type' => 'post',
+						'title'     => 'Blocked',
+						'content'   => 'Body',
+					)
+				)
+			);
+		} finally {
+			$type->cap->create_posts = $original_create_cap;
+		}
+
+		$contributor_id = self::factory()->user->create( array( 'role' => 'contributor' ) );
+		wp_set_current_user( $contributor_id );
+		$this->assertTrue( current_user_can( 'edit_posts' ) );
+		$this->assertFalse( current_user_can( 'publish_posts' ) );
+		$this->assertSame(
+			'403',
+			$this->outcome(
+				'blu/add-cpt',
+				array(
+					'post_type' => 'post',
+					'title'     => 'No Publish',
+					'content'   => 'Body',
+					'status'    => 'publish',
+				)
+			)
+		);
+	}
+
+	/**
 	 * Administrators are what the Hiive JWT transport authenticates as, so
-	 * every path has to stay open for them, including on other users' content.
+	 * ordinary content remains available to them, including other users' content.
 	 *
 	 * @return void
 	 */
@@ -379,7 +472,7 @@ class CustomPostTypePermissionsWPUnitTest extends \lucatume\WPBrowser\TestCase\W
 			)
 		);
 		$this->assertSame(
-			'allowed',
+			'gate',
 			$this->outcome(
 				'blu/get-cpt',
 				array(
