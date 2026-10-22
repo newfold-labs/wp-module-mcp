@@ -322,8 +322,8 @@ class SearchStatusWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$this->assertSame( 'id,title,slug,status', $fields );
 	}
 
-	/** Administrators retain access to custom types whose capabilities were never granted. */
-	public function test_cpt_explicit_any_keeps_administrator_access_to_custom_capability_types(): void {
+	/** Administrators respect custom type capabilities when no role holds them. */
+	public function test_cpt_explicit_any_respects_custom_capability_types(): void {
 		$this->register_search_abilities();
 		$slug = 'bmcp_status_ledger';
 		register_post_type(
@@ -347,7 +347,7 @@ class SearchStatusWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 			)
 		);
 		unregister_post_type( $slug );
-		$this->assertArrayHasKey( $item_id, array_column( $result['message']['results'], null, 'id' ) );
+		$this->assertInstanceOf( \WP_Error::class, $result );
 	}
 
 	/** Provide the three core post type search cases. */

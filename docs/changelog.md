@@ -11,7 +11,10 @@ Notable changes are listed here; older history may be on **GitHub Releases**.
 
 ## [Unreleased]
 
+- Fixed: direct media-file reads now check permission on the attachment. Uploads reject files whose content does not match an allowed extension, before attachment registration.
+
 - Changed: post, page, custom post type, and WooCommerce product searches default to `status=publish`; tool descriptions explain explicit `status=any` and `status=trash` lookups, and each result reports its actual status. Post and page searches return compact results with a plain title and request only the REST fields they need. Custom post type results are filtered for read permission before pagination, so totals count accessible items.
+- Fixed: custom post type abilities now check the requested type's capabilities and the target item's permissions before direct reads, writes, or deletes. Creation and publishing check their specific capabilities, and explicit WordPress denials remain effective for administrators. (PRESS0-5133)
 
 - Documentation: added **AGENTS.md**, **CLAUDE.md** (symlink), and **docs/** per Newfold module documentation standards (replaces superseded `add/docs` branch work).
 

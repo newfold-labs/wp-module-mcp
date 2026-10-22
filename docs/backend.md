@@ -19,15 +19,25 @@ updated: 2026-03-26
 
 Implementations live under **`includes/Abilities/`** (e.g. `Posts`, `Pages`, `Media`, `Users`, `SiteInfo`, `Settings`, `CustomPostTypes`, `RestApiCrud`, `GlobalStyles`, `Themes`, `WooProducts`, `WooOrders`, `Prompts`, `Resources`). Each class registers its abilities on construction.
 
+### Post-type permissions
+
+The custom post type abilities query posts directly. Their permission callbacks check the requested type's capabilities; `get-cpt` checks `read_post`, while updates and deletes check `edit_post` and `delete_post`. Creating requires the type's `create_posts` capability; publishing requires `publish_posts`. These checks honor WordPress denials even for administrators. Search filters inaccessible posts before pagination; totals describe accessible results.
+
 ### Searching by status
 
 Post, page, custom post type, and WooCommerce product searches default to `status=publish`. Pass `status=any` to include other non-trash statuses, or `status=trash` to locate a deleted item. Each result includes its actual `status`; a normal search never retries in the trash. Post and page searches return compact `id`, plain `title`, `status`, and `slug` entries; their get abilities provide full details. Custom post type searches check visibility before pagination and return counts of accessible items because they query posts directly rather than through a REST controller.
 
 WordPress uses `future` for scheduled content. Its current, visible status slugs, including eligible custom statuses, are available from `GET /wp/v2/statuses` through the REST gateway. The search abilities accept status strings rather than a fixed enum so plugin-registered statuses are not frozen into the tool schema. WooCommerce validates product status against its own REST endpoint's accepted values, which may differ from the WordPress status catalog.
 
+### Direct media access
+
+`blu/get-media-file` reads attachment bytes directly, so it verifies the target is an attachment and checks `read_post` for that ID before opening the file. `blu/upload-media` uses `wp_check_filetype_and_ext` after writing upload bits; it deletes files whose contents do not match an allowed extension before registering the attachment.
+
 ## Discovery tools
 
 `AbilityGateway` registers three meta-tools (`blu-list-abilities`, `blu-get-ability-schema`, `blu-call-ability`). `RestApiCrud` registers `blu-list-api-functions`, `blu-get-function-details`, and `blu-run-api-function` for raw REST access.
+
+The gateway includes Yoast SEO abilities when Yoast registers them. Its whitelist requires both the `yoast-seo/` namespace and `yoast-seo` category; the abilities remain behind the three gateway tools and retain Yoast's own permission checks. Yoast may withhold its abilities when its indexables are disabled, including on local environments.
 
 In gateway mode, only the three meta-tools appear in MCP `tools/list`. Clients discover and execute the REST abilities through those tools; the REST catalog reflects routes registered by active plugins.
 

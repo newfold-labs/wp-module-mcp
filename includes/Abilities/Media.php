@@ -74,9 +74,9 @@ class Media {
 				'permission_callback' => fn() => current_user_can( 'upload_files' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => true,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -107,9 +107,9 @@ class Media {
 				'permission_callback' => fn() => current_user_can( 'upload_files' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => true,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -137,8 +137,15 @@ class Media {
 					'required'   => array( 'id' ),
 				),
 				'execute_callback'    => function ( $input ) {
-					$id        = $input['id'];
+					$id        = (int) $input['id'];
 					$size      = $input['size'] ?? 'full';
+					$attachment = get_post( $id );
+					if ( ! $attachment || 'attachment' !== $attachment->post_type ) {
+						return blu_prepare_ability_response( 404, 'Media item not found' );
+					}
+					if ( ! current_user_can( 'read_post', $id ) ) {
+						return blu_prepare_ability_response( 403, 'You do not have permission to read this media item.' );
+					}
 					$file_path = get_attached_file( $id );
 
 					if ( ! file_exists( $file_path ) ) {
@@ -174,9 +181,9 @@ class Media {
 				'permission_callback' => fn() => current_user_can( 'upload_files' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => true,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -251,6 +258,16 @@ class Media {
 						return blu_prepare_ability_response( 500, 'File upload error: ' . $upload['error'] );
 					}
 
+					// wp_upload_bits() checks the extension but does not verify the
+					// file bytes against it. Reject a disguised payload before creating
+					// an attachment record.
+					$checked_type = wp_check_filetype_and_ext( $upload['file'], $filename );
+					if ( empty( $checked_type['ext'] ) || empty( $checked_type['type'] ) || ! empty( $checked_type['proper_filename'] ) ) {
+						wp_delete_file( $upload['file'] );
+						return blu_prepare_ability_response( 400, 'Uploaded file type is not allowed.' );
+					}
+					$mime_type = $checked_type['type'];
+
 					// Create attachment
 					$attachment = array(
 						'post_mime_type' => $mime_type,
@@ -274,9 +291,9 @@ class Media {
 				'permission_callback' => fn() => current_user_can( 'upload_files' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => false,
-						'idempotent'   => false,
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => false,
 					),
 				),
 			)
@@ -326,9 +343,9 @@ class Media {
 				'permission_callback' => fn() => current_user_can( 'upload_files' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => false,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -360,9 +377,9 @@ class Media {
 				'permission_callback' => fn() => current_user_can( 'delete_posts' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => false,
-						'destructive'  => true,
-						'idempotent'   => true,
+						'readonly'    => false,
+						'destructive' => true,
+						'idempotent'  => true,
 					),
 				),
 			)
@@ -403,9 +420,9 @@ class Media {
 				'permission_callback' => fn() => current_user_can( 'upload_files' ),
 				'meta'                => array(
 					'annotations' => array(
-						'readonly'     => true,
-						'destructive'  => false,
-						'idempotent'   => true,
+						'readonly'    => true,
+						'destructive' => false,
+						'idempotent'  => true,
 					),
 				),
 			)

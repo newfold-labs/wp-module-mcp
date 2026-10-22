@@ -47,17 +47,19 @@ class AbilityGateway {
 			array(
 				'blu/',
 				'woocommerce/',
+				'yoast-seo/',
 			)
 		);
 
-		// WooCommerce registers native abilities under its own category. Keep
-		// namespace and public metadata checks below as additional gates.
+		// Allow curated categories. WooCommerce abilities also require public
+		// metadata below; integrators can broaden this list via the filter.
 		$allowed_categories = apply_filters(
 			'blu_mcp_allowed_categories',
 			array(
 				'blu-mcp',
 				'woocommerce',
 				'woocommerce-rest',
+				'yoast-seo',
 			)
 		);
 
