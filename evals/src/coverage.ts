@@ -15,6 +15,10 @@ export interface TestCase {
   source: string;
   /** When set, consecutive cases with the same id share chat history (post id, etc.). */
   series_id?: string;
+  /** Do not score this step if a required earlier step did not succeed. */
+  requires_success_of?: string[];
+  /** This test expects the selected ability to reject invalid input. */
+  expect_tool_error?: boolean;
   /** Explicitly equivalent REST dispatches; successful calls earn a warning, not a pass. */
   rest_alternatives?: RestAlternative[];
 }

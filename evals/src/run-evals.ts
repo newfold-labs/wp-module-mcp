@@ -7,6 +7,8 @@ import { fetchOpenAiToolsFromList } from './mcp-tools.js';
 import { classifyEvalResult } from './eval-status.js';
 import { safeTrace, summarizeFailure } from './diagnostics.js';
 import { MenuOutcomeFixture } from './menu-outcome.js';
+import { resolveEvalPrompt } from './eval-prompt.js';
+import { blockingPrerequisite } from './eval-dependencies.js';
 import type { TestCase } from './coverage.js';
 
 const EVAL_DELAY_MS = 500;
@@ -30,6 +32,7 @@ export interface EvalRunResult {
   warning: number;
   error: number;
   skip: number;
+  blocked: number;
   passRate: number;
   toolCount: number;
   reportMarkdown: string;
@@ -51,6 +54,8 @@ export async function runEvals(options: EvalRunOptions): Promise<EvalRunResult> 
     let warning = 0;
     let error = 0;
     let skip = 0;
+    let blocked = 0;
+    const statuses = new Map<string, string>();
     const rows: string[] = [];
     const diagnostics: Array<Record<string, unknown>> = [];
 
@@ -99,6 +104,15 @@ export async function runEvals(options: EvalRunOptions): Promise<EvalRunResult> 
             ? `[${unit.seriesId} ${stepIndex + 1}/${runnable.length}] `
             : '';
 
+          const prerequisite = blockingPrerequisite(test.requires_success_of, statuses);
+          if (prerequisite) {
+            blocked++;
+            statuses.set(test.id, 'blocked');
+            rows.push(`| :no_entry_sign: | ${escapeCell(stepLabel + test.description)} | \`${test.expected_tool}\` | Blocked by ${escapeCell(prerequisite)} |`);
+            diagnostics.push({ id: test.id, status: 'blocked', prerequisite });
+            continue;
+          }
+
           if (menuFixture && test.expected_outcome === 'menu_page_absent') {
             await menuFixture.ensurePageItem();
           }
@@ -106,7 +120,12 @@ export async function runEvals(options: EvalRunOptions): Promise<EvalRunResult> 
             ? test.expected_outcome === 'menu_page_present'
               ? `Add the published page "AI Eval Landing Page" to the "AI Eval Primary ${menuFixture.pageId}" navigation menu.`
               : `Remove the "AI Eval Landing Page" page link from the "AI Eval Primary ${menuFixture.pageId}" navigation menu.`
-            : test.prompt;
+            : resolveEvalPrompt(test.id, test.prompt, {
+                productId: Number(process.env.WP_EVAL_PRODUCT_ID) || undefined,
+                portfolioId: Number(process.env.WP_EVAL_PORTFOLIO_ID) || undefined,
+                testimonialId: Number(process.env.WP_EVAL_TESTIMONIAL_ID) || undefined,
+                pageId: Number(process.env.WP_EVAL_PAGE_ID) || undefined,
+              });
           const outcomeCheck = menuFixture
             ? async () => (await menuFixture.containsPage()) === (test.expected_outcome === 'menu_page_present')
             : undefined;
@@ -120,6 +139,7 @@ export async function runEvals(options: EvalRunOptions): Promise<EvalRunResult> 
               prompt,
               outcomeCheck,
               expectedTool: test.expected_tool,
+              expectToolError: test.expect_tool_error,
               restAlternatives: test.rest_alternatives,
               model: options.model,
               gatewayUrl: options.gatewayUrl,
@@ -153,11 +173,12 @@ export async function runEvals(options: EvalRunOptions): Promise<EvalRunResult> 
 
           const description = stepLabel + test.description;
           const status = classifyEvalResult(result);
+          statuses.set(test.id, status);
           const currentMessages = result.conversationMessages.slice(previousMessageCount);
           const reason = result.error ? 'Eval error' : summarizeFailure(currentMessages);
           const actual = compactTool(result.actualTool);
           const expected = test.expected_outcome === 'menu_page_present' ? 'page linked to menu' : test.expected_outcome === 'menu_page_absent' ? 'page removed from menu' : `\`${test.expected_tool}\``;
-          diagnostics.push({ id: test.id, status, reason: status === 'pass' ? undefined : reason, error: result.error, turns: result.turns, trace: safeTrace(currentMessages) });
+          diagnostics.push({ id: test.id, status, selectionMatched: result.matched, executionFailed: result.executionFailed ?? false, reason: status === 'pass' ? undefined : reason, error: result.error, turns: result.turns, trace: safeTrace(currentMessages) });
           if (status === 'error') {
             rows.push(
               `| :boom: | ${escapeCell(description)} | ${expected} | Eval error (details in trace artifact) |`
@@ -170,7 +191,7 @@ export async function runEvals(options: EvalRunOptions): Promise<EvalRunResult> 
             pass++;
           } else if (status === 'warning') {
             rows.push(
-              `| :warning: | ${escapeCell(description)} | ${expected} | REST alternative: \`${actual}\` (${result.turns} turns) |`
+              `| :warning: | ${escapeCell(description)} | ${expected} | ${result.executionFailed ? 'Selected; execution failed' : 'REST alternative'}: \`${actual}\` (${result.turns} turns) |`
             );
             warning++;
           } else {
@@ -206,7 +227,7 @@ export async function runEvals(options: EvalRunOptions): Promise<EvalRunResult> 
     const lines = [
       `## ${statusEmoji} MCP AI Eval Results`,
       '',
-      `**Model:** \`${options.model}\` | **MCP tools (tools/list):** ${toolCount} | **Passed:** ${pass} | **REST warnings:** ${warning} | **Failed:** ${fail} | **Errors:** ${error} | **Skipped:** ${skip} | **Pass Rate:** ${passRate}%`,
+      `**Model:** \`${options.model}\` | **MCP tools (tools/list):** ${toolCount} | **Passed:** ${pass} | **Warnings:** ${warning} | **Failed:** ${fail} | **Errors:** ${error} | **Blocked:** ${blocked} | **Skipped:** ${skip} | **Pass Rate:** ${passRate}%`,
       'Detailed traces: `mcp-ai-eval-trace` artifact on this workflow run.',
       '',
       '| Status | Test | Expected Tool / Outcome | Actual / Notes |',
@@ -235,7 +256,7 @@ export async function runEvals(options: EvalRunOptions): Promise<EvalRunResult> 
       core.setOutput('tool_count', String(toolCount));
     }
 
-    return { pass, fail, warning, error, skip, passRate, toolCount, reportMarkdown, diagnostics };
+    return { pass, fail, warning, error, skip, blocked, passRate, toolCount, reportMarkdown, diagnostics };
   } finally {
     await client.close();
   }

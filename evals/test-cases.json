@@ -389,7 +389,7 @@
   {
     "id": "cpt-add-1",
     "description": "Add custom post type item",
-    "prompt": "Create a new 'event' custom post type item titled 'Annual Tech Conference 2026'",
+    "prompt": "Create a draft event titled 'Annual Tech Conference 2026' with content 'A technology conference for local developers.'",
     "expected_tool": "blu_add-cpt",
     "source": "CustomPostTypes.php"
   },
@@ -438,7 +438,7 @@
   {
     "id": "wc-product-update-1",
     "description": "Update WooCommerce product",
-    "prompt": "Update the price of product ID 42 to $39.99 and change its description",
+    "prompt": "Update the regular price of product ID 42 to $39.99 and set its full description to 'A practical tool for everyday work.'",
     "expected_tool": "blu_wc-update-product",
     "source": "WooProducts.php"
   },
@@ -529,7 +529,7 @@
   {
     "id": "google-taxonomy-1",
     "description": "Search Google product taxonomy",
-    "prompt": "Find Google product taxonomy categories related to 'running shoes'",
+    "prompt": "Which Google product category IDs match running shoes? Please look up the current taxonomy and give me the IDs and category paths.",
     "expected_tool": "blu_google-product-taxonomy",
     "source": "Resources.php"
   },
@@ -691,7 +691,10 @@
     "prompt": "Insert the image into the page.",
     "expected_tool": "blu_add-section",
     "source": "BlockEditor.php",
-    "series_id": "pages-ai-landing"
+    "series_id": "pages-ai-landing",
+    "requires_success_of": [
+      "uploading-image-19"
+    ]
   },
   {
     "id": "publishing-the-page-21",
@@ -731,7 +734,11 @@
     "prompt": "Replace the existing image with another image.",
     "expected_tool": "blu_edit-block",
     "source": "BlockEditor.php",
-    "series_id": "pages-ai-landing"
+    "series_id": "pages-ai-landing",
+    "requires_success_of": [
+      "uploading-image-19",
+      "inserting-image-into-page-20"
+    ]
   },
   {
     "id": "deleting-the-page-26",
@@ -763,7 +770,10 @@
     "prompt": "List media in the library and confirm test.jpg is present.",
     "expected_tool": "blu_list-media",
     "source": "Media.php",
-    "series_id": "media-workflow"
+    "series_id": "media-workflow",
+    "requires_success_of": [
+      "uploading-media-file-28"
+    ]
   },
   {
     "id": "searching-uploaded-media-30",
@@ -771,7 +781,10 @@
     "prompt": "Search for the uploaded media.",
     "expected_tool": "blu_search-media",
     "source": "Media.php",
-    "series_id": "media-workflow"
+    "series_id": "media-workflow",
+    "requires_success_of": [
+      "uploading-media-file-28"
+    ]
   },
   {
     "id": "opening-media-details-31",
@@ -779,7 +792,10 @@
     "prompt": "Get the test.jpg media item and show its metadata.",
     "expected_tool": "blu_get-media",
     "source": "Media.php",
-    "series_id": "media-workflow"
+    "series_id": "media-workflow",
+    "requires_success_of": [
+      "uploading-media-file-28"
+    ]
   },
   {
     "id": "inserting-media-into-existing-page-32",
@@ -787,7 +803,10 @@
     "prompt": "Insert the media into an existing page.",
     "expected_tool": "blu_add-section",
     "source": "BlockEditor.php",
-    "series_id": "media-workflow"
+    "series_id": "media-workflow",
+    "requires_success_of": [
+      "uploading-media-file-28"
+    ]
   },
   {
     "id": "replacing-media-inside-page-33",
@@ -795,7 +814,11 @@
     "prompt": "Replace media inside the page.",
     "expected_tool": "blu_edit-block",
     "source": "BlockEditor.php",
-    "series_id": "media-workflow"
+    "series_id": "media-workflow",
+    "requires_success_of": [
+      "uploading-media-file-28",
+      "inserting-media-into-existing-page-32"
+    ]
   },
   {
     "id": "deleting-media-file-34",
@@ -803,7 +826,10 @@
     "prompt": "Delete the media file.",
     "expected_tool": "blu_delete-media",
     "source": "Media.php",
-    "series_id": "media-workflow"
+    "series_id": "media-workflow",
+    "requires_success_of": [
+      "uploading-media-file-28"
+    ]
   },
   {
     "id": "verifying-media-removal-35",
@@ -811,7 +837,11 @@
     "prompt": "Search the media library for test.jpg and confirm it is not found.",
     "expected_tool": "blu_search-media",
     "source": "Media.php",
-    "series_id": "media-workflow"
+    "series_id": "media-workflow",
+    "requires_success_of": [
+      "uploading-media-file-28",
+      "deleting-media-file-34"
+    ]
   },
   {
     "id": "uploading-unsupported-file-36",
@@ -819,7 +849,8 @@
     "prompt": "Attempt to upload unsupported file 'test.exe'.",
     "expected_tool": "blu_upload-media",
     "source": "Media.php",
-    "series_id": "media-workflow"
+    "series_id": "media-workflow",
+    "expect_tool_error": true
   },
   {
     "id": "verifying-invalid-file-rejection-37",
@@ -827,7 +858,8 @@
     "prompt": "Attempt to upload test.exe again; the upload should be rejected with an error.",
     "expected_tool": "blu_upload-media",
     "source": "Media.php",
-    "series_id": "media-workflow"
+    "series_id": "media-workflow",
+    "expect_tool_error": true
   },
   {
     "id": "adding-page-to-menu-38",
@@ -938,7 +970,7 @@
   {
     "id": "creating-variable-product-51",
     "description": "Creating variable product",
-    "prompt": "Create a variable product with sizes S, M, L and different prices.",
+    "prompt": "Create a published variable T-shirt product named 'AI Eval Size Shirt' with size options S, M, and L priced at $19, $21, and $23 respectively.",
     "expected_tool": "blu_wc-add-product",
     "source": "WooProducts.php",
     "series_id": "wc-product-ai-tool"
@@ -949,7 +981,10 @@
     "prompt": "Get the variable product with sizes S, M, L from this flow and show its variation data.",
     "expected_tool": "blu_wc-get-product",
     "source": "WooProducts.php",
-    "series_id": "wc-product-ai-tool"
+    "series_id": "wc-product-ai-tool",
+    "requires_success_of": [
+      "creating-variable-product-51"
+    ]
   },
   {
     "id": "deleting-the-product-53",
@@ -1237,7 +1272,10 @@
     "prompt": "Search Books for 'LLM Project'.",
     "expected_tool": "blu_cpt-search",
     "source": "CustomPostTypes.php",
-    "series_id": "cpt-books-llm"
+    "series_id": "cpt-books-llm",
+    "requires_success_of": [
+      "creating-and-publishing-books-custom-post-type-ite-87"
+    ]
   },
   {
     "id": "fetching-books-item-details-89",
@@ -1245,7 +1283,10 @@
     "prompt": "Get the full details of the LLM Project item in the Books custom post type.",
     "expected_tool": "blu_get-cpt",
     "source": "CustomPostTypes.php",
-    "series_id": "cpt-books-llm"
+    "series_id": "cpt-books-llm",
+    "requires_success_of": [
+      "creating-and-publishing-books-custom-post-type-ite-87"
+    ]
   },
   {
     "id": "updating-books-item-content-90",
@@ -1253,7 +1294,10 @@
     "prompt": "In the Books custom post type, update the content of the LLM Project item to: 'Updated: this LLM Project now.'",
     "expected_tool": "blu_update-cpt",
     "source": "CustomPostTypes.php",
-    "series_id": "cpt-books-llm"
+    "series_id": "cpt-books-llm",
+    "requires_success_of": [
+      "creating-and-publishing-books-custom-post-type-ite-87"
+    ]
   },
   {
     "id": "deleting-books-item-91",
@@ -1261,7 +1305,10 @@
     "prompt": "Delete the LLM Project item from the Books custom post type.",
     "expected_tool": "blu_delete-cpt",
     "source": "CustomPostTypes.php",
-    "series_id": "cpt-books-llm"
+    "series_id": "cpt-books-llm",
+    "requires_success_of": [
+      "creating-and-publishing-books-custom-post-type-ite-87"
+    ]
   },
   {
     "id": "verifying-books-item-deletion-92",
@@ -1269,7 +1316,10 @@
     "prompt": "Confirm it no longer exists by searching Books for 'LLM Project' (expect zero results).",
     "expected_tool": "blu_cpt-search",
     "source": "CustomPostTypes.php",
-    "series_id": "cpt-books-llm"
+    "series_id": "cpt-books-llm",
+    "requires_success_of": [
+      "creating-and-publishing-books-custom-post-type-ite-87"
+    ]
   },
   {
     "id": "creating-first-post-93",

@@ -250,7 +250,7 @@ class AbilityGateway {
 			'blu/list-abilities',
 			array(
 				'label'               => 'List Abilities',
-				'description'         => 'Find the ability for the user\'s task. First call blu-list-abilities; narrow with search or name_prefix if needed. Choose the ability matching the object and action, then call blu-get-ability-schema and blu-call-ability with its required parameters. If no specific ability fits, discover registered WordPress REST API routes with blu-list-api-functions, inspect one with blu-get-function-details, and dispatch with blu-run-api-function.',
+				'description'         => 'Find the ability for the user\'s task. Call blu-list-abilities once, narrowing with search or name_prefix if needed; do not repeat the same search. Choose the ability matching the object and action, then call blu-get-ability-schema and blu-call-ability with its required parameters. If no specific ability fits, discover registered WordPress REST API routes with blu-list-api-functions, inspect one with blu-get-function-details, and dispatch with blu-run-api-function. For a classic navigation menu, use the registered /wp/v2/menus and /wp/v2/menu-items routes; /wp/v2/navigation is for block navigation.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'                 => 'object',

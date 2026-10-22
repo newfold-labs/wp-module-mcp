@@ -35,6 +35,8 @@ export interface AgentEvalOptions {
   prompt: string;
   expectedTool: string;
   restAlternatives?: RestAlternative[];
+  /** Negative case: the selected ability must reject the supplied input. */
+  expectToolError?: boolean;
   model: string;
   gatewayUrl: string;
   gatewayToken: string;
@@ -49,6 +51,8 @@ export interface AgentEvalOptions {
 
 export interface AgentEvalResult {
   matched: boolean;
+  /** The expected ability was selected, but its response reported an error. */
+  executionFailed?: boolean;
   restAlternative?: boolean;
   actualTool: string;
   error?: string;
@@ -111,6 +115,7 @@ export async function runAgentEval(options: AgentEvalOptions): Promise<AgentEval
       : [{ role: 'user', content: options.prompt }];
   let lastRelevant = '';
   let matched = false;
+  let executionFailed = false;
   let restAlternative = false;
   let restAlternativeTool = '';
   let tools: OpenAiFunctionTool[];
@@ -130,20 +135,23 @@ export async function runAgentEval(options: AgentEvalOptions): Promise<AgentEval
   for (let turn = 0; turn < maxTurns; turn++) {
     let response: Response;
     try {
-      response = await fetch(options.gatewayUrl, {
-        method: 'POST',
-        headers: {
-          'cf-aig-authorization': `Bearer ${options.gatewayToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: options.model,
-          messages,
-          tools,
-          tool_choice: 'auto',
-        }),
-        signal: AbortSignal.timeout(60_000),
-      });
+      for (let attempt = 0; ; attempt++) {
+        try {
+          response = await fetch(options.gatewayUrl, {
+            method: 'POST',
+            headers: {
+              'cf-aig-authorization': `Bearer ${options.gatewayToken}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ model: options.model, messages, tools, tool_choice: 'auto' }),
+            signal: AbortSignal.timeout(60_000),
+          });
+          break;
+        } catch (err) {
+          if (attempt > 0 || !(err instanceof Error) || err.name !== 'TimeoutError') throw err;
+          await new Promise((resolve) => setTimeout(resolve, 250));
+        }
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       return {
@@ -250,6 +258,19 @@ export async function runAgentEval(options: AgentEvalOptions): Promise<AgentEval
         tool_call_id: call.id,
         content: formatToolResultForModel(result),
       });
+      if (matchesExpectedToolCall(toolName, call.function?.arguments, expectedNorm)) {
+        let statusCode: number | undefined;
+        let failed = result.isError === true;
+        try {
+          const payload = JSON.parse(formatToolResultForModel(result)) as { statusCode?: number; status?: string };
+          statusCode = payload.statusCode;
+          if (payload.status === 'error') failed = true;
+        } catch { /* The response may be plain text. */ }
+        if (statusCode !== undefined && statusCode >= 400) failed = true;
+        executionFailed = options.expectToolError
+          ? !(statusCode !== undefined && statusCode >= 400)
+          : failed;
+      }
       if (matchesRestAlternative(toolName, call.function?.arguments, options.restAlternatives ?? [], result)) {
         restAlternative = true;
         restAlternativeTool = `${toolName}(${(call.function?.arguments ?? '').slice(0, 220)})`;
@@ -268,6 +289,7 @@ export async function runAgentEval(options: AgentEvalOptions): Promise<AgentEval
     if (matched && !options.outcomeCheck) {
       return {
         matched: true,
+        executionFailed,
         actualTool: lastRelevant,
         turns: turn + 1,
         conversationMessages: messages,

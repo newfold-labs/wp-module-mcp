@@ -1,3 +1,7 @@
+import { createHash, randomBytes } from 'node:crypto';
+
+const discoverySalt = randomBytes(16);
+
 interface Message {
   role: string;
   content?: string | null;
@@ -15,8 +19,12 @@ export function safeTrace(messages: Message[]): Array<Record<string, unknown>> {
           let args: Record<string, unknown> = {};
           try { args = JSON.parse(call.function.arguments) as Record<string, unknown>; } catch { /* omit malformed arguments */ }
           const params = args.parameters && typeof args.parameters === 'object' ? args.parameters as Record<string, unknown> : {};
+          const discoveryKey = call.function.name === 'blu-list-abilities'
+            ? createHash('sha256').update(discoverySalt).update(JSON.stringify({ search: args.search ?? '', name_prefix: args.name_prefix ?? '' })).digest('hex').slice(0, 12)
+            : undefined;
           return {
             name: call.function.name,
+            discoveryKey,
             ability: typeof args.ability_name === 'string' ? args.ability_name : undefined,
             route: typeof params.route === 'string' ? params.route : undefined,
             method: typeof params.method === 'string' ? params.method : undefined,
@@ -42,6 +50,14 @@ export function summarizeFailure(messages: Message[]): string {
   if (trace.some((entry) => entry.role === 'tool' && (entry.toolError || typeof entry.statusCode === 'number' && entry.statusCode >= 400))) {
     return 'Tool error';
   }
+  const discoveryCounts = new Map<string, number>();
+  for (const entry of trace) {
+    if (!Array.isArray(entry.calls)) continue;
+    for (const call of entry.calls as Array<{ discoveryKey?: string }>) {
+      if (call.discoveryKey) discoveryCounts.set(call.discoveryKey, (discoveryCounts.get(call.discoveryKey) ?? 0) + 1);
+    }
+  }
+  if ([...discoveryCounts.values()].some((count) => count >= 3)) return 'Repeated discovery query';
   const calls = trace.flatMap((entry) => Array.isArray(entry.calls) ? entry.calls as Array<{ name: string }> : []);
   if (calls.length === 0) {
     const reply = [...messages].reverse().find((message) => message.role === 'assistant')?.content;

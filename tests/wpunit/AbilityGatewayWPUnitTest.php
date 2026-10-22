@@ -661,6 +661,8 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$this->assertStringContainsString( 'blu-list-api-functions', $list_description );
 		$this->assertStringContainsString( 'blu-call-ability', $call_description );
 		$this->assertStringContainsString( 'blu-run-api-function', $call_description );
+		$this->assertStringContainsString( 'do not repeat', strtolower( $list_description ) );
+		$this->assertStringContainsString( '/wp/v2/menu-items', $list_description );
 	}
 
 	/**

@@ -164,11 +164,13 @@ jobs:
           jq -n \
             --arg plugin "${{ github.workspace }}/${{ env.BRAND_PLUGIN_DIR }}" \
             --arg module "${{ github.workspace }}" \
+            --arg fixture "${{ github.workspace }}/evals/fixtures/content-types.php" \
             --arg plugin_dir "$PLUGIN_DIR_NAME" \
             '{
               plugins: [$plugin],
               mappings: {
-                ("wp-content/plugins/" + $plugin_dir + "/vendor/newfold-labs/wp-module-mcp"): $module
+                ("wp-content/plugins/" + $plugin_dir + "/vendor/newfold-labs/wp-module-mcp"): $module,
+                "wp-content/mu-plugins/mcp-eval-content-types.php": $fixture
               }
             }' > .wp-env.override.json
           cat .wp-env.override.json
@@ -253,6 +255,44 @@ jobs:
             }
             throw new Exception( "WooCommerce REST routes were not registered." );
           '
+
+      - name: Seed WooCommerce product used by eval prompts
+        if: steps.changes.outputs.skip != 'true'
+        run: |
+          PRODUCT_ID=$(npx wp-env run cli wp eval '
+            $product = new WC_Product_Simple();
+            $product->set_name( "AI Eval Sample Product" );
+            $product->set_status( "publish" );
+            $product->set_regular_price( "29.99" );
+            echo $product->save();
+          ' | tr -d '\r\n')
+          if ! [[ "$PRODUCT_ID" =~ ^[0-9]+$ ]]; then
+            echo "::error::Could not seed WooCommerce eval product."
+            exit 1
+          fi
+          echo "WP_EVAL_PRODUCT_ID=$PRODUCT_ID" >> "$GITHUB_ENV"
+
+      - name: Seed custom post type items used by eval prompts
+        if: steps.changes.outputs.skip != 'true'
+        run: |
+          PORTFOLIO_ID=$(npx wp-env run cli wp post create --post_type=portfolio --post_title='AI Eval Portfolio' --post_content='A seeded portfolio project.' --post_status=publish --porcelain | tr -d '\r\n')
+          TESTIMONIAL_ID=$(npx wp-env run cli wp post create --post_type=testimonial --post_title='AI Eval Testimonial' --post_content='A seeded testimonial.' --post_status=publish --porcelain | tr -d '\r\n')
+          if ! [[ "$PORTFOLIO_ID" =~ ^[0-9]+$ && "$TESTIMONIAL_ID" =~ ^[0-9]+$ ]]; then
+            echo "::error::Could not seed custom post type eval items."
+            exit 1
+          fi
+          echo "WP_EVAL_PORTFOLIO_ID=$PORTFOLIO_ID" >> "$GITHUB_ENV"
+          echo "WP_EVAL_TESTIMONIAL_ID=$TESTIMONIAL_ID" >> "$GITHUB_ENV"
+
+      - name: Seed page used by media eval prompts
+        if: steps.changes.outputs.skip != 'true'
+        run: |
+          PAGE_ID=$(npx wp-env run cli wp post create --post_type=page --post_title='AI Eval Media Page' --post_content='Media eval content.' --post_status=publish --porcelain | tr -d '\r\n')
+          if ! [[ "$PAGE_ID" =~ ^[0-9]+$ ]]; then
+            echo "::error::Could not seed media eval page."
+            exit 1
+          fi
+          echo "WP_EVAL_PAGE_ID=$PAGE_ID" >> "$GITHUB_ENV"
 
       - name: Create application password
         if: steps.changes.outputs.skip != 'true'

@@ -26,3 +26,21 @@ test('distinguishes a clarification request from no action', () => {
   assert.equal(summarizeFailure([{ role: 'assistant', content: 'Which image file should I upload?' }]), 'Asked for input');
   assert.equal(summarizeFailure([{ role: 'assistant', content: 'Done.' }]), 'No tool call');
 });
+
+test('records a stable private discovery key to distinguish repeated searches', () => {
+  const call = (search: string) => [{ role: 'assistant', tool_calls: [{ id: '1', function: { name: 'blu-list-abilities', arguments: JSON.stringify({ search }) } }] }];
+  const a = JSON.stringify(safeTrace(call('secret portfolio')));
+  const b = JSON.stringify(safeTrace(call('secret portfolio')));
+  const c = JSON.stringify(safeTrace(call('other query')));
+  assert.equal(a, b);
+  assert.notEqual(a, c);
+  assert.ok(!a.includes('secret portfolio'));
+  assert.match(a, /discoveryKey/);
+});
+
+test('identifies a repeated discovery query without printing its terms', () => {
+  const messages = Array.from({ length: 3 }, (_, index) => ({
+    role: 'assistant', tool_calls: [{ id: String(index), function: { name: 'blu-list-abilities', arguments: '{"search":"private query"}' } }],
+  }));
+  assert.equal(summarizeFailure(messages), 'Repeated discovery query');
+});
