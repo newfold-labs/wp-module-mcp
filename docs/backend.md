@@ -21,7 +21,7 @@ Implementations live under **`includes/Abilities/`** (e.g. `Posts`, `Pages`, `Me
 
 ### Post-type permissions
 
-The custom post type abilities query posts directly. Their permission callbacks check the requested type's capabilities, and single-item operations check the target post's capability. Creating requires the type's `create_posts` capability; publishing requires `publish_posts`. These checks honor WordPress denials even for administrators. Search filters inaccessible posts before pagination; totals describe accessible results.
+The custom post type abilities query posts directly. Their permission callbacks check the requested type's capabilities; `get-cpt` checks `read_post`, while updates and deletes check `edit_post` and `delete_post`. Creating requires the type's `create_posts` capability; publishing requires `publish_posts`. These checks honor WordPress denials even for administrators. Search filters inaccessible posts before pagination; totals describe accessible results.
 
 ### Searching by status
 

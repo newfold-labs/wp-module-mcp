@@ -272,17 +272,18 @@ class CustomPostTypePermissionsWPUnitTest extends \lucatume\WPBrowser\TestCase\W
 	/**
 	 * On a type that does use the generic capabilities the coarse gate passes,
 	 * so only the per-object check can refuse. Reading, rewriting and deleting
-	 * another user's item must all be refused, and `blu/delete-cpt` force
+	 * another user's unpublished item must all be refused, and `blu/delete-cpt` force
 	 * deletes past the trash, so a miss here is unrecoverable.
 	 *
 	 * @return void
 	 */
 	public function test_per_object_check_refuses_another_users_item(): void {
-		$post_id = $this->make_post( 'Owner Post', 'publish', $this->owner_id );
+		$post_id = $this->make_post( 'Owner Post', 'draft', $this->owner_id );
 		wp_set_current_user( $this->author_id );
 
 		$this->assertTrue( current_user_can( 'edit_posts' ), 'Precondition: the coarse gate passes.' );
 		$this->assertFalse( current_user_can( 'edit_post', $post_id ), 'Precondition: core refuses this object.' );
+		$this->assertFalse( current_user_can( 'read_post', $post_id ), 'Precondition: core refuses reading this draft.' );
 
 		$this->assertSame(
 			'403',
@@ -318,6 +319,24 @@ class CustomPostTypePermissionsWPUnitTest extends \lucatume\WPBrowser\TestCase\W
 
 		$this->assertSame( 'Owner Post', get_post_field( 'post_title', $post_id ), 'The item must be untouched.' );
 		$this->assertNotNull( get_post( $post_id ), 'The item must still exist.' );
+	}
+
+	/** Published items remain readable to users who can read them in WordPress. */
+	public function test_get_allows_another_users_published_post(): void {
+		$post_id = $this->make_post( 'Public Owner Post', 'publish', $this->owner_id );
+		wp_set_current_user( $this->author_id );
+		$this->assertTrue( current_user_can( 'read_post', $post_id ) );
+		$this->assertFalse( current_user_can( 'edit_post', $post_id ) );
+		$this->assertSame(
+			'allowed',
+			$this->outcome(
+				'blu/get-cpt',
+				array(
+					'post_type' => 'post',
+					'id'        => $post_id,
+				)
+			)
+		);
 	}
 
 	/**

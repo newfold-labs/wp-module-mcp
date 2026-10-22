@@ -191,7 +191,7 @@ class CustomPostTypes {
 						);
 					}
 
-					if ( ! blu_current_user_can_act_on_post( $post, 'edit_post' ) ) {
+					if ( ! blu_current_user_can_act_on_post( $post, 'read_post' ) ) {
 						return blu_post_permission_denied_response( (int) $post->ID, 'read' );
 					}
 
