@@ -116,6 +116,7 @@ export async function runEvals(options: EvalRunOptions): Promise<EvalRunResult> 
           try {
             result = await runAgentEval({
               client,
+              tools,
               prompt,
               outcomeCheck,
               expectedTool: test.expected_tool,

@@ -39,6 +39,8 @@ export interface AgentEvalOptions {
   gatewayUrl: string;
   gatewayToken: string;
   maxTurns?: number;
+  /** Reuse the run's tools/list snapshot; gateway discovery uses blu-list-abilities. */
+  tools?: OpenAiFunctionTool[];
   /** For stateful cases, score the verified WordPress outcome instead of a selected call. */
   outcomeCheck?: () => Promise<boolean>;
   /** Prior turns from a series; the current prompt is appended as a new user message. */
@@ -113,7 +115,7 @@ export async function runAgentEval(options: AgentEvalOptions): Promise<AgentEval
   let restAlternativeTool = '';
   let tools: OpenAiFunctionTool[];
   try {
-    tools = await fetchOpenAiToolsFromList(options.client);
+    tools = options.tools ?? await fetchOpenAiToolsFromList(options.client);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     return {
@@ -272,19 +274,6 @@ export async function runAgentEval(options: AgentEvalOptions): Promise<AgentEval
       };
     }
 
-    // Refresh tools/list in case the model discovered new schemas via gateway (same set, cheap).
-    try {
-      tools = await fetchOpenAiToolsFromList(options.client);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      return {
-        matched: false,
-        actualTool: lastRelevant || '(none)',
-        error: `Unable to refresh tools/list: ${msg}`,
-        turns: turn + 1,
-        conversationMessages: messages,
-      };
-    }
   }
 
   return {

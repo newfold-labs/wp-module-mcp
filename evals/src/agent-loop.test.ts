@@ -8,6 +8,7 @@ test('outcome cases keep running after a selected tool until WordPress state mat
   let turn = 0;
   let completed = false;
   const calls: string[] = [];
+  let listCalls = 0;
   globalThis.fetch = async () => {
     turn++;
     return new Response(JSON.stringify({ choices: [{ message: {
@@ -18,7 +19,10 @@ test('outcome cases keep running after a selected tool until WordPress state mat
     } }] }), { status: 200 });
   };
   const client = {
-    listTools: async () => ({ tools: [{ name: 'blu-call-ability', description: 'Call an ability', inputSchema: { type: 'object', properties: {} } }] }),
+    listTools: async () => {
+      listCalls++;
+      return { tools: [{ name: 'blu-call-ability', description: 'Call an ability', inputSchema: { type: 'object', properties: {} } }] };
+    },
     callTool: async ({ name }: { name: string }) => {
       calls.push(name);
       if (calls.length === 2) completed = true;
@@ -33,6 +37,13 @@ test('outcome cases keep running after a selected tool until WordPress state mat
     assert.equal(result.matched, true);
     assert.equal(result.turns, 2);
     assert.equal(calls.length, 2);
+    assert.equal(listCalls, 1);
+    await runAgentEval({ client, prompt: 'Another task', expectedTool: 'blu_add-cpt',
+      model: 'test', gatewayUrl: 'http://example.invalid', gatewayToken: 'test',
+      outcomeCheck: async () => true,
+      tools: [{ type: 'function', function: { name: 'blu-call-ability', description: 'Call an ability', parameters: { type: 'object', properties: {} } } }],
+    });
+    assert.equal(listCalls, 1, 'a run-level snapshot avoids another tools/list call');
   } finally {
     globalThis.fetch = originalFetch;
   }
