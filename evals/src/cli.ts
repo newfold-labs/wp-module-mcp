@@ -69,9 +69,8 @@ async function cmdRunEvals(): Promise<void> {
     core.setOutput('tool_count', String(result.toolCount));
   }
 
-  if (result.fail > 0 || result.error > 0) {
-    process.exitCode = 1;
-  }
+  // Model-selection results are advisory. The workflow posts the counts and
+  // report; only a runner or reporting failure should make this step fail.
 }
 
 async function main(): Promise<void> {
