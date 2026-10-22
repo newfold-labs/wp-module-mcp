@@ -17,7 +17,10 @@ export function safeTrace(messages: Message[]): Array<Record<string, unknown>> {
         role: 'assistant',
         calls: message.tool_calls?.map((call) => {
           let args: Record<string, unknown> = {};
-          try { args = JSON.parse(call.function.arguments) as Record<string, unknown>; } catch { /* omit malformed arguments */ }
+          try {
+            const parsed: unknown = JSON.parse(call.function.arguments);
+            if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) args = parsed as Record<string, unknown>;
+          } catch { /* omit malformed arguments */ }
           const params = args.parameters && typeof args.parameters === 'object' ? args.parameters as Record<string, unknown> : {};
           const discoveryKey = call.function.name === 'blu-list-abilities'
             ? createHash('sha256').update(discoverySalt).update(JSON.stringify({ search: args.search ?? '', name_prefix: args.name_prefix ?? '' })).digest('hex').slice(0, 12)

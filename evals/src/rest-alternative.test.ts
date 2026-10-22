@@ -28,3 +28,12 @@ test('rejects failed REST dispatch and unlisted alternatives', () => {
   assert.equal(matchesRestAlternative('blu-call-ability', args, expected, failure), false);
   assert.equal(matchesRestAlternative('blu-call-ability', args, [], success), false);
 });
+
+test('ignores an embedded query string and trailing slash on the route', () => {
+  for (const route of ['/wp/v2/posts?status=draft', '/wp/v2/posts/']) {
+    const args = JSON.stringify({ ability_name: 'blu-run-api-function', parameters: { route, method: 'POST' } });
+    assert.equal(matchesRestAlternative('blu-call-ability', args, expected, success), true);
+  }
+  const nested = JSON.stringify({ ability_name: 'blu-run-api-function', parameters: { route: '/wp/v2/posts/5', method: 'POST' } });
+  assert.equal(matchesRestAlternative('blu-call-ability', nested, expected, success), false);
+});

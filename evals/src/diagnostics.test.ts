@@ -62,3 +62,10 @@ test('records only a safe REST error code for failed calls', () => {
   assert.match(trace, /rest_invalid_param/);
   assert.ok(!trace.includes('secret123'));
 });
+
+test('tolerates null and array tool arguments', () => {
+  for (const args of ['null', '[]', '"text"']) {
+    const trace = safeTrace([{ role: 'assistant', tool_calls: [{ id: '1', function: { name: 'blu-call-ability', arguments: args } }] }]);
+    assert.equal(trace.length, 1);
+  }
+});

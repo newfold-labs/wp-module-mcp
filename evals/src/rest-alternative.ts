@@ -7,6 +7,11 @@ export interface RestAlternative {
   method: string;
 }
 
+function normalizeRoute(route: string): string {
+  const path = route.split('?', 1)[0];
+  return path.length > 1 ? path.replace(/\/+$/, '') : path;
+}
+
 /** Only an explicitly listed, successfully executed REST request counts as an alternative. */
 export function matchesRestAlternative(
   toolName: string,
@@ -31,7 +36,12 @@ export function matchesRestAlternative(
       return false;
     }
     const { route, method } = params as Record<string, unknown>;
-    if (!alternatives.some((alternative) => route === alternative.route && method === alternative.method)) {
+    if (typeof route !== 'string') {
+      return false;
+    }
+    // RestApiCrud moves an embedded query string into request params; compare only the endpoint path.
+    const path = normalizeRoute(route);
+    if (!alternatives.some((alternative) => path === normalizeRoute(alternative.route) && method === alternative.method)) {
       return false;
     }
     const payload = parseBluPayload(result, 'REST alternative');

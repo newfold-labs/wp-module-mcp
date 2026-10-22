@@ -9,7 +9,8 @@ import { safeTrace, summarizeFailure } from './diagnostics.js';
 import { MenuOutcomeFixture } from './menu-outcome.js';
 import { resolveEvalPrompt } from './eval-prompt.js';
 import { blockingPrerequisite } from './eval-dependencies.js';
-import { pageHasImage, productHasTerms, WordPressOutcomes } from './wp-outcomes.js';
+import { pageHasImage, pageImageReplaced, productHasTerms, WordPressOutcomes } from './wp-outcomes.js';
+import { resolveMcpAuthorization } from './auth.js';
 import type { TestCase } from './coverage.js';
 
 const EVAL_DELAY_MS = 500;
@@ -48,10 +49,10 @@ export async function runEvals(options: EvalRunOptions): Promise<EvalRunResult> 
   try {
     const tools = await fetchOpenAiToolsFromList(client);
     const standaloneIds = process.env.WP_EVAL_IDS ? JSON.parse(process.env.WP_EVAL_IDS) as Record<string, number> : {};
-    const wpOutcomes = new WordPressOutcomes(
-      process.env.MCP_EVAL_SERVER_URL ?? 'http://localhost:8888/index.php?rest_route=/blu/mcp',
-      process.env.WP_EVAL_USER ?? '', process.env.WP_APP_PASSWORD ?? ''
-    );
+    const serverUrl = process.env.MCP_EVAL_SERVER_URL ?? 'http://localhost:8888/index.php?rest_route=/blu/mcp';
+    // Same credentials as the MCP client, including MCP_EVAL_AUTH_BASIC-only configurations.
+    const { authorization } = resolveMcpAuthorization();
+    const wpOutcomes = new WordPressOutcomes(serverUrl, authorization);
     toolCount = tools.length;
     console.log(`Using ${toolCount} MCP tool(s) from tools/list`);
 
@@ -95,12 +96,16 @@ export async function runEvals(options: EvalRunOptions): Promise<EvalRunResult> 
       }
 
       let conversationMessages: AgentEvalResult['conversationMessages'] = [];
-      const menuFixture = unit.kind === 'series' && unit.seriesId === 'menu-primary'
-        ? await MenuOutcomeFixture.create(
-            process.env.MCP_EVAL_SERVER_URL ?? 'http://localhost:8888/index.php?rest_route=/blu/mcp',
-            process.env.WP_EVAL_USER ?? '', process.env.WP_APP_PASSWORD ?? ''
-          )
-        : undefined;
+      let menuFixture: MenuOutcomeFixture | undefined;
+      let fixtureError: string | undefined;
+      if (unit.kind === 'series' && unit.seriesId === 'menu-primary') {
+        try {
+          menuFixture = await MenuOutcomeFixture.create(serverUrl, authorization);
+        } catch (err) {
+          // Report the series as errors instead of aborting the whole run.
+          fixtureError = `Fixture setup failed: ${err instanceof Error ? err.message : String(err)}`;
+        }
+      }
 
       try {
         for (let stepIndex = 0; stepIndex < runnable.length; stepIndex++) {
@@ -119,9 +124,14 @@ export async function runEvals(options: EvalRunOptions): Promise<EvalRunResult> 
             continue;
           }
 
-          if (menuFixture && test.expected_outcome === 'menu_page_absent') {
-            await menuFixture.ensurePageItem();
+          if (fixtureError) {
+            error++;
+            statuses.set(test.id, 'error');
+            rows.push(`| :boom: | ${escapeCell(stepLabel + test.description)} | ${test.expected_outcome?.replaceAll('_', ' ') ?? `\`${test.expected_tool}\``} | Eval error (details in trace artifact) |`);
+            diagnostics.push({ id: test.id, status: 'error', error: fixtureError });
+            continue;
           }
+
           const prompt = menuFixture
             ? test.expected_outcome === 'menu_page_present'
               ? `Add the published page "AI Eval Landing Page" to the "AI Eval Primary ${menuFixture.pageId}" navigation menu.`
@@ -135,17 +145,13 @@ export async function runEvals(options: EvalRunOptions): Promise<EvalRunResult> 
               });
           const pageId = ['inserting-media-into-existing-page-32', 'replacing-media-inside-page-33'].includes(test.id)
             ? Number(process.env.WP_EVAL_PAGE_ID) || undefined : undefined;
-          const priorPageContent = test.expected_outcome === 'page_image_changed'
-            ? await wpOutcomes.pageContent(pageId) : undefined;
+          let priorPageContent = '';
           const outcomeCheck = menuFixture
             ? async () => (await menuFixture.containsPage()) === (test.expected_outcome === 'menu_page_present')
             : test.expected_outcome === 'page_image_present'
               ? async () => pageHasImage(await wpOutcomes.pageContent(pageId))
               : test.expected_outcome === 'page_image_changed'
-                ? async () => {
-                    const content = await wpOutcomes.pageContent(pageId);
-                    return content !== priorPageContent && pageHasImage(content);
-                  }
+                ? async () => pageImageReplaced(priorPageContent, await wpOutcomes.pageContent(pageId))
                 : test.expected_outcome === 'page_published'
                   ? async () => (await wpOutcomes.pageStatus(pageId)) === 'publish'
                 : test.expected_outcome === 'product_terms'
@@ -159,6 +165,13 @@ export async function runEvals(options: EvalRunOptions): Promise<EvalRunResult> 
           let result: AgentEvalResult;
           const previousMessageCount = inSeries ? conversationMessages.length : 0;
           try {
+            // Fixture reads run here so a REST failure is recorded as this case's error.
+            if (menuFixture && test.expected_outcome === 'menu_page_absent') {
+              await menuFixture.ensurePageItem();
+            }
+            if (test.expected_outcome === 'page_image_changed') {
+              priorPageContent = await wpOutcomes.pageContent(pageId);
+            }
             result = await runAgentEval({
               client,
               tools,
@@ -240,7 +253,11 @@ export async function runEvals(options: EvalRunOptions): Promise<EvalRunResult> 
           await sleep(EVAL_DELAY_MS);
         }
       } finally {
-        if (menuFixture) await menuFixture.cleanup();
+        if (menuFixture) {
+          await menuFixture.cleanup().catch((err: unknown) => {
+            console.warn(`Menu fixture cleanup failed: ${err instanceof Error ? err.message : String(err)}`);
+          });
+        }
       }
 
       if (unit.kind === 'series') {

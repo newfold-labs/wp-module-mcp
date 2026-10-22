@@ -25,9 +25,8 @@ export class MenuOutcomeFixture {
     this.menuId = menuId;
   }
 
-  static async create(serverUrl: string, user: string, password: string): Promise<MenuOutcomeFixture> {
+  static async create(serverUrl: string, authorization: string): Promise<MenuOutcomeFixture> {
     const baseUrl = new URL(serverUrl).origin;
-    const authorization = `Basic ${Buffer.from(`${user}:${password}`).toString('base64')}`;
     const request = (route: string, method: string, data?: unknown) => MenuOutcomeFixture.request(baseUrl, authorization, route, method, data);
     const page = await request('/wp/v2/pages', 'POST', { title: 'AI Eval Landing Page', status: 'publish' }) as { id: number };
     try {

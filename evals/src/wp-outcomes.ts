@@ -9,6 +9,26 @@ export function pageHasImage(content: string): boolean {
   return /<img\b|<!--\s+wp:image\b/i.test(content);
 }
 
+/** Identify each image by attachment ID or source URL so a text-only edit is not read as a replacement. */
+export function pageImageKeys(content: string): Set<string> {
+  const keys = new Set<string>();
+  for (const match of content.matchAll(/<!--\s+wp:image\s+(\{.*?\})\s*\/?-->/gis)) {
+    try {
+      const id = (JSON.parse(match[1]) as { id?: unknown }).id;
+      if (typeof id === 'number') keys.add(`id:${id}`);
+    } catch { /* fall back to the img source */ }
+  }
+  for (const match of content.matchAll(/<img\b[^>]*?\bsrc=["']([^"']+)["']/gi)) keys.add(`src:${match[1]}`);
+  return keys;
+}
+
+/** A replacement removes at least one prior image and adds at least one new one. */
+export function pageImageReplaced(before: string, after: string): boolean {
+  const prior = pageImageKeys(before);
+  const current = pageImageKeys(after);
+  return [...current].some((key) => !prior.has(key)) && [...prior].some((key) => !current.has(key));
+}
+
 export function productHasTerms(product: Product, category: string, tag: string): boolean {
   return Boolean(product.categories?.some((item) => item.name === category)
     && product.tags?.some((item) => item.name === tag));
@@ -19,9 +39,9 @@ export class WordPressOutcomes {
   private readonly origin: string;
   private readonly auth: string;
 
-  constructor(serverUrl: string, user: string, password: string) {
+  constructor(serverUrl: string, authorization: string) {
     this.origin = new URL(serverUrl).origin;
-    this.auth = `Basic ${Buffer.from(`${user}:${password}`).toString('base64')}`;
+    this.auth = authorization;
   }
 
   private async get<T>(route: string, params: Record<string, string> = {}): Promise<T> {
@@ -33,9 +53,13 @@ export class WordPressOutcomes {
     return await response.json() as T;
   }
 
+  /** Drafts have no slug until published, so match the exact title instead. */
   private async landingPageId(): Promise<number | undefined> {
-    const pages = await this.get<Array<{ id: number }>>('/wp/v2/pages', { slug: 'ai-landing-page', status: 'any', context: 'edit' });
-    return pages[0]?.id;
+    const title = 'AI Landing Page';
+    const pages = await this.get<Array<{ id: number; title?: { raw?: string } }>>('/wp/v2/pages', {
+      search: title, status: 'any', context: 'edit', orderby: 'date', order: 'desc', per_page: '100',
+    });
+    return pages.find((page) => page.title?.raw?.trim() === title)?.id;
   }
 
   async pageContent(pageId?: number): Promise<string> {

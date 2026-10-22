@@ -34,4 +34,27 @@ class ResourcesWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 			}
 		}
 	}
+
+	/** Taxonomy matches keep Google category IDs and match only the path. */
+	public function test_google_taxonomy_filter_returns_ids_and_paths(): void {
+		$taxonomy = "187 - Apparel & Accessories > Shoes\n"
+			. "1856 - Apparel & Accessories > Shoe Accessories\n"
+			. "not a category line\n"
+			. "5322 - Sporting Goods > Athletics\n";
+		$filter   = new \ReflectionMethod( Resources::class, 'filter_google_taxonomies' );
+		$filter->setAccessible( true );
+		$resources = ( new \ReflectionClass( Resources::class ) )->newInstanceWithoutConstructor();
+
+		$this->assertSame(
+			array(
+				array(
+					'id'   => 187,
+					'path' => 'Apparel & Accessories > Shoes',
+				),
+			),
+			$filter->invoke( $resources, $taxonomy, array( 'shoes' ) )
+		);
+		$this->assertSame( array(), $filter->invoke( $resources, $taxonomy, array( '5322' ) ) );
+		$this->assertSame( array( 5322 ), array_column( $filter->invoke( $resources, $taxonomy, array( '/^sporting/' ) ), 'id' ) );
+	}
 }

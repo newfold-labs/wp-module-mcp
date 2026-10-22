@@ -30,7 +30,7 @@ class Resources {
 			'blu/google-product-taxonomy',
 			array(
 				'label'               => 'Google Product Taxonomy',
-				'description'         => 'Search the current Google Product Taxonomy for matching Shopping category IDs and paths. This ability fetches the taxonomy for the site; the assistant does not need separate web access.',
+				'description'         => 'Search the current Google Product Taxonomy for matching Shopping categories. Returns each match as { id, path }, where id is the numeric Google category ID. This ability fetches the taxonomy for the site; the assistant does not need separate web access.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
@@ -54,7 +54,9 @@ class Resources {
 					}
 					$locale = str_replace( '_', '-', get_locale() );
 
-					$taxonomy = get_transient( 'blu/google-product-taxonomy-' . $locale );
+					// v2 cache keeps each category's numeric ID; v1 stored paths only.
+					$cache_key = 'blu/google-product-taxonomy-v2-' . $locale;
+					$taxonomy  = get_transient( $cache_key );
 					if ( false === $taxonomy ) {
 
 						$content = $this->retrieve_file( $locale );
@@ -79,11 +81,9 @@ class Resources {
 								continue;
 							}
 
-							$line = preg_replace( '/^\d+\s*-\s*/', '', $line );
-
 							$taxonomy .= $line . "\n";
 						}
-						set_transient( 'blu/google-product-taxonomy-' . $locale, $taxonomy, MONTH_IN_SECONDS );
+						set_transient( $cache_key, $taxonomy, MONTH_IN_SECONDS );
 					}
 
 					$filtered = $this->filter_google_taxonomies( $taxonomy, $patterns );
@@ -125,10 +125,12 @@ class Resources {
 	/**
 	 * Filter the Google product taxonomies
 	 *
-	 * @param string $taxonomy The taxonomy.
+	 * Patterns match the category path only, never its numeric ID.
+	 *
+	 * @param string $taxonomy The taxonomy, one "ID - Path" line per category.
 	 * @param array  $patterns The patterns
 	 *
-	 * @return array
+	 * @return array List of arrays with integer `id` and string `path`.
 	 */
 	private function filter_google_taxonomies( $taxonomy, $patterns ) {
 		$lines = explode( "\n", $taxonomy );
@@ -138,9 +140,13 @@ class Resources {
 		foreach ( $lines as $line ) {
 			$line = trim( $line );
 
-			if ( '' === $line ) {
+			if ( ! preg_match( '/^(\d+)\s*-\s*(.+)$/', $line, $parts ) ) {
 				continue;
 			}
+			$category = array(
+				'id'   => (int) $parts[1],
+				'path' => $parts[2],
+			);
 
 			foreach ( $patterns as $pattern ) {
 
@@ -150,12 +156,12 @@ class Resources {
 						// Ensure case-insensitive
 						$regex = rtrim( $regex, '/' ) . '/i';
 					}
-					if ( preg_match( $regex, $line ) ) {
-						$filtered[] = $line;
+					if ( preg_match( $regex, $category['path'] ) ) {
+						$filtered[] = $category;
 						break;
 					}
-				} elseif ( false !== stripos( $line, $pattern ) ) {
-					$filtered[] = $line;
+				} elseif ( false !== stripos( $category['path'], $pattern ) ) {
+					$filtered[] = $category;
 					break;
 				}
 			}
