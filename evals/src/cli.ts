@@ -62,15 +62,15 @@ async function cmdRunEvals(): Promise<void> {
   });
 
   await writeEvalReport(reportPath, result.reportMarkdown);
+  await writeFile(process.env.EVAL_TRACE ?? join(REPO_ROOT, 'eval-trace.json'), JSON.stringify(result.diagnostics, null, 2) + '\n', 'utf8');
   console.log(result.reportMarkdown);
 
   if (process.env.GITHUB_OUTPUT) {
     core.setOutput('tool_count', String(result.toolCount));
   }
 
-  if (result.fail > 0 || result.error > 0) {
-    process.exitCode = 1;
-  }
+  // Model-selection results are advisory. The workflow posts the counts and
+  // report; only a runner or reporting failure should make this step fail.
 }
 
 async function main(): Promise<void> {

@@ -39,8 +39,31 @@ try {
     'MCP must expose exactly the three gateway tools'
   );
 
+  const { prompts } = await client.listPrompts();
+  const promptNames = new Set(prompts.map((prompt) => prompt.name));
+  for (const name of [
+    'blu-suggest-product-description',
+    'blu-suggest-product-categories',
+    'blu-suggest-product-tag',
+    'blu-smart-product-details',
+    'blu-guided-product-creation-prompt',
+    'blu-suggest-product-brand',
+  ]) {
+    assert.ok(promptNames.has(name), `${name} is unavailable from prompts/list`);
+  }
+  const guided = await client.getPrompt({
+    name: 'blu-guided-product-creation-prompt',
+    arguments: { product_name: 'MCP Smoke Test Product' },
+  });
+  assert.ok(guided.messages.length > 0, 'prompts/get must return guided product messages');
+
   const abilities = await call('blu-list-abilities', { name_prefix: 'blu-' });
   assert.ok(Array.isArray(abilities), 'Ability catalog must be an array');
+  const globalStylesListing = abilities.find((ability) => ability.name === 'blu-update-global-styles');
+  assert.ok(globalStylesListing, 'Global styles ability must be discoverable');
+  const globalStylesSchema = await call('blu-get-ability-schema', { ability_name: 'blu-update-global-styles' });
+  assert.ok(globalStylesListing.description.length < globalStylesSchema.description.length,
+    'Discovery summary must be shorter than the full schema instructions');
   for (const name of ['blu-list-api-functions', 'blu-get-function-details', 'blu-run-api-function']) {
     assert.ok(abilities.some((ability) => ability.name === name), `${name} is unavailable`);
     const schema = await call('blu-get-ability-schema', { ability_name: name });
@@ -69,7 +92,7 @@ try {
   });
   assert.ok(Array.isArray(response), 'GET /wp/v2/posts must return a list');
 
-  console.log('MCP gateway smoke passed: 3 tools, REST discovery, schema, and GET dispatch');
+  console.log('MCP smoke passed: 3 gateway tools, prompts, discovery summaries, schemas, and REST dispatch');
 } finally {
   await client.close();
 }

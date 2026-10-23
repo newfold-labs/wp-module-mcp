@@ -50,7 +50,9 @@ class WooProducts {
 						),
 						'per_page' => array(
 							'type'        => 'integer',
-							'description' => 'Products per page',
+							'description' => 'Products per page, from 1 to 100. Use page for additional results.',
+							'minimum'     => 1,
+							'maximum'     => 100,
 						),
 					),
 				),

@@ -73,6 +73,9 @@ class LogoGen {
 						'destructive' => false,
 						'idempotent'  => false,
 					),
+					'mcp'         => array(
+						'summary' => 'Modify the existing site logo using AI while preserving it as the base. Use blu-regenerate-logo for a wholly new design.',
+					),
 				),
 			)
 		);
@@ -112,6 +115,9 @@ class LogoGen {
 						'readonly'    => false,
 						'destructive' => false,
 						'idempotent'  => false,
+					),
+					'mcp'         => array(
+						'summary' => 'Create and set a new site logo from scratch. Use blu-edit-logo to change an existing logo.',
 					),
 				),
 			)

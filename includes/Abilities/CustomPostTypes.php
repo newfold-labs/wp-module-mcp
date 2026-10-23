@@ -213,7 +213,7 @@ class CustomPostTypes {
 			'blu/add-cpt',
 			array(
 				'label'               => 'Add Custom Post Type Item',
-				'description'         => 'Create a new content item within an existing custom post type (e.g. add a new menu item, event, or recipe). Accepts friendly post_type identifiers (slug, REST base, or label). This does NOT register a new post type — use blu-list-post-types to discover what exists.',
+				'description'         => 'Create a new content item within an existing custom post type (e.g. an event or recipe). Accepts friendly post_type identifiers (slug, REST base, or label). This does NOT register a new post type — use blu-list-post-types to discover what exists. To add a page link to a classic navigation menu, use blu-add-page-to-menu; creating a nav_menu_item post alone does not link it to a menu or page.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',

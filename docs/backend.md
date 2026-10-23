@@ -41,6 +41,8 @@ The gateway includes Yoast SEO abilities when Yoast registers them. Its whitelis
 
 In gateway mode, only the three meta-tools appear in MCP `tools/list`. Clients discover and execute the REST abilities through those tools; the REST catalog reflects routes registered by active plugins.
 
+For abilities with lengthy guidance, `blu-list-abilities` returns the optional `meta.mcp.summary` as the discovery description. `blu-get-ability-schema` still returns the complete ability description and input schema. Search matches the complete description so shorter catalog entries do not hide an ability from discovery.
+
 The two list tools accept optional filter arguments documented in **[api.md](api.md)** and **[reference.md](reference.md)**. `blu-list-abilities` filters by `search` and `name_prefix`; `blu-list-api-functions` filters by `namespace`, `methods`, and `search`. Both set `additionalProperties: false` on input schemas to reject unknown fields. Output schemas are omitted, matching the module's existing convention; response shapes are documented in `api.md`.
 
 ## Assets

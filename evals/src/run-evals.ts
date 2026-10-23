@@ -4,6 +4,13 @@ import * as core from '@actions/core';
 import { runAgentEval, type AgentEvalResult } from './agent-loop.js';
 import { connectMcpClient } from './mcp-client.js';
 import { fetchOpenAiToolsFromList } from './mcp-tools.js';
+import { classifyEvalResult } from './eval-status.js';
+import { safeTrace, summarizeFailure } from './diagnostics.js';
+import { MenuOutcomeFixture } from './menu-outcome.js';
+import { resolveEvalPrompt } from './eval-prompt.js';
+import { blockingPrerequisite } from './eval-dependencies.js';
+import { pageHasImage, pageImageReplaced, productHasTerms, WordPressOutcomes } from './wp-outcomes.js';
+import { resolveMcpAuthorization } from './auth.js';
 import type { TestCase } from './coverage.js';
 
 const EVAL_DELAY_MS = 500;
@@ -24,11 +31,14 @@ export interface EvalRunOptions {
 export interface EvalRunResult {
   pass: number;
   fail: number;
+  warning: number;
   error: number;
   skip: number;
+  blocked: number;
   passRate: number;
   toolCount: number;
   reportMarkdown: string;
+  diagnostics: Array<Record<string, unknown>>;
 }
 
 export async function runEvals(options: EvalRunOptions): Promise<EvalRunResult> {
@@ -38,14 +48,23 @@ export async function runEvals(options: EvalRunOptions): Promise<EvalRunResult> 
   let toolCount = 0;
   try {
     const tools = await fetchOpenAiToolsFromList(client);
+    const standaloneIds = process.env.WP_EVAL_IDS ? JSON.parse(process.env.WP_EVAL_IDS) as Record<string, number> : {};
+    const serverUrl = process.env.MCP_EVAL_SERVER_URL ?? 'http://localhost:8888/index.php?rest_route=/blu/mcp';
+    // Same credentials as the MCP client, including MCP_EVAL_AUTH_BASIC-only configurations.
+    const { authorization } = resolveMcpAuthorization();
+    const wpOutcomes = new WordPressOutcomes(serverUrl, authorization);
     toolCount = tools.length;
     console.log(`Using ${toolCount} MCP tool(s) from tools/list`);
 
     let pass = 0;
     let fail = 0;
+    let warning = 0;
     let error = 0;
     let skip = 0;
+    let blocked = 0;
+    const statuses = new Map<string, string>();
     const rows: string[] = [];
+    const diagnostics: Array<Record<string, unknown>> = [];
 
     const units = groupTestCases(testCases);
     let firstEvalLogged = false;
@@ -77,77 +96,168 @@ export async function runEvals(options: EvalRunOptions): Promise<EvalRunResult> 
       }
 
       let conversationMessages: AgentEvalResult['conversationMessages'] = [];
-
-      for (let stepIndex = 0; stepIndex < runnable.length; stepIndex++) {
-        const test = runnable[stepIndex];
-        const inSeries = unit.kind === 'series';
-        const stepLabel = inSeries
-          ? `[${unit.seriesId} ${stepIndex + 1}/${runnable.length}] `
-          : '';
-
-        let result: AgentEvalResult;
+      let menuFixture: MenuOutcomeFixture | undefined;
+      let fixtureError: string | undefined;
+      if (unit.kind === 'series' && unit.seriesId === 'menu-primary') {
         try {
-          result = await runAgentEval({
-            client,
-            prompt: test.prompt,
-            expectedTool: test.expected_tool,
-            model: options.model,
-            gatewayUrl: options.gatewayUrl,
-            gatewayToken: options.gatewayToken,
-            conversationMessages: inSeries ? conversationMessages : undefined,
-          });
+          menuFixture = await MenuOutcomeFixture.create(serverUrl, authorization);
         } catch (err) {
-          const msg = err instanceof Error ? err.message : String(err);
-          result = {
-            matched: false,
-            actualTool: '(none)',
-            error: `Unhandled eval error: ${msg}`,
-            turns: 1,
-            conversationMessages: inSeries ? conversationMessages : [],
-          };
+          // Report the series as errors instead of aborting the whole run.
+          fixtureError = `Fixture setup failed: ${err instanceof Error ? err.message : String(err)}`;
         }
+      }
 
-        conversationMessages = result.conversationMessages;
+      try {
+        for (let stepIndex = 0; stepIndex < runnable.length; stepIndex++) {
+          const test = runnable[stepIndex];
+          const inSeries = unit.kind === 'series';
+          const stepLabel = inSeries
+            ? `[${unit.seriesId} ${stepIndex + 1}/${runnable.length}] `
+            : '';
 
-        if (!firstEvalLogged) {
-          firstEvalLogged = true;
-          console.log('::group::Debug: First eval');
-          console.log(
-            `Turns: ${result.turns}, matched: ${result.matched}, actual: ${result.actualTool}`
-          );
-          if (result.error) {
-            console.log(`Error: ${result.error}`);
+          const prerequisite = blockingPrerequisite(test.requires_success_of, statuses);
+          if (prerequisite) {
+            blocked++;
+            statuses.set(test.id, 'blocked');
+            rows.push(`| :no_entry_sign: | ${escapeCell(stepLabel + test.description)} | \`${test.expected_tool}\` | Blocked by ${escapeCell(prerequisite)} |`);
+            diagnostics.push({ id: test.id, status: 'blocked', prerequisite });
+            continue;
           }
-          console.log('::endgroup::');
-        }
 
-        const description = stepLabel + test.description;
-        if (result.error && !result.matched) {
-          rows.push(
-            `| :warning: | ${escapeCell(description)} | \`${test.expected_tool}\` | ${escapeCell(result.error)} |`
-          );
-          error++;
-        } else if (result.matched) {
-          rows.push(
-            `| :white_check_mark: | ${escapeCell(description)} | \`${test.expected_tool}\` | \`${result.actualTool}\` (${result.turns} turns) |`
-          );
-          pass++;
-        } else {
-          rows.push(
-            `| :x: | ${escapeCell(description)} | \`${test.expected_tool}\` | \`${result.actualTool}\` (${result.turns} turns) |`
-          );
-          fail++;
-        }
+          if (fixtureError) {
+            error++;
+            statuses.set(test.id, 'error');
+            rows.push(`| :boom: | ${escapeCell(stepLabel + test.description)} | ${test.expected_outcome?.replaceAll('_', ' ') ?? `\`${test.expected_tool}\``} | Eval error (details in trace artifact) |`);
+            diagnostics.push({ id: test.id, status: 'error', error: fixtureError });
+            continue;
+          }
 
-        if (inSeries) {
-          console.log(
-            `  step ${stepIndex + 1}/${runnable.length}: ${test.description} → ${
-              result.matched ? 'pass' : result.error ? 'error' : 'fail'
-            } (${result.actualTool})`
-          );
-        }
+          const prompt = menuFixture
+            ? test.expected_outcome === 'menu_page_present'
+              ? `Add the published page "AI Eval Landing Page" to the "AI Eval Primary ${menuFixture.pageId}" navigation menu.`
+              : `Remove the "AI Eval Landing Page" page link from the "AI Eval Primary ${menuFixture.pageId}" navigation menu.`
+            : resolveEvalPrompt(test.id, test.prompt, {
+                productId: Number(process.env.WP_EVAL_PRODUCT_ID) || undefined,
+                portfolioId: Number(process.env.WP_EVAL_PORTFOLIO_ID) || undefined,
+                testimonialId: Number(process.env.WP_EVAL_TESTIMONIAL_ID) || undefined,
+                pageId: Number(process.env.WP_EVAL_PAGE_ID) || undefined,
+                ids: standaloneIds,
+              });
+          const pageId = ['inserting-media-into-existing-page-32', 'replacing-media-inside-page-33'].includes(test.id)
+            ? Number(process.env.WP_EVAL_PAGE_ID) || undefined : undefined;
+          let priorPageContent = '';
+          const outcomeCheck = menuFixture
+            ? async () => (await menuFixture.containsPage()) === (test.expected_outcome === 'menu_page_present')
+            : test.expected_outcome === 'page_image_present'
+              ? async () => pageHasImage(await wpOutcomes.pageContent(pageId))
+              : test.expected_outcome === 'page_image_changed'
+                ? async () => pageImageReplaced(priorPageContent, await wpOutcomes.pageContent(pageId))
+                : test.expected_outcome === 'page_published'
+                  ? async () => (await wpOutcomes.pageStatus(pageId)) === 'publish'
+                : test.expected_outcome === 'product_terms'
+                  ? async () => productHasTerms(await wpOutcomes.product() ?? {}, 'AI Tools', 'Automation')
+                  : test.expected_outcome === 'product_published'
+                    ? async () => (await wpOutcomes.product())?.status === 'publish'
+                    : test.expected_outcome === 'product_absent'
+                      ? async () => !(await wpOutcomes.product())
+                      : undefined;
 
-        await sleep(EVAL_DELAY_MS);
+          let result: AgentEvalResult;
+          const previousMessageCount = inSeries ? conversationMessages.length : 0;
+          try {
+            // Fixture reads run here so a REST failure is recorded as this case's error.
+            if (menuFixture && test.expected_outcome === 'menu_page_absent') {
+              await menuFixture.ensurePageItem();
+            }
+            if (test.expected_outcome === 'page_image_changed') {
+              priorPageContent = await wpOutcomes.pageContent(pageId);
+            }
+            result = await runAgentEval({
+              client,
+              tools,
+              prompt,
+              outcomeCheck,
+              expectedTool: test.expected_tool,
+              expectToolError: test.expect_tool_error,
+              restAlternatives: test.rest_alternatives,
+              model: options.model,
+              gatewayUrl: options.gatewayUrl,
+              gatewayToken: options.gatewayToken,
+              conversationMessages: inSeries ? conversationMessages : undefined,
+            });
+          } catch (err) {
+            const msg = err instanceof Error ? err.message : String(err);
+            result = {
+              matched: false,
+              actualTool: '(none)',
+              error: `Unhandled eval error: ${msg}`,
+              turns: 1,
+              conversationMessages: inSeries ? conversationMessages : [],
+            };
+          }
+
+          conversationMessages = result.conversationMessages;
+
+          if (!firstEvalLogged) {
+            firstEvalLogged = true;
+            console.log('::group::Debug: First eval');
+            console.log(
+              `Turns: ${result.turns}, matched: ${result.matched}, actual: ${compactTool(result.actualTool)}`
+            );
+            if (result.error) {
+              console.log(`Error: ${result.error}`);
+            }
+            console.log('::endgroup::');
+          }
+
+          const description = stepLabel + test.description;
+          const status = classifyEvalResult(result);
+          statuses.set(test.id, status);
+          const currentMessages = result.conversationMessages.slice(previousMessageCount);
+          const reason = result.error ? 'Eval error' : summarizeFailure(currentMessages);
+          const actual = compactTool(result.actualTool);
+          const expected = test.expected_outcome
+            ? test.expected_outcome.replaceAll('_', ' ')
+            : `\`${test.expected_tool}\``;
+          diagnostics.push({ id: test.id, status, selectionMatched: result.matched, executionFailed: result.executionFailed ?? false, reason: status === 'pass' ? undefined : reason, error: result.error, turns: result.turns, trace: safeTrace(currentMessages) });
+          if (status === 'error') {
+            rows.push(
+              `| :boom: | ${escapeCell(description)} | ${expected} | Eval error (details in trace artifact) |`
+            );
+            error++;
+          } else if (status === 'pass') {
+            rows.push(
+              `| :white_check_mark: | ${escapeCell(description)} | ${expected} | \`${actual}\` (${result.turns} turns) |`
+            );
+            pass++;
+          } else if (status === 'warning') {
+            rows.push(
+              `| :warning: | ${escapeCell(description)} | ${expected} | ${result.executionFailed ? 'Selected; execution failed' : 'REST alternative'}: \`${actual}\` (${result.turns} turns) |`
+            );
+            warning++;
+          } else {
+            rows.push(
+              `| :x: | ${escapeCell(description)} | ${expected} | ${escapeCell(reason)}; \`${actual}\` (${result.turns} turns) |`
+            );
+            fail++;
+          }
+
+          if (inSeries) {
+            console.log(
+              `  step ${stepIndex + 1}/${runnable.length}: ${test.description} → ${
+                status
+              } (${actual})`
+            );
+          }
+
+          await sleep(EVAL_DELAY_MS);
+        }
+      } finally {
+        if (menuFixture) {
+          await menuFixture.cleanup().catch((err: unknown) => {
+            console.warn(`Menu fixture cleanup failed: ${err instanceof Error ? err.message : String(err)}`);
+          });
+        }
       }
 
       if (unit.kind === 'series') {
@@ -155,16 +265,17 @@ export async function runEvals(options: EvalRunOptions): Promise<EvalRunResult> 
       }
     }
 
-    const totalRun = pass + fail + error;
+    const totalRun = pass + warning + fail + error;
     const passRate = totalRun > 0 ? Math.floor((pass * 100) / totalRun) : 0;
-    const statusEmoji = fail > 0 || error > 0 ? ':red_circle:' : ':green_circle:';
+    const statusEmoji = fail > 0 || error > 0 ? ':red_circle:' : warning > 0 ? ':yellow_circle:' : ':green_circle:';
 
     const lines = [
       `## ${statusEmoji} MCP AI Eval Results`,
       '',
-      `**Model:** \`${options.model}\` | **MCP tools (tools/list):** ${toolCount} | **Passed:** ${pass} | **Failed:** ${fail} | **Errors:** ${error} | **Skipped:** ${skip} | **Pass Rate:** ${passRate}%`,
+      `**Model:** \`${options.model}\` | **MCP tools (tools/list):** ${toolCount} | **Passed:** ${pass} | **Warnings:** ${warning} | **Failed:** ${fail} | **Errors:** ${error} | **Blocked:** ${blocked} | **Skipped:** ${skip} | **Pass Rate:** ${passRate}%`,
+      'Detailed traces: `mcp-ai-eval-trace` artifact on this workflow run.',
       '',
-      '| Status | Test | Expected Tool | Actual / Notes |',
+      '| Status | Test | Expected Tool / Outcome | Actual / Notes |',
       '|--------|------|---------------|----------------|',
       ...rows,
     ];
@@ -184,12 +295,13 @@ export async function runEvals(options: EvalRunOptions): Promise<EvalRunResult> 
     if (process.env.GITHUB_OUTPUT) {
       core.setOutput('pass', String(pass));
       core.setOutput('fail', String(fail));
+      core.setOutput('warning', String(warning));
       core.setOutput('error', String(error));
       core.setOutput('pass_rate', String(passRate));
       core.setOutput('tool_count', String(toolCount));
     }
 
-    return { pass, fail, error, skip, passRate, toolCount, reportMarkdown };
+    return { pass, fail, warning, error, skip, blocked, passRate, toolCount, reportMarkdown, diagnostics };
   } finally {
     await client.close();
   }
@@ -235,6 +347,12 @@ async function loadTestCases(repoRoot: string): Promise<TestCase[]> {
 
 function escapeCell(value: string): string {
   return value.replace(/\|/g, '\\|').replace(/\n/g, ' ');
+}
+
+function compactTool(value: string): string {
+  const name = value.split('(')[0];
+  const ability = value.match(/"ability_name"\s*:\s*"([a-zA-Z0-9_/-]+)"/);
+  return ability ? `${name} → ${ability[1]}` : name;
 }
 
 function sleep(ms: number): Promise<void> {

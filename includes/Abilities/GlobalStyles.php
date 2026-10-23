@@ -153,8 +153,9 @@ class GlobalStyles {
 						'idempotent'  => true,
 					),
 					'mcp'         => array(
-						'public' => true,
-						'type'   => 'tool',
+						'public'  => true,
+						'type'    => 'tool',
+						'summary' => 'Change site-wide colors, fonts, and spacing. Resolves the global styles ID automatically. Use blu-update-block-attrs for one block.',
 					),
 				),
 			)

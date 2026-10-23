@@ -11,7 +11,8 @@ export async function loadPhpAbilityNames(abilitiesDir: string): Promise<string[
   const slashes = new Set<string>();
 
   for (const file of files) {
-    if (!file.endsWith('.php') || file === 'AbilityGateway.php') {
+    // Prompts.php registers MCP prompts, which belong in prompts/list rather than tools/list.
+    if (!file.endsWith('.php') || file === 'AbilityGateway.php' || file === 'Prompts.php') {
       continue;
     }
     const content = await readFile(join(abilitiesDir, file), 'utf8');

@@ -252,7 +252,7 @@ class AbilityGateway {
 			'blu/list-abilities',
 			array(
 				'label'               => 'List Abilities',
-				'description'         => 'Discover abilities available on this site, including WordPress REST API access. For any REST endpoint, find blu-list-api-functions, blu-get-function-details, and blu-run-api-function here; they appear only when available. Each entry includes name, label, description, and annotations. Filter with search or name_prefix, then use blu-get-ability-schema and blu-call-ability.',
+				'description'         => 'Find the ability for the user\'s task on this connected site. Call blu-list-abilities once, narrowing with search or name_prefix if needed; do not repeat the same search. Choose the ability matching the object and action, then call blu-get-ability-schema and blu-call-ability with its required parameters. Discovery results are available to execute; do not ask for a separate site connection or credentials. For classic navigation menus choose blu-add-page-to-menu or blu-remove-page-from-menu; /wp/v2/navigation is for block navigation. If no specific ability fits, discover registered WordPress REST API routes with blu-list-api-functions, inspect one with blu-get-function-details, and dispatch with blu-run-api-function.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'                 => 'object',
@@ -335,7 +335,7 @@ class AbilityGateway {
 						$result[] = array(
 							'name'        => $this->to_mcp_name( $ability->get_name() ),
 							'label'       => $ability->get_label(),
-							'description' => $ability->get_description(),
+							'description' => isset( $meta['mcp']['summary'] ) && is_string( $meta['mcp']['summary'] ) && '' !== trim( $meta['mcp']['summary'] ) ? $meta['mcp']['summary'] : $ability->get_description(),
 							'annotations' => $annotations,
 						);
 					}
@@ -365,7 +365,7 @@ class AbilityGateway {
 			'blu/get-ability-schema',
 			array(
 				'label'               => 'Get Ability Schema',
-				'description'         => 'Get the full input schema for a discovered ability, including REST abilities such as blu-list-api-functions, blu-get-function-details, and blu-run-api-function, before invoking it via blu-call-ability.',
+				'description'         => 'Get the full description and input schema for an ability returned by blu-list-abilities. Read it once per ability, then use blu-call-ability with the required parameters; do not repeatedly request the same schema.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
@@ -425,7 +425,7 @@ class AbilityGateway {
 			'blu/call-ability',
 			array(
 				'label'               => 'Call Ability',
-				'description'         => 'Execute a discovered ability by name with its parameters using blu-call-ability. For WordPress REST API endpoints, use ability_name blu-list-api-functions to find registered routes, blu-get-function-details for a route schema, or blu-run-api-function to dispatch a request. Get each ability input schema with blu-get-ability-schema. Gateway tools cannot be invoked through this tool.',
+				'description'         => 'Execute an ability found with blu-list-abilities, using the name and parameters from blu-get-ability-schema. Prefer a specific ability for the requested object and action. If none fits, use blu-list-api-functions, blu-get-function-details, then blu-run-api-function for a registered REST API route. Gateway tools cannot be invoked through blu-call-ability.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',

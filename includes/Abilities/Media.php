@@ -7,6 +7,30 @@ namespace BLU\Abilities;
  * Media abilities for WordPress media library.
  */
 class Media {
+	/**
+	 * Resolve a disk filename without treating a human media title as a file extension.
+	 *
+	 * @param array  $input     Upload parameters.
+	 * @param string $mime_type Detected MIME type.
+	 * @return string Sanitized filename.
+	 * @throws \InvalidArgumentException When the MIME type is not allowed.
+	 */
+	public static function resolve_upload_filename( array $input, string $mime_type ): string {
+		$filename = sanitize_file_name( (string) ( $input['filename'] ?? $input['title'] ?? 'upload' ) );
+		if ( '' === $filename ) {
+			$filename = 'upload';
+		}
+		if ( '' !== pathinfo( $filename, PATHINFO_EXTENSION ) ) {
+			return $filename;
+		}
+		foreach ( get_allowed_mime_types() as $extensions => $allowed_type ) {
+			if ( $allowed_type === $mime_type ) {
+				$extension = explode( '|', $extensions )[0];
+				return $filename . '.' . $extension;
+			}
+		}
+		throw new \InvalidArgumentException( 'Unsupported media type' );
+	}
 
 	/**
 	 * Constructor - registers all media-related abilities.
@@ -179,6 +203,10 @@ class Media {
 							'type'        => 'string',
 							'description' => 'Base64 encoded file data',
 						),
+						'filename'    => array(
+							'type'        => 'string',
+							'description' => 'Original filename including extension, e.g. "company-logo.png". Separate from the display title.',
+						),
 						'title'       => array(
 							'type'        => 'string',
 							'description' => 'Media title',
@@ -210,8 +238,19 @@ class Media {
 						return blu_prepare_ability_response( 400, 'Invalid base64 data' );
 					}
 
+					// Detect mime type
+					$finfo     = new \finfo( FILEINFO_MIME_TYPE );
+					$mime_type = $finfo->buffer( $file_data );
+					if ( ! is_string( $mime_type ) || '' === $mime_type ) {
+						return blu_prepare_ability_response( 400, 'Unsupported media type' );
+					}
+
 					// Create temp file
-					$filename = isset( $input['title'] ) ? sanitize_file_name( $input['title'] ) : 'upload';
+					try {
+						$filename = self::resolve_upload_filename( $input, $mime_type );
+					} catch ( \InvalidArgumentException $e ) {
+						return blu_prepare_ability_response( 400, $e->getMessage() );
+					}
 					$upload   = wp_upload_bits( $filename, null, $file_data );
 
 					if ( $upload['error'] ) {

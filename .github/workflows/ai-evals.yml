@@ -164,11 +164,13 @@ jobs:
           jq -n \
             --arg plugin "${{ github.workspace }}/${{ env.BRAND_PLUGIN_DIR }}" \
             --arg module "${{ github.workspace }}" \
+            --arg fixture "${{ github.workspace }}/evals/fixtures/content-types.php" \
             --arg plugin_dir "$PLUGIN_DIR_NAME" \
             '{
               plugins: [$plugin],
               mappings: {
-                ("wp-content/plugins/" + $plugin_dir + "/vendor/newfold-labs/wp-module-mcp"): $module
+                ("wp-content/plugins/" + $plugin_dir + "/vendor/newfold-labs/wp-module-mcp"): $module,
+                "wp-content/mu-plugins/mcp-eval-content-types.php": $fixture
               }
             }' > .wp-env.override.json
           cat .wp-env.override.json
@@ -254,6 +256,56 @@ jobs:
             throw new Exception( "WooCommerce REST routes were not registered." );
           '
 
+      - name: Seed WooCommerce product used by eval prompts
+        if: steps.changes.outputs.skip != 'true'
+        run: |
+          PRODUCT_ID=$(npx wp-env run cli wp eval '
+            $product = new WC_Product_Simple();
+            $product->set_name( "AI Eval Sample Product" );
+            $product->set_status( "publish" );
+            $product->set_regular_price( "29.99" );
+            echo $product->save();
+          ' | tr -d '\r\n')
+          if ! [[ "$PRODUCT_ID" =~ ^[0-9]+$ ]]; then
+            echo "::error::Could not seed WooCommerce eval product."
+            exit 1
+          fi
+          echo "WP_EVAL_PRODUCT_ID=$PRODUCT_ID" >> "$GITHUB_ENV"
+
+      - name: Seed custom post type items used by eval prompts
+        if: steps.changes.outputs.skip != 'true'
+        run: |
+          PORTFOLIO_ID=$(npx wp-env run cli wp post create --post_type=portfolio --post_title='AI Eval Portfolio' --post_content='A seeded portfolio project.' --post_status=publish --porcelain | tr -d '\r\n')
+          TESTIMONIAL_ID=$(npx wp-env run cli wp post create --post_type=testimonial --post_title='AI Eval Testimonial' --post_content='A seeded testimonial.' --post_status=publish --porcelain | tr -d '\r\n')
+          if ! [[ "$PORTFOLIO_ID" =~ ^[0-9]+$ && "$TESTIMONIAL_ID" =~ ^[0-9]+$ ]]; then
+            echo "::error::Could not seed custom post type eval items."
+            exit 1
+          fi
+          echo "WP_EVAL_PORTFOLIO_ID=$PORTFOLIO_ID" >> "$GITHUB_ENV"
+          echo "WP_EVAL_TESTIMONIAL_ID=$TESTIMONIAL_ID" >> "$GITHUB_ENV"
+
+      - name: Seed page used by media eval prompts
+        if: steps.changes.outputs.skip != 'true'
+        run: |
+          PAGE_ID=$(npx wp-env run cli wp post create --post_type=page --post_title='AI Eval Media Page' --post_content='Media eval content.' --post_status=publish --porcelain | tr -d '\r\n')
+          if ! [[ "$PAGE_ID" =~ ^[0-9]+$ ]]; then
+            echo "::error::Could not seed media eval page."
+            exit 1
+          fi
+          echo "WP_EVAL_PAGE_ID=$PAGE_ID" >> "$GITHUB_ENV"
+
+      - name: Seed standalone eval objects
+        if: steps.changes.outputs.skip != 'true'
+        run: |
+          PLUGIN_DIR_NAME="$(basename "${{ env.BRAND_PLUGIN_DIR }}")"
+          SEED_OUTPUT=$(npx wp-env run cli wp eval-file "wp-content/plugins/${PLUGIN_DIR_NAME}/vendor/newfold-labs/wp-module-mcp/evals/fixtures/seed.php")
+          FIXTURES=$(printf '%s\n' "$SEED_OUTPUT" | sed -n 's/^MCP_EVAL_FIXTURES=//p' | tail -1)
+          if ! printf '%s' "$FIXTURES" | jq -e 'type == "object" and all(.[]; type == "number" and . > 0)' >/dev/null; then
+            echo "::error::Could not seed standalone eval objects."
+            exit 1
+          fi
+          echo "WP_EVAL_IDS=$FIXTURES" >> "$GITHUB_ENV"
+
       - name: Create application password
         if: steps.changes.outputs.skip != 'true'
         id: wp_auth
@@ -267,6 +319,13 @@ jobs:
         if: steps.changes.outputs.skip != 'true'
         working-directory: evals
         run: npm ci
+
+      - name: Verify eval classification
+        if: steps.changes.outputs.skip != 'true'
+        working-directory: evals
+        run: |
+          npm test
+          npm run typecheck
 
       - name: Verify MCP gateway and REST access
         if: steps.changes.outputs.skip != 'true'
@@ -290,9 +349,18 @@ jobs:
         env:
           CF_AI_TOKEN: ${{ secrets.CLOUDFLARE_AI_GATEWAY_TOKEN }}
           EVAL_REPORT: ${{ github.workspace }}/eval-report.md
+          EVAL_TRACE: ${{ github.workspace }}/eval-trace.json
           EVAL_RUN_ALL: ${{ steps.changes.outputs.run_all }}
           EVAL_CHANGED_SOURCES: ${{ steps.changes.outputs.changed_sources }}
         run: npm run run-evals
+
+      - name: Upload AI eval trace
+        if: always() && steps.changes.outputs.skip != 'true' && steps.changes.outputs.skip_ai != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: mcp-ai-eval-trace
+          path: eval-trace.json
+          if-no-files-found: ignore
 
       - name: Combine reports
         if: always() && steps.changes.outputs.skip != 'true'

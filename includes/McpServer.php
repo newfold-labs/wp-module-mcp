@@ -9,6 +9,7 @@ use BLU\Abilities\AbilityGateway;
 use BLU\Abilities\CustomPostTypes;
 use BLU\Abilities\GlobalStyles;
 use BLU\Abilities\Media;
+use BLU\Abilities\NavMenus;
 use BLU\Abilities\Pages;
 use BLU\Abilities\Posts;
 use BLU\Abilities\Prompts;
@@ -149,6 +150,7 @@ class McpServer {
 		new Posts();
 		new Pages();
 		new Media();
+		new NavMenus();
 		new Users();
 		new SiteInfo();
 		new Settings();

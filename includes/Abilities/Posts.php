@@ -80,7 +80,7 @@ class Posts {
 			'blu/get-post',
 			array(
 				'label'               => 'Get Post',
-				'description'         => 'Get a WordPress post by ID',
+				'description'         => 'Get a blog post by ID. Use blu-get-page for a page ID and blu-get-cpt for another custom post type.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
@@ -113,7 +113,7 @@ class Posts {
 			'blu/add-post',
 			array(
 				'label'               => 'Add Post',
-				'description'         => 'Add a new WordPress post',
+				'description'         => 'Create a new blog post, including its title, content, and status. Use blu-add-page for a page or blu-add-cpt for another custom post type.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
@@ -211,7 +211,7 @@ class Posts {
 			'blu/delete-post',
 			array(
 				'label'               => 'Delete Post',
-				'description'         => 'Delete a WordPress post by ID',
+				'description'         => 'Move a WordPress blog post to Trash by ID. This ability does not permanently delete it.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',

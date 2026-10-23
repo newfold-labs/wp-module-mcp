@@ -637,6 +637,25 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$this->assertIsArray( $result['message'] );
 	}
 
+	/** Discovery uses a short summary while schema lookup retains full guidance. */
+	public function test_discovery_summary_does_not_replace_full_schema_description() {
+		$this->register_test_ability(
+			'blu/long-guidance',
+			'blu-mcp',
+			function () {
+				return true;
+			},
+			'Long Guidance',
+			'Full detailed instructions for this ability.',
+			array( 'mcp' => array( 'summary' => 'Short discovery summary.' ) )
+		);
+		$this->register_gateway();
+		$listed = blu_get_ability( 'blu/list-abilities' )->execute( array( 'name_prefix' => 'blu-long-guidance' ) );
+		$this->assertSame( 'Short discovery summary.', $listed['message'][0]['description'] );
+		$schema = blu_get_ability( 'blu/get-ability-schema' )->execute( array( 'ability_name' => 'blu-long-guidance' ) );
+		$this->assertSame( 'Full detailed instructions for this ability.', $schema['message']['description'] );
+	}
+
 	/** The advertised gateway description must explain how to find REST abilities. */
 	public function test_gateway_descriptions_explain_rest_discovery() {
 		$this->register_gateway();
@@ -646,6 +665,8 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$this->assertStringContainsString( 'blu-list-api-functions', $list_description );
 		$this->assertStringContainsString( 'blu-call-ability', $call_description );
 		$this->assertStringContainsString( 'blu-run-api-function', $call_description );
+		$this->assertStringContainsString( 'do not repeat', strtolower( $list_description ) );
+		$this->assertStringContainsString( 'blu-add-page-to-menu', $list_description );
 	}
 
 	/**

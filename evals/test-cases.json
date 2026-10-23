@@ -60,6 +60,7 @@
     "description": "Create new blog post",
     "prompt": "Create a new blog post titled 'Getting Started with React' with some introductory content about React",
     "expected_tool": "blu_add-post",
+    "rest_alternatives": [{ "route": "/wp/v2/posts", "method": "POST" }],
     "source": "Posts.php"
   },
   {
@@ -72,7 +73,7 @@
   {
     "id": "post-delete-1",
     "description": "Delete a post",
-    "prompt": "Delete the blog post with ID 99",
+    "prompt": "Move the blog post with ID 99 to Trash.",
     "expected_tool": "blu_delete-post",
     "source": "Posts.php"
   },
@@ -102,12 +103,13 @@
     "description": "Search pages",
     "prompt": "Find all published pages on my WordPress site",
     "expected_tool": "blu_pages-search",
+    "rest_alternatives": [{ "route": "/wp/v2/pages", "method": "GET" }],
     "source": "Pages.php"
   },
   {
     "id": "page-add-1",
     "description": "Create a page",
-    "prompt": "Create a new About Us page with a description of our company",
+    "prompt": "Create an About Us page with this text: 'We help small businesses build fast, accessible WordPress websites and provide ongoing support.' Save it as a draft.",
     "expected_tool": "blu_add-page",
     "source": "Pages.php"
   },
@@ -184,7 +186,7 @@
   {
     "id": "api-details-1",
     "description": "Get API endpoint details",
-    "prompt": "Show me the details and parameters for the GET /wp/v2/posts endpoint",
+    "prompt": "Inspect the site's registered GET /wp/v2/posts REST endpoint and tell me which query parameters it accepts.",
     "expected_tool": "blu_get-function-details",
     "source": "RestApiCrud.php"
   },
@@ -198,7 +200,7 @@
   {
     "id": "cpt-search-1",
     "description": "Search custom post type items",
-    "prompt": "Search for items in the 'portfolio' custom post type",
+    "prompt": "Search my Portfolio items for 'AI Eval' and show the matching entries.",
     "expected_tool": "blu_cpt-search",
     "source": "CustomPostTypes.php"
   },
@@ -212,7 +214,7 @@
   {
     "id": "wc-products-search-1",
     "description": "Search WooCommerce products",
-    "prompt": "Find all WooCommerce products containing 'shoe' in the name",
+    "prompt": "Find WooCommerce products with 'shoe' in the name.",
     "expected_tool": "blu_wc-products-search",
     "source": "WooProducts.php"
   },
@@ -278,41 +280,6 @@
     "prompt": "Show me the WooCommerce orders totals report with status breakdown",
     "expected_tool": "blu_wc-reports-orders-totals",
     "source": "WooOrders.php"
-  },
-  {
-    "id": "prompt-suggest-desc-1",
-    "description": "Suggest product description",
-    "prompt": "Generate a product description for my new product 'Organic Coffee Beans'",
-    "expected_tool": "blu_suggest-product-description",
-    "source": "Prompts.php"
-  },
-  {
-    "id": "prompt-suggest-cat-1",
-    "description": "Suggest product categories",
-    "prompt": "What categories would you suggest for my product 'Wireless Bluetooth Headphones'?",
-    "expected_tool": "blu_suggest-product-categories",
-    "source": "Prompts.php"
-  },
-  {
-    "id": "prompt-suggest-tag-1",
-    "description": "Suggest product tags",
-    "prompt": "Suggest relevant tags for my product 'Running Shoes' in the sports category",
-    "expected_tool": "blu_suggest-product-tag",
-    "source": "Prompts.php"
-  },
-  {
-    "id": "prompt-smart-details-1",
-    "description": "Smart product details",
-    "prompt": "Generate complete listing content for product ID 72 including materials, size chart, and care instructions",
-    "expected_tool": "blu_smart-product-details",
-    "source": "Prompts.php"
-  },
-  {
-    "id": "prompt-variation-attrs-1",
-    "description": "Guided product creation for variations",
-    "prompt": "Start guided product creation for 'Men's Casual Shirt' and help me choose variation attributes like size and color.",
-    "expected_tool": "blu_guided-product-creation-prompt",
-    "source": "Prompts.php"
   },
   {
     "id": "category-update-1",
@@ -422,7 +389,7 @@
   {
     "id": "cpt-add-1",
     "description": "Add custom post type item",
-    "prompt": "Create a new 'event' custom post type item titled 'Annual Tech Conference 2026'",
+    "prompt": "Create a draft event titled 'Annual Tech Conference 2026' with content 'A technology conference for local developers.'",
     "expected_tool": "blu_add-cpt",
     "source": "CustomPostTypes.php"
   },
@@ -436,7 +403,7 @@
   {
     "id": "cpt-delete-1",
     "description": "Delete custom post type item",
-    "prompt": "Delete the testimonial custom post type item with ID 30",
+    "prompt": "Permanently delete the testimonial custom post type item with ID 30.",
     "expected_tool": "blu_delete-cpt",
     "source": "CustomPostTypes.php"
   },
@@ -450,7 +417,7 @@
   {
     "id": "global-styles-update-1",
     "description": "Update global styles",
-    "prompt": "Update the global styles ID 128 to change the primary color to blue and heading font to Inter",
+    "prompt": "Set the site's primary accent color to #2563EB and use Inter for headings across the site.",
     "expected_tool": "blu_update-global-styles",
     "source": "GlobalStyles.php"
   },
@@ -471,7 +438,7 @@
   {
     "id": "wc-product-update-1",
     "description": "Update WooCommerce product",
-    "prompt": "Update the price of product ID 42 to $39.99 and change its description",
+    "prompt": "Update the regular price of product ID 42 to $39.99 and set its full description to 'A practical tool for everyday work.'",
     "expected_tool": "blu_wc-update-product",
     "source": "WooProducts.php"
   },
@@ -548,7 +515,7 @@
   {
     "id": "wc-products-report-1",
     "description": "Get products report",
-    "prompt": "Show me the WooCommerce products totals report with status breakdown",
+    "prompt": "How many products are in each status in my store right now?",
     "expected_tool": "blu_wc-reports-products-totals",
     "source": "WooOrders.php"
   },
@@ -562,16 +529,9 @@
   {
     "id": "google-taxonomy-1",
     "description": "Search Google product taxonomy",
-    "prompt": "Find Google product taxonomy categories related to 'running shoes'",
+    "prompt": "For my connected store, which Google Shopping category IDs fit running shoes? Give me the category paths too.",
     "expected_tool": "blu_google-product-taxonomy",
     "source": "Resources.php"
-  },
-  {
-    "id": "prompt-suggest-brand-1",
-    "description": "Suggest product brands",
-    "prompt": "What brands would you suggest for my product 'Yoga Mat Premium'?",
-    "expected_tool": "blu_suggest-product-brand",
-    "source": "Prompts.php"
   },
   {
     "id": "creating-a-category-1",
@@ -640,7 +600,7 @@
   {
     "id": "scheduling-the-post-9",
     "description": "Scheduling the post",
-    "prompt": "Schedule the post for future date.",
+    "prompt": "Schedule the 'AI Workflow Post' to publish on January 15, 2036 at 9:00 AM in the site's timezone.",
     "expected_tool": "blu_update-post",
     "source": "Posts.php",
     "series_id": "posts-ai-workflow"
@@ -699,7 +659,8 @@
     "prompt": "Attempt to delete the same post again.",
     "expected_tool": "blu_delete-post",
     "source": "Posts.php",
-    "series_id": "posts-ai-workflow"
+    "series_id": "posts-ai-workflow",
+    "expect_tool_error": true
   },
   {
     "id": "creating-a-new-page-17",
@@ -712,7 +673,7 @@
   {
     "id": "adding-page-content-18",
     "description": "Adding page content",
-    "prompt": "Add content of around 200 words.",
+    "prompt": "Add about 200 words to the 'AI Landing Page' explaining how our AI tools help small teams save time.",
     "expected_tool": "blu_update-page",
     "source": "Pages.php",
     "series_id": "pages-ai-landing"
@@ -730,21 +691,26 @@
     "description": "Inserting image into page",
     "prompt": "Insert the image into the page.",
     "expected_tool": "blu_add-section",
+    "expected_outcome": "page_image_present",
     "source": "BlockEditor.php",
-    "series_id": "pages-ai-landing"
+    "series_id": "pages-ai-landing",
+    "requires_success_of": [
+      "uploading-image-19"
+    ]
   },
   {
     "id": "publishing-the-page-21",
     "description": "Publishing the page",
     "prompt": "Save and publish the page.",
     "expected_tool": "blu_update-page",
+    "expected_outcome": "page_published",
     "source": "Pages.php",
     "series_id": "pages-ai-landing"
   },
   {
     "id": "searching-for-the-page-22",
     "description": "Searching for the page",
-    "prompt": "Search for the page.",
+    "prompt": "Find the 'AI Landing Page' in my pages.",
     "expected_tool": "blu_pages-search",
     "source": "Pages.php",
     "series_id": "pages-ai-landing"
@@ -760,7 +726,7 @@
   {
     "id": "updating-page-content-24",
     "description": "Updating page content",
-    "prompt": "Update the page content.",
+    "prompt": "Add a short 'How it works' section to the 'AI Landing Page' explaining that customers can sign up, connect their tools, and review automated results.",
     "expected_tool": "blu_update-page",
     "source": "Pages.php",
     "series_id": "pages-ai-landing"
@@ -770,13 +736,18 @@
     "description": "Replacing existing image",
     "prompt": "Replace the existing image with another image.",
     "expected_tool": "blu_edit-block",
+    "expected_outcome": "page_image_changed",
     "source": "BlockEditor.php",
-    "series_id": "pages-ai-landing"
+    "series_id": "pages-ai-landing",
+    "requires_success_of": [
+      "uploading-image-19",
+      "inserting-image-into-page-20"
+    ]
   },
   {
     "id": "deleting-the-page-26",
     "description": "Deleting the page",
-    "prompt": "Delete the page.",
+    "prompt": "Delete the 'AI Landing Page' we created earlier.",
     "expected_tool": "blu_delete-page",
     "source": "Pages.php",
     "series_id": "pages-ai-landing"
@@ -803,7 +774,10 @@
     "prompt": "List media in the library and confirm test.jpg is present.",
     "expected_tool": "blu_list-media",
     "source": "Media.php",
-    "series_id": "media-workflow"
+    "series_id": "media-workflow",
+    "requires_success_of": [
+      "uploading-media-file-28"
+    ]
   },
   {
     "id": "searching-uploaded-media-30",
@@ -811,7 +785,10 @@
     "prompt": "Search for the uploaded media.",
     "expected_tool": "blu_search-media",
     "source": "Media.php",
-    "series_id": "media-workflow"
+    "series_id": "media-workflow",
+    "requires_success_of": [
+      "uploading-media-file-28"
+    ]
   },
   {
     "id": "opening-media-details-31",
@@ -819,31 +796,46 @@
     "prompt": "Get the test.jpg media item and show its metadata.",
     "expected_tool": "blu_get-media",
     "source": "Media.php",
-    "series_id": "media-workflow"
+    "series_id": "media-workflow",
+    "requires_success_of": [
+      "uploading-media-file-28"
+    ]
   },
   {
     "id": "inserting-media-into-existing-page-32",
     "description": "Inserting media into existing page",
     "prompt": "Insert the media into an existing page.",
     "expected_tool": "blu_add-section",
+    "expected_outcome": "page_image_present",
     "source": "BlockEditor.php",
-    "series_id": "media-workflow"
+    "series_id": "media-workflow",
+    "requires_success_of": [
+      "uploading-media-file-28"
+    ]
   },
   {
     "id": "replacing-media-inside-page-33",
     "description": "Replacing media inside page",
     "prompt": "Replace media inside the page.",
     "expected_tool": "blu_edit-block",
+    "expected_outcome": "page_image_changed",
     "source": "BlockEditor.php",
-    "series_id": "media-workflow"
+    "series_id": "media-workflow",
+    "requires_success_of": [
+      "uploading-media-file-28",
+      "inserting-media-into-existing-page-32"
+    ]
   },
   {
     "id": "deleting-media-file-34",
     "description": "Deleting media file",
-    "prompt": "Delete the media file.",
+    "prompt": "Delete the media-flow.png image uploaded earlier in this media workflow.",
     "expected_tool": "blu_delete-media",
     "source": "Media.php",
-    "series_id": "media-workflow"
+    "series_id": "media-workflow",
+    "requires_success_of": [
+      "uploading-media-file-28"
+    ]
   },
   {
     "id": "verifying-media-removal-35",
@@ -851,7 +843,11 @@
     "prompt": "Search the media library for test.jpg and confirm it is not found.",
     "expected_tool": "blu_search-media",
     "source": "Media.php",
-    "series_id": "media-workflow"
+    "series_id": "media-workflow",
+    "requires_success_of": [
+      "uploading-media-file-28",
+      "deleting-media-file-34"
+    ]
   },
   {
     "id": "uploading-unsupported-file-36",
@@ -859,7 +855,8 @@
     "prompt": "Attempt to upload unsupported file 'test.exe'.",
     "expected_tool": "blu_upload-media",
     "source": "Media.php",
-    "series_id": "media-workflow"
+    "series_id": "media-workflow",
+    "expect_tool_error": true
   },
   {
     "id": "verifying-invalid-file-rejection-37",
@@ -867,22 +864,25 @@
     "prompt": "Attempt to upload test.exe again; the upload should be rejected with an error.",
     "expected_tool": "blu_upload-media",
     "source": "Media.php",
-    "series_id": "media-workflow"
+    "series_id": "media-workflow",
+    "expect_tool_error": true
   },
   {
     "id": "adding-page-to-menu-38",
     "description": "Adding page to menu",
-    "prompt": "Add page 'AI Landing Page' to the menu.",
-    "expected_tool": "blu_add-cpt",
-    "source": "CustomPostTypes.php",
+    "prompt": "Add the 'AI Eval Landing Page' page to the 'AI Eval Primary' navigation menu.",
+    "expected_tool": "blu_add-page-to-menu",
+    "expected_outcome": "menu_page_present",
+    "source": "NavMenus.php",
     "series_id": "menu-primary"
   },
   {
     "id": "removing-page-from-menu-39",
     "description": "Removing page from menu",
-    "prompt": "Remove the page from the menu.",
-    "expected_tool": "blu_delete-cpt",
-    "source": "CustomPostTypes.php",
+    "prompt": "Remove the 'AI Eval Landing Page' page link from the 'AI Eval Primary' navigation menu.",
+    "expected_tool": "blu_remove-page-from-menu",
+    "expected_outcome": "menu_page_absent",
+    "source": "NavMenus.php",
     "series_id": "menu-primary"
   },
   {
@@ -912,7 +912,7 @@
   {
     "id": "adding-product-price-and-description-43",
     "description": "Adding product price and description",
-    "prompt": "Add price and description.",
+    "prompt": "Set the 'AI Tool' product's price to $39.99 and describe it as a simple way for small teams to automate repetitive work.",
     "expected_tool": "blu_wc-update-product",
     "source": "WooProducts.php",
     "series_id": "wc-product-ai-tool"
@@ -920,10 +920,12 @@
   {
     "id": "assigning-category-and-tag-44",
     "description": "Assigning category and tag",
-    "prompt": "Assign category and tag.",
+    "prompt": "Put the 'AI Tool' product in the 'AI Tools' category and add the 'Automation' tag.",
     "expected_tool": "blu_wc-update-product",
+    "expected_outcome": "product_terms",
     "source": "WooProducts.php",
-    "series_id": "wc-product-ai-tool"
+    "series_id": "wc-product-ai-tool",
+    "requires_success_of": ["creating-new-product-42"]
   },
   {
     "id": "adding-product-image-45",
@@ -946,8 +948,10 @@
     "description": "Publishing the product",
     "prompt": "Publish the product.",
     "expected_tool": "blu_wc-update-product",
+    "expected_outcome": "product_published",
     "source": "WooProducts.php",
-    "series_id": "wc-product-ai-tool"
+    "series_id": "wc-product-ai-tool",
+    "requires_success_of": ["creating-new-product-42"]
   },
   {
     "id": "searching-for-the-product-48",
@@ -968,7 +972,7 @@
   {
     "id": "updating-product-price-50",
     "description": "Updating product price",
-    "prompt": "Update the product price.",
+    "prompt": "Change the 'AI Tool' product's price to $44.99.",
     "expected_tool": "blu_wc-update-product",
     "source": "WooProducts.php",
     "series_id": "wc-product-ai-tool"
@@ -976,7 +980,7 @@
   {
     "id": "creating-variable-product-51",
     "description": "Creating variable product",
-    "prompt": "Create a variable product with sizes S, M, L and different prices.",
+    "prompt": "Create a published variable T-shirt product named 'AI Eval Size Shirt' with size options S, M, and L priced at $19, $21, and $23 respectively.",
     "expected_tool": "blu_wc-add-product",
     "source": "WooProducts.php",
     "series_id": "wc-product-ai-tool"
@@ -987,15 +991,20 @@
     "prompt": "Get the variable product with sizes S, M, L from this flow and show its variation data.",
     "expected_tool": "blu_wc-get-product",
     "source": "WooProducts.php",
-    "series_id": "wc-product-ai-tool"
+    "series_id": "wc-product-ai-tool",
+    "requires_success_of": [
+      "creating-variable-product-51"
+    ]
   },
   {
     "id": "deleting-the-product-53",
     "description": "Deleting the product",
-    "prompt": "Delete the product.",
+    "prompt": "Delete the 'AI Tool' product created earlier in this flow. Leave the 'AI Eval Size Shirt' product alone.",
     "expected_tool": "blu_wc-delete-product",
+    "expected_outcome": "product_absent",
     "source": "WooProducts.php",
-    "series_id": "wc-product-ai-tool"
+    "series_id": "wc-product-ai-tool",
+    "requires_success_of": ["creating-new-product-42"]
   },
   {
     "id": "deleting-category-and-tag-54",
@@ -1016,7 +1025,7 @@
   {
     "id": "searching-existing-users-56",
     "description": "Searching existing users",
-    "prompt": "Search for existing users.",
+    "prompt": "Check whether a user named 'test_user' already exists.",
     "expected_tool": "blu_users-search",
     "source": "Users.php",
     "series_id": "users-test-user"
@@ -1024,7 +1033,7 @@
   {
     "id": "creating-new-user-57",
     "description": "Creating new user",
-    "prompt": "Create a new user 'test_user' with role 'Author'.",
+    "prompt": "Create an Author account for test_user with email test_user@example.com and password 'EvalPass-2027-Strong!'.",
     "expected_tool": "blu_add-user",
     "source": "Users.php",
     "series_id": "users-test-user"
@@ -1040,7 +1049,7 @@
   {
     "id": "updating-user-role-59",
     "description": "Updating user role",
-    "prompt": "Update role to 'Editor'.",
+    "prompt": "Change test_user's role from Author to Editor.",
     "expected_tool": "blu_update-user",
     "source": "Users.php",
     "series_id": "users-test-user"
@@ -1059,7 +1068,8 @@
     "prompt": "Attempt to create duplicate user 'test_user'.",
     "expected_tool": "blu_add-user",
     "source": "Users.php",
-    "series_id": "users-test-user"
+    "series_id": "users-test-user",
+    "expect_tool_error": true
   },
   {
     "id": "deleting-the-user-62",
@@ -1075,7 +1085,8 @@
     "prompt": "Attempt to delete currently logged-in user.",
     "expected_tool": "blu_delete-user",
     "source": "Users.php",
-    "series_id": "users-test-user"
+    "series_id": "users-test-user",
+    "expect_tool_error": true
   },
   {
     "id": "opening-general-site-settings-64",
@@ -1112,7 +1123,7 @@
   {
     "id": "setting-homepage-68",
     "description": "Setting homepage",
-    "prompt": "Set homepage to 'AI Landing Page'.",
+    "prompt": "Set the site's homepage to 'AI Eval Settings Home'.",
     "expected_tool": "blu_update-general-settings",
     "source": "Settings.php",
     "series_id": "settings-ai-test"
@@ -1120,7 +1131,7 @@
   {
     "id": "setting-posts-page-69",
     "description": "Setting posts page",
-    "prompt": "Set posts page to a blog page.",
+    "prompt": "Create a page titled 'Blog' if needed, then use it as the site's posts page.",
     "expected_tool": "blu_update-general-settings",
     "source": "Settings.php",
     "series_id": "settings-ai-test"
@@ -1150,17 +1161,9 @@
     "series_id": "theme-global-styles"
   },
   {
-    "id": "fetching-active-styles-73",
-    "description": "Fetching active styles",
-    "prompt": "Fetch active styles.",
-    "expected_tool": "blu_get-active-global-styles",
-    "source": "GlobalStyles.php",
-    "series_id": "theme-global-styles"
-  },
-  {
     "id": "updating-color-settings-74",
     "description": "Updating color settings",
-    "prompt": "Update color settings.",
+    "prompt": "Change the site's background to #F8FAFC and its main text color to #1F2937.",
     "expected_tool": "blu_update-global-styles",
     "source": "GlobalStyles.php",
     "series_id": "theme-global-styles"
@@ -1184,7 +1187,7 @@
   {
     "id": "changing-site-fonts-77",
     "description": "Changing site fonts",
-    "prompt": "Ask the agent to change the available fonts.",
+    "prompt": "Use Inter for headings throughout the site, while keeping the body font as it is.",
     "expected_tool": "blu_update-global-styles",
     "source": "GlobalStyles.php",
     "series_id": "site-fonts"
@@ -1275,7 +1278,10 @@
     "prompt": "Search Books for 'LLM Project'.",
     "expected_tool": "blu_cpt-search",
     "source": "CustomPostTypes.php",
-    "series_id": "cpt-books-llm"
+    "series_id": "cpt-books-llm",
+    "requires_success_of": [
+      "creating-and-publishing-books-custom-post-type-ite-87"
+    ]
   },
   {
     "id": "fetching-books-item-details-89",
@@ -1283,7 +1289,10 @@
     "prompt": "Get the full details of the LLM Project item in the Books custom post type.",
     "expected_tool": "blu_get-cpt",
     "source": "CustomPostTypes.php",
-    "series_id": "cpt-books-llm"
+    "series_id": "cpt-books-llm",
+    "requires_success_of": [
+      "creating-and-publishing-books-custom-post-type-ite-87"
+    ]
   },
   {
     "id": "updating-books-item-content-90",
@@ -1291,7 +1300,10 @@
     "prompt": "In the Books custom post type, update the content of the LLM Project item to: 'Updated: this LLM Project now.'",
     "expected_tool": "blu_update-cpt",
     "source": "CustomPostTypes.php",
-    "series_id": "cpt-books-llm"
+    "series_id": "cpt-books-llm",
+    "requires_success_of": [
+      "creating-and-publishing-books-custom-post-type-ite-87"
+    ]
   },
   {
     "id": "deleting-books-item-91",
@@ -1299,7 +1311,10 @@
     "prompt": "Delete the LLM Project item from the Books custom post type.",
     "expected_tool": "blu_delete-cpt",
     "source": "CustomPostTypes.php",
-    "series_id": "cpt-books-llm"
+    "series_id": "cpt-books-llm",
+    "requires_success_of": [
+      "creating-and-publishing-books-custom-post-type-ite-87"
+    ]
   },
   {
     "id": "verifying-books-item-deletion-92",
@@ -1307,7 +1322,10 @@
     "prompt": "Confirm it no longer exists by searching Books for 'LLM Project' (expect zero results).",
     "expected_tool": "blu_cpt-search",
     "source": "CustomPostTypes.php",
-    "series_id": "cpt-books-llm"
+    "series_id": "cpt-books-llm",
+    "requires_success_of": [
+      "creating-and-publishing-books-custom-post-type-ite-87"
+    ]
   },
   {
     "id": "creating-first-post-93",
@@ -1320,7 +1338,7 @@
   {
     "id": "creating-another-post-94",
     "description": "Creating another post",
-    "prompt": "Create another post.",
+    "prompt": "Create another post titled 'Edge Follow-up' with a short paragraph about lessons learned from the first test.",
     "expected_tool": "blu_add-post",
     "source": "Posts.php",
     "series_id": "edge-posts"
@@ -1328,7 +1346,7 @@
   {
     "id": "updating-latest-post-95",
     "description": "Updating latest post",
-    "prompt": "Update the latest post.",
+    "prompt": "Change the title of 'Edge Follow-up' to 'Edge Follow-up Updated'.",
     "expected_tool": "blu_update-post",
     "source": "Posts.php",
     "series_id": "edge-posts"
@@ -1336,7 +1354,7 @@
   {
     "id": "deleting-first-post-96",
     "description": "Deleting first post",
-    "prompt": "Delete the first post.",
+    "prompt": "Delete 'Edge Test', the first post we created in this conversation.",
     "expected_tool": "blu_delete-post",
     "source": "Posts.php",
     "series_id": "edge-posts"
