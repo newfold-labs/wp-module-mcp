@@ -7,7 +7,7 @@ on:
       - main
     paths:
       - 'includes/Abilities/**'
-      - 'evals/**'
+      - 'tests/evals/**'
       - '.github/workflows/ai-evals.yml'
       - '.wp-env.json'
   workflow_dispatch:
@@ -74,7 +74,7 @@ jobs:
             HEAD_SHA="HEAD"
           fi
 
-          CHANGED_FILES=$(git diff --name-only "$BASE_SHA"..."$HEAD_SHA" -- includes/Abilities/ evals/ .github/workflows/ai-evals.yml .wp-env.json 2>/dev/null || echo "")
+          CHANGED_FILES=$(git diff --name-only "$BASE_SHA"..."$HEAD_SHA" -- includes/Abilities/ tests/evals/ .github/workflows/ai-evals.yml .wp-env.json 2>/dev/null || echo "")
 
           if [ -z "$CHANGED_FILES" ]; then
             echo "No ability or eval files changed. Skipping evals."
@@ -88,7 +88,7 @@ jobs:
             if [[ "$file" == includes/Abilities/*.php ]]; then
               CHANGED_SOURCES="$CHANGED_SOURCES $(basename "$file")"
               RUN_MODEL_EVALS=true
-            elif [[ "$file" == evals/* && "$file" != evals/smoke.mjs ]] || [[ "$file" == .wp-env.json ]]; then
+            elif [[ "$file" == tests/evals/* && "$file" != tests/evals/smoke.mjs ]] || [[ "$file" == .wp-env.json ]]; then
               RUN_MODEL_EVALS=true
             fi
           done <<< "$CHANGED_FILES"
@@ -108,7 +108,7 @@ jobs:
 
           EVALS_CHANGED=false
           while IFS= read -r file; do
-            if [[ "$file" == evals/* && "$file" != evals/smoke.mjs ]] || [[ "$file" == .wp-env.json ]]; then
+            if [[ "$file" == tests/evals/* && "$file" != tests/evals/smoke.mjs ]] || [[ "$file" == .wp-env.json ]]; then
               EVALS_CHANGED=true
               break
             fi
@@ -146,7 +146,7 @@ jobs:
           cache: npm
           cache-dependency-path: |
             package-lock.json
-            evals/package-lock.json
+            tests/evals/package-lock.json
 
       - name: Install Bluehost plugin (Composer)
         if: steps.changes.outputs.skip != 'true'
@@ -164,7 +164,7 @@ jobs:
           jq -n \
             --arg plugin "${{ github.workspace }}/${{ env.BRAND_PLUGIN_DIR }}" \
             --arg module "${{ github.workspace }}" \
-            --arg fixture "${{ github.workspace }}/evals/fixtures/content-types.php" \
+            --arg fixture "${{ github.workspace }}/tests/evals/fixtures/content-types.php" \
             --arg plugin_dir "$PLUGIN_DIR_NAME" \
             '{
               plugins: [$plugin],
@@ -298,7 +298,7 @@ jobs:
         if: steps.changes.outputs.skip != 'true'
         run: |
           PLUGIN_DIR_NAME="$(basename "${{ env.BRAND_PLUGIN_DIR }}")"
-          SEED_OUTPUT=$(npx wp-env run cli wp eval-file "wp-content/plugins/${PLUGIN_DIR_NAME}/vendor/newfold-labs/wp-module-mcp/evals/fixtures/seed.php")
+          SEED_OUTPUT=$(npx wp-env run cli wp eval-file "wp-content/plugins/${PLUGIN_DIR_NAME}/vendor/newfold-labs/wp-module-mcp/tests/evals/fixtures/seed.php")
           FIXTURES=$(printf '%s\n' "$SEED_OUTPUT" | sed -n 's/^MCP_EVAL_FIXTURES=//p' | tail -1)
           if ! printf '%s' "$FIXTURES" | jq -e 'type == "object" and all(.[]; type == "number" and . > 0)' >/dev/null; then
             echo "::error::Could not seed standalone eval objects."
@@ -317,26 +317,26 @@ jobs:
 
       - name: Install eval dependencies
         if: steps.changes.outputs.skip != 'true'
-        working-directory: evals
+        working-directory: tests/evals
         run: npm ci
 
       - name: Verify eval classification
         if: steps.changes.outputs.skip != 'true'
-        working-directory: evals
+        working-directory: tests/evals
         run: |
           npm test
           npm run typecheck
 
       - name: Verify MCP gateway and REST access
         if: steps.changes.outputs.skip != 'true'
-        working-directory: evals
+        working-directory: tests/evals
         run: node smoke.mjs
 
       - name: Check tool coverage
         id: coverage
         if: steps.changes.outputs.skip != 'true'
         continue-on-error: true
-        working-directory: evals
+        working-directory: tests/evals
         env:
           COVERAGE_REPORT: ${{ github.workspace }}/coverage-report.md
         run: npm run coverage
@@ -345,7 +345,7 @@ jobs:
         if: steps.changes.outputs.skip != 'true' && steps.changes.outputs.skip_ai != 'true'
         id: eval
         continue-on-error: true
-        working-directory: evals
+        working-directory: tests/evals
         env:
           CF_AI_TOKEN: ${{ secrets.CLOUDFLARE_AI_GATEWAY_TOKEN }}
           EVAL_REPORT: ${{ github.workspace }}/eval-report.md
