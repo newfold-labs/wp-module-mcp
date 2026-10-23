@@ -5,7 +5,7 @@ return [
 	'language' => 'fr',
 	'project-id-version' => '',
 	'pot-creation-date' => '2025-02-13T09:55:55+00:00',
-	'po-revision-date' => '2026-10-23T14:10:04+00:00',
+	'po-revision-date' => '2026-10-23T19:32:54+00:00',
 	'x-generator' => 'WP-CLI 2.12.0',
 	'messages' => [
 		'Unable to retrieve Hiive authentication token for palette generation.' => 'Impossible de récupérer le jeton d’authentification Hiive pour la génération de palette.',
