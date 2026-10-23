@@ -341,7 +341,7 @@ function shouldRunTest(test: TestCase, options: EvalRunOptions): boolean {
 async function loadTestCases(repoRoot: string): Promise<TestCase[]> {
   const { readFile } = await import('node:fs/promises');
   return JSON.parse(
-    await readFile(join(repoRoot, 'evals/test-cases.json'), 'utf8')
+    await readFile(join(repoRoot, 'tests/evals/test-cases.json'), 'utf8')
   ) as TestCase[];
 }
 

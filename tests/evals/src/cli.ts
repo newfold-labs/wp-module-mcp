@@ -10,7 +10,7 @@ import { runCoverageCheck, writeCoverageReport } from './coverage.js';
 import { runEvals, writeEvalReport } from './run-evals.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const REPO_ROOT = resolve(__dirname, '../..');
+const REPO_ROOT = resolve(__dirname, '../../..');
 
 async function cmdCoverage(): Promise<void> {
   const reportPath = process.env.COVERAGE_REPORT ?? join(REPO_ROOT, 'coverage-report.md');

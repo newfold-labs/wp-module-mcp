@@ -36,7 +36,7 @@ export async function runCoverageCheck(options: {
   toolCount: number;
 }): Promise<CoverageResult> {
   const abilitiesDir = join(options.repoRoot, 'includes/Abilities');
-  const testCasesPath = join(options.repoRoot, 'evals/test-cases.json');
+  const testCasesPath = join(options.repoRoot, 'tests/evals/test-cases.json');
 
   const phpToolsNorm = await loadPhpAbilityNames(abilitiesDir);
   const mcpNamesRaw = (await readFile(options.abilityNamesFile, 'utf8'))
@@ -59,7 +59,7 @@ export async function runCoverageCheck(options: {
 
   if (missingTests.length > 0) {
     lines.push(
-      `**${missingTests.length} ability(s) in this repo missing test cases in \`evals/test-cases.json\`:**`,
+      `**${missingTests.length} ability(s) in this repo missing test cases in \`tests/evals/test-cases.json\`:**`,
       ''
     );
     for (const t of missingTests) {
