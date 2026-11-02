@@ -7,7 +7,7 @@ import {
   type OpenAiFunctionTool,
 } from './mcp-tools.js';
 import { normalizeToolName } from './tool-names.js';
-import { matchesRestAlternative, type RestAlternative } from './rest-alternative.js';
+import { matchesRestAlternative, isSuccessfulRunApiCall, type RestAlternative } from './rest-alternative.js';
 
 const DEFAULT_MAX_TURNS = 20;
 
@@ -54,11 +54,36 @@ export interface AgentEvalResult {
   /** The expected ability was selected, but its response reported an error. */
   executionFailed?: boolean;
   restAlternative?: boolean;
+  /** Expected ability was not selected, but blu-run-api-function succeeded for the task. */
+  runApiAlternative?: boolean;
   actualTool: string;
   error?: string;
   turns: number;
   /** Full chat history after this step (pass to the next step in a series). */
   conversationMessages: ChatMessage[];
+}
+
+const RUN_API_ABILITY = 'blu_run-api-function';
+
+function runApiAlternativeEligible(expectedNorm: string, expectToolError?: boolean): boolean {
+  return expectedNorm !== RUN_API_ABILITY && expectToolError !== true;
+}
+
+async function acceptRunApiFunctionalPass(
+  matched: boolean,
+  successfulRunApi: boolean,
+  expectedNorm: string,
+  expectToolError: boolean | undefined,
+  outcomeCheck?: () => Promise<boolean>
+): Promise<{ matched: boolean; runApiAlternative: boolean }> {
+  if (matched || !successfulRunApi || !runApiAlternativeEligible(expectedNorm, expectToolError)) {
+    return { matched, runApiAlternative: false };
+  }
+  if (outcomeCheck) {
+    const outcomeOk = await outcomeCheck();
+    return { matched: outcomeOk, runApiAlternative: outcomeOk };
+  }
+  return { matched: true, runApiAlternative: true };
 }
 
 function formatToolResultForModel(result: CallToolResult): string {
@@ -118,6 +143,8 @@ export async function runAgentEval(options: AgentEvalOptions): Promise<AgentEval
   let executionFailed = false;
   let restAlternative = false;
   let restAlternativeTool = '';
+  let successfulRunApi = false;
+  let successfulRunApiTool = '';
   let tools: OpenAiFunctionTool[];
   try {
     tools = options.tools ?? await fetchOpenAiToolsFromList(options.client);
@@ -204,10 +231,20 @@ export async function runAgentEval(options: AgentEvalOptions): Promise<AgentEval
       if (assistantMessage) {
         messages.push({ role: 'assistant', content: assistantMessage.content ?? null });
       }
+      const functional = await acceptRunApiFunctionalPass(
+        matched,
+        successfulRunApi,
+        expectedNorm,
+        options.expectToolError,
+        options.outcomeCheck
+      );
       return {
-        matched: options.outcomeCheck ? await options.outcomeCheck() : matched,
-        restAlternative: options.outcomeCheck ? false : restAlternative,
-        actualTool: !matched && restAlternative ? restAlternativeTool : lastRelevant || '(none)',
+        matched: functional.matched,
+        runApiAlternative: functional.runApiAlternative,
+        restAlternative: functional.runApiAlternative ? false : restAlternative,
+        actualTool: !matched && (restAlternative || functional.runApiAlternative)
+          ? (functional.runApiAlternative ? successfulRunApiTool : restAlternativeTool)
+          : lastRelevant || '(none)',
         turns: turn + 1,
         conversationMessages: messages,
       };
@@ -275,11 +312,17 @@ export async function runAgentEval(options: AgentEvalOptions): Promise<AgentEval
         restAlternative = true;
         restAlternativeTool = `${toolName}(${(call.function?.arguments ?? '').slice(0, 220)})`;
       }
+      if (isSuccessfulRunApiCall(toolName, call.function?.arguments, result)) {
+        successfulRunApi = true;
+        successfulRunApiTool = `${toolName}(${(call.function?.arguments ?? '').slice(0, 220)})`;
+      }
     }
 
     if (options.outcomeCheck && await options.outcomeCheck()) {
+      const usedRunApi = successfulRunApi && !matched && runApiAlternativeEligible(expectedNorm, options.expectToolError);
       return {
         matched: true,
+        runApiAlternative: usedRunApi,
         actualTool: lastRelevant || toolCalls[toolCalls.length - 1]?.function.name || '(none)',
         turns: turn + 1,
         conversationMessages: messages,
@@ -298,11 +341,20 @@ export async function runAgentEval(options: AgentEvalOptions): Promise<AgentEval
 
   }
 
+  const functional = await acceptRunApiFunctionalPass(
+    false,
+    successfulRunApi,
+    expectedNorm,
+    options.expectToolError,
+    options.outcomeCheck
+  );
+
   return {
-    matched: options.outcomeCheck ? await options.outcomeCheck() : false,
-    restAlternative: options.outcomeCheck ? false : restAlternative,
-    actualTool: restAlternative ? restAlternativeTool : lastRelevant || '(none)',
-    error: restAlternative ? undefined : `Exceeded max turns (${maxTurns}) without expected tool`,
+    matched: functional.matched,
+    runApiAlternative: functional.runApiAlternative,
+    restAlternative: functional.runApiAlternative ? false : restAlternative,
+    actualTool: restAlternative ? restAlternativeTool : successfulRunApiTool || lastRelevant || '(none)',
+    error: functional.matched || restAlternative ? undefined : `Exceeded max turns (${maxTurns}) without expected tool`,
     turns: maxTurns,
     conversationMessages: messages,
   };

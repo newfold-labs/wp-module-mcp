@@ -219,15 +219,16 @@ export async function runEvals(options: EvalRunOptions): Promise<EvalRunResult> 
           const expected = test.expected_outcome
             ? test.expected_outcome.replaceAll('_', ' ')
             : `\`${test.expected_tool}\``;
-          diagnostics.push({ id: test.id, status, selectionMatched: result.matched, executionFailed: result.executionFailed ?? false, reason: status === 'pass' ? undefined : reason, error: result.error, turns: result.turns, trace: safeTrace(currentMessages) });
+          diagnostics.push({ id: test.id, status, selectionMatched: result.matched, executionFailed: result.executionFailed ?? false, runApiAlternative: result.runApiAlternative ?? false, reason: status === 'pass' ? undefined : reason, error: result.error, turns: result.turns, trace: safeTrace(currentMessages) });
           if (status === 'error') {
             rows.push(
               `| :boom: | ${escapeCell(description)} | ${expected} | Eval error (details in trace artifact) |`
             );
             error++;
           } else if (status === 'pass') {
+            const viaRunApi = result.runApiAlternative ? '; REST via run-api' : '';
             rows.push(
-              `| :white_check_mark: | ${escapeCell(description)} | ${expected} | \`${actual}\` (${result.turns} turns) |`
+              `| :white_check_mark: | ${escapeCell(description)} | ${expected} | \`${actual}\`${viaRunApi} (${result.turns} turns) |`
             );
             pass++;
           } else if (status === 'warning') {

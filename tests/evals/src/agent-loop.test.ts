@@ -102,3 +102,40 @@ test('a rejection test passes only when the selected upload rejects the file', a
     }
   } finally { globalThis.fetch = originalFetch; }
 });
+
+test('accepts a successful run-api dispatch when the dedicated ability was not selected', async () => {
+  const originalFetch = globalThis.fetch;
+  let turn = 0;
+  globalThis.fetch = async () => {
+    turn++;
+    if (turn <= 2) {
+      return new Response(JSON.stringify({ choices: [{ message: {
+        role: 'assistant',
+        tool_calls: [{ id: String(turn), type: 'function', function: {
+          name: 'blu-call-ability',
+          arguments: JSON.stringify({ ability_name: 'blu-run-api-function', parameters: { route: '/wp/v2/books', method: 'GET' } }),
+        } }],
+      } }] }), { status: 200 });
+    }
+    return new Response(JSON.stringify({ choices: [{ message: { role: 'assistant', content: 'Found the book.' } }] }), { status: 200 });
+  };
+  const client = {
+    callTool: async () => ({ structuredContent: { statusCode: 200, status: 'success' }, content: [] }),
+  } as unknown as Client;
+  try {
+    const result = await runAgentEval({
+      client,
+      prompt: 'Search Books for LLM Project',
+      expectedTool: 'blu_cpt-search',
+      model: 'test',
+      gatewayUrl: 'http://example.invalid',
+      gatewayToken: 'test',
+      maxTurns: 5,
+      tools: [{ type: 'function', function: { name: 'blu-call-ability', description: 'Call', parameters: { type: 'object', properties: {} } } }],
+    });
+    assert.equal(result.matched, true);
+    assert.equal(result.runApiAlternative, true);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});

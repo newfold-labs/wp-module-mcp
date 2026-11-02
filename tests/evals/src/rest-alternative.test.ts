@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { matchesRestAlternative } from './rest-alternative.js';
+import { matchesRestAlternative, isSuccessfulRunApiCall } from './rest-alternative.js';
 
 const expected = [{ route: '/wp/v2/posts', method: 'POST' }];
 const success = { structuredContent: { statusCode: 201, status: 'success' }, content: [] };
@@ -36,4 +36,11 @@ test('ignores an embedded query string and trailing slash on the route', () => {
   }
   const nested = JSON.stringify({ ability_name: 'blu-run-api-function', parameters: { route: '/wp/v2/posts/5', method: 'POST' } });
   assert.equal(matchesRestAlternative('blu-call-ability', nested, expected, success), false);
+});
+
+test('detects any successful run-api dispatch regardless of listed alternatives', () => {
+  const args = JSON.stringify({ ability_name: 'blu-run-api-function', parameters: { route: '/wp/v2/books', method: 'GET' } });
+  assert.equal(isSuccessfulRunApiCall('blu-call-ability', args, success), true);
+  assert.equal(isSuccessfulRunApiCall('blu-call-ability', args, failure), false);
+  assert.equal(isSuccessfulRunApiCall('blu-call-ability', JSON.stringify({ ability_name: 'blu-add-cpt' }), success), false);
 });
