@@ -17,7 +17,7 @@ updated: 2026-03-26
 
 ## Abilities
 
-Implementations live under **`includes/Abilities/`** (e.g. `Posts`, `Pages`, `Media`, `Users`, `SiteInfo`, `Settings`, `CustomPostTypes`, `RestApiCrud`, `GlobalStyles`, `Themes`, `WooProducts`, `WooOrders`, `Prompts`, `Resources`). Each class registers its abilities on construction.
+Implementations live under **`includes/Abilities/`** (e.g. `Posts`, `Pages`, `Media`, `Users`, `SiteInfo`, `Settings`, `CustomPostTypes`, `RestApiCrud`, `GlobalStyles`, `Themes`, `WooProducts`, `WooAttributeTerms`, `WooOrders`, `Prompts`, `Resources`). Each class registers its abilities on construction. `WooAttributeTerms` registers its single workflow only when WooCommerce's attribute and attribute-term POST routes are available; each write runs through the native REST controller and its permission check.
 
 ### Post-type permissions
 

@@ -13,6 +13,7 @@ updated: 2026-03-26
 
 - Registration of a BLU MCP **server** (`blu-mcp` route namespace, HTTP transport) with tools derived from abilities in the **`blu-mcp`** category.
 - A broad set of **abilities** (posts, pages, media, users, settings, themes, global styles, REST CRUD, WooCommerce when active, prompts, resources, etc.) implemented under `includes/Abilities/`.
+- A WooCommerce workflow ability, `blu/wc-add-product-attribute`, creates a global product attribute and optional terms in one call when both native WooCommerce write routes are registered. It uses the WooCommerce REST controllers and reports partial term failures with the created attribute ID.
 - **Transport permission** callback via **`McpValidation`**: admin session or JWT bearer validation (Hiive public keys).
 - Thin **`blu_*` helpers** in `includes/functions.php` around the Abilities API (`wp_register_ability`, categories, filtered lists, standardized REST responses).
 
