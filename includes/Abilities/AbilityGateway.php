@@ -211,6 +211,8 @@ class AbilityGateway {
 	 *
 	 * @param mixed $result Result returned by a delegated ability.
 	 * @return array Object-shaped result or a result envelope.
+	 *
+	 * @throws \UnexpectedValueException When an object result cannot be JSON encoded.
 	 */
 	private function normalize_result_for_mcp( $result ): array {
 		if ( is_array( $result ) ) {
@@ -227,7 +229,7 @@ class AbilityGateway {
 			// Inspect the serialized shape because JsonSerializable may emit any type.
 			$json = wp_json_encode( $result );
 			if ( false === $json ) {
-				return blu_prepare_ability_response( 500, 'Ability execution failed.' );
+				throw new \UnexpectedValueException( 'Ability result cannot be JSON encoded.' );
 			}
 			$decoded = json_decode( $json, true );
 			if ( '{' === $json[0] && is_array( $decoded ) && ! empty( $decoded ) && array_keys( $decoded ) !== range( 0, count( $decoded ) - 1 ) ) {
@@ -419,6 +421,10 @@ class AbilityGateway {
 	 *
 	 * Executes any whitelisted ability by name, delegating to the target ability's
 	 * own permission_callback and execute_callback.
+	 *
+	 * Failures are returned as WP_Error rather than an ability response wrapper:
+	 * the MCP adapter only flags a tool result with `isError: true` for a WP_Error,
+	 * and a wrapper with `status: "error"` would reach the client as a successful call.
 	 */
 	private function register_call_ability(): void {
 		blu_register_ability(
@@ -443,20 +449,21 @@ class AbilityGateway {
 				),
 				'execute_callback'    => function ( $input ) {
 					if ( empty( $input['ability_name'] ) ) {
-						return blu_prepare_ability_response( 400, 'The ability_name parameter is required.' );
+						return new \WP_Error( 'blu_missing_ability_name', 'The ability_name parameter is required.', array( 'status' => 400 ) );
 					}
 
 					if ( $this->is_gateway_ability( $input['ability_name'] ) ) {
-						return blu_prepare_ability_response(
-							400,
-							'Gateway tools cannot be called through blu-call-ability. Call them directly as MCP tools.'
+						return new \WP_Error(
+							'blu_gateway_ability_not_callable',
+							'Gateway tools cannot be called through blu-call-ability. Call them directly as MCP tools.',
+							array( 'status' => 400 )
 						);
 					}
 
 					$ability = $this->get_whitelisted_ability( $input['ability_name'] );
 
 					if ( ! $ability ) {
-						return blu_prepare_ability_response( 404, 'Ability not found or not available.' );
+						return new \WP_Error( 'blu_ability_not_found', 'Ability not found or not available.', array( 'status' => 404 ) );
 					}
 
 					$parameters = $this->normalize_parameters(
@@ -502,14 +509,18 @@ class AbilityGateway {
 						// WP_Error message. 4xx messages are kept verbatim because
 						// they carry validation/permission feedback the LLM needs to
 						// self-correct.
-						$message = $status_code >= 500
-							? 'Ability execution failed.'
-							: $result->get_error_message();
+						if ( $status_code >= 500 ) {
+							return new \WP_Error( 'blu_ability_execution_failed', 'Ability execution failed.', array( 'status' => $status_code ) );
+						}
 
-						return blu_prepare_ability_response( $status_code, $message );
+						return new \WP_Error( $result->get_error_code(), $result->get_error_message(), array( 'status' => $status_code ) );
 					}
 
-					return $this->normalize_result_for_mcp( $result );
+					try {
+						return $this->normalize_result_for_mcp( $result );
+					} catch ( \UnexpectedValueException $e ) {
+						return new \WP_Error( 'blu_ability_execution_failed', 'Ability execution failed.', array( 'status' => 500 ) );
+					}
 				},
 				'permission_callback' => fn() => is_user_logged_in(),
 				'meta'                => array(

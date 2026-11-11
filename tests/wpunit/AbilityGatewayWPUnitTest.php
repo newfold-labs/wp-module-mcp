@@ -394,8 +394,9 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$this->register_gateway();
 		$ability = blu_get_ability( 'blu/call-ability' );
 		$result  = $ability->execute( array( 'ability_name' => 'nonexistent/tool' ) );
-		$this->assertSame( 404, $result['statusCode'] );
-		$this->assertSame( 'error', $result['status'] );
+		$this->assertWPError( $result );
+		$this->assertSame( 'blu_ability_not_found', $result->get_error_code() );
+		$this->assertSame( array( 'status' => 404 ), $result->get_error_data() );
 	}
 
 	/**
@@ -518,8 +519,9 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$this->register_gateway();
 
 		$result = blu_get_ability( 'blu/call-ability' )->execute( array( 'ability_name' => 'blu-recursive-object' ) );
-		$this->assertSame( 500, $result['statusCode'] );
-		$this->assertSame( 'Ability execution failed.', $result['message'] );
+		$this->assertWPError( $result );
+		$this->assertSame( array( 'status' => 500 ), $result->get_error_data() );
+		$this->assertSame( 'Ability execution failed.', $result->get_error_message() );
 	}
 
 	/**
@@ -557,9 +559,9 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 			)
 		);
 
-		$this->assertSame( 400, $result['statusCode'], 'A schema violation must not be reported as a server error.' );
-		$this->assertSame( 'error', $result['status'] );
-		$this->assertStringContainsString( 'widget', $result['message'], 'The reason must survive so the caller can correct the call.' );
+		$this->assertWPError( $result );
+		$this->assertSame( array( 'status' => 400 ), $result->get_error_data(), 'A schema violation must not be reported as a server error.' );
+		$this->assertStringContainsString( 'widget', $result->get_error_message(), 'The reason must survive so the caller can correct the call.' );
 	}
 
 	/**
@@ -588,8 +590,8 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 			)
 		);
 
-		$this->assertSame( 403, $result['statusCode'], 'A denial must not be reported as a server error.' );
-		$this->assertSame( 'error', $result['status'] );
+		$this->assertWPError( $result );
+		$this->assertSame( array( 'status' => 403 ), $result->get_error_data(), 'A denial must not be reported as a server error.' );
 	}
 
 	/**
@@ -618,9 +620,10 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 			)
 		);
 
-		$this->assertSame( 500, $result['statusCode'] );
-		$this->assertSame( 'Ability execution failed.', $result['message'], 'A 5xx message must stay redacted.' );
-		$this->assertStringNotContainsString( 'hunter2', $result['message'] );
+		$this->assertWPError( $result );
+		$this->assertSame( array( 'status' => 500 ), $result->get_error_data() );
+		$this->assertSame( 'Ability execution failed.', $result->get_error_message(), 'A 5xx message must stay redacted.' );
+		$this->assertStringNotContainsString( 'hunter2', $result->get_error_message() );
 	}
 
 	/**
@@ -1052,15 +1055,18 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 
 		// Self-call (would cause infinite recursion).
 		$result = $ability->execute( array( 'ability_name' => 'blu-call-ability' ) );
-		$this->assertSame( 400, $result['statusCode'] );
+		$this->assertWPError( $result );
+		$this->assertSame( array( 'status' => 400 ), $result->get_error_data() );
 
 		// Other gateway tools (slash form).
 		$result = $ability->execute( array( 'ability_name' => 'blu/list-abilities' ) );
-		$this->assertSame( 400, $result['statusCode'] );
+		$this->assertWPError( $result );
+		$this->assertSame( array( 'status' => 400 ), $result->get_error_data() );
 
 		// Other gateway tools (hyphen form).
 		$result = $ability->execute( array( 'ability_name' => 'blu-get-ability-schema' ) );
-		$this->assertSame( 400, $result['statusCode'] );
+		$this->assertWPError( $result );
+		$this->assertSame( array( 'status' => 400 ), $result->get_error_data() );
 	}
 
 	/**
@@ -1223,7 +1229,8 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 
 		$ability = blu_get_ability( 'blu/call-ability' );
 		$result  = $ability->execute( array( 'ability_name' => 'secret/hidden-tool' ) );
-		$this->assertSame( 404, $result['statusCode'] );
+		$this->assertWPError( $result );
+		$this->assertSame( array( 'status' => 404 ), $result->get_error_data() );
 	}
 
 	/**
@@ -1255,9 +1262,9 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 			)
 		);
 
-		$this->assertSame( 400, $result['statusCode'] );
-		$this->assertSame( 'error', $result['status'] );
-		$this->assertSame( 'Bad input value', $result['message'] );
+		$this->assertWPError( $result );
+		$this->assertSame( array( 'status' => 400 ), $result->get_error_data() );
+		$this->assertSame( 'Bad input value', $result->get_error_message() );
 	}
 
 	/**
@@ -1287,10 +1294,11 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 			)
 		);
 
-		$this->assertSame( 500, $result['statusCode'] );
-		$this->assertSame( 'Ability execution failed.', $result['message'] );
-		$this->assertStringNotContainsString( '/var/www', $result['message'] );
-		$this->assertStringNotContainsString( 'connection refused', $result['message'] );
+		$this->assertWPError( $result );
+		$this->assertSame( array( 'status' => 500 ), $result->get_error_data() );
+		$this->assertSame( 'Ability execution failed.', $result->get_error_message() );
+		$this->assertStringNotContainsString( '/var/www', $result->get_error_message() );
+		$this->assertStringNotContainsString( 'connection refused', $result->get_error_message() );
 	}
 
 	/**
@@ -1321,9 +1329,10 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 			)
 		);
 
-		$this->assertSame( 503, $result['statusCode'] );
-		$this->assertSame( 'Ability execution failed.', $result['message'] );
-		$this->assertStringNotContainsString( 'wp_credentials', $result['message'] );
+		$this->assertWPError( $result );
+		$this->assertSame( array( 'status' => 503 ), $result->get_error_data() );
+		$this->assertSame( 'Ability execution failed.', $result->get_error_message() );
+		$this->assertStringNotContainsString( 'wp_credentials', $result->get_error_message() );
 	}
 
 	/**
@@ -1354,8 +1363,9 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 			)
 		);
 
-		$this->assertSame( 403, $result['statusCode'] );
-		$this->assertSame( 'You lack the required capability for this action.', $result['message'] );
+		$this->assertWPError( $result );
+		$this->assertSame( array( 'status' => 403 ), $result->get_error_data() );
+		$this->assertSame( 'You lack the required capability for this action.', $result->get_error_message() );
 	}
 
 	/**

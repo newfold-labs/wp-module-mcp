@@ -92,8 +92,13 @@ test('a rejection test passes only when the selected upload rejects the file', a
     } }],
   } }] }), { status: 200 });
   try {
-    for (const [statusCode, expectedFailed] of [[400, false], [201, true]]) {
-      const client = { callTool: async () => ({ structuredContent: { statusCode }, content: [] }) } as unknown as Client;
+    const results = [
+      [{ structuredContent: { statusCode: 400 }, content: [] }, false],
+      [{ content: [{ type: 'text', text: 'Unsupported file type.' }], isError: true }, false],
+      [{ structuredContent: { statusCode: 201 }, content: [] }, true],
+    ] as const;
+    for (const [toolResult, expectedFailed] of results) {
+      const client = { callTool: async () => toolResult } as unknown as Client;
       const result = await runAgentEval({ client, prompt: 'Upload an invalid file', expectedTool: 'blu_upload-media',
         expectToolError: true, model: 'test', gatewayUrl: 'http://example.invalid', gatewayToken: 'test', maxTurns: 1,
         tools: [{ type: 'function', function: { name: 'blu-call-ability', description: 'Call', parameters: { type: 'object', properties: {} } } }],

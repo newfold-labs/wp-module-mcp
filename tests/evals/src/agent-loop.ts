@@ -267,9 +267,7 @@ export async function runAgentEval(options: AgentEvalOptions): Promise<AgentEval
           if (payload.status === 'error') failed = true;
         } catch { /* The response may be plain text. */ }
         if (statusCode !== undefined && statusCode >= 400) failed = true;
-        executionFailed = options.expectToolError
-          ? !(statusCode !== undefined && statusCode >= 400)
-          : failed;
+        executionFailed = options.expectToolError ? !failed : failed;
       }
       if (matchesRestAlternative(toolName, call.function?.arguments, options.restAlternatives ?? [], result)) {
         restAlternative = true;

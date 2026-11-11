@@ -549,6 +549,8 @@ Inside `structuredContent`, gateway abilities return a consistent wrapper:
 - `status` — `"success"` or `"error"`
 - `message` — the actual payload (array for lists, object for single items, string for errors)
 
+`blu-call-ability` reports its own failures, and `WP_Error`s returned by the called ability, as tool execution errors (`isError: true`, see [Error shapes](#error-shapes)) rather than as a wrapper with `status: "error"`. A wrapper with `status: "error"` still reaches the client as a successful result when the called ability builds it itself, so clients should check both `isError` and `status`.
+
 ### SSE
 
 The MCP 2025-06-18 spec defines GET for SSE streaming. This server currently returns HTTP 405 for GET requests (not implemented), but spec-compliant clients should be prepared to handle SSE in future versions.

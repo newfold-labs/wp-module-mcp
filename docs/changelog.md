@@ -11,6 +11,8 @@ Notable changes are listed here; older history may be on **GitHub Releases**.
 
 ## [Unreleased]
 
+- Changed: `blu-call-ability` reports failures as MCP tool errors (`isError: true` with the error message as text) instead of a successful result holding an ability response wrapper with `status: "error"`. This covers a missing or unknown `ability_name`, a gateway tool called through the gateway, and a `WP_Error` from the called ability. 5xx messages are still redacted. Wrappers the called ability builds itself pass through unchanged.
+
 - Fixed: direct media-file reads now check permission on the attachment. Uploads reject files whose content does not match an allowed extension, before attachment registration.
 
 - Changed: post, page, custom post type, and WooCommerce product searches default to `status=publish`; tool descriptions explain explicit `status=any` and `status=trash` lookups, and each result reports its actual status. Post and page searches return compact results with a plain title and request only the REST fields they need. Custom post type results are filtered for read permission before pagination, so totals count accessible items.
