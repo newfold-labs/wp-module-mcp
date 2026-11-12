@@ -8,6 +8,12 @@ import {
 } from './mcp-tools.js';
 import { normalizeToolName } from './tool-names.js';
 import { matchesRestAlternative, isSuccessfulRunApiCall, type RestAlternative } from './rest-alternative.js';
+import {
+  addTurnUsage,
+  createEmptyUsage,
+  type CompletionUsagePayload,
+  type EvalUsage,
+} from './usage.js';
 
 const DEFAULT_MAX_TURNS = 20;
 
@@ -23,10 +29,12 @@ interface ChatMessage {
 }
 
 interface ChatCompletionResponse {
+  model?: string;
   choices?: Array<{
     message?: ChatMessage;
     finish_reason?: string;
   }>;
+  usage?: CompletionUsagePayload;
   error?: { message?: string };
 }
 
@@ -59,6 +67,7 @@ export interface AgentEvalResult {
   actualTool: string;
   error?: string;
   turns: number;
+  usage: EvalUsage;
   /** Full chat history after this step (pass to the next step in a series). */
   conversationMessages: ChatMessage[];
 }
@@ -145,6 +154,7 @@ export async function runAgentEval(options: AgentEvalOptions): Promise<AgentEval
   let restAlternativeTool = '';
   let successfulRunApi = false;
   let successfulRunApiTool = '';
+  let usage = createEmptyUsage(options.model);
   let tools: OpenAiFunctionTool[];
   try {
     tools = options.tools ?? await fetchOpenAiToolsFromList(options.client);
@@ -155,6 +165,7 @@ export async function runAgentEval(options: AgentEvalOptions): Promise<AgentEval
       actualTool: '',
       error: `Unable to load tools/list: ${msg}`,
       turns: 1,
+      usage,
       conversationMessages: messages,
     };
   }
@@ -186,6 +197,7 @@ export async function runAgentEval(options: AgentEvalOptions): Promise<AgentEval
         actualTool: '',
         error: `Request failed: ${msg}`,
         turns: turn + 1,
+        usage,
         conversationMessages: messages,
       };
     }
@@ -197,6 +209,7 @@ export async function runAgentEval(options: AgentEvalOptions): Promise<AgentEval
         actualTool: '',
         error: `HTTP ${response.status}: ${responseText.slice(0, 200)}`,
         turns: turn + 1,
+        usage,
         conversationMessages: messages,
       };
     }
@@ -210,6 +223,7 @@ export async function runAgentEval(options: AgentEvalOptions): Promise<AgentEval
         actualTool: '',
         error: 'Invalid JSON from AI gateway',
         turns: turn + 1,
+        usage,
         conversationMessages: messages,
       };
     }
@@ -220,9 +234,13 @@ export async function runAgentEval(options: AgentEvalOptions): Promise<AgentEval
         actualTool: '',
         error: parsed.error.message,
         turns: turn + 1,
+        usage,
         conversationMessages: messages,
       };
     }
+
+    const gatewayCacheHit = response.headers.get('cf-aig-cache-status')?.toUpperCase() === 'HIT';
+    usage = addTurnUsage(usage, parsed.usage, parsed.model || options.model, gatewayCacheHit);
 
     const assistantMessage = parsed.choices?.[0]?.message;
     const toolCalls = assistantMessage?.tool_calls;
@@ -246,6 +264,7 @@ export async function runAgentEval(options: AgentEvalOptions): Promise<AgentEval
           ? (functional.runApiAlternative ? successfulRunApiTool : restAlternativeTool)
           : lastRelevant || '(none)',
         turns: turn + 1,
+        usage,
         conversationMessages: messages,
       };
     }
@@ -325,6 +344,7 @@ export async function runAgentEval(options: AgentEvalOptions): Promise<AgentEval
         runApiAlternative: usedRunApi,
         actualTool: lastRelevant || toolCalls[toolCalls.length - 1]?.function.name || '(none)',
         turns: turn + 1,
+        usage,
         conversationMessages: messages,
       };
     }
@@ -335,6 +355,7 @@ export async function runAgentEval(options: AgentEvalOptions): Promise<AgentEval
         executionFailed,
         actualTool: lastRelevant,
         turns: turn + 1,
+        usage,
         conversationMessages: messages,
       };
     }
@@ -356,6 +377,7 @@ export async function runAgentEval(options: AgentEvalOptions): Promise<AgentEval
     actualTool: restAlternative ? restAlternativeTool : successfulRunApiTool || lastRelevant || '(none)',
     error: functional.matched || restAlternative ? undefined : `Exceeded max turns (${maxTurns}) without expected tool`,
     turns: maxTurns,
+    usage,
     conversationMessages: messages,
   };
 }

@@ -12,6 +12,14 @@ import { blockingPrerequisite } from './eval-dependencies.js';
 import { pageHasImage, pageImageReplaced, productHasTerms, WordPressOutcomes } from './wp-outcomes.js';
 import { resolveMcpAuthorization } from './auth.js';
 import type { TestCase } from './coverage.js';
+import {
+  createEmptyUsage,
+  formatRunTokensSummary,
+  formatTokensCell,
+  formatUsd,
+  mergeEvalUsage,
+  type EvalUsage,
+} from './usage.js';
 
 const EVAL_DELAY_MS = 500;
 
@@ -37,6 +45,7 @@ export interface EvalRunResult {
   blocked: number;
   passRate: number;
   toolCount: number;
+  usage: EvalUsage;
   reportMarkdown: string;
   diagnostics: Array<Record<string, unknown>>;
 }
@@ -62,6 +71,7 @@ export async function runEvals(options: EvalRunOptions): Promise<EvalRunResult> 
     let error = 0;
     let skip = 0;
     let blocked = 0;
+    let totalUsage = createEmptyUsage(options.model);
     const statuses = new Map<string, string>();
     const rows: string[] = [];
     const diagnostics: Array<Record<string, unknown>> = [];
@@ -119,7 +129,7 @@ export async function runEvals(options: EvalRunOptions): Promise<EvalRunResult> 
           if (prerequisite) {
             blocked++;
             statuses.set(test.id, 'blocked');
-            rows.push(`| :no_entry_sign: | ${escapeCell(stepLabel + test.description)} | \`${test.expected_tool}\` | Blocked by ${escapeCell(prerequisite)} |`);
+            rows.push(`| :no_entry_sign: | ${escapeCell(stepLabel + test.description)} | \`${test.expected_tool}\` | Blocked by ${escapeCell(prerequisite)} | — |`);
             diagnostics.push({ id: test.id, status: 'blocked', prerequisite });
             continue;
           }
@@ -127,7 +137,7 @@ export async function runEvals(options: EvalRunOptions): Promise<EvalRunResult> 
           if (fixtureError) {
             error++;
             statuses.set(test.id, 'error');
-            rows.push(`| :boom: | ${escapeCell(stepLabel + test.description)} | ${test.expected_outcome?.replaceAll('_', ' ') ?? `\`${test.expected_tool}\``} | Eval error (details in trace artifact) |`);
+            rows.push(`| :boom: | ${escapeCell(stepLabel + test.description)} | ${test.expected_outcome?.replaceAll('_', ' ') ?? `\`${test.expected_tool}\``} | Eval error (details in trace artifact) | — |`);
             diagnostics.push({ id: test.id, status: 'error', error: fixtureError });
             continue;
           }
@@ -192,17 +202,19 @@ export async function runEvals(options: EvalRunOptions): Promise<EvalRunResult> 
               actualTool: '(none)',
               error: `Unhandled eval error: ${msg}`,
               turns: 1,
+              usage: createEmptyUsage(options.model),
               conversationMessages: inSeries ? conversationMessages : [],
             };
           }
 
           conversationMessages = result.conversationMessages;
+          totalUsage = mergeEvalUsage(totalUsage, result.usage);
 
           if (!firstEvalLogged) {
             firstEvalLogged = true;
             console.log('::group::Debug: First eval');
             console.log(
-              `Turns: ${result.turns}, matched: ${result.matched}, actual: ${compactTool(result.actualTool)}`
+              `Turns: ${result.turns}, matched: ${result.matched}, actual: ${compactTool(result.actualTool)}, tokens: ${result.usage.totalTokens}`
             );
             if (result.error) {
               console.log(`Error: ${result.error}`);
@@ -219,26 +231,38 @@ export async function runEvals(options: EvalRunOptions): Promise<EvalRunResult> 
           const expected = test.expected_outcome
             ? test.expected_outcome.replaceAll('_', ' ')
             : `\`${test.expected_tool}\``;
-          diagnostics.push({ id: test.id, status, selectionMatched: result.matched, executionFailed: result.executionFailed ?? false, runApiAlternative: result.runApiAlternative ?? false, reason: status === 'pass' ? undefined : reason, error: result.error, turns: result.turns, trace: safeTrace(currentMessages) });
+          const usageCell = formatTokensCell(result.usage);
+          diagnostics.push({
+            id: test.id,
+            status,
+            selectionMatched: result.matched,
+            executionFailed: result.executionFailed ?? false,
+            runApiAlternative: result.runApiAlternative ?? false,
+            reason: status === 'pass' ? undefined : reason,
+            error: result.error,
+            turns: result.turns,
+            usage: result.usage,
+            trace: safeTrace(currentMessages),
+          });
           if (status === 'error') {
             rows.push(
-              `| :boom: | ${escapeCell(description)} | ${expected} | Eval error (details in trace artifact) |`
+              `| :boom: | ${escapeCell(description)} | ${expected} | Eval error (details in trace artifact) | ${usageCell} |`
             );
             error++;
           } else if (status === 'pass') {
             const viaRunApi = result.runApiAlternative ? '; REST via run-api' : '';
             rows.push(
-              `| :white_check_mark: | ${escapeCell(description)} | ${expected} | \`${actual}\`${viaRunApi} (${result.turns} turns) |`
+              `| :white_check_mark: | ${escapeCell(description)} | ${expected} | \`${actual}\`${viaRunApi} (${result.turns} turns) | ${usageCell} |`
             );
             pass++;
           } else if (status === 'warning') {
             rows.push(
-              `| :warning: | ${escapeCell(description)} | ${expected} | ${result.executionFailed ? 'Selected; execution failed' : 'REST alternative'}: \`${actual}\` (${result.turns} turns) |`
+              `| :warning: | ${escapeCell(description)} | ${expected} | ${result.executionFailed ? 'Selected; execution failed' : 'REST alternative'}: \`${actual}\` (${result.turns} turns) | ${usageCell} |`
             );
             warning++;
           } else {
             rows.push(
-              `| :x: | ${escapeCell(description)} | ${expected} | ${escapeCell(reason)}; \`${actual}\` (${result.turns} turns) |`
+              `| :x: | ${escapeCell(description)} | ${expected} | ${escapeCell(reason)}; \`${actual}\` (${result.turns} turns) | ${usageCell} |`
             );
             fail++;
           }
@@ -247,7 +271,7 @@ export async function runEvals(options: EvalRunOptions): Promise<EvalRunResult> 
             console.log(
               `  step ${stepIndex + 1}/${runnable.length}: ${test.description} → ${
                 status
-              } (${actual})`
+              } (${actual}, ${usageCell})`
             );
           }
 
@@ -269,15 +293,22 @@ export async function runEvals(options: EvalRunOptions): Promise<EvalRunResult> 
     const totalRun = pass + warning + fail + error;
     const passRate = totalRun > 0 ? Math.floor((pass * 100) / totalRun) : 0;
     const statusEmoji = fail > 0 || error > 0 ? ':red_circle:' : warning > 0 ? ':yellow_circle:' : ':green_circle:';
+    const estimatedCostText =
+      totalUsage.estimatedCostUsd !== null ? formatUsd(totalUsage.estimatedCostUsd) : 'n/a';
+    const gatewayCacheText =
+      totalUsage.gatewayCacheHits > 0
+        ? ` | **Gateway Cache Hits:** ${totalUsage.gatewayCacheHits}`
+        : '';
 
     const lines = [
       `## ${statusEmoji} MCP AI Eval Results`,
       '',
       `**Model:** \`${options.model}\` | **MCP tools (tools/list):** ${toolCount} | **Passed:** ${pass} | **Warnings:** ${warning} | **Failed:** ${fail} | **Errors:** ${error} | **Blocked:** ${blocked} | **Skipped:** ${skip} | **Pass Rate:** ${passRate}%`,
+      `**Tokens:** ${formatRunTokensSummary(totalUsage)} | **Est. Cost:** ${estimatedCostText}${gatewayCacheText}`,
       'Detailed traces: `mcp-ai-eval-trace` artifact on this workflow run.',
       '',
-      '| Status | Test | Expected Tool / Outcome | Actual / Notes |',
-      '|--------|------|---------------|----------------|',
+      '| Status | Test | Expected Tool / Outcome | Actual / Notes | Tokens / Cost |',
+      '|--------|------|---------------|----------------|---------------|',
       ...rows,
     ];
 
@@ -300,9 +331,26 @@ export async function runEvals(options: EvalRunOptions): Promise<EvalRunResult> 
       core.setOutput('error', String(error));
       core.setOutput('pass_rate', String(passRate));
       core.setOutput('tool_count', String(toolCount));
+      core.setOutput('total_tokens', String(totalUsage.totalTokens));
+      core.setOutput('prompt_tokens', String(totalUsage.promptTokens));
+      core.setOutput('cached_tokens', String(totalUsage.cachedTokens));
+      core.setOutput('completion_tokens', String(totalUsage.completionTokens));
+      core.setOutput('estimated_cost', estimatedCostText);
     }
 
-    return { pass, fail, warning, error, skip, blocked, passRate, toolCount, reportMarkdown, diagnostics };
+    return {
+      pass,
+      fail,
+      warning,
+      error,
+      skip,
+      blocked,
+      passRate,
+      toolCount,
+      usage: totalUsage,
+      reportMarkdown,
+      diagnostics,
+    };
   } finally {
     await client.close();
   }

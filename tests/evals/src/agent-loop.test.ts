@@ -139,3 +139,81 @@ test('accepts a successful run-api dispatch when the dedicated ability was not s
     globalThis.fetch = originalFetch;
   }
 });
+
+test('accumulates token usage and estimated cost across agent turns and gateway cache hits', async () => {
+  const originalFetch = globalThis.fetch;
+  let turn = 0;
+  globalThis.fetch = async () => {
+    turn++;
+    if (turn === 1) {
+      return new Response(
+        JSON.stringify({
+          model: 'gpt-5-mini-2025-08-07',
+          usage: {
+            prompt_tokens: 1500,
+            completion_tokens: 100,
+            total_tokens: 1600,
+            prompt_tokens_details: { cached_tokens: 500 },
+          },
+          choices: [{
+            message: {
+              role: 'assistant',
+              tool_calls: [{
+                id: '1',
+                type: 'function',
+                function: { name: 'blu-list-abilities', arguments: '{"search":"posts"}' },
+              }],
+            },
+          }],
+        }),
+        { status: 200 }
+      );
+    }
+    return new Response(
+      JSON.stringify({
+        model: 'gpt-5-mini-2025-08-07',
+        usage: { prompt_tokens: 1800, completion_tokens: 120, total_tokens: 1920 },
+        choices: [{
+          message: {
+            role: 'assistant',
+            tool_calls: [{
+              id: '2',
+              type: 'function',
+              function: {
+                name: 'blu-call-ability',
+                arguments: '{"ability_name":"blu-posts-search","parameters":{}}',
+              },
+            }],
+          },
+        }],
+      }),
+      { status: 200, headers: { 'cf-aig-cache-status': 'HIT' } }
+    );
+  };
+  const client = {
+    callTool: async () => ({ structuredContent: { statusCode: 200, status: 'success' }, content: [] }),
+  } as unknown as Client;
+  try {
+    const result = await runAgentEval({
+      client,
+      prompt: 'Search posts',
+      expectedTool: 'blu_posts-search',
+      model: 'openai/gpt-5-mini',
+      gatewayUrl: 'http://example.invalid',
+      gatewayToken: 'test',
+      tools: [{ type: 'function', function: { name: 'blu-call-ability', description: 'Call', parameters: { type: 'object', properties: {} } } }],
+    });
+    assert.equal(result.matched, true);
+    assert.equal(result.turns, 2);
+    assert.equal(result.usage.promptTokens, 3300);
+    assert.equal(result.usage.cachedTokens, 500);
+    assert.equal(result.usage.completionTokens, 220);
+    assert.equal(result.usage.totalTokens, 3520);
+    assert.equal(result.usage.gatewayCacheHits, 1);
+    // Turn 1 billed: 1000*0.25/1M + 500*0.025/1M + 100*2.0/1M = 0.0004625; Turn 2 HIT = $0
+    assert.ok(result.usage.estimatedCostUsd !== null);
+    assert.ok(Math.abs(result.usage.estimatedCostUsd - 0.0004625) < 1e-12);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
