@@ -1057,7 +1057,7 @@ class WooProducts {
 	 * @param string  $type The REST API type : categories|tags|brands.
 	 * @param boolean $hierarchical If add the item with hierarchical structure.
 	 *
-	 * @return array
+	 * @return array|\WP_Error Standardized response or error.
 	 */
 	private function add_product_taxonomies( $taxonomies, $type = 'categories', $hierarchical = false ) {
 		$hierarchical = 'categories' === $type ? $hierarchical : false;
@@ -1139,7 +1139,7 @@ class WooProducts {
 	 * @param int    $term_id The term id.
 	 * @param string $taxonomy The taxonomy type.
 	 *
-	 * @return array
+	 * @return array|\WP_Error Standardized response or error.
 	 */
 	private function get_taxonomy( $term_id, $taxonomy = 'categories' ) {
 		$request = new \WP_REST_Request( 'GET', '/wc/v3/products/' . $taxonomy . '/' . $term_id );
