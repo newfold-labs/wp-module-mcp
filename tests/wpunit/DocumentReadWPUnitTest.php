@@ -179,7 +179,7 @@ class DocumentReadWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	 */
 	public function test_read_returns_400_when_source_url_empty() {
 		$result = $this->execute_read( array( 'source_url' => '' ) );
-		$this->assertSame( 400, $result['statusCode'] );
+		$this->assertSame( 400, $result->get_error_data()['status'] );
 	}
 
 	/**
@@ -187,7 +187,7 @@ class DocumentReadWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	 */
 	public function test_read_returns_400_when_source_url_invalid() {
 		$result = $this->execute_read( array( 'source_url' => 'not-a-url' ) );
-		$this->assertSame( 400, $result['statusCode'] );
+		$this->assertSame( 400, $result->get_error_data()['status'] );
 	}
 
 	/**
@@ -195,7 +195,7 @@ class DocumentReadWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	 */
 	public function test_read_returns_404_when_file_not_found() {
 		$result = $this->execute_read( array( 'source_url' => $this->url_for( 'nonexistent-' . uniqid() . '.txt' ) ) );
-		$this->assertSame( 404, $result['statusCode'] );
+		$this->assertSame( 404, $result->get_error_data()['status'] );
 	}
 
 	/**
@@ -214,8 +214,8 @@ class DocumentReadWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		fclose( $fh );
 
 		$result = $this->execute_read( array( 'source_url' => $this->url_for( $filename ) ) );
-		$this->assertSame( 400, $result['statusCode'] );
-		$this->assertStringContainsString( '50', $result['message'] );
+		$this->assertSame( 400, $result->get_error_data()['status'] );
+		$this->assertStringContainsString( '50', $result->get_error_message() );
 	}
 
 	/**
@@ -227,7 +227,7 @@ class DocumentReadWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		// PNG magic bytes — mime_content_type returns image/png.
 		$this->create_temp_file( 'logo.bin', "\x89PNG\r\n\x1a\n" . str_repeat( 'x', 20 ) );
 		$result = $this->execute_read( array( 'source_url' => $this->url_for( 'logo.bin' ) ) );
-		$this->assertSame( 400, $result['statusCode'] );
+		$this->assertSame( 400, $result->get_error_data()['status'] );
 	}
 
 	// -------------------------------------------------------------------------

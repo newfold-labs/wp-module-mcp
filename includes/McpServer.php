@@ -57,6 +57,7 @@ class McpServer {
 	 */
 	public function __construct() {
 		add_action( 'mcp_adapter_init', array( $this, 'register_server' ) );
+		add_filter( 'mcp_adapter_tool_call_result', array( $this, 'redact_tool_error' ), 10, 5 );
 		// Runs after register_server() and the prefixed DefaultServerFactory hook so the
 		// first (own-adapter) firing has completed successfully before we clean up.
 		add_action( 'mcp_adapter_init', array( $this, 'suppress_sibling_default_server_refire' ), 999 );
@@ -66,6 +67,32 @@ class McpServer {
 		// Compat shims for sibling plugins that lazy-load their MCP machinery against
 		// their own transport route. Each one self-registers its hooks.
 		new WooCommerceAbilities();
+	}
+
+	/**
+	 * Redact server error details before the adapter exposes them to MCP clients.
+	 *
+	 * @param mixed  $result Tool result.
+	 * @param array  $args Tool arguments.
+	 * @param string $tool_name Tool name.
+	 * @param mixed  $tool Tool object.
+	 * @param mixed  $server Adapter server.
+	 * @return mixed Safe tool result.
+	 */
+	public function redact_tool_error( $result, $args, $tool_name, $tool, $server ) {
+		if ( ! is_object( $server ) || ! method_exists( $server, 'get_server_id' ) || 'blu-mcp' !== $server->get_server_id() || ! is_wp_error( $result ) ) {
+			return $result;
+		}
+		$data   = $result->get_error_data();
+		$status = is_array( $data ) ? ( $data['status'] ?? null ) : null;
+		if ( ! is_int( $status ) ) {
+			$code   = $result->get_error_code();
+			$status = is_int( $code ) ? $code : ( in_array( $code, array( 'ability_invalid_input', 'ability_invalid_permissions' ), true ) ? 400 : 500 );
+		}
+		if ( $status >= 500 ) {
+			return new \WP_Error( 'blu_ability_execution_failed', 'Ability execution failed.', array( 'status' => $status ) );
+		}
+		return $result;
 	}
 
 	/**

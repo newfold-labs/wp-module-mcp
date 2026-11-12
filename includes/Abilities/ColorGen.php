@@ -58,9 +58,9 @@ class ColorGen {
 	 * Generate color palettes via the Hiive ai-platform colorgen endpoint.
 	 *
 	 * @param array $input Tool input parameters.
-	 * @return array Standardized ability response.
+	 * @return array|\WP_Error Standardized ability response.
 	 */
-	public function generate( array $input ): array {
+	public function generate( array $input ) {
 		set_time_limit( 60 );
 
 		$api_url = defined( 'NFD_AI_PLATFORM_URL' ) ? NFD_AI_PLATFORM_URL : 'https://ai-platform.hiive.cloud';

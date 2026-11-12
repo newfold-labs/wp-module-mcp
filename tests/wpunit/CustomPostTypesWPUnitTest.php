@@ -165,7 +165,7 @@ class CustomPostTypesWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase 
 	 *
 	 * @return array
 	 */
-	private function execute( string $ability, array $input ): array {
+	private function execute( string $ability, array $input ) {
 		return blu_get_ability( $ability )->execute( $input );
 	}
 
@@ -233,12 +233,12 @@ class CustomPostTypesWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase 
 	public function test_post_type_not_found_response_lists_available_types(): void {
 		$result = blu_post_type_not_found_response( 'Widgets' );
 
-		$this->assertSame( 400, $result['statusCode'] );
-		$this->assertSame( 'error', $result['status'] );
-		$this->assertStringContainsString( 'Widgets', $result['message'] );
-		$this->assertStringContainsString( self::CPT_SLUG, $result['message'] );
-		$this->assertStringContainsString( '"Books"', $result['message'] );
-		$this->assertStringContainsString( 'post', $result['message'] );
+		$this->assertSame( 400, $result->get_error_data()['status'] );
+		$this->assertWPError( $result );
+		$this->assertStringContainsString( 'Widgets', $result->get_error_message() );
+		$this->assertStringContainsString( self::CPT_SLUG, $result->get_error_message() );
+		$this->assertStringContainsString( '"Books"', $result->get_error_message() );
+		$this->assertStringContainsString( 'post', $result->get_error_message() );
 	}
 
 	/**
@@ -437,8 +437,8 @@ class CustomPostTypesWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase 
 			)
 		);
 
-		$this->assertSame( 404, $result['statusCode'] );
-		$this->assertSame( 'error', $result['status'] );
+		$this->assertSame( 404, $result->get_error_data()['status'] );
+		$this->assertWPError( $result );
 	}
 
 	/**
@@ -551,10 +551,10 @@ class CustomPostTypesWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase 
 	public function test_unknown_post_type_returns_400_with_available_types( string $ability, array $extra ): void {
 		$result = $this->execute( $ability, array_merge( array( 'post_type' => 'Widgets' ), $extra ) );
 
-		$this->assertSame( 400, $result['statusCode'] );
-		$this->assertSame( 'error', $result['status'] );
-		$this->assertStringContainsString( 'Unknown post type "Widgets"', $result['message'] );
-		$this->assertStringContainsString( self::CPT_SLUG, $result['message'] );
+		$this->assertSame( 400, $result->get_error_data()['status'] );
+		$this->assertWPError( $result );
+		$this->assertStringContainsString( 'Unknown post type "Widgets"', $result->get_error_message() );
+		$this->assertStringContainsString( self::CPT_SLUG, $result->get_error_message() );
 	}
 
 	/**

@@ -254,7 +254,7 @@ class ImageEditColorsWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase 
 	 */
 	public function test_extract_returns_400_when_image_url_empty() {
 		$result = $this->execute_extract( array( 'image_url' => '' ) );
-		$this->assertSame( 400, $result['statusCode'] );
+		$this->assertSame( 400, $result->get_error_data()['status'] );
 	}
 
 	/**
@@ -262,7 +262,7 @@ class ImageEditColorsWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase 
 	 */
 	public function test_extract_returns_400_when_image_url_invalid() {
 		$result = $this->execute_extract( array( 'image_url' => 'not-a-url' ) );
-		$this->assertSame( 400, $result['statusCode'] );
+		$this->assertSame( 400, $result->get_error_data()['status'] );
 	}
 
 	/**
@@ -270,7 +270,7 @@ class ImageEditColorsWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase 
 	 */
 	public function test_extract_returns_400_when_image_url_not_allowed() {
 		$result = $this->execute_extract( array( 'image_url' => 'https://evil.example.com/logo.png' ) );
-		$this->assertSame( 400, $result['statusCode'] );
+		$this->assertSame( 400, $result->get_error_data()['status'] );
 	}
 
 	// -------------------------------------------------------------------------

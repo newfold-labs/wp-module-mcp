@@ -9,6 +9,91 @@ namespace BLU;
  */
 class McpServerWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 
+	/** Server errors are redacted for our MCP server without changing other servers. */
+	public function test_redacts_server_errors_only_for_our_mcp_server(): void {
+		$server = new McpServer();
+		$ours   = new class() {
+			/**
+			 * Return the server ID.
+			 *
+			 * @return string
+			 */
+			public function get_server_id() {
+				return 'blu-mcp';
+			}
+		};
+		$other  = new class() {
+			/**
+			 * Return the server ID.
+			 *
+			 * @return string
+			 */
+			public function get_server_id() {
+				return 'other';
+			}
+		};
+		$error  = new \WP_Error( 'failure', 'secret path /srv/db', array( 'status' => 503 ) );
+		$this->assertSame( $error, $server->redact_tool_error( $error, array(), '', null, $other ) );
+		$result = $server->redact_tool_error( $error, array(), '', null, $ours );
+		$this->assertWPError( $result );
+		$this->assertSame( 'Ability execution failed.', $result->get_error_message() );
+		$invalid = new \WP_Error( 'invalid', 'Correct the input', array( 'status' => 400 ) );
+		$this->assertSame( $invalid, $server->redact_tool_error( $invalid, array(), '', null, $ours ) );
+	}
+
+	/** The adapter emits tool errors and redacts server failures. */
+	public function test_adapter_reports_rest_errors_and_successes(): void {
+		new McpServer();
+		$tool    = \WP\MCP\Domain\Tools\McpTool::fromArray(
+			array(
+				'name'       => 'test-rest-result',
+				'handler'    => function ( $args ) {
+					$status = $args['status'];
+					return blu_standardize_rest_response(
+						new \WP_REST_Response(
+							array(
+								'code'    => 'example',
+								'message' => 503 === $status ? 'secret path /srv/db' : 'Not found',
+							),
+							$status
+						)
+					);
+				},
+				'permission' => function () {
+					return true; },
+			)
+		);
+		$adapter = new \WP\MCP\Core\McpServer( 'blu-mcp', 'blu', 'mcp-test', 'test', 'test', '1.0', array(), null, null, array( $tool ) );
+		$schema  = \WP\McpSchema\Schemas::create()->forVersion( \WP\McpSchema\Schemas::V2025_11_25 );
+		$context = new \WP\MCP\Core\McpRequestContext( $schema, new \stdClass(), null, 'test' );
+		$handler = new \WP\MCP\Handlers\Tools\ToolsHandler( $adapter );
+		foreach ( array(
+			404 => 'Not found',
+			503 => 'Ability execution failed.',
+			201 => null,
+		) as $status => $expected ) {
+			$request = $schema->fromArray(
+				\WP\McpSchema\Record\CallToolRequest::class,
+				array(
+					'jsonrpc' => '2.0',
+					'id'      => 1,
+					'method'  => 'tools/call',
+					'params'  => array(
+						'name'      => 'test-rest-result',
+						'arguments' => array( 'status' => $status ),
+					),
+				)
+			);
+			$result  = $handler->call_tool( $request, $context );
+			$this->assertSame( null !== $expected, $result['isError'] );
+			if ( null !== $expected ) {
+				$this->assertSame( $expected, $result['content'][0]['text'] );
+			} else {
+				$this->assertSame( 201, $result['structuredContent']->statusCode );
+			}
+		}
+	}
+
 	/** Gateway mode keeps REST abilities behind the three advertised tools. */
 	public function test_gateway_mode_advertises_only_gateway_tools(): void {
 		$server = new McpServer();
