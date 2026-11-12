@@ -153,6 +153,10 @@ class GlobalStylesWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 			)
 		);
 
+		if ( is_wp_error( $result ) ) {
+			$this->assertSame( 404, $result->get_error_data()['status'] );
+			return;
+		}
 		$this->assertIsArray( $result );
 		$this->assertArrayHasKey( 'statusCode', $result );
 	}
@@ -172,6 +176,10 @@ class GlobalStylesWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 			)
 		);
 
+		if ( is_wp_error( $result ) ) {
+			$this->assertSame( 404, $result->get_error_data()['status'] );
+			return;
+		}
 		$this->assertIsArray( $result );
 		$this->assertArrayHasKey( 'statusCode', $result );
 	}
@@ -193,6 +201,9 @@ class GlobalStylesWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 			)
 		);
 
+		if ( is_wp_error( $result ) ) {
+			$this->markTestSkipped( 'REST update did not succeed in this harness; cannot assert on diff.' );
+		}
 		$this->assertIsArray( $result );
 		if ( $result['statusCode'] < 200 || $result['statusCode'] >= 300 ) {
 			$this->markTestSkipped( 'REST update did not succeed in this harness; cannot assert on diff.' );
@@ -227,6 +238,9 @@ class GlobalStylesWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 			)
 		);
 
+		if ( is_wp_error( $result ) ) {
+			$this->markTestSkipped( 'REST update did not succeed in this harness; cannot assert on diff.' );
+		}
 		$this->assertIsArray( $result );
 		if ( $result['statusCode'] < 200 || $result['statusCode'] >= 300 ) {
 			$this->markTestSkipped( 'REST update did not succeed in this harness; cannot assert on diff.' );
@@ -271,6 +285,9 @@ class GlobalStylesWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 			)
 		);
 
+		if ( is_wp_error( $result ) ) {
+			$this->markTestSkipped( 'REST update did not succeed in this harness; cannot assert on diff.' );
+		}
 		$this->assertIsArray( $result );
 		if ( $result['statusCode'] < 200 || $result['statusCode'] >= 300 ) {
 			$this->markTestSkipped( 'REST update did not succeed in this harness; cannot assert on diff.' );
@@ -308,6 +325,9 @@ class GlobalStylesWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 			)
 		);
 
+		if ( is_wp_error( $result ) ) {
+			$this->markTestSkipped( 'REST update did not succeed in this harness; cannot assert on diff.' );
+		}
 		$this->assertIsArray( $result );
 		if ( $result['statusCode'] < 200 || $result['statusCode'] >= 300 ) {
 			$this->markTestSkipped( 'REST update did not succeed in this harness; cannot assert on diff.' );
@@ -351,6 +371,9 @@ class GlobalStylesWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 			)
 		);
 
+		if ( is_wp_error( $result ) ) {
+			$this->markTestSkipped( 'REST update did not succeed in this harness; cannot assert on diff.' );
+		}
 		$this->assertIsArray( $result );
 		if ( $result['statusCode'] < 200 || $result['statusCode'] >= 300 ) {
 			$this->markTestSkipped( 'REST update did not succeed in this harness; cannot assert on diff.' );
@@ -385,6 +408,9 @@ class GlobalStylesWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 			)
 		);
 
+		if ( is_wp_error( $result ) ) {
+			$this->markTestSkipped( 'REST update did not succeed in this harness; cannot assert on diff.' );
+		}
 		$this->assertIsArray( $result );
 		if ( $result['statusCode'] < 200 || $result['statusCode'] >= 300 ) {
 			$this->markTestSkipped( 'REST update did not succeed in this harness; cannot assert on diff.' );
@@ -416,6 +442,9 @@ class GlobalStylesWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 			)
 		);
 
+		if ( is_wp_error( $result ) ) {
+			$this->markTestSkipped( 'REST update did not succeed in this harness; cannot assert on diff.' );
+		}
 		$this->assertIsArray( $result );
 		if ( $result['statusCode'] < 200 || $result['statusCode'] >= 300 ) {
 			$this->markTestSkipped( 'REST update did not succeed in this harness; cannot assert on diff.' );
@@ -461,6 +490,10 @@ class GlobalStylesWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	public function test_get_active_global_styles_returns_response() {
 		$result = $this->execute_ability( 'blu/get-active-global-styles', array() );
 
+		if ( is_wp_error( $result ) ) {
+			$this->assertSame( 404, $result->get_error_data()['status'] );
+			return;
+		}
 		$this->assertIsArray( $result );
 		$this->assertArrayHasKey( 'statusCode', $result );
 		$this->assertContains( $result['statusCode'], array( 200, 404 ) );
@@ -474,6 +507,10 @@ class GlobalStylesWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	public function test_get_active_global_styles_id_returns_response() {
 		$result = $this->execute_ability( 'blu/get-active-global-styles-id', array() );
 
+		if ( is_wp_error( $result ) ) {
+			$this->assertSame( 404, $result->get_error_data()['status'] );
+			return;
+		}
 		$this->assertIsArray( $result );
 		$this->assertArrayHasKey( 'statusCode', $result );
 		$this->assertContains( $result['statusCode'], array( 200, 404 ) );

@@ -65,9 +65,7 @@ class FunctionsWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	public function test_blu_standardize_rest_response_wp_error() {
 		$error  = new \WP_Error( 'code', 'Error message' );
 		$result = blu_standardize_rest_response( $error );
-		$this->assertIsArray( $result );
-		$this->assertSame( 'code', $result['statusCode'] );
-		$this->assertSame( 'Error message', $result['message'] );
+		$this->assertSame( $error, $result );
 	}
 
 	/**
@@ -91,8 +89,8 @@ class FunctionsWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	 */
 	public function test_blu_standardize_rest_response_unexpected() {
 		$result = blu_standardize_rest_response( 'not valid' );
-		$this->assertSame( 500, $result['statusCode'] );
-		$this->assertSame( 'Unexpected response format.', $result['message'] );
+		$this->assertWPError( $result );
+		$this->assertSame( 500, $result->get_error_data()['status'] );
 	}
 
 	/**
@@ -215,10 +213,7 @@ class FunctionsWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	public function test_blu_standardize_rest_response_wp_error_empty_code_uses_500() {
 		$error  = new \WP_Error( '', 'Error with no code' );
 		$result = blu_standardize_rest_response( $error );
-		$this->assertSame( 500, $result['statusCode'] );
-		$this->assertArrayHasKey( 'message', $result );
-		// WP_Error with empty code may return empty string for message in some WP versions.
-		$this->assertIsString( $result['message'] );
+		$this->assertSame( $error, $result );
 	}
 
 	/**
@@ -227,9 +222,27 @@ class FunctionsWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	 * @return void
 	 */
 	public function test_blu_prepare_ability_response_error_status() {
-		$result = blu_prepare_ability_response( 404, array( 'error' => 'Not found' ) );
-		$this->assertSame( 404, $result['statusCode'] );
-		$this->assertSame( 'error', $result['status'] );
+		$result = blu_prepare_ability_response(
+			404,
+			array(
+				'code'    => 'not_found',
+				'message' => 'Not found',
+				'data'    => array(
+					'status' => 404,
+					'detail' => 'example',
+				),
+			)
+		);
+		$this->assertWPError( $result );
+		$this->assertSame( 'not_found', $result->get_error_code() );
+		$this->assertSame( 'Not found', $result->get_error_message() );
+		$this->assertSame(
+			array(
+				'status' => 404,
+				'detail' => 'example',
+			),
+			$result->get_error_data()
+		);
 	}
 
 	/**

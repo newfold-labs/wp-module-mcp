@@ -11,6 +11,59 @@ use BLU\Abilities\AbilityGateway;
  */
 class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 
+	/** The adapter exposes an unknown delegated ability as an MCP tool error. */
+	public function test_gateway_failure_is_an_mcp_tool_error(): void {
+		$this->register_test_ability(
+			'blu/rest-failure',
+			'blu-mcp',
+			function () {
+				return blu_standardize_rest_response(
+					new \WP_REST_Response(
+						array(
+							'code'    => 'not_found',
+							'message' => 'Missing',
+						),
+						404
+					)
+				);
+			}
+		);
+		$this->register_gateway();
+		$adapter = new \WP\MCP\Core\McpServer( 'blu-mcp', 'blu', 'mcp-test', 'test', 'test', '1.0', array(), null, null, array( 'blu/call-ability' ) );
+		$schema  = \WP\McpSchema\Schemas::create()->forVersion( \WP\McpSchema\Schemas::V2025_11_25 );
+		$request = $schema->fromArray(
+			\WP\McpSchema\Record\CallToolRequest::class,
+			array(
+				'jsonrpc' => '2.0',
+				'id'      => 1,
+				'method'  => 'tools/call',
+				'params'  => array(
+					'name'      => 'blu-call-ability',
+					'arguments' => array( 'ability_name' => 'blu-nonexistent' ),
+				),
+			)
+		);
+		$context = new \WP\MCP\Core\McpRequestContext( $schema, new \stdClass(), null, 'test' );
+		$result  = ( new \WP\MCP\Handlers\Tools\ToolsHandler( $adapter ) )->call_tool( $request, $context );
+		$this->assertTrue( $result['isError'] );
+		$this->assertSame( 'Ability not found or not available.', $result['content'][0]['text'] );
+		$request = $schema->fromArray(
+			\WP\McpSchema\Record\CallToolRequest::class,
+			array(
+				'jsonrpc' => '2.0',
+				'id'      => 2,
+				'method'  => 'tools/call',
+				'params'  => array(
+					'name'      => 'blu-call-ability',
+					'arguments' => array( 'ability_name' => 'blu-rest-failure' ),
+				),
+			)
+		);
+		$result  = ( new \WP\MCP\Handlers\Tools\ToolsHandler( $adapter ) )->call_tool( $request, $context );
+		$this->assertTrue( $result['isError'] );
+		$this->assertSame( 'Missing', $result['content'][0]['text'] );
+	}
+
 	/**
 	 * Names of abilities registered during tests that need cleanup.
 	 *
@@ -381,8 +434,8 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$this->register_gateway();
 		$ability = blu_get_ability( 'blu/get-ability-schema' );
 		$result  = $ability->execute( array( 'ability_name' => 'nonexistent/tool' ) );
-		$this->assertSame( 404, $result['statusCode'] );
-		$this->assertSame( 'error', $result['status'] );
+		$this->assertSame( 404, $result->get_error_data()['status'] );
+		$this->assertWPError( $result );
 	}
 
 	/**
@@ -1209,7 +1262,7 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 
 		$ability = blu_get_ability( 'blu/get-ability-schema' );
 		$result  = $ability->execute( array( 'ability_name' => 'secret/hidden-tool' ) );
-		$this->assertSame( 404, $result['statusCode'] );
+		$this->assertSame( 404, $result->get_error_data()['status'] );
 	}
 
 	/**

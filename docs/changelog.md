@@ -11,7 +11,7 @@ Notable changes are listed here; older history may be on **GitHub Releases**.
 
 ## [Unreleased]
 
-- Changed: `blu-call-ability` reports failures as MCP tool errors (`isError: true` with the error message as text) instead of a successful result holding an ability response wrapper with `status: "error"`. This covers a missing or unknown `ability_name`, a gateway tool called through the gateway, and a `WP_Error` from the called ability. 5xx messages are still redacted. Wrappers the called ability builds itself pass through unchanged.
+- Changed: module ability and REST failures return `WP_Error` to PHP callers and MCP tool errors (`isError: true`) to clients. PHP callers must handle errors before reading result arrays. Successful responses are unchanged. MCP error messages for 5xx and unclassified errors are redacted; third-party custom error arrays are not converted.
 
 - Fixed: direct media-file reads now check permission on the attachment. Uploads reject files whose content does not match an allowed extension, before attachment registration.
 

@@ -138,9 +138,9 @@ class ImageEdit {
 	 * Extract dominant colors from an image using GD.
 	 *
 	 * @param array $input Tool input parameters.
-	 * @return array Standardized ability response.
+	 * @return array|\WP_Error Standardized ability response.
 	 */
-	public function extract_colors( array $input ): array {
+	public function extract_colors( array $input ) {
 		if ( ! function_exists( 'imagecreatefromstring' ) ) {
 			return blu_prepare_ability_response( 500, __( 'GD image library is not available on this server.', 'wp-module-mcp' ) );
 		}
@@ -288,9 +288,9 @@ class ImageEdit {
 	 * Edit an image via the AI platform.
 	 *
 	 * @param array $input Tool input parameters.
-	 * @return array Standardized ability response.
+	 * @return array|\WP_Error Standardized ability response.
 	 */
-	public function edit( array $input ): array {
+	public function edit( array $input ) {
 		// Extend PHP execution time for this long-running request.
 		set_time_limit( 120 );
 

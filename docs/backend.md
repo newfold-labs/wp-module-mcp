@@ -39,7 +39,7 @@ WordPress uses `future` for scheduled content. Its current, visible status slugs
 
 The gateway includes Yoast SEO abilities when Yoast registers them. Its whitelist requires both the `yoast-seo/` namespace and `yoast-seo` category; the abilities remain behind the three gateway tools and retain Yoast's own permission checks. Yoast may withhold its abilities when its indexables are disabled, including on local environments.
 
-`blu-call-ability` returns its failures as a `WP_Error`, which the MCP adapter sends as a tool execution error (`isError: true`) carrying only the message, so clients see that the call failed. The HTTP-style status stays in the error data; 5xx messages are replaced with `Ability execution failed.` because abilities may put paths, SQL, or credentials in them.
+Module abilities return `WP_Error` for failures, including unsuccessful REST responses. The MCP adapter sends these as tool execution errors (`isError: true`) carrying the message. PHP callers must check `is_wp_error()` before using a result as an array; the HTTP status is stored in the error data when available. At the MCP boundary, 5xx and unclassified error messages are replaced with `Ability execution failed.` because abilities may put paths, SQL, or credentials in them. Third-party abilities may still return custom error arrays.
 
 In gateway mode, only the three meta-tools appear in MCP `tools/list`. Clients discover and execute the REST abilities through those tools; the REST catalog reflects routes registered by active plugins.
 

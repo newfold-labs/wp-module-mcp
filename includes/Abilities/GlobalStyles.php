@@ -243,9 +243,9 @@ class GlobalStyles {
 	 * caller can self-correct without round-tripping through a follow-up read.
 	 *
 	 * @param array $input The input parameters.
-	 * @return array The result.
+	 * @return array|\WP_Error The result.
 	 */
-	public function execute_update_global_styles( array $input = array() ): array {
+	public function execute_update_global_styles( array $input = array() ) {
 		if ( ! isset( $input['settings'] ) && ! isset( $input['styles'] ) ) {
 			return blu_prepare_ability_response( 400, 'Settings or styles object is required' );
 		}
@@ -275,7 +275,7 @@ class GlobalStyles {
 		// Only attach the applied/not_applied diff on a successful 2xx response.
 		// On error, the message already carries the REST error string; surfacing
 		// a diff against an unwritten post would be misleading.
-		if ( isset( $result['statusCode'] ) && $result['statusCode'] >= 200 && $result['statusCode'] < 300 ) {
+		if ( ! is_wp_error( $result ) && isset( $result['statusCode'] ) && $result['statusCode'] >= 200 && $result['statusCode'] < 300 ) {
 			$stored = is_array( $result['message'] ?? null ) ? $result['message'] : array();
 			$diff   = $this->diff_requested_vs_stored( $data, $stored );
 

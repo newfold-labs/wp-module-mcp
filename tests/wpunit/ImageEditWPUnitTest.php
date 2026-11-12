@@ -259,8 +259,8 @@ class ImageEditWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 			)
 		);
 
-		$this->assertSame( 400, $result['statusCode'] );
-		$this->assertSame( 'A valid source_url is required.', $result['message'] );
+		$this->assertSame( 400, $result->get_error_data()['status'] );
+		$this->assertSame( 'A valid source_url is required.', $result->get_error_message() );
 	}
 
 	/**
@@ -274,8 +274,8 @@ class ImageEditWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 			)
 		);
 
-		$this->assertSame( 400, $result['statusCode'] );
-		$this->assertSame( 'source_url is not allowed.', $result['message'] );
+		$this->assertSame( 400, $result->get_error_data()['status'] );
+		$this->assertSame( 'source_url is not allowed.', $result->get_error_message() );
 	}
 
 	/**
@@ -292,7 +292,7 @@ class ImageEditWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 			)
 		);
 
-		$this->assertSame( 401, $result['statusCode'] );
+		$this->assertSame( 401, $result->get_error_data()['status'] );
 	}
 
 	/**
@@ -386,8 +386,8 @@ class ImageEditWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 			)
 		);
 
-		$this->assertSame( 400, $result['statusCode'] );
-		$this->assertStringContainsString( 'Unable to fetch source image', $result['message'] );
+		$this->assertSame( 400, $result->get_error_data()['status'] );
+		$this->assertStringContainsString( 'Unable to fetch source image', $result->get_error_message() );
 	}
 
 	/**
@@ -422,8 +422,8 @@ class ImageEditWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 			)
 		);
 
-		$this->assertSame( 400, $result['statusCode'] );
-		$this->assertSame( 'Unsupported source image type.', $result['message'] );
+		$this->assertSame( 400, $result->get_error_data()['status'] );
+		$this->assertSame( 'Unsupported source image type.', $result->get_error_message() );
 	}
 
 	/**
@@ -462,7 +462,7 @@ class ImageEditWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 			)
 		);
 
-		$this->assertSame( 504, $result['statusCode'] );
+		$this->assertSame( 504, $result->get_error_data()['status'] );
 	}
 
 	/**
@@ -501,7 +501,7 @@ class ImageEditWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 			)
 		);
 
-		$this->assertSame( 502, $result['statusCode'] );
+		$this->assertSame( 502, $result->get_error_data()['status'] );
 	}
 
 	/**
@@ -544,8 +544,8 @@ class ImageEditWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 			)
 		);
 
-		$this->assertSame( 503, $result['statusCode'] );
-		$this->assertSame( 'Service unavailable', $result['message'] );
+		$this->assertSame( 503, $result->get_error_data()['status'] );
+		$this->assertSame( 'Service unavailable', $result->get_error_message() );
 	}
 
 	/**
@@ -588,7 +588,7 @@ class ImageEditWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 			)
 		);
 
-		$this->assertSame( 500, $result['statusCode'] );
-		$this->assertSame( 'No image URL in response', $result['message'] );
+		$this->assertSame( 500, $result->get_error_data()['status'] );
+		$this->assertSame( 'No image URL in response', $result->get_error_message() );
 	}
 }

@@ -195,7 +195,7 @@ class CustomPostTypePermissionsWPUnitTest extends \lucatume\WPBrowser\TestCase\W
 	private function outcome( string $ability, array $input ): string {
 		$result = blu_get_ability( $ability )->execute( $input );
 		if ( is_wp_error( $result ) ) {
-			return 'gate';
+			return 403 === ( $result->get_error_data()['status'] ?? null ) ? '403' : 'gate';
 		}
 
 		return 403 === $result['statusCode'] ? '403' : 'allowed';

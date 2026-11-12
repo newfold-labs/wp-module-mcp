@@ -47,9 +47,9 @@ class DocumentRead {
 	 * Read document content from the temp upload directory.
 	 *
 	 * @param array $input Tool input parameters.
-	 * @return array Standardized ability response.
+	 * @return array|\WP_Error Standardized ability response.
 	 */
-	public function read( array $input ): array {
+	public function read( array $input ) {
 		$raw_url = (string) ( $input['source_url'] ?? '' );
 		$url     = esc_url_raw( $raw_url );
 

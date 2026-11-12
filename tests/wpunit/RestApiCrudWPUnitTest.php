@@ -508,8 +508,8 @@ class RestApiCrudWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 				'data'   => array(),
 			)
 		);
-		$this->assertSame( 400, $result['statusCode'] );
-		$this->assertSame( 'error', $result['status'] );
+		$this->assertSame( 400, $result->get_error_data()['status'] );
+		$this->assertWPError( $result );
 
 		$result_nested = blu_get_ability( 'blu/run-api-function' )->execute(
 			array(
@@ -518,7 +518,7 @@ class RestApiCrudWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 				'data'   => array(),
 			)
 		);
-		$this->assertSame( 400, $result_nested['statusCode'] );
+		$this->assertSame( 400, $result_nested->get_error_data()['status'] );
 	}
 
 	/** HEAD metadata must use the GET handler when WordPress would dispatch it that way. */
@@ -574,7 +574,7 @@ class RestApiCrudWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 				'method' => 'GET',
 			)
 		);
-		$this->assertSame( 404, $result['statusCode'] );
+		$this->assertSame( 404, $result->get_error_data()['status'] );
 	}
 
 	/**
@@ -589,7 +589,7 @@ class RestApiCrudWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 				'method' => 'DELETE',
 			)
 		);
-		$this->assertSame( 404, $result['statusCode'] );
+		$this->assertSame( 404, $result->get_error_data()['status'] );
 	}
 
 	/** A REST route registered during discovery must also be available to details and dispatch. */
@@ -691,7 +691,7 @@ class RestApiCrudWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 				'method' => 'POST',
 			)
 		);
-		$this->assertSame( 403, $write['statusCode'] );
+		$this->assertSame( 403, $write->get_error_data()['status'] );
 	}
 
 	/** The schema must permit every method a registered REST endpoint can advertise. */

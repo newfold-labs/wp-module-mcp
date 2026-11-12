@@ -128,9 +128,9 @@ class LogoGen {
 	 * Edit the existing site logo via AI image edit, then set it as site_logo.
 	 *
 	 * @param array $input Tool input parameters.
-	 * @return array Standardized ability response.
+	 * @return array|\WP_Error Standardized ability response.
 	 */
-	public function edit( array $input ): array {
+	public function edit( array $input ) {
 		set_time_limit( 120 );
 
 		$prompt = trim( (string) ( $input['prompt'] ?? '' ) );
@@ -171,7 +171,7 @@ class LogoGen {
 		);
 
 		if ( is_wp_error( $edit_result ) ) {
-			return blu_prepare_ability_response( 400, $edit_result->get_error_message() );
+			return $edit_result;
 		}
 
 		$status = (int) ( $edit_result['statusCode'] ?? 500 );
@@ -200,9 +200,9 @@ class LogoGen {
 	 * Request a logo from the AI platform, sideload it, and set as site_logo.
 	 *
 	 * @param array $input Tool input parameters.
-	 * @return array Standardized ability response.
+	 * @return array|\WP_Error Standardized ability response.
 	 */
-	public function regenerate( array $input ): array {
+	public function regenerate( array $input ) {
 		// Extend PHP execution time for this long-running request.
 		set_time_limit( 120 );
 
@@ -285,9 +285,9 @@ class LogoGen {
 	 * Set an existing image URL as the site logo.
 	 *
 	 * @param array $input Tool input parameters.
-	 * @return array Standardized ability response.
+	 * @return array|\WP_Error Standardized ability response.
 	 */
-	public function set_from_image( array $input ): array {
+	public function set_from_image( array $input ) {
 		set_time_limit( 120 );
 
 		$raw_url = (string) ( $input['source_url'] ?? '' );
@@ -311,9 +311,9 @@ class LogoGen {
 	 *
 	 * @param string $url  Image URL to sideload.
 	 * @param string $desc Attachment description/title.
-	 * @return array Standardized ability response.
+	 * @return array|\WP_Error Standardized ability response.
 	 */
-	private function sideload_and_set_logo( string $url, string $desc ): array {
+	private function sideload_and_set_logo( string $url, string $desc ) {
 		require_once ABSPATH . 'wp-admin/includes/media.php';
 		require_once ABSPATH . 'wp-admin/includes/file.php';
 		require_once ABSPATH . 'wp-admin/includes/image.php';

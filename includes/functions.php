@@ -243,9 +243,20 @@ function blu_ai_platform_sslverify() {
  * @param int   $status  The HTTP status code of the response.
  * @param mixed $message The response message or data.
  *
- * @return array An associative array containing 'status' and 'response' keys.
+ * @return array|WP_Error Standardized success response or error.
  */
 function blu_prepare_ability_response( $status, $message ) {
+	if ( is_int( $status ) && $status >= 400 && $status <= 599 ) {
+		$data = is_array( $message ) ? $message : array();
+		$code = isset( $data['code'] ) && is_string( $data['code'] ) && '' !== $data['code'] ? $data['code'] : 'blu_ability_error';
+		$text = is_string( $message ) ? $message : ( $data['message'] ?? $data['error'] ?? 'Ability execution failed.' );
+		if ( ! is_string( $text ) ) {
+			$text = 'Ability execution failed.';
+		}
+		$error_data           = isset( $data['data'] ) && is_array( $data['data'] ) ? $data['data'] : array();
+		$error_data['status'] = $status;
+		return new \WP_Error( $code, $text, $error_data );
+	}
 	return array(
 		'statusCode' => $status,
 		'status'     => blu_get_status_type( $status ),
@@ -258,15 +269,13 @@ function blu_prepare_ability_response( $status, $message ) {
  *
  * @param mixed $response The original response which can be a WP_Error or WP_REST_Response.
  *
- * @return array An associative array containing 'status' and 'response' keys.
+ * @return array|WP_Error Standardized success response or error.
  */
 function blu_standardize_rest_response( $response ) {
 
 	if ( is_wp_error( $response ) ) {
 
-		$status = $response->get_error_code() ? $response->get_error_code() : 500;
-
-		return blu_prepare_ability_response( $status, $response->get_error_message() );
+		return $response;
 
 	} elseif ( $response instanceof \WP_REST_Response ) {
 
@@ -283,11 +292,14 @@ function blu_standardize_rest_response( $response ) {
  * Single-item abilities provide the full REST resource when more detail is
  * needed. Error responses keep their original status and message.
  *
- * @param array $response Standardized REST response.
+ * @param array|WP_Error $response Standardized REST response.
  *
- * @return array Compact search response.
+ * @return array|WP_Error Compact search response or error.
  */
-function blu_compact_post_search_response( array $response ): array {
+function blu_compact_post_search_response( $response ) {
+	if ( is_wp_error( $response ) ) {
+		return $response;
+	}
 	if ( 200 !== $response['statusCode'] || ! is_array( $response['message'] ) ) {
 		return $response;
 	}
@@ -379,9 +391,9 @@ function blu_resolve_post_type( string $input ): ?string {
  *
  * @param string $input The identifier the caller tried to use.
  *
- * @return array Standardized 400 ability response listing valid options.
+ * @return WP_Error Error listing valid options.
  */
-function blu_post_type_not_found_response( string $input ): array {
+function blu_post_type_not_found_response( string $input ) {
 	$available = array();
 	foreach ( get_post_types( array(), 'objects' ) as $slug => $object ) {
 		$label       = isset( $object->labels->name ) ? $object->labels->name : $slug;
@@ -533,9 +545,9 @@ function blu_current_user_can_act_on_post( WP_Post $post, string $cap ): bool {
  * @param int    $post_id The item the caller named.
  * @param string $action  Human-readable action, e.g. "read" or "delete".
  *
- * @return array Standardized 403 ability response.
+ * @return WP_Error Permission error.
  */
-function blu_post_permission_denied_response( int $post_id, string $action ): array {
+function blu_post_permission_denied_response( int $post_id, string $action ) {
 	return blu_prepare_ability_response(
 		403,
 		sprintf( 'You do not have permission to %1$s item %2$d.', $action, $post_id )

@@ -571,7 +571,7 @@ class WooProducts {
 							$categories = explode( '>', $category_path );
 
 							$resp = $this->add_product_taxonomies( $categories, 'categories', true );
-							if ( ! in_array( $resp['statusCode'], array( 200, 201 ) ) ) {
+							if ( is_wp_error( $resp ) || ! in_array( $resp['statusCode'], array( 200, 201 ), true ) ) {
 								return $resp;
 							}
 
@@ -1075,15 +1075,15 @@ class WooProducts {
 			$request->set_body_params( $args );
 			$response = rest_do_request( $request );
 			$response = blu_standardize_rest_response( $response );
-			if ( 400 == $response ['statusCode'] && 'term_exists' === $response['message']['code'] ) {
-				$parent        = $response['message']['data']['resource_id'];
+			if ( is_wp_error( $response ) && 'term_exists' === $response->get_error_code() && 400 === ( $response->get_error_data()['status'] ?? null ) ) {
+				$parent        = $response->get_error_data()['resource_id'];
 				$term_response = $this->get_taxonomy( $parent, $type );
-				if ( 200 == $term_response['statusCode'] ) {
+				if ( ! is_wp_error( $term_response ) && 200 == $term_response['statusCode'] ) {
 					$existing[] = $term_response['message'];
 				} else {
 					return $term_response;
 				}
-			} elseif ( 201 == $response ['statusCode'] ) {
+			} elseif ( ! is_wp_error( $response ) && 201 == $response ['statusCode'] ) {
 				$parent    = $response['message']['id'];
 				$created[] = $response['message'];
 			} else {

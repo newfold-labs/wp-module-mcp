@@ -183,7 +183,7 @@ class ColorGenWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 
 		$result = $this->execute_generate( array( 'prompt' => 'calm wellness brand' ) );
 
-		$this->assertSame( 401, $result['statusCode'] );
+		$this->assertSame( 401, $result->get_error_data()['status'] );
 	}
 
 	/**
@@ -192,7 +192,7 @@ class ColorGenWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	public function test_generate_returns_400_when_prompt_empty() {
 		$result = $this->execute_generate( array( 'prompt' => '' ) );
 
-		$this->assertSame( 400, $result['statusCode'] );
+		$this->assertSame( 400, $result->get_error_data()['status'] );
 	}
 
 	// -------------------------------------------------------------------------
@@ -346,7 +346,7 @@ class ColorGenWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 
 		$result = $this->execute_generate( array( 'prompt' => 'calm brand' ) );
 
-		$this->assertSame( 504, $result['statusCode'] );
+		$this->assertSame( 504, $result->get_error_data()['status'] );
 	}
 
 	/**
@@ -363,7 +363,7 @@ class ColorGenWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 
 		$result = $this->execute_generate( array( 'prompt' => 'calm brand' ) );
 
-		$this->assertSame( 500, $result['statusCode'] );
+		$this->assertSame( 500, $result->get_error_data()['status'] );
 	}
 
 	/**
@@ -380,7 +380,7 @@ class ColorGenWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 
 		$result = $this->execute_generate( array( 'prompt' => 'calm brand' ) );
 
-		$this->assertSame( 503, $result['statusCode'] );
+		$this->assertSame( 503, $result->get_error_data()['status'] );
 	}
 
 	/**

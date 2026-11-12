@@ -167,7 +167,7 @@ class ImageGenWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 
 		$result = $this->execute_generate( array( 'prompt' => 'A test image' ) );
 
-		$this->assertSame( 401, $result['statusCode'] );
+		$this->assertSame( 401, $result->get_error_data()['status'] );
 	}
 
 	/**
@@ -232,7 +232,7 @@ class ImageGenWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 
 		$result = $this->execute_generate( array( 'prompt' => 'A test image' ) );
 
-		$this->assertSame( 504, $result['statusCode'] );
+		$this->assertSame( 504, $result->get_error_data()['status'] );
 	}
 
 	/**
@@ -243,7 +243,7 @@ class ImageGenWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 
 		$result = $this->execute_generate( array( 'prompt' => 'A test image' ) );
 
-		$this->assertSame( 502, $result['statusCode'] );
+		$this->assertSame( 502, $result->get_error_data()['status'] );
 	}
 
 	/**
@@ -260,7 +260,7 @@ class ImageGenWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 
 		$result = $this->execute_generate( array( 'prompt' => 'A test image' ) );
 
-		$this->assertSame( 503, $result['statusCode'] );
+		$this->assertSame( 503, $result->get_error_data()['status'] );
 	}
 
 	/**
@@ -277,6 +277,6 @@ class ImageGenWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 
 		$result = $this->execute_generate( array( 'prompt' => 'A test image' ) );
 
-		$this->assertSame( 500, $result['statusCode'] );
+		$this->assertSame( 500, $result->get_error_data()['status'] );
 	}
 }

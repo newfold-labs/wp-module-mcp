@@ -535,7 +535,7 @@ Errors come in two forms that clients must distinguish:
 
 ### Ability response wrapper
 
-Inside `structuredContent`, gateway abilities return a consistent wrapper:
+Successful module abilities commonly return a wrapper in `structuredContent`:
 
 ```json
 {
@@ -545,11 +545,11 @@ Inside `structuredContent`, gateway abilities return a consistent wrapper:
 }
 ```
 
-- `statusCode` — HTTP-style status (200, 400, 404, 500)
-- `status` — `"success"` or `"error"`
-- `message` — the actual payload (array for lists, object for single items, string for errors)
+- `statusCode` — HTTP-style success status (for example, 200 or 201)
+- `status` — `"success"`
+- `message` — the actual payload (array for lists or object for single items)
 
-`blu-call-ability` reports its own failures, and `WP_Error`s returned by the called ability, as tool execution errors (`isError: true`, see [Error shapes](#error-shapes)) rather than as a wrapper with `status: "error"`. A wrapper with `status: "error"` still reaches the client as a successful result when the called ability builds it itself, so clients should check both `isError` and `status`.
+Module ability failures and failed REST responses return `WP_Error`, which the adapter sends as a tool execution error (`isError: true`, see [Error shapes](#error-shapes)). Third-party abilities that create their own error-shaped arrays may still return those as successful results.
 
 ### SSE
 

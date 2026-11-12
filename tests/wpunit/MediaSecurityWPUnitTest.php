@@ -82,7 +82,7 @@ class MediaSecurityWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		add_filter( 'map_meta_cap', $deny, 10, 4 );
 		try {
 			$result = blu_get_ability( 'blu/get-media-file' )->execute( array( 'id' => $id ) );
-			$this->assertSame( 403, $result['statusCode'] );
+			$this->assertSame( 403, $result->get_error_data()['status'] );
 		} finally {
 			remove_filter( 'map_meta_cap', $deny, 10 );
 		}
@@ -98,7 +98,7 @@ class MediaSecurityWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 				'title' => 'unsafe.png',
 			)
 		);
-		$this->assertSame( 400, $result['statusCode'], wp_json_encode( $result ) );
+		$this->assertSame( 400, $result->get_error_data()['status'], wp_json_encode( $result ) );
 	}
 
 	/** A valid image must still upload successfully. */

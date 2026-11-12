@@ -187,7 +187,7 @@ class BlockEditorWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 			)
 		);
 
-		$this->assertSame( 400, $result['statusCode'] );
+		$this->assertSame( 400, $result->get_error_data()['status'] );
 	}
 
 	/**
@@ -310,7 +310,7 @@ class BlockEditorWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 			)
 		);
 
-		$this->assertSame( 400, $result['statusCode'] );
+		$this->assertSame( 400, $result->get_error_data()['status'] );
 	}
 
 	/**
@@ -432,7 +432,7 @@ class BlockEditorWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	public function test_duplicate_block_requires_client_id_or_kind() {
 		$result = $this->execute_ability( 'blu/duplicate-block', array() );
 
-		$this->assertSame( 400, $result['statusCode'] );
+		$this->assertSame( 400, $result->get_error_data()['status'] );
 	}
 
 	/**
@@ -516,7 +516,7 @@ class BlockEditorWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 			array( 'block_content' => '<!-- wp:paragraph --><p>Hi</p><!-- /wp:paragraph -->' )
 		);
 
-		$this->assertSame( 400, $result['statusCode'] );
+		$this->assertSame( 400, $result->get_error_data()['status'] );
 	}
 
 	/**

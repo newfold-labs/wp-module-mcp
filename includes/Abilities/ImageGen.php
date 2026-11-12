@@ -75,9 +75,9 @@ class ImageGen {
 	 * Generate an image via the AI platform.
 	 *
 	 * @param array $input Tool input parameters.
-	 * @return array Standardized ability response.
+	 * @return array|\WP_Error Standardized ability response.
 	 */
-	public function generate( array $input ): array {
+	public function generate( array $input ) {
 		// Extend PHP execution time for this long-running request.
 		set_time_limit( 120 );
 
