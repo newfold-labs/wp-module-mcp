@@ -360,14 +360,15 @@ class AbilityGateway {
 	 * Register the blu/get-ability-schema gateway ability.
 	 *
 	 * Returns the full input schema for a specific whitelisted ability so the LLM
-	 * knows what parameters to pass when calling it.
+	 * knows what parameters to pass when calling it, plus its output schema (when
+	 * defined) so the LLM knows what the returned fields mean.
 	 */
 	private function register_get_ability_schema(): void {
 		blu_register_ability(
 			'blu/get-ability-schema',
 			array(
 				'label'               => 'Get Ability Schema',
-				'description'         => 'Get the full description and input schema for an ability returned by blu-list-abilities. Read it once per ability, then use blu-call-ability with the required parameters; do not repeatedly request the same schema.',
+				'description'         => 'Get the full description, input schema and output schema for an ability returned by blu-list-abilities. Read it once per ability, then use blu-call-ability with the required parameters; do not repeatedly request the same schema.',
 				'category'            => 'blu-mcp',
 				'input_schema'        => array(
 					'type'       => 'object',
@@ -393,16 +394,22 @@ class AbilityGateway {
 					$meta        = $ability->get_meta();
 					$annotations = isset( $meta['annotations'] ) ? $meta['annotations'] : array();
 
-					return blu_prepare_ability_response(
-						200,
-						array(
-							'name'         => $this->to_mcp_name( $ability->get_name() ),
-							'label'        => $ability->get_label(),
-							'description'  => $ability->get_description(),
-							'input_schema' => $ability->get_input_schema(),
-							'annotations'  => $annotations,
-						)
+					$schema = array(
+						'name'         => $this->to_mcp_name( $ability->get_name() ),
+						'label'        => $ability->get_label(),
+						'description'  => $ability->get_description(),
+						'input_schema' => $ability->get_input_schema(),
 					);
+
+					// The field descriptions of the output schema often explain how to interpret the result, and many MCP clients don't pass a tool's outputSchema to the model.
+					$output_schema = $ability->get_output_schema();
+					if ( ! empty( $output_schema ) ) {
+						$schema['output_schema'] = $output_schema;
+					}
+
+					$schema['annotations'] = $annotations;
+
+					return blu_prepare_ability_response( 200, $schema );
 				},
 				'permission_callback' => fn() => is_user_logged_in(),
 				'meta'                => array(
