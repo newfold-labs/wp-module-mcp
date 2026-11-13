@@ -98,6 +98,7 @@ export interface AbilitySchema {
   name: string;
   description?: string;
   input_schema?: Record<string, unknown>;
+  output_schema?: Record<string, unknown>;
 }
 
 export function parseAbilitySchema(payload: BluAbilityPayload): AbilitySchema {
