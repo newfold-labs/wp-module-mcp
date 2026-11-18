@@ -58,9 +58,10 @@
   {
     "id": "post-add-1",
     "description": "Create new blog post",
-    "prompt": "Create a new blog post titled 'Getting Started with React' with some introductory content about React",
+    "prompt": "Create a new blog post titled 'Getting Started with React' with some introductory content about React. Save it as a draft.",
     "expected_tool": "blu_add-post",
     "rest_alternatives": [{ "route": "/wp/v2/posts", "method": "POST" }],
+    "expected_outcome": "post_draft_created",
     "source": "Posts.php"
   },
   {
@@ -68,6 +69,7 @@
     "description": "Update existing post",
     "prompt": "Update the title of post 15 to 'Updated: Best Practices for WordPress Development'",
     "expected_tool": "blu_update-post",
+    "expected_outcome": "post_title_updated",
     "source": "Posts.php"
   },
   {
@@ -75,6 +77,7 @@
     "description": "Delete a post",
     "prompt": "Move the blog post with ID 99 to Trash.",
     "expected_tool": "blu_delete-post",
+    "expected_outcome": "post_trashed",
     "source": "Posts.php"
   },
   {
@@ -188,6 +191,7 @@
     "description": "Get API endpoint details",
     "prompt": "Inspect the site's registered GET /wp/v2/posts REST endpoint and tell me which query parameters it accepts.",
     "expected_tool": "blu_get-function-details",
+    "rest_alternatives": [{ "route": "/wp/v2/posts", "method": "OPTIONS" }],
     "source": "RestApiCrud.php"
   },
   {
@@ -1358,5 +1362,125 @@
     "expected_tool": "blu_delete-post",
     "source": "Posts.php",
     "series_id": "edge-posts"
+  },
+  {
+    "id": "selection-delete-block",
+    "description": "Delete block",
+    "prompt": "Remove the selected paragraph block with client ID 11111111-1111-4111-8111-111111111111 from the editor.",
+    "expected_tool": "blu_delete-block",
+    "source": "BlockEditor.php",
+    "selection_only": true
+  },
+  {
+    "id": "selection-duplicate-block",
+    "description": "Duplicate block",
+    "prompt": "Duplicate the existing column block with client ID 11111111-1111-4111-8111-111111111111, keeping its design.",
+    "expected_tool": "blu_duplicate-block",
+    "source": "BlockEditor.php",
+    "selection_only": true
+  },
+  {
+    "id": "selection-insert-inner-block",
+    "description": "Insert inner block",
+    "prompt": "Insert a new heading inside the group block with client ID 11111111-1111-4111-8111-111111111111. The heading should say Welcome.",
+    "expected_tool": "blu_insert-inner-block",
+    "source": "BlockEditor.php",
+    "selection_only": true
+  },
+  {
+    "id": "selection-move-block",
+    "description": "Move block",
+    "prompt": "Move the block with client ID 11111111-1111-4111-8111-111111111111 to index 1 in its parent container.",
+    "expected_tool": "blu_move-block",
+    "source": "BlockEditor.php",
+    "selection_only": true
+  },
+  {
+    "id": "selection-get-block-markup",
+    "description": "Get block markup",
+    "prompt": "Show the saved markup of the block with client ID 11111111-1111-4111-8111-111111111111.",
+    "expected_tool": "blu_get-block-markup",
+    "source": "BlockEditor.php",
+    "selection_only": true
+  },
+  {
+    "id": "selection-highlight-block",
+    "description": "Highlight block",
+    "prompt": "Highlight the block with client ID 11111111-1111-4111-8111-111111111111 so I can find it in the editor.",
+    "expected_tool": "blu_highlight-block",
+    "source": "BlockEditor.php",
+    "selection_only": true
+  },
+  {
+    "id": "selection-update-block-attrs",
+    "description": "Update block attrs",
+    "prompt": "Change the background color attribute of block 11111111-1111-4111-8111-111111111111 to blue.",
+    "expected_tool": "blu_update-block-attrs",
+    "source": "BlockEditor.php",
+    "selection_only": true
+  },
+  {
+    "id": "selection-edit-image",
+    "description": "Edit image",
+    "prompt": "Edit the existing image at https://example.org/photo.png to remove the background.",
+    "expected_tool": "blu_edit-image",
+    "source": "ImageEdit.php",
+    "selection_only": true
+  },
+  {
+    "id": "selection-extract-image-colors",
+    "description": "Extract image colors",
+    "prompt": "Extract the dominant colors from the existing image at https://example.org/photo.png.",
+    "expected_tool": "blu_extract-image-colors",
+    "source": "ImageEdit.php",
+    "selection_only": true
+  },
+  {
+    "id": "selection-edit-logo",
+    "description": "Edit logo",
+    "prompt": "Change the existing site logo to use blue lettering, keeping its current design.",
+    "expected_tool": "blu_edit-logo",
+    "source": "LogoGen.php",
+    "selection_only": true
+  },
+  {
+    "id": "selection-regenerate-logo",
+    "description": "Regenerate logo",
+    "prompt": "Create a completely new logo from scratch for a bakery called Sunrise.",
+    "expected_tool": "blu_regenerate-logo",
+    "source": "LogoGen.php",
+    "selection_only": true
+  },
+  {
+    "id": "selection-set-logo-from-image",
+    "description": "Set logo from image",
+    "prompt": "Set the existing image at https://example.org/logo.png as the site logo.",
+    "expected_tool": "blu_set-logo-from-image",
+    "source": "LogoGen.php",
+    "selection_only": true
+  },
+  {
+    "id": "selection-generate-color-palette",
+    "description": "Generate color palette",
+    "prompt": "Generate a color palette for a calm coastal bakery website.",
+    "expected_tool": "blu_generate-color-palette",
+    "source": "ColorGen.php",
+    "selection_only": true
+  },
+  {
+    "id": "selection-generate-image",
+    "description": "Generate image",
+    "prompt": "Generate a new image from scratch of a red fox in a snowy forest.",
+    "expected_tool": "blu_generate-image",
+    "source": "ImageGen.php",
+    "selection_only": true
+  },
+  {
+    "id": "selection-read-document",
+    "description": "Read document",
+    "prompt": "Read and extract the text from the document at https://example.org/report.pdf.",
+    "expected_tool": "blu_read-document",
+    "source": "DocumentRead.php",
+    "selection_only": true
   }
 ]

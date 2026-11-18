@@ -156,7 +156,13 @@ export async function runEvals(options: EvalRunOptions): Promise<EvalRunResult> 
           const pageId = ['inserting-media-into-existing-page-32', 'replacing-media-inside-page-33'].includes(test.id)
             ? Number(process.env.WP_EVAL_PAGE_ID) || undefined : undefined;
           let priorPageContent = '';
-          const outcomeCheck = menuFixture
+          const outcomeCheck = test.id === 'post-add-1'
+            ? async () => wpOutcomes.hasDraftPost('Getting Started with React', 'React')
+            : test.id === 'post-update-1'
+            ? async () => wpOutcomes.postHasTitle(standaloneIds.post_update, 'Updated: Best Practices for WordPress Development')
+            : test.id === 'post-delete-1'
+              ? async () => (await wpOutcomes.postStatus(standaloneIds.post_delete)) === 'trash'
+              : menuFixture
             ? async () => (await menuFixture.containsPage()) === (test.expected_outcome === 'menu_page_present')
             : test.expected_outcome === 'page_image_present'
               ? async () => pageHasImage(await wpOutcomes.pageContent(pageId))
@@ -189,6 +195,7 @@ export async function runEvals(options: EvalRunOptions): Promise<EvalRunResult> 
               outcomeCheck,
               expectedTool: test.expected_tool,
               expectToolError: test.expect_tool_error,
+              selectionOnly: test.selection_only,
               restAlternatives: test.rest_alternatives,
               model: options.model,
               gatewayUrl: options.gatewayUrl,
@@ -222,7 +229,7 @@ export async function runEvals(options: EvalRunOptions): Promise<EvalRunResult> 
             console.log('::endgroup::');
           }
 
-          const description = stepLabel + test.description;
+          const description = stepLabel + test.description + (test.selection_only ? ' (selection only)' : '');
           const status = classifyEvalResult(result);
           statuses.set(test.id, status);
           const currentMessages = result.conversationMessages.slice(previousMessageCount);

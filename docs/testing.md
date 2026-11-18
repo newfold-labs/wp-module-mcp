@@ -53,3 +53,7 @@ The AI selection report distinguishes exact ability selections (pass), successfu
 - **Lint** and **codecoverage** should pass for PHP changes.
 - Add or update **WPUnit** tests when behavior changes.
 - Playwright failures may surface from the **Bluehost** workflow; coordinate fixes in the plugin or module as needed.
+
+### AI eval selection-only cases
+
+Cases marked `selection_only` exercise ability discovery and selection without executing the selected or any other non-discovery tool. These cases cover editor-client actions and abilities that depend on external image, logo, or document services; they do not verify execution or WordPress state. Stateful post cases check the seeded post or created draft through WordPress REST in addition to tracking the tool selected.

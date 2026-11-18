@@ -49,6 +49,8 @@ export interface AgentEvalOptions {
   gatewayUrl: string;
   gatewayToken: string;
   maxTurns?: number;
+  /** Stop before executing any non-discovery tool. */
+  selectionOnly?: boolean;
   /** Reuse the run's tools/list snapshot; gateway discovery uses blu-list-abilities. */
   tools?: OpenAiFunctionTool[];
   /** For stateful cases, score the verified WordPress outcome instead of a selected call. */
@@ -248,6 +250,10 @@ export async function runAgentEval(options: AgentEvalOptions): Promise<AgentEval
       content: assistantMessage?.content ?? null,
       tool_calls: toolCalls,
     });
+
+    if (options.selectionOnly && toolCalls.some((call) => !isGatewayMetaTool(call.function?.name ?? ''))) {
+      return { matched, actualTool: lastRelevant || '(none)', turns: turn + 1, usage, conversationMessages: messages };
+    }
 
     for (const call of toolCalls) {
       const toolName = call.function?.name ?? '';

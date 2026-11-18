@@ -185,3 +185,21 @@ test('accumulates token usage and estimated cost across agent turns and gateway 
     globalThis.fetch = originalFetch;
   }
 });
+
+test('selection-only cases do not execute the selected external ability', async () => {
+  const originalFetch = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = async () => new Response(JSON.stringify({ choices: [{ message: {
+    role: 'assistant', tool_calls: [{ id: 'select', type: 'function', function: {
+      name: 'blu-call-ability', arguments: '{"ability_name":"blu-generate-image","parameters":{"prompt":"a tree"}}',
+    } }],
+  } }] }), { status: 200 });
+  const client = { callTool: async () => { calls++; throw new Error('must not execute'); } } as unknown as Client;
+  try {
+    const result = await runAgentEval({ client, prompt: 'Create a tree image', expectedTool: 'blu_generate-image',
+      model: 'test', gatewayUrl: 'http://example.invalid', gatewayToken: 'test', tools: [], selectionOnly: true,
+    });
+    assert.equal(result.matched, true);
+    assert.equal(calls, 0);
+  } finally { globalThis.fetch = originalFetch; }
+});
