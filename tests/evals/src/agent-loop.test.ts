@@ -185,3 +185,34 @@ test('accumulates token usage and estimated cost across agent turns and gateway 
     globalThis.fetch = originalFetch;
   }
 });
+
+test('forwards output schema field guidance to the model after gateway discovery', async () => {
+  const originalFetch = globalThis.fetch;
+  const description = 'The front end may add more page types.';
+  let turn = 0;
+  globalThis.fetch = async (_url, init) => {
+    turn++;
+    if (turn === 1) {
+      return new Response(JSON.stringify({ choices: [{ message: {
+        role: 'assistant', tool_calls: [{ id: 'schema', type: 'function', function: {
+          name: 'blu-get-ability-schema', arguments: '{"ability_name":"yoast-seo-output-mock"}',
+        } }],
+      } }] }), { status: 200 });
+    }
+    const request = JSON.parse(String(init?.body)) as { messages: Array<{ role: string; content: string }> };
+    const toolMessage = request.messages.find((message) => message.role === 'tool');
+    const payload = JSON.parse(toolMessage!.content);
+    assert.equal(payload.message.output_schema.properties.page_type.description, description);
+    return new Response(JSON.stringify({ choices: [{ message: { role: 'assistant', content: 'Done' } }] }), { status: 200 });
+  };
+  const client = { callTool: async () => ({ structuredContent: { statusCode: 200, message: {
+    output_schema: { type: 'object', properties: { page_type: { type: 'string', description } } },
+  } }, content: [] }) } as unknown as Client;
+  try {
+    const result = await runAgentEval({ client, prompt: 'Inspect page type', expectedTool: 'yoast-seo-output-mock',
+      model: 'test', gatewayUrl: 'http://example.invalid', gatewayToken: 'test', tools: [],
+    });
+    assert.equal(result.turns, 2);
+    assert.equal(result.error, undefined);
+  } finally { globalThis.fetch = originalFetch; }
+});

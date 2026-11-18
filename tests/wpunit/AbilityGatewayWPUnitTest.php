@@ -209,23 +209,25 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	 * @param array         $meta         Optional ability metadata.
 	 * @param array|null    $input_schema Optional input schema, defaults to a bare object.
 	 * @param callable|null $permission   Optional permission callback, defaults to allow.
+	 * @param array|null    $output_schema Optional output schema, defaults to none.
 	 *
 	 * @return void
 	 */
-	private function register_test_ability( string $name, string $category, callable $execute, string $label = 'Test Ability', string $description = 'A test ability', array $meta = array(), ?array $input_schema = null, ?callable $permission = null ): void {
-		$cb = function () use ( $name, $category, $execute, $label, $description, $meta, $input_schema, $permission ) {
-			blu_register_ability(
-				$name,
-				array(
-					'label'               => $label,
-					'description'         => $description,
-					'category'            => $category,
-					'input_schema'        => $input_schema ?? array( 'type' => 'object' ),
-					'execute_callback'    => $execute,
-					'permission_callback' => $permission ?? fn() => true,
-					'meta'                => $meta,
-				)
+	private function register_test_ability( string $name, string $category, callable $execute, string $label = 'Test Ability', string $description = 'A test ability', array $meta = array(), ?array $input_schema = null, ?callable $permission = null, ?array $output_schema = null ): void {
+		$cb = function () use ( $name, $category, $execute, $label, $description, $meta, $input_schema, $permission, $output_schema ) {
+			$args = array(
+				'label'               => $label,
+				'description'         => $description,
+				'category'            => $category,
+				'input_schema'        => $input_schema ?? array( 'type' => 'object' ),
+				'execute_callback'    => $execute,
+				'permission_callback' => $permission ?? fn() => true,
+				'meta'                => $meta,
 			);
+			if ( null !== $output_schema ) {
+				$args['output_schema'] = $output_schema;
+			}
+			blu_register_ability( $name, $args );
 		};
 		add_action( 'wp_abilities_api_init', $cb, 5 );
 		$this->test_ability_hooks[]   = $cb;
@@ -998,6 +1000,94 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$result  = $ability->execute( array( 'ability_name' => 'blu-add-mock' ) );
 		$this->assertSame( 200, $result['statusCode'] );
 		$this->assertSame( 'blu-add-mock', $result['message']['name'] );
+	}
+
+	/**
+	 * Verifies get-ability-schema returns the output schema, including its field descriptions.
+	 *
+	 * @return void
+	 */
+	public function test_get_ability_schema_returns_output_schema() {
+		$output_schema = array(
+			'type'       => 'object',
+			'properties' => array(
+				'page_type' => array(
+					'type'        => 'string',
+					'description' => 'The stored page type. The front end may add more types.',
+				),
+			),
+		);
+		$this->register_test_ability(
+			'blu/output-mock',
+			'blu-mcp',
+			function () {
+				return array( 'page_type' => 'WebPage' );
+			},
+			'Test Ability',
+			'A test ability',
+			array(),
+			null,
+			null,
+			$output_schema
+		);
+		$this->register_gateway();
+		$result = blu_get_ability( 'blu/get-ability-schema' )->execute( array( 'ability_name' => 'blu-output-mock' ) );
+		$this->assertSame( 200, $result['statusCode'] );
+		$this->assertSame( $output_schema, $result['message']['output_schema'] );
+	}
+
+	/** The MCP adapter preserves output field guidance in the tool response. */
+	public function test_output_schema_survives_mcp_tool_call(): void {
+		$description   = 'The front end may add more page types.';
+		$output_schema = array(
+			'type'       => 'object',
+			'properties' => array(
+				'page_type' => array(
+					'type'        => 'string',
+					'description' => $description,
+				),
+			),
+		);
+		$this->register_test_ability( 'yoast-seo/output-mock', 'yoast-seo', fn() => array( 'page_type' => 'WebPage' ), 'Test', 'Test ability', array(), null, null, $output_schema );
+		$this->register_gateway();
+		$adapter = new \WP\MCP\Core\McpServer( 'blu-mcp', 'blu', 'mcp-test', 'test', 'test', '1.0', array(), null, null, array( 'blu/get-ability-schema' ) );
+		$schema  = \WP\McpSchema\Schemas::create()->forVersion( \WP\McpSchema\Schemas::V2025_11_25 );
+		$request = $schema->fromArray(
+			\WP\McpSchema\Record\CallToolRequest::class,
+			array(
+				'jsonrpc' => '2.0',
+				'id'      => 1,
+				'method'  => 'tools/call',
+				'params'  => array(
+					'name'      => 'blu-get-ability-schema',
+					'arguments' => array( 'ability_name' => 'yoast-seo-output-mock' ),
+				),
+			)
+		);
+		$context = new \WP\MCP\Core\McpRequestContext( $schema, new \stdClass(), null, 'test' );
+		$result  = ( new \WP\MCP\Handlers\Tools\ToolsHandler( $adapter ) )->call_tool( $request, $context );
+		$this->assertFalse( $result['isError'] );
+		$payload = json_decode( wp_json_encode( $result['structuredContent'] ), true );
+		$this->assertSame( $description, $payload['message']['output_schema']['properties']['page_type']['description'] );
+	}
+
+	/**
+	 * Verifies get-ability-schema omits output_schema when the ability defines none.
+	 *
+	 * @return void
+	 */
+	public function test_get_ability_schema_omits_missing_output_schema() {
+		$this->register_test_ability(
+			'blu/no-output-mock',
+			'blu-mcp',
+			function () {
+				return blu_prepare_ability_response( 200, 'ok' );
+			}
+		);
+		$this->register_gateway();
+		$result = blu_get_ability( 'blu/get-ability-schema' )->execute( array( 'ability_name' => 'blu-no-output-mock' ) );
+		$this->assertSame( 200, $result['statusCode'] );
+		$this->assertArrayNotHasKey( 'output_schema', $result['message'] );
 	}
 
 	/**
