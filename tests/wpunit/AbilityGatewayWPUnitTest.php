@@ -1036,6 +1036,41 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$this->assertSame( $output_schema, $result['message']['output_schema'] );
 	}
 
+	/** The MCP adapter preserves output field guidance in the tool response. */
+	public function test_output_schema_survives_mcp_tool_call(): void {
+		$description   = 'The front end may add more page types.';
+		$output_schema = array(
+			'type'       => 'object',
+			'properties' => array(
+				'page_type' => array(
+					'type'        => 'string',
+					'description' => $description,
+				),
+			),
+		);
+		$this->register_test_ability( 'yoast-seo/output-mock', 'yoast-seo', fn() => array( 'page_type' => 'WebPage' ), 'Test', 'Test ability', array(), null, null, $output_schema );
+		$this->register_gateway();
+		$adapter = new \WP\MCP\Core\McpServer( 'blu-mcp', 'blu', 'mcp-test', 'test', 'test', '1.0', array(), null, null, array( 'blu/get-ability-schema' ) );
+		$schema  = \WP\McpSchema\Schemas::create()->forVersion( \WP\McpSchema\Schemas::V2025_11_25 );
+		$request = $schema->fromArray(
+			\WP\McpSchema\Record\CallToolRequest::class,
+			array(
+				'jsonrpc' => '2.0',
+				'id'      => 1,
+				'method'  => 'tools/call',
+				'params'  => array(
+					'name'      => 'blu-get-ability-schema',
+					'arguments' => array( 'ability_name' => 'yoast-seo-output-mock' ),
+				),
+			)
+		);
+		$context = new \WP\MCP\Core\McpRequestContext( $schema, new \stdClass(), null, 'test' );
+		$result  = ( new \WP\MCP\Handlers\Tools\ToolsHandler( $adapter ) )->call_tool( $request, $context );
+		$this->assertFalse( $result['isError'] );
+		$payload = json_decode( wp_json_encode( $result['structuredContent'] ), true );
+		$this->assertSame( $description, $payload['message']['output_schema']['properties']['page_type']['description'] );
+	}
+
 	/**
 	 * Verifies get-ability-schema omits output_schema when the ability defines none.
 	 *
