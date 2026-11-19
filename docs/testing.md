@@ -57,3 +57,5 @@ The AI selection report distinguishes exact ability selections (pass), successfu
 ### AI eval selection-only cases
 
 Cases marked `selection_only` exercise ability discovery and selection without executing the selected or any other non-discovery tool. These cases cover editor-client actions and abilities that depend on external image, logo, or document services; they do not verify execution or WordPress state. Stateful post cases check the seeded post or created draft through WordPress REST in addition to tracking the tool selected.
+
+The diagnostic trace records MCP error flags, HTTP-style status codes, and safe error codes without including raw tool responses. A “No tool call” result means the model answered without calling a tool; inspect the redacted reply in the trace to determine whether it requested clarification or attempted an answer.

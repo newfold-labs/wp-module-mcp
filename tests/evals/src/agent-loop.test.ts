@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import type { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { runAgentEval } from './agent-loop.js';
+import { safeTrace, summarizeFailure } from './diagnostics.js';
 
 test('outcome cases keep running after a selected tool until WordPress state matches', async () => {
   const originalFetch = globalThis.fetch;
@@ -64,6 +65,28 @@ test('reports expected-tool selection separately from failed execution', async (
     });
     assert.equal(result.matched, true);
     assert.equal(result.executionFailed, true);
+  } finally { globalThis.fetch = originalFetch; }
+});
+
+test('preserves MCP error flags in diagnostics without sending them to the model', async () => {
+  const originalFetch = globalThis.fetch;
+  let turn = 0;
+  globalThis.fetch = async (_input, init) => {
+    turn++;
+    const body = JSON.parse(String(init?.body));
+    assert.ok(body.messages.every((message: Record<string, unknown>) => !('toolError' in message)));
+    return new Response(JSON.stringify({ choices: [{ message: turn === 1 ? {
+      role: 'assistant', tool_calls: [{ id: 'bad', type: 'function', function: {
+        name: 'blu-call-ability', arguments: '{"ability_name":"blu-add-cpt","parameters":{}}',
+      } }],
+    } : { role: 'assistant', content: 'Unable to complete.' } }] }));
+  };
+  const client = { callTool: async () => ({ isError: true, content: [{ type: 'text', text: 'private error detail' }] }) } as unknown as Client;
+  try {
+    const result = await runAgentEval({ client, prompt: 'Create', expectedTool: 'blu_other',
+      model: 'test', gatewayUrl: 'http://example.invalid', gatewayToken: 'test', tools: [], maxTurns: 2 });
+    assert.equal(summarizeFailure(result.conversationMessages), 'Tool error');
+    assert.ok(!JSON.stringify(safeTrace(result.conversationMessages)).includes('private error detail'));
   } finally { globalThis.fetch = originalFetch; }
 });
 

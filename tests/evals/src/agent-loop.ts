@@ -20,6 +20,8 @@ const DEFAULT_MAX_TURNS = 20;
 interface ChatMessage {
   role: string;
   content?: string | null;
+  /** Local diagnostic metadata; never sent to the model. */
+  toolError?: boolean;
   tool_calls?: Array<{
     id: string;
     type: 'function';
@@ -156,7 +158,7 @@ export async function runAgentEval(options: AgentEvalOptions): Promise<AgentEval
               'cf-aig-authorization': `Bearer ${options.gatewayToken}`,
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ model: options.model, messages, tools, tool_choice: 'auto' }),
+            body: JSON.stringify({ model: options.model, messages: messages.map(({ toolError: _toolError, ...message }) => message), tools, tool_choice: 'auto' }),
             signal: AbortSignal.timeout(60_000),
           });
           break;
@@ -282,6 +284,7 @@ export async function runAgentEval(options: AgentEvalOptions): Promise<AgentEval
         role: 'tool',
         tool_call_id: call.id,
         content: formatToolResultForModel(result),
+        toolError: result.isError === true,
       });
       if (matchesExpectedToolCall(toolName, call.function?.arguments, expectedNorm)) {
         let statusCode: number | undefined;

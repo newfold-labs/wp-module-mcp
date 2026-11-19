@@ -5,6 +5,7 @@ const discoverySalt = randomBytes(16);
 interface Message {
   role: string;
   content?: string | null;
+  toolError?: boolean;
   tool_call_id?: string;
   tool_calls?: Array<{ id: string; function: { name: string; arguments: string } }>;
 }
@@ -42,10 +43,11 @@ export function safeTrace(messages: Message[]): Array<Record<string, unknown>> {
     let statusCode: number | undefined;
     let errorCode: string | undefined;
     let invalidParams: string[] | undefined;
-    const toolError = typeof message.content === 'string' && message.content.startsWith('MCP error:');
+    let toolError = message.toolError === true || typeof message.content === 'string' && message.content.startsWith('MCP error:');
     if (typeof message.content === 'string') {
       try {
         const payload = JSON.parse(message.content) as Record<string, unknown>;
+        if (payload.status === 'error' || payload.isError === true) toolError = true;
         if (typeof payload.statusCode === 'number') statusCode = payload.statusCode;
         if (statusCode && statusCode >= 400 && payload.message && typeof payload.message === 'object') {
           const detail = payload.message as Record<string, unknown>;
@@ -74,10 +76,7 @@ export function summarizeFailure(messages: Message[]): string {
   }
   if ([...discoveryCounts.values()].some((count) => count >= 3)) return 'Repeated discovery query';
   const calls = trace.flatMap((entry) => Array.isArray(entry.calls) ? entry.calls as Array<{ name: string }> : []);
-  if (calls.length === 0) {
-    const reply = [...messages].reverse().find((message) => message.role === 'assistant')?.content;
-    return typeof reply === 'string' && /\?|\b(?:need|provide|which|what)\b/i.test(reply) ? 'Asked for input' : 'No tool call';
-  }
+  if (calls.length === 0) return 'No tool call';
   if (calls.every((call) => ['blu-list-abilities', 'blu-get-ability-schema'].includes(call.name))) return 'Discovery only';
   return 'Different ability';
 }
