@@ -93,7 +93,7 @@ test('a rejection test passes only when the selected upload rejects the file', a
   } }] }), { status: 200 });
   try {
     const results = [
-      [{ structuredContent: { statusCode: 400 }, content: [] }, false],
+      [{ structuredContent: { statusCode: 400 }, content: [] }, true],
       [{ content: [{ type: 'text', text: 'Unsupported file type.' }], isError: true }, false],
       [{ structuredContent: { statusCode: 201 }, content: [] }, true],
     ] as const;

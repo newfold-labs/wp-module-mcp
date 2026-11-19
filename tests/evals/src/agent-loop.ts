@@ -14,6 +14,7 @@ import {
   type CompletionUsagePayload,
   type EvalUsage,
 } from './usage.js';
+import { shouldFlagExecutionFailed } from './mcp-tool-failure.js';
 
 const DEFAULT_MAX_TURNS = 20;
 
@@ -278,15 +279,7 @@ export async function runAgentEval(options: AgentEvalOptions): Promise<AgentEval
         content: formatToolResultForModel(result),
       });
       if (matchesExpectedToolCall(toolName, call.function?.arguments, expectedNorm)) {
-        let statusCode: number | undefined;
-        let failed = result.isError === true;
-        try {
-          const payload = JSON.parse(formatToolResultForModel(result)) as { statusCode?: number; status?: string };
-          statusCode = payload.statusCode;
-          if (payload.status === 'error') failed = true;
-        } catch { /* The response may be plain text. */ }
-        if (statusCode !== undefined && statusCode >= 400) failed = true;
-        executionFailed = options.expectToolError ? !failed : failed;
+        executionFailed = shouldFlagExecutionFailed(result, options.expectToolError);
       }
       if (matchesRestAlternative(toolName, call.function?.arguments, options.restAlternatives ?? [], result)) {
         restAlternative = true;

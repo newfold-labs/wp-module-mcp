@@ -11,6 +11,40 @@ use BLU\Abilities\AbilityGateway;
  */
 class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 
+	/** Legacy error envelopes from delegated abilities must surface as MCP isError. */
+	public function test_gateway_error_envelope_is_an_mcp_tool_error(): void {
+		$this->register_test_ability(
+			'blu/envelope-failure',
+			'blu-mcp',
+			function () {
+				return array(
+					'statusCode' => 400,
+					'status'     => 'error',
+					'message'    => 'Unsupported file type.',
+				);
+			}
+		);
+		$this->register_gateway();
+		$adapter = new \WP\MCP\Core\McpServer( 'blu-mcp', 'blu', 'mcp-test', 'test', 'test', '1.0', array(), null, null, array( 'blu/call-ability' ) );
+		$schema  = \WP\McpSchema\Schemas::create()->forVersion( \WP\McpSchema\Schemas::V2025_11_25 );
+		$request = $schema->fromArray(
+			\WP\McpSchema\Record\CallToolRequest::class,
+			array(
+				'jsonrpc' => '2.0',
+				'id'      => 1,
+				'method'  => 'tools/call',
+				'params'  => array(
+					'name'      => 'blu-call-ability',
+					'arguments' => array( 'ability_name' => 'blu-envelope-failure' ),
+				),
+			)
+		);
+		$context = new \WP\MCP\Core\McpRequestContext( $schema, new \stdClass(), null, 'test' );
+		$result  = ( new \WP\MCP\Handlers\Tools\ToolsHandler( $adapter ) )->call_tool( $request, $context );
+		$this->assertTrue( $result['isError'] );
+		$this->assertSame( 'Unsupported file type.', $result['content'][0]['text'] );
+	}
+
 	/** The adapter exposes an unknown delegated ability as an MCP tool error. */
 	public function test_gateway_failure_is_an_mcp_tool_error(): void {
 		$this->register_test_ability(

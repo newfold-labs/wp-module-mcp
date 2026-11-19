@@ -255,7 +255,11 @@ export async function runEvals(options: EvalRunOptions): Promise<EvalRunResult> 
             pass++;
           } else if (status === 'warning') {
             rows.push(
-              `| :warning: | ${escapeCell(description)} | ${expected} | ${result.executionFailed ? 'Selected; execution failed' : 'REST alternative'}: \`${actual}\` (${result.turns} turns) | ${usageCell} |`
+              `| :warning: | ${escapeCell(description)} | ${expected} | ${result.executionFailed
+                ? test.expect_tool_error
+                  ? 'Selected; rejection missing or MCP isError false'
+                  : 'Selected; execution failed'
+                : 'REST alternative'}: \`${actual}\` (${result.turns} turns) | ${usageCell} |`
             );
             warning++;
           } else {

@@ -217,6 +217,24 @@ class FunctionsWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 	}
 
 	/**
+	 * Verifies legacy error envelopes coerce to WP_Error for MCP isError.
+	 *
+	 * @return void
+	 */
+	public function test_blu_coerce_ability_error_to_wp_error() {
+		$envelope = array(
+			'statusCode' => 400,
+			'status'     => 'error',
+			'message'    => 'Unsupported file type.',
+		);
+		$result   = blu_coerce_ability_error_to_wp_error( $envelope );
+		$this->assertWPError( $result );
+		$this->assertSame( 'Unsupported file type.', $result->get_error_message() );
+		$this->assertSame( array( 'status' => 400 ), $result->get_error_data() );
+		$this->assertSame( $envelope, blu_coerce_ability_error_to_wp_error( array( 'statusCode' => 200, 'status' => 'success' ) ) );
+	}
+
+	/**
 	 * Verifies blu_prepare_ability_response with error status code sets status to error.
 	 *
 	 * @return void

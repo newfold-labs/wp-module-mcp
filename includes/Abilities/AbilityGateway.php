@@ -477,7 +477,7 @@ class AbilityGateway {
 						isset( $input['parameters'] ) ? $input['parameters'] : null
 					);
 
-					$result = $ability->execute( $parameters );
+					$result = blu_coerce_ability_error_to_wp_error( $ability->execute( $parameters ) );
 
 					if ( is_wp_error( $result ) ) {
 						// WordPress convention: WP_Error::get_error_code() is a string slug

@@ -265,6 +265,52 @@ function blu_prepare_ability_response( $status, $message ) {
 }
 
 /**
+ * Converts a legacy ability error envelope into WP_Error for MCP tool errors.
+ *
+ * Some third-party abilities return { statusCode, status, message } arrays instead
+ * of WP_Error. The MCP adapter only sets isError: true for WP_Error.
+ *
+ * @param mixed $result Ability execute result.
+ *
+ * @return mixed Input unchanged, or WP_Error when the envelope signals failure.
+ */
+function blu_coerce_ability_error_to_wp_error( $result ) {
+	if ( is_wp_error( $result ) || ! is_array( $result ) ) {
+		return $result;
+	}
+
+	$status_code = null;
+	if ( isset( $result['statusCode'] ) && is_int( $result['statusCode'] ) ) {
+		$status_code = $result['statusCode'];
+	} elseif ( isset( $result['status'] ) && 'error' === $result['status'] ) {
+		$status_code = isset( $result['statusCode'] ) && is_int( $result['statusCode'] ) ? $result['statusCode'] : 500;
+	}
+
+	if ( ! is_int( $status_code ) || $status_code < 400 || $status_code > 599 ) {
+		return $result;
+	}
+
+	$message = $result['message'] ?? 'Ability execution failed.';
+	$code    = 'blu_ability_error';
+	$text    = 'Ability execution failed.';
+
+	if ( is_string( $message ) ) {
+		$text = $message;
+	} elseif ( is_array( $message ) ) {
+		if ( isset( $message['code'] ) && is_string( $message['code'] ) && '' !== $message['code'] ) {
+			$code = $message['code'];
+		}
+		if ( isset( $message['message'] ) && is_string( $message['message'] ) ) {
+			$text = $message['message'];
+		} elseif ( isset( $message['error'] ) && is_string( $message['error'] ) ) {
+			$text = $message['error'];
+		}
+	}
+
+	return new \WP_Error( $code, $text, array( 'status' => $status_code ) );
+}
+
+/**
  * Standardizes a REST API response into a consistent format.
  *
  * @param mixed $response The original response which can be a WP_Error or WP_REST_Response.

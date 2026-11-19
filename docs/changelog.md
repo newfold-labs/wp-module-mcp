@@ -11,7 +11,7 @@ Notable changes are listed here; older history may be on **GitHub Releases**.
 
 ## [Unreleased]
 
-- Changed: module ability and REST failures return `WP_Error` to PHP callers and MCP tool errors (`isError: true`) to clients. PHP callers must handle errors before reading result arrays. Successful responses are unchanged. MCP error messages for 5xx and unclassified errors are redacted; third-party custom error arrays are not converted.
+- Changed: module ability and REST failures return `WP_Error` to PHP callers and MCP tool errors (`isError: true`) to clients. PHP callers must handle errors before reading result arrays. Successful responses are unchanged. MCP error messages for 5xx and unclassified errors are redacted. `blu/call-ability` coerces legacy third-party error envelopes (`statusCode` / `status: error`) into `WP_Error` before the adapter responds. AI evals with `expect_tool_error` require MCP `isError: true`, not only legacy status fields.
 
 - Fixed: direct media-file reads now check permission on the attachment. Uploads reject files whose content does not match an allowed extension, before attachment registration.
 
