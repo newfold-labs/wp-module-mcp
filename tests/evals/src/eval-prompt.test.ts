@@ -30,3 +30,8 @@ test('media workflow names the existing page and uploaded image', () => {
   assert.match(prompt, /media-flow\.png/);
   assert.match(prompt, /content/);
 });
+
+test('post update uses its own seeded fixture instead of a hard-coded ID', () => {
+  assert.equal(resolveEvalPrompt('post-update-1', 'Update post 15', { ids: { post_update: 314 } }), 'Update post 314');
+  assert.throws(() => resolveEvalPrompt('post-update-1', 'Update post 15', {}), /fixture/i);
+});

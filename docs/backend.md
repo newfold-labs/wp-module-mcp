@@ -31,7 +31,7 @@ WordPress uses `future` for scheduled content. Its current, visible status slugs
 
 ### Direct media access
 
-`blu/get-media-file` reads attachment bytes directly, so it verifies the target is an attachment and checks `read_post` for that ID before opening the file. `blu/upload-media` uses `wp_check_filetype_and_ext` after writing upload bits; it deletes files whose contents do not match an allowed extension before registering the attachment.
+`blu/get-media-file` reads attachment bytes directly; the gateway passes successful image results to the MCP adapter as image content so binary bytes are encoded correctly. It verifies the target is an attachment and checks `read_post` for that ID before opening the file. `blu/upload-media` uses `wp_check_filetype_and_ext` after writing upload bits; it deletes files whose contents do not match an allowed extension before registering the attachment.
 
 ## Discovery tools
 

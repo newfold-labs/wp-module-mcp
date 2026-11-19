@@ -11,7 +11,7 @@ export interface TestCase {
   prompt: string;
   expected_tool: string;
   /** State assertion used by outcome-based cases; tool name remains for coverage. */
-  expected_outcome?: 'menu_page_present' | 'menu_page_absent' | 'page_image_present' | 'page_image_changed' | 'page_published' | 'product_terms' | 'product_published' | 'product_absent';
+  expected_outcome?: 'menu_page_present' | 'menu_page_absent' | 'page_image_present' | 'page_image_changed' | 'page_published' | 'product_terms' | 'product_published' | 'product_absent' | 'post_draft_created' | 'post_title_updated' | 'post_trashed';
   source: string;
   /** When set, consecutive cases with the same id share chat history (post id, etc.). */
   series_id?: string;
@@ -19,6 +19,8 @@ export interface TestCase {
   requires_success_of?: string[];
   /** This test expects the selected ability to reject invalid input. */
   expect_tool_error?: boolean;
+  /** Score selection without executing an external or client-side action. */
+  selection_only?: boolean;
   /** Explicitly equivalent REST dispatches; successful calls earn a warning, not a pass. */
   rest_alternatives?: RestAlternative[];
 }

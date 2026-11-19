@@ -523,6 +523,13 @@ class AbilityGateway {
 						return new \WP_Error( $result->get_error_code(), $result->get_error_message(), array( 'status' => $status_code ) );
 					}
 
+					// Let the adapter encode binary images as MCP image content rather than JSON.
+					if ( is_array( $result ) && isset( $result['statusCode'], $result['message'] ) && 200 === $result['statusCode']
+						&& is_array( $result['message'] ) && isset( $result['message']['type'], $result['message']['results'] )
+						&& 'image' === $result['message']['type'] && is_string( $result['message']['results'] ) ) {
+						return $result['message'];
+					}
+
 					try {
 						return $this->normalize_result_for_mcp( $result );
 					} catch ( \UnexpectedValueException $e ) {

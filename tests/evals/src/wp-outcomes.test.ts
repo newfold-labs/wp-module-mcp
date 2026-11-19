@@ -65,3 +65,22 @@ test('product term outcome requires both requested terms', () => {
   assert.equal(productHasTerms(product, 'AI Tools', 'Automation'), true);
   assert.equal(productHasTerms(product, 'AI Tools', 'News'), false);
 });
+
+test('post outcome checks compare the requested fixture and draft content', async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (input) => {
+    const route = new URL(String(input)).searchParams.get('rest_route');
+    const value = route === '/wp/v2/posts/11' ? { status: 'trash', title: { raw: 'Old' } }
+      : route === '/wp/v2/posts/12' ? { status: 'publish', title: { raw: 'Updated title' } }
+      : [{ status: 'draft', title: { raw: 'Fixture title' }, content: { raw: 'Intro content' } }];
+    return new Response(JSON.stringify(value), { status: 200 });
+  };
+  try {
+    const outcomes = new WordPressOutcomes(serverUrl, 'Basic test');
+    assert.equal(await outcomes.postHasTitle(12, 'Updated title'), true);
+    assert.equal(await outcomes.postHasTitle(12, 'Wrong'), false);
+    assert.equal(await outcomes.postStatus(11), 'trash');
+    assert.equal(await outcomes.hasDraftPost('Fixture title', 'Intro'), true);
+    assert.equal(await outcomes.hasDraftPost('Fixture title', 'missing'), false);
+  } finally { globalThis.fetch = originalFetch; }
+});

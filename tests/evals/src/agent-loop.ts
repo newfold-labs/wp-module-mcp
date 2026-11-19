@@ -20,6 +20,8 @@ const DEFAULT_MAX_TURNS = 20;
 interface ChatMessage {
   role: string;
   content?: string | null;
+  /** Local diagnostic metadata; never sent to the model. */
+  toolError?: boolean;
   tool_calls?: Array<{
     id: string;
     type: 'function';
@@ -49,6 +51,8 @@ export interface AgentEvalOptions {
   gatewayUrl: string;
   gatewayToken: string;
   maxTurns?: number;
+  /** Stop before executing any non-discovery tool. */
+  selectionOnly?: boolean;
   /** Reuse the run's tools/list snapshot; gateway discovery uses blu-list-abilities. */
   tools?: OpenAiFunctionTool[];
   /** For stateful cases, score the verified WordPress outcome instead of a selected call. */
@@ -154,7 +158,7 @@ export async function runAgentEval(options: AgentEvalOptions): Promise<AgentEval
               'cf-aig-authorization': `Bearer ${options.gatewayToken}`,
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ model: options.model, messages, tools, tool_choice: 'auto' }),
+            body: JSON.stringify({ model: options.model, messages: messages.map(({ toolError: _toolError, ...message }) => message), tools, tool_choice: 'auto' }),
             signal: AbortSignal.timeout(60_000),
           });
           break;
@@ -249,6 +253,10 @@ export async function runAgentEval(options: AgentEvalOptions): Promise<AgentEval
       tool_calls: toolCalls,
     });
 
+    if (options.selectionOnly && toolCalls.some((call) => !isGatewayMetaTool(call.function?.name ?? ''))) {
+      return { matched, actualTool: lastRelevant || '(none)', turns: turn + 1, usage, conversationMessages: messages };
+    }
+
     for (const call of toolCalls) {
       const toolName = call.function?.name ?? '';
       let args: Record<string, unknown> = {};
@@ -276,6 +284,7 @@ export async function runAgentEval(options: AgentEvalOptions): Promise<AgentEval
         role: 'tool',
         tool_call_id: call.id,
         content: formatToolResultForModel(result),
+        toolError: result.isError === true,
       });
       if (matchesExpectedToolCall(toolName, call.function?.arguments, expectedNorm)) {
         let statusCode: number | undefined;

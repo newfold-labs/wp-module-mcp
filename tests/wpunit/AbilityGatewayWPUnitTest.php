@@ -64,6 +64,43 @@ class AbilityGatewayWPUnitTest extends \lucatume\WPBrowser\TestCase\WPTestCase {
 		$this->assertSame( 'Missing', $result['content'][0]['text'] );
 	}
 
+	/** Binary image results must survive gateway serialization. */
+	public function test_gateway_returns_binary_image_as_mcp_content(): void {
+		$bytes = "\x89PNG\r\n\x1a\n";
+		$this->register_test_ability(
+			'blu/image-fixture',
+			'blu-mcp',
+			fn() => blu_prepare_ability_response(
+				200,
+				array(
+					'results'  => $bytes,
+					'type'     => 'image',
+					'mimeType' => 'image/png',
+				)
+			)
+		);
+		$this->register_gateway();
+		$adapter = new \WP\MCP\Core\McpServer( 'blu-mcp', 'blu', 'mcp-test', 'test', 'test', '1.0', array(), null, null, array( 'blu/call-ability' ) );
+		$schema  = \WP\McpSchema\Schemas::create()->forVersion( \WP\McpSchema\Schemas::V2025_11_25 );
+		$request = $schema->fromArray(
+			\WP\McpSchema\Record\CallToolRequest::class,
+			array(
+				'jsonrpc' => '2.0',
+				'id'      => 1,
+				'method'  => 'tools/call',
+				'params'  => array(
+					'name'      => 'blu-call-ability',
+					'arguments' => array( 'ability_name' => 'blu-image-fixture' ),
+				),
+			)
+		);
+		$context = new \WP\MCP\Core\McpRequestContext( $schema, new \stdClass(), null, 'test' );
+		$result  = ( new \WP\MCP\Handlers\Tools\ToolsHandler( $adapter ) )->call_tool( $request, $context );
+		$this->assertFalse( $result['isError'] );
+		$this->assertSame( 'image', $result['content'][0]['type'] );
+		$this->assertSame( $bytes, base64_decode( $result['content'][0]['data'], true ) );
+	}
+
 	/**
 	 * Names of abilities registered during tests that need cleanup.
 	 *

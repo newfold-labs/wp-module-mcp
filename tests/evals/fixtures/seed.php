@@ -25,6 +25,7 @@
 	foreach (
 	array(
 		'post_get'          => array( 'post', 'AI Eval Read Post' ),
+		'post_update'       => array( 'post', 'AI Eval Update Post' ),
 		'post_delete'       => array( 'post', 'AI Eval Delete Post' ),
 		'page_get'          => array( 'page', 'AI Eval Read Page' ),
 		'page_update'       => array( 'page', 'AI Eval Update Page' ),
@@ -35,7 +36,8 @@
 		$ids[ $key ] = $create_post( $spec[0], $spec[1] );
 	}
 
-	$png = base64_decode( 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4//8/AAX+Av4N70a4AAAAAElFTkSuQmCC', true );
+	$png = base64_decode( 'iVBORw0KGgoAAAANSUhEUgAAASwAAAEsCAIAAAD2HxkiAAAD6UlEQVR4nO3OQQ0AIAADMaTjHGTcY00qoOfcB5T6AYzrBzCuH8C4fgDj+gGM6wcwrh/AuH4A4/oBjOsHMK4fwLh+AOP6AYzrBzCuH8C4fgDj+gGM6wcwrh/AuH4A4/oBjOsHMK4fwLh+AOP6AYzrBzCuH8C4fgDj+gGM6wcwrh/AuH4A4/oBjOsHMK4fwLh+AOP6AYzrBzCuH8C4fgDj+gGM6wcwrh/AuH4A4/oBjOsHMK4fwLh+AOP6AYzrBzCuH8C4fgDj+gGM6wcwrh/AuH4A4/oBjOsHMK4fwLh+AOP6AYzrBzCuH8C4fgDj+gGM6wcwrh/AuH4A4/oBjOsHMK4fwLh+AOP6AYzrBzCuH8C4fgDj+gGM6wcwrh/AuH4A4/oBjOsHMK4fwLh+AOP6AYzrBzCuH8C4fgDj+gGM6wcwrh/AuH4A4/oBjOsHMK4fwLh+AOP6AYzrBzCuH8C4fgDj+gGM6wcwrh/AuH4A4/oBjOsHMK4fwLh+AOP6AYzrBzCuH8C4fgDj+gGM6wcwrh/AuH4A4/oBjOsHMK4fwLh+AOP6AYzrBzCuH8C4fgDj+gGM6wcwrh/AuH4A4/oBjOsHMK4fwLh+AOP6AYzrBzCuH8C4fgDj+gGM6wcwrh/AuH4A4/oBjOsHMK4fwLh+AOP6AYzrBzCuH8C4fgDj+gGM6wcwrh/AuH4A4/oBjOsHMK4fwLh+AOP6AYzrBzCuH8C4fgDj+gGM6wcwrh/AuH4A4/oBjOsHMK4fwLh+AOP6AYzrBzCuH8C4fgDj+gGM6wcwrh/AuH4A4/oBjOsHMK4fwLh+AOP6AYzrBzCuH8C4fgDj+gGM6wcwrh/AuH4A4/oBjOsHMK4fwLh+AOP6AYzrBzCuH8C4fgDj+gGM6wcwrh/AuH4A4/oBjOsHMK4fwLh+AOP6AYzrBzCuH8C4fgDj+gGM6wcwrh/AuH4A4/oBjOsHMK4fwLh+AOP6AYzrBzCuH8C4fgDj+gGM6wcwrh/AuH4A4/oBjOsHMK4fwLh+AOP6AYzrBzCuH8C4fgDj+gGM6wcwrh/AuH4A4/oBjOsHMK4fwLh+AOP6AYzrBzCuH8C4fgDj+gGM6wcwrh/AuH4A4/oBjOsHMK4fwLh+AOP6AYzrBzCuH8C4fgDj+gGM6wcwrh/AuH4A4/oBjOsHMK4fwLh+AOP6AYzrBzCuH8C4fgDj+gGM6wcwrh/AuH4A4/oBjOsHMK4fwLh+AOP6AYzrBzCuH8C4fgDj+gGM6wcwrh/AuH4A4/oBjOsHMK4fwLh+AOP6AYzrBzCuH8C4fgDj+gGM6wcwrh/AuH4A4/oBjOsHMK4fwLYPKBkXQ1XNhhwAAAAASUVORK5CYII=', true );
+	require_once ABSPATH . 'wp-admin/includes/image.php';
 	foreach ( array( 'media_get', 'media_update', 'media_delete' ) as $key ) {
 		$upload = wp_upload_bits( $key . '.png', null, $png );
 		if ( ! empty( $upload['error'] ) ) {
@@ -49,6 +51,11 @@
 			),
 			$upload['file']
 		);
+		$metadata = wp_generate_attachment_metadata( $ids[ $key ], $upload['file'] );
+		if ( empty( $metadata['sizes']['thumbnail']['file'] ) ) {
+			throw new RuntimeException( 'Could not generate media fixture thumbnail' );
+		}
+		wp_update_attachment_metadata( $ids[ $key ], $metadata );
 	}
 
 	foreach ( array( 'user_get', 'user_update', 'user_delete' ) as $key ) {

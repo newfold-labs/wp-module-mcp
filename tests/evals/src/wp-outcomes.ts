@@ -76,6 +76,23 @@ export class WordPressOutcomes {
     return page.status;
   }
 
+  async postHasTitle(id: number, title: string): Promise<boolean> {
+    const post = await this.get<{ title?: { raw?: string } }>(`/wp/v2/posts/${id}`, { context: 'edit', status: 'any' });
+    return post.title?.raw === title;
+  }
+
+  async postStatus(id: number): Promise<string | undefined> {
+    const post = await this.get<{ status?: string }>(`/wp/v2/posts/${id}`, { context: 'edit' });
+    return post.status;
+  }
+
+  async hasDraftPost(title: string, content: string): Promise<boolean> {
+    const posts = await this.get<Array<{ status?: string; title?: { raw?: string }; content?: { raw?: string } }>>('/wp/v2/posts', {
+      search: title, status: 'draft', context: 'edit', per_page: '100',
+    });
+    return posts.some((post) => post.status === 'draft' && post.title?.raw === title && Boolean(post.content?.raw?.includes(content)));
+  }
+
   async product(name = 'AI Tool'): Promise<Product | undefined> {
     const products = await this.get<Product[]>('/wc/v3/products', { search: name, per_page: '100' });
     return products.find((item) => item.name === name);
