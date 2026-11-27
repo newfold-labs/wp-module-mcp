@@ -3,6 +3,7 @@ const IMAGE_UPLOADS = new Set(['media-upload-1', 'uploading-image-19', 'uploadin
 const PRODUCT_42 = new Set(['wc-product-get-1', 'wc-product-update-1']);
 const STANDALONE_IDS: Record<string, [string, number]> = {
   'post-get-1': ['post_get', 42],
+  'post-update-1': ['post_update', 15],
   'post-delete-1': ['post_delete', 99],
   'page-get-1': ['page_get', 10],
   'page-update-1': ['page_update', 7],

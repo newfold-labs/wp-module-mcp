@@ -22,9 +22,16 @@ test('summarizes tool errors and different ability choices', () => {
   assert.equal(summarizeFailure([call, { role: 'tool', tool_call_id: '1', content: '{"statusCode":200}' }]), 'Different ability');
 });
 
-test('distinguishes a clarification request from no action', () => {
-  assert.equal(summarizeFailure([{ role: 'assistant', content: 'Which image file should I upload?' }]), 'Asked for input');
+test('reports no tool call without guessing the intent of a reply', () => {
+  assert.equal(summarizeFailure([{ role: 'assistant', content: 'Which image file should I upload?' }]), 'No tool call');
+  assert.equal(summarizeFailure([{ role: 'assistant', content: 'Here is a palette. Tell me which one you prefer.' }]), 'No tool call');
   assert.equal(summarizeFailure([{ role: 'assistant', content: 'Done.' }]), 'No tool call');
+});
+
+test('recognizes a structured tool error without exposing its message', () => {
+  const messages = [{ role: 'tool', content: JSON.stringify({ status: 'error', message: 'private value' }) }];
+  assert.equal(summarizeFailure(messages), 'Tool error');
+  assert.ok(!JSON.stringify(safeTrace(messages)).includes('private value'));
 });
 
 test('records a stable private discovery key to distinguish repeated searches', () => {
